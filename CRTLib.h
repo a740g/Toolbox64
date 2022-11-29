@@ -6,7 +6,7 @@ void *NumberToOffset(size_t n) { return (void *)n; }
 
 void *OffsetToString(void *p) { return p; }
 
-void *OffsetAtOffset(void **p) { return *p; }
+void *PeekOffset(void **p) { return *p; }
 
 uint8_t PeekByteAtOffset(void *p, size_t o) { return *((uint8_t *)p + o); }
 
@@ -20,6 +20,8 @@ float PeekSingleAtOffset(void *p, size_t o) { return *((float *)p + o); }
 
 double PeekDoubleAtOffset(void *p, size_t o) { return *((double *)p + o); }
 
+void *PeekOffsetAtOffset(void *p, size_t o) { return (void *)(*((size_t *)p + o)); }
+
 uint8_t PeekString(char *s, size_t o) { return s[o]; }
 
 void PokeByteAtOffset(void *p, size_t o, uint8_t n) { *((uint8_t *)p + o) = n; }
@@ -29,6 +31,8 @@ void PokeIntegerAtOffset(void *p, size_t o, uint16_t n) { *((uint16_t *)p + o) =
 void PokeLongAtOffset(void *p, size_t o, uint32_t n) { *((uint32_t *)p + o) = n; }
 
 void PokeInteger64AtOffset(void *p, size_t o, uint64_t n) { *((uint64_t *)p + o) = n; }
+
+void PokeOffsetAtOffset(void *p, size_t o, void *n) { *((size_t *)p + o) = (size_t)n; }
 
 void PokeString(char *s, size_t o, uint8_t n) { s[o] = n; }
 

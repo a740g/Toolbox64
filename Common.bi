@@ -140,6 +140,14 @@ $If COMMON_BI = UNDEFINED Then
     Const KEY_UPPER_X = 88
     Const KEY_UPPER_Y = 89
     Const KEY_UPPER_Z = 90
+    Const KEY_OPEN_BRACKET = 91
+    Const KEY_CLOSE_BRACKET = 93
+    Const KEY_OPEN_BRACE = 123
+    Const KEY_CLOSE_BRACE = 125
+    Const KEY_OPEN_PARENTHESIS = 40
+    Const KEY_CLOSE_PARENTHESIS = 41
+    Const KEY_SEMICOLON = 59
+    Const KEY_COLON = 58
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------------------------------------------------------------
