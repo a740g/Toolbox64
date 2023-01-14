@@ -49,7 +49,7 @@ $If CRTLIB_BI = UNDEFINED Then
         Sub memmove (ByVal dst As Offset, Byval src As Offset, Byval count As Unsigned Long)
         Sub memmove_s (ByVal dst As Offset, Byval destsz As Unsigned Long, Byval src As Offset, Byval count As Unsigned Long)
         Sub memccpy (ByVal dst As Offset, Byval src As Offset, Byval c As Long, Byval count As Unsigned Long)
-        Function GetTicks&&
+        Function GetTicks~&&
     End Declare
 
     Declare CustomType Library "./CRTLib"
