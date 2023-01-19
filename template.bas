@@ -8,7 +8,7 @@
 '-----------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '-----------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
+'$Include:'CRTLib.bi'
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
@@ -100,11 +100,6 @@ End Declare
 '-----------------------------------------------------------------------------------------------------
 ' PROGRAM ENTRY POINT
 '-----------------------------------------------------------------------------------------------------
-
-Dim i As Unsigned Long, j As Long
-i = 2048
-
-Print Log(i) - 1
 
 End
 '-----------------------------------------------------------------------------------------------------
@@ -512,13 +507,13 @@ End Function
 ' This function is static, so don't mix/nest calls with different array pointers, always finish one array before starting the next
 ' No safety checks are done, so call on valid (non-NULL) pointers only to avoid crashes, rewind on first call for each new pointer
 ' and/or when needed, returns zero when the entire array is done
-Function PtrFromPtrArray%& (arrPtr As Offset, rewind As Byte)
-    Static offs As Unsigned Long
-    Dim ptr As Offset
+Function PtrFromPtrArray~%& (arrPtr As Offset, rewind As Byte)
+    Static offs As Unsigned Integer64
+    Dim ptr As Unsigned Offset
 
     If rewind Then offs = 0
-    memcpy Offset(ptr), arrPtr + offs, Len(offs) ' Len here will pickup the correct pointer size based on system arch
-    If ptr <> NULL Then offs = offs + Len(offs)
+    memcpy Offset(ptr), arrPtr + offs, Len(ptr) ' Len here will pickup the correct pointer size based on system arch
+    If ptr <> NULL Then offs = offs + Len(ptr)
     PtrFromPtrArray = ptr
 End Function
 
