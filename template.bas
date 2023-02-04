@@ -107,6 +107,65 @@ End
 '-----------------------------------------------------------------------------------------------------
 ' FUNCTIONS & SUBROUTINES
 '-----------------------------------------------------------------------------------------------------
+' This works around the QB SCREEN 0 high intensity background nonsense
+' c is the color (0 to 15) for paletted destinations or 32-bit RGB for true color destinations
+' isBackGround can be set to true when setting the background color
+Sub SetColor (c As Unsigned Long, isBackground As Long)
+    If PixelSize = 0 Then ' text mode
+        If isBackground Then
+            Color DefaultColor Mod 16 + (-16 * (c > 7)), c Mod 8
+        Else
+            Color c
+        End If
+    Else ' graphics mode
+        If isBackground Then
+            Color , c
+        Else
+            Color c
+        End If
+    End If
+End Sub
+
+
+' This works around the QB SCREEN 0 high intensity background nonsense
+' isBackGround can be set to true when getting the background color
+Function GetColor~& (isBackground As Long)
+    If PixelSize = 0 Then
+        If isBackground Then
+            GetColor = BackgroundColor + (-8 * (DefaultColor > 15))
+        Else
+            GetColor = DefaultColor Mod 16
+        End If
+    Else
+        If isBackground Then
+            GetColor = BackgroundColor
+        Else
+            GetColor = DefaultColor
+        End If
+    End If
+End Function
+
+
+' Returns the number of characters per line
+Function TextScreenWidth&
+    If PixelSize = 0 Then
+        TextScreenWidth = Width
+    Else
+        TextScreenWidth = Width \ FontWidth ' this will cause a divide by zero if a variable width font is used; use fixed width fonts instead
+    End If
+End Function
+
+
+' Returns the number of lines
+Function TextScreenHeight&
+    If PixelSize = 0 Then
+        TextScreenHeight = Height
+    Else
+        TextScreenHeight = Height \ FontHeight
+    End If
+End Function
+
+
 ' Calculates and returns the FPS when repeatedly called inside a loop
 Function CalculateFPS~&
     Static As Unsigned Long counter, finalFPS
@@ -670,6 +729,33 @@ Sub DrawTextBox (l As Long, t As Long, r As Long, b As Long, sCaption As String)
 End Sub
 
 
+' Clears a given portion of screen without disturbing the cursor location and screen colors
+Sub ClearTextCanvasArea (l As Long, t As Long, r As Long, b As Long)
+    Dim As Long i, w, x, y
+    Dim As Unsigned Long fc, bc
+
+    w = 1 + r - l ' calculate width
+
+    If w > 0 And t <= b Then ' only proceed is width is > 0 and height is > 0
+        ' Save some stuff
+        fc = DefaultColor
+        bc = BackgroundColor
+        x = Pos(0)
+        y = CsrLin
+
+        Color Black, Black ' lights out
+
+        For i = t To b
+            Locate i, l: Print Space$(w); ' fill with SPACE
+        Next
+
+        ' Restore saved stuff
+        Color fc, bc
+        Locate y, x
+    End If
+End Sub
+
+
 ' Sleeps until some keys or buttons are pressed
 ' TODO: Game controller
 Sub WaitInput
@@ -849,7 +935,7 @@ Function GetFileNameFromPath$ (pathName As String)
 
     ' Retrieve the position of the first / or \ in the parameter from the
     For i = Len(pathName) To 1 Step -1
-        If Asc(pathName, i) = 47 Or Asc(pathName, i) = 92 Then Exit For
+        If Asc(pathName, i) = KEY_SLASH Or Asc(pathName, i) = KEY_BACKSLASH Then Exit For
     Next
 
     ' Return the full string if pathsep was not found
