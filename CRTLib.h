@@ -66,3 +66,16 @@ uint32_t PreviousPowerOfTwo(uint32_t n) {
 /// @param x A power of 2 number
 /// @return A number (n) that we use in 1 << n to get x
 uint32_t LShOneCount(uint32_t x) { return x == 0 ? 0 : (CHAR_BIT * sizeof(x)) - 1 - __builtin_clz(x); }
+
+/// @brief Reverses bits in a number
+/// @param n The number
+/// @param bytes The sizeof(number)
+/// @return A number with bits reversed
+size_t ReverseBits(size_t n, unsigned int bytes) {
+    n = __builtin_bswap64(n);
+    n >>= ((sizeof(size_t) - bytes) * 8);
+    n = ((n & 0xaaaaaaaaaaaaaaaa) >> 1) | ((n & 0x5555555555555555) << 1);
+    n = ((n & 0xcccccccccccccccc) >> 2) | ((n & 0x3333333333333333) << 2);
+    n = ((n & 0xf0f0f0f0f0f0f0f0) >> 4) | ((n & 0x0f0f0f0f0f0f0f0f) << 4);
+    return n;
+}
