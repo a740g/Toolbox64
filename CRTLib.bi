@@ -17,7 +17,7 @@ $If CRTLIB_BI = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    ' This only includes CRT library functions that makes sense in BASIC
+    ' This only includes CRT library functions that makes sense in QB64
     Declare CustomType Library
         Function IsAlNum& Alias isalnum (ByVal ch As Long)
         Function IsAlpha& Alias isalpha (ByVal ch As Long)
