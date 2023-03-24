@@ -92,14 +92,13 @@ End Type
 '-----------------------------------------------------------------------------------------------------
 ' EXTERNAL LIBRARIES
 '-----------------------------------------------------------------------------------------------------
-Declare CustomType Library
-
-End Declare
 '-----------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------
 ' PROGRAM ENTRY POINT
 '-----------------------------------------------------------------------------------------------------
+Print GetFileNameFromPath("C:\test\dummy.wav")
+Print GetDirectoryNameFromPath("C:\test\dummy.wav")
 
 End
 '-----------------------------------------------------------------------------------------------------
@@ -107,6 +106,102 @@ End
 '-----------------------------------------------------------------------------------------------------
 ' FUNCTIONS & SUBROUTINES
 '-----------------------------------------------------------------------------------------------------
+
+' Returns: The path, or empty if no path
+Function GetDirectoryNameFromPath$ (pathName As String)
+    Dim i As Unsigned Long
+
+    For i = Len(pathName) To 1 Step -1
+        If Asc(pathName, i) = KEY_SLASH Or Asc(pathName, i) = KEY_BACKSLASH Then
+            GetDirectoryNameFromPath = Left$(pathName, i)
+            Exit Function
+        End If
+    Next
+End Function
+
+
+' Gets the filename portion from a file path
+Function GetFileNameFromPath$ (pathName As String)
+    Dim i As Unsigned Long
+
+    ' Retrieve the position of the first / or \ in the parameter from the
+    For i = Len(pathName) To 1 Step -1
+        If Asc(pathName, i) = KEY_SLASH Or Asc(pathName, i) = KEY_BACKSLASH Then Exit For
+    Next
+
+    ' Return the full string if pathsep was not found
+    If i = 0 Then GetFileNameFromPath = pathName Else GetFileNameFromPath = Right$(pathName, Len(pathName) - i)
+End Function
+
+
+' Adds a trailing / to a directory name if needed
+' TODO: This needs to be more platform specific (i.e. \ should not be checked on non-windows platforms)
+Function FixDirectoryName$ (dir_name As String)
+    If Len(dir_name) > 0 And (Asc(dir_name, Len(dir_name)) <> KEY_SLASH Or Asc(dir_name, Len(dir_name)) <> KEY_BACKSLASH) Then
+        FixDirectoryName = dir_name + "/"
+    Else
+        FixDirectoryName = dir_name
+    End If
+End Function
+
+
+' Return true if path name is an absolute path (i.e. starts from the root)
+Function IsAbsolutePath%% (path_name As String)
+    $If WIN Then
+        IsAbsolutePath = Asc(path_name, 1) = KEY_SLASH Or Asc(path_name, 1) = KEY_BACKSLASH Or Asc(path_name, 3) = KEY_SLASH Or Asc(path_name, 3) = KEY_BACKSLASH ' either / or \ or x:/ or x:\
+    $Else
+            IsAbsolutePath = ASC(path_name, 1) = 47 ' /
+    $End If
+End Function
+
+
+' Copies file src to dst. Src file must exist and dst file must not
+' TODO: Fix me. Behavior is undefined if file size > 2 GB
+Function FileCopy%% (fileSrc As String, fileDst As String)
+    Dim As Long ffs, ffd
+    Dim ffbc As String
+
+    ' By default we assume failure
+    FileCopy = FALSE
+
+    ' Check if source file exists
+    If FileExists(fileSrc) Then
+        ' Check if dest file exists
+        If FileExists(fileDst) Then
+            Exit Function
+        End If
+
+        ffs = FreeFile
+        Open fileSrc For Binary Access Read As ffs
+        ffd = FreeFile
+        Open fileDst For Binary Access Write As ffd
+
+        ' Load the whole file into memory
+        ffbc = Input$(LOF(ffs), ffs)
+        ' Write the buffer to the new file
+        Put ffd, , ffbc
+
+        Close ffs
+        Close ffd
+
+        ' Success
+        FileCopy = TRUE
+    End If
+End Function
+
+
+Function GetKey~%
+    Dim k As String: k = InKey$
+
+    Select Case Len(k)
+        Case 2
+            GetKey = CV(Unsigned Integer, k)
+        Case 1
+            GetKey = Asc(k)
+    End Select
+End Function
+
+
 ' This works around the QB SCREEN 0 high intensity background nonsense
 ' c is the color (0 to 15) for paletted destinations or 32-bit RGB for true color destinations
 ' isBackGround can be set to true when setting the background color
@@ -548,17 +643,24 @@ End Function
 Function CStrPtrToBStr$ (cStrPtr As Offset)
     If cStrPtr <> NULL Then
         Dim bufSize As Long
-        bufSize = strlen(cStrPtr)
+        bufSize = StrLen(cStrPtr)
 
         If bufSize > 0 Then
             Dim buf As String
             buf = String$(bufSize + 1, NULL)
 
-            strncpy Offset(buf), cStrPtr, bufSize
+            StrNCpy Offset(buf), cStrPtr, bufSize
 
             CStrPtrToBStr = Left$(buf, InStr(buf, Chr$(NULL)) - 1)
         End If
     End If
+End Function
+
+
+' Returns a BASIC string (bstring) from zero terminated C string (cstring)
+Function CStrToBStr$ (cStr As String)
+    Dim zeroPos As Long: zeroPos = InStr(cStr, Chr$(NULL))
+    If zeroPos > 0 Then CStrToBStr = Left$(cStr, zeroPos - 1) Else CStrToBStr = cStr
 End Function
 
 
@@ -571,7 +673,7 @@ Function PtrFromPtrArray~%& (arrPtr As Offset, rewind As Byte)
     Dim ptr As Unsigned Offset
 
     If rewind Then offs = 0
-    memcpy Offset(ptr), arrPtr + offs, Len(ptr) ' Len here will pickup the correct pointer size based on system arch
+    MemCpy Offset(ptr), arrPtr + offs, Len(ptr) ' Len here will pickup the correct pointer size based on system arch
     If ptr <> NULL Then offs = offs + Len(ptr)
     PtrFromPtrArray = ptr
 End Function
@@ -594,42 +696,6 @@ Function GetHexString$ (anyByteSeq As String, grp As Unsigned Byte, sep As Strin
     Next
     If cap Then GetHexString = tmp Else GetHexString = LCase$(tmp)
 End Function
-
-
-' Copies file src to dst. Src file must exist and dst file must not
-' Warning: Behavior is undefined if file size > 2 GB
-Function FileCopy%% (fileSrc As String, fileDst As String)
-    Dim As Long ffs, ffd
-    Dim ffbc As String
-
-    ' By default we assume failure
-    FileCopy = FALSE
-
-    ' Check if source file exists
-    If FileExists(fileSrc) Then
-        ' Check if dest file exists
-        If FileExists(fileDst) Then
-            Exit Function
-        End If
-
-        ffs = FreeFile
-        Open fileSrc For Binary Access Read As ffs
-        ffd = FreeFile
-        Open fileDst For Binary Access Write As ffd
-
-        ' Load the whole file into memory
-        ffbc = Input$(LOF(ffs), ffs)
-        ' Write the buffer to the new file
-        Put ffd, , ffbc
-
-        Close ffs
-        Close ffd
-
-        ' Success
-        FileCopy = TRUE
-    End If
-End Function
-
 
 '  Loads an image in 8bpp or 32bpp and optionally sets a transparent color
 Function LoadImageTransparent& (fileName As String, transparentColor As Unsigned Long, is8bpp As Byte)
@@ -929,24 +995,6 @@ Function StrSpn& (InString As String, Separator As String)
 End Function
 
 
-' Gets the filename portion from a file path
-Function GetFileNameFromPath$ (pathName As String)
-    Dim i As Unsigned Long
-
-    ' Retrieve the position of the first / or \ in the parameter from the
-    For i = Len(pathName) To 1 Step -1
-        If Asc(pathName, i) = KEY_SLASH Or Asc(pathName, i) = KEY_BACKSLASH Then Exit For
-    Next
-
-    ' Return the full string if pathsep was not found
-    If i = 0 Then
-        GetFileNameFromPath = pathName
-    Else
-        GetFileNameFromPath = Right$(pathName, Len(pathName) - i)
-    End If
-End Function
-
-
 ' This is a simple text parser that can take an input string from OpenFileDialog$ and spit out discrete filepaths in an array
 ' Returns the number of strings parsed
 Function ParseOpenFileDialogList& (ofdList As String, ofdArray() As String)
@@ -972,22 +1020,6 @@ Function ParseOpenFileDialogList& (ofdList As String, ofdArray() As String)
         c = c + 1
         ReDim Preserve ofdArray(0 To c) As String
     Loop
-End Function
-
-
-' Returns a BASIC string (bstring) from zero terminated C string (cstring)
-Function CStrToBStr$ (cStr As String)
-    Dim zeroPos As Long
-
-    CStrToBStr = cStr
-    zeroPos = InStr(cStr, Chr$(NULL))
-    If zeroPos > 0 Then CStrToBStr = Left$(cStr, zeroPos - 1)
-End Function
-
-
-' Generates a random number between lo & hi
-Function RandomBetween& (lo As Long, hi As Long)
-    RandomBetween = lo + Rnd * (hi - lo)
 End Function
 
 
