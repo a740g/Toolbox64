@@ -14,7 +14,7 @@ $If LIBNATIVEMIDI_BI = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-----------------------------------------------------------------------------------------------------
-    Declare Library "./LibNativeMIDI"
+    Declare Library "LibNativeMIDI"
         ' <summary>
         ' Include LibNativeMIDI.bas and call MIDI_Play() instead of this!
         ' This loads and starts playing a MIDI file.

@@ -4,7 +4,10 @@
 !*.*
 # Unignore all dirs
 !*/
-# Ignore all exe files
+# Ignore all executable files
 *.exe
+*.so
+*.dylib
 # Ignore vscode stuff
 .vscode
+.fake
