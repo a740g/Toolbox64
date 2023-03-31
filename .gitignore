@@ -6,6 +6,7 @@
 !*/
 # Ignore all executable files
 *.exe
+*.dll
 *.so
 *.dylib
 # Ignore vscode stuff
