@@ -12,7 +12,7 @@ This is A740G's Toolbox. A collection of useful libraries for QB64-PE.
 | Easings.bi<br>reasings.h | Math | Bindings to raylib Easing functions library |
 | IMGUI64.bas<br>IMGUI64.bi | GUI | Immediate mode GUI library |
 | LibNativeMIDI.bas<br>LibNativeMIDI.bi<br>LibNativeMIDI.h | Audio | Windows native MIDI library |
-| MIDIPlayer.bas<br>MIDIPlayer.biM<br>MIDIPlayer.h<br>opl.h<br>soundfont.h<br>stb_vorbis.c<br>tml.h<br>tsf.h | Audio | Cross platform MIDI player library using Soundfonts and OPL3 emulation |
+| MIDIPlayer.bas<br>MIDIPlayer.bi<br>MIDIPlayer.h<br>opl.h<br>soundfont.h<br>stb_vorbis.c<br>tml.h<br>tsf.h | Audio | Cross platform MIDI player library using Soundfonts and OPL3 emulation |
 | MODPlayer.bas<br>MODPlayer.bi<br>SoftSynth.bas<br>SoftSynth.bi | Audio | Protracker and compatible MOD player library |
 | VGAFont.bas<br>VGAFont.bi | Font| PSF font library |
 
@@ -35,4 +35,4 @@ Assuming you made this a [Git submodule](https://git-scm.com/book/en/v2/Git-Tool
 - I made this for myself and as such it is tailored to my coding style and conventions
 - This is not backward compatible with older versions of QB64-PE or QB64
 - All files here are in source only form and will never include any binaries
-- There is no directory structure. This lends itself well to the fact that you con covinently use this as a [Git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- There is no directory structure. This lends itself well to the fact that you can covinently use this as a [Git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
