@@ -35,4 +35,4 @@ Assuming you made this a [Git submodule](https://git-scm.com/book/en/v2/Git-Tool
 - I made this for myself and as such it is tailored to my coding style and conventions
 - This is not backward compatible with older versions of QB64-PE or QB64
 - All files here are in source only form and will never include any binaries
-- There is no directory structure. This lends itself well to the fact that you can covinently use this as a [Git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- There is no directory structure. This lends itself well to the fact that you can conveniently use this as a [Git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
