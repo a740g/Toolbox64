@@ -72,9 +72,9 @@ static int16_t fft_s_temp[FFT_SAMPLES];
 
 static void fft_init()
 {
-    int i, j = 0, k;
+    auto j = 0, k = 0;
 
-    for (i = 0; i < FFT_SAMPLES; ++i)
+    for (auto i = 0; i < FFT_SAMPLES; ++i)
     {
         fft_permtab[i] = j;
         for (k = FFT_SAMPLES2; k && (k <= j); k >>= 1)
@@ -82,13 +82,13 @@ static void fft_init()
         j += k;
     }
 
-    for (i = FFT_SAMPLES2 / 4 + 1; i <= FFT_SAMPLES2 / 2; ++i)
+    for (auto i = FFT_SAMPLES2 / 4 + 1; i <= FFT_SAMPLES2 / 2; ++i)
     {
         fft_cossintab86[i][0] = fft_cossintab86[FFT_SAMPLES2 / 2 - i][1];
         fft_cossintab86[i][1] = fft_cossintab86[FFT_SAMPLES2 / 2 - i][0];
     }
 
-    for (i = FFT_SAMPLES2 / 2 + 1; i < FFT_SAMPLES2; ++i)
+    for (auto i = FFT_SAMPLES2 / 2 + 1; i < FFT_SAMPLES2; ++i)
     {
         fft_cossintab86[i][0] = -fft_cossintab86[FFT_SAMPLES2 - i][0];
         fft_cossintab86[i][1] = fft_cossintab86[FFT_SAMPLES2 - i][1];
@@ -99,9 +99,7 @@ static void fft_init()
 
 static int fft_imul29(int a, int b)
 {
-    double d = (double)a * (double)b;
-    d /= (1 << 29);
-    return (int)d;
+    return (int)(((double)a * (double)b) / (double)(1 << 29));
 }
 
 static void fft_calc(int32_t *xi, int32_t *curcossin, uint32_t d2)
@@ -119,15 +117,14 @@ static void fft_calc(int32_t *xi, int32_t *curcossin, uint32_t d2)
 
 static void fft_do86(int32_t (*x)[2], const int n)
 {
-    unsigned int i, j;
     int32_t *xe = x[1 << n];
     int32_t curcossin[2];
     int32_t *xi;
-    for (i = FFT_POW - n; i < FFT_POW; ++i)
+    for (auto i = FFT_POW - n; i < FFT_POW; ++i)
     {
         const uint32_t s2dk = FFT_SAMPLES2 >> i;
         const uint32_t d2 = 2 * s2dk;
-        for (j = 0; j < s2dk; ++j)
+        for (auto j = 0; j < s2dk; ++j)
         {
             curcossin[0] = fft_cossintab86[j << i][0];
             curcossin[1] = fft_cossintab86[j << i][1];
@@ -144,15 +141,14 @@ static void fft_do86(int32_t (*x)[2], const int n)
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
 void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, const int inc, const int bits)
 {
-    const unsigned int full = 1 << bits;
-    const unsigned int half = full >> 1;
-    unsigned int i;
+    const auto full = 1 << bits;
+    const auto half = full >> 1;
     int32_t xr[2];
 
     if (!fft_init_done)
         fft_init();
 
-    for (i = 0; i < full; ++i)
+    for (auto i = 0; i < full; ++i)
     {
         fft_x86[i][0] = *samp << 12;
         samp += inc;
@@ -160,7 +156,7 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, const int inc, const
     }
     fft_do86(fft_x86, bits);
 
-    for (i = 1; i <= half; ++i)
+    for (auto i = 1; i <= half; ++i)
     {
         xr[0] = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
         xr[1] = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
@@ -175,9 +171,9 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, const int inc, const
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
 void AnalyzerFFTSingle(uint16_t *ana, const float *samp, const int inc, const int bits)
 {
-    const unsigned int full = std::min(1 << bits, FFT_SAMPLES);
+    const auto full = std::min(1 << bits, FFT_SAMPLES);
 
-    for (int i = 0; i < full; ++i)
+    for (auto i = 0; i < full; ++i)
     {
         fft_s_temp[i] = (int16_t)(fmaxf(fminf(*samp, 1.0f), -1.0f) * SHRT_MAX);
         samp += inc;

@@ -442,14 +442,14 @@ uint64_t ByteSwapInteger64(uint64_t x)
 }
 
 /// @brief Makes a four-character code
-/// @param c1 Character 1
-/// @param c2 Character 2
-/// @param c3 Character 3
-/// @param c4 Character 4
+/// @param ch0 Character 0
+/// @param ch1 Character 1
+/// @param ch2 Character 2
+/// @param ch3 Character 3
 /// @return The FOURCC
 uint32_t MakeFourCC(uint8_t ch0, uint8_t ch1, uint8_t ch2, uint8_t ch3)
 {
-    return ((uint32_t)ch0 | ((uint32_t)ch1 << 8) | ((uint32_t)ch2 << 16) | ((uint32_t)ch3 << 24));
+    return (uint32_t)ch0 | ((uint32_t)ch1 << 8) | ((uint32_t)ch2 << 16) | ((uint32_t)ch3 << 24);
 }
 
 /// @brief Makes a BYTE out of two nibbles

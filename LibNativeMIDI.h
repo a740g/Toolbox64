@@ -6,7 +6,7 @@
 //  https://github.com/a740g
 //
 //  This uses a heavily modiified version of the Win32 native MIDI codec from SDL_mixer
-//  https://github.com/libsdl-org/SDL_mixer/blob/main/src/codecs/native_midi/native_midi_win32.c
+//  https://github.com/libsdl-org/SDL_mixer/tree/main/src/codecs/native_midi
 //
 //  native_midi: Hardware Midi support for the SDL_mixer library
 //  Copyright(C) 2000, 2001  Florian 'Proff' Schulze <florian.proff.schulze@gmx.net>
@@ -26,9 +26,10 @@
 //
 //-----------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------------------------------
-// CONSTANTS
-//-----------------------------------------------------------------------------------------------------
+#include <stdint.h>
+#include <stdio.h>
+#include <windows.h>
+
 // In QuickBASIC false means 0 and true means -1 (sad, but true XD)
 #define MIDI_FALSE FALSE
 #define MIDI_TRUE -TRUE
@@ -43,26 +44,19 @@
 #define MIDI_STATUS_SYSEX 0xF
 /* The constant 'MThd' */
 #define MIDI_MAGIC 0x4d546864
-//-----------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------------------------------
-// MACROS
-//-----------------------------------------------------------------------------------------------------
 #define MIDI_IS_STRING_EMPTY(s) ((s) == nullptr || (s)[0] == NULL)
 #define MIDI_CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 /* Some macros that help us stay endianess-independant */
 #define MIDI_BE_SHORT(x) ((((x)&0xFF) << 8) | (((x) >> 8) & 0xFF))
 #define MIDI_BE_LONG(x) ((((x)&0x0000FF) << 24) | (((x)&0x00FF00) << 8) | (((x)&0xFF0000) >> 8) | (((x) >> 24) & 0xFF))
-//-----------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------------------------------
-// STRUCTURES, CLASSES & ENUMERATIONS
-//-----------------------------------------------------------------------------------------------------
 /* We store the midi events in a linked list; this way it is
    easy to shuffle the tracks together later on; and we are
    flexible in the size of each elemnt.
  */
-struct MIDIEvent {
+struct MIDIEvent
+{
     uint32_t time;     /* Time at which this midi events occurs */
     uint8_t status;    /* Status byte */
     uint8_t data[2];   /* 1 or 2 bytes additional data for most events */
@@ -72,19 +66,22 @@ struct MIDIEvent {
 };
 
 /* A single midi track as read from the midi file */
-struct MIDITrack {
+struct MIDITrack
+{
     uint8_t *data; /* MIDI message stream */
     int len;       /* length of the track data */
 };
 
 /* A midi file, stripped down to the absolute minimum - divison & track data */
-struct MIDIFile {
+struct MIDIFile
+{
     int division;     /* number of pulses per quarter note (ppqn) */
     int nTracks;      /* number of tracks */
     MIDITrack *track; /* tracks */
 };
 
-struct MIDISong {
+struct MIDISong
+{
     bool MusicLoaded;
     bool MusicPlaying;
     int Loops;
@@ -95,24 +92,18 @@ struct MIDISong {
     int Size;
     int NewPos;
 };
-//-----------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------------------------------
-// GLOBAL VARIABLES
-//-----------------------------------------------------------------------------------------------------
 static UINT MIDIDevice = MIDI_MAPPER;
 static HMIDISTRM hMIDIStream = nullptr;
 static MIDISong *pMIDISong = nullptr;
-//-----------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------------------------------
-// INTERNAL LIBRARY FUNCTIONS
-//-----------------------------------------------------------------------------------------------------
 /* Get Variable Length Quantity */
-static int MIDIGetVLQ(MIDITrack *track, int *currentPos) {
+static int MIDIGetVLQ(MIDITrack *track, int *currentPos)
+{
     int l = 0;
     uint8_t c;
-    for (;;) {
+    for (;;)
+    {
         c = track->data[*currentPos];
         (*currentPos)++;
         l += (c & 0x7f);
@@ -123,12 +114,14 @@ static int MIDIGetVLQ(MIDITrack *track, int *currentPos) {
 }
 
 /* Create a single MIDIEvent */
-static MIDIEvent *MIDICreateEvent(uint32_t time, uint8_t evnt, uint8_t a, uint8_t b) {
+static MIDIEvent *MIDICreateEvent(uint32_t time, uint8_t evnt, uint8_t a, uint8_t b)
+{
     MIDIEvent *newEvent;
 
     newEvent = (MIDIEvent *)calloc(1, sizeof(MIDIEvent));
 
-    if (newEvent) {
+    if (newEvent)
+    {
         newEvent->time = time;
         newEvent->status = evnt;
         newEvent->data[0] = a;
@@ -139,12 +132,14 @@ static MIDIEvent *MIDICreateEvent(uint32_t time, uint8_t evnt, uint8_t a, uint8_
 }
 
 /* Release a MIDIEvent list after usage. */
-static void MIDIFreeEventList(MIDIEvent *head) {
+static void MIDIFreeEventList(MIDIEvent *head)
+{
     MIDIEvent *cur, *next;
 
     cur = head;
 
-    while (cur) {
+    while (cur)
+    {
         next = cur->next;
         if (cur->extraData)
             free(cur->extraData);
@@ -154,7 +149,8 @@ static void MIDIFreeEventList(MIDIEvent *head) {
 }
 
 /* Convert a single midi track to a list of MIDIEvents */
-static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
+static MIDIEvent *MIDITrackToStream(MIDITrack *track)
+{
     uint32_t atime = 0;
     uint32_t len = 0;
     uint8_t evnt, type, a, b;
@@ -165,7 +161,8 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
     MIDIEvent *head = MIDICreateEvent(0, 0, 0, 0); /* dummy event to make handling the list easier */
     MIDIEvent *currentEvent = head;
 
-    while (!end) {
+    while (!end)
+    {
         if (currentPos >= track->len)
             break; /* End of data stream reached */
 
@@ -173,11 +170,14 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
         evnt = track->data[currentPos++];
 
         /* Handle SysEx seperatly */
-        if (((evnt >> 4) & 0x0F) == MIDI_STATUS_SYSEX) {
-            if (evnt == 0xFF) {
+        if (((evnt >> 4) & 0x0F) == MIDI_STATUS_SYSEX)
+        {
+            if (evnt == 0xFF)
+            {
                 type = track->data[currentPos];
                 currentPos++;
-                switch (type) {
+                switch (type)
+                {
                 case 0x2f: /* End of data marker */
                     end = 1;
                     [[fallthrough]];
@@ -190,7 +190,8 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
                     */
                     break;
                 }
-            } else
+            }
+            else
                 type = 0;
 
             len = MIDIGetVLQ(track, &currentPos);
@@ -198,18 +199,22 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
             /* Create an event and attach the extra data, if any */
             currentEvent->next = MIDICreateEvent(atime, evnt, type, 0);
             currentEvent = currentEvent->next;
-            if (nullptr == currentEvent) {
+            if (nullptr == currentEvent)
+            {
                 MIDIFreeEventList(head);
                 return nullptr;
             }
-            if (len) {
+            if (len)
+            {
                 currentEvent->extraLen = len;
                 currentEvent->extraData = (uint8_t *)malloc(len);
                 if (currentEvent->extraData)
                     memcpy(currentEvent->extraData, &(track->data[currentPos]), len);
                 currentPos += len;
             }
-        } else {
+        }
+        else
+        {
             a = evnt;
             if (a & 0x80) /* It's a status byte */
             {
@@ -220,7 +225,8 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
                 /* Read the next byte which should always be a data byte */
                 a = track->data[currentPos++] & 0x7F;
             }
-            switch (laststatus) {
+            switch (laststatus)
+            {
             case MIDI_STATUS_NOTE_OFF:
             case MIDI_STATUS_NOTE_ON:     /* Note on */
             case MIDI_STATUS_AFTERTOUCH:  /* Key Pressure */
@@ -229,7 +235,8 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
                 b = track->data[currentPos++] & 0x7F;
                 currentEvent->next = MIDICreateEvent(atime, (uint8_t)((laststatus << 4) + lastchan), a, b);
                 currentEvent = currentEvent->next;
-                if (nullptr == currentEvent) {
+                if (nullptr == currentEvent)
+                {
                     MIDIFreeEventList(head);
                     return nullptr;
                 }
@@ -240,7 +247,8 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
                 a &= 0x7f;
                 currentEvent->next = MIDICreateEvent(atime, (uint8_t)((laststatus << 4) + lastchan), a, 0);
                 currentEvent = currentEvent->next;
-                if (nullptr == currentEvent) {
+                if (nullptr == currentEvent)
+                {
                     MIDIFreeEventList(head);
                     return nullptr;
                 }
@@ -262,7 +270,8 @@ static MIDIEvent *MIDITrackToStream(MIDITrack *track) {
  *  To do so, first convert the tracks seperatly, then interweave the resulting
  *  MIDIEvent-Lists to one big list.
  */
-static MIDIEvent *MIDIToStream(MIDIFile *mididata) {
+static MIDIEvent *MIDIToStream(MIDIFile *mididata)
+{
     MIDIEvent **track;
     MIDIEvent *head = MIDICreateEvent(0, 0, 0, 0); /* dummy event to make handling the list easier */
     MIDIEvent *currentEvent = head;
@@ -272,7 +281,8 @@ static MIDIEvent *MIDIToStream(MIDIFile *mididata) {
         return nullptr;
 
     track = (MIDIEvent **)calloc(1, sizeof(MIDIEvent *) * mididata->nTracks);
-    if (nullptr == track) {
+    if (nullptr == track)
+    {
         free(head);
         return nullptr;
     }
@@ -283,13 +293,16 @@ static MIDIEvent *MIDIToStream(MIDIFile *mididata) {
 
     /* Now, merge the lists. */
     /* TODO */
-    for (;;) {
+    for (;;)
+    {
         uint32_t lowestTime = INT_MAX;
         int currentTrackID = -1;
 
         /* Find the next event */
-        for (trackID = 0; trackID < mididata->nTracks; trackID++) {
-            if (track[trackID] && (track[trackID]->time < lowestTime)) {
+        for (trackID = 0; trackID < mididata->nTracks; trackID++)
+        {
+            if (track[trackID] && (track[trackID]->time < lowestTime))
+            {
                 currentTrackID = trackID;
                 lowestTime = track[currentTrackID]->time;
             }
@@ -316,7 +329,8 @@ static MIDIEvent *MIDIToStream(MIDIFile *mididata) {
     return currentEvent;
 }
 
-static bool MIDIReadFile(MIDIFile *mididata, FILE *src) {
+static bool MIDIReadFile(MIDIFile *mididata, FILE *src)
+{
     int i = 0;
     uint32_t ID;
     uint32_t size;
@@ -352,7 +366,8 @@ static bool MIDIReadFile(MIDIFile *mididata, FILE *src) {
 
     /* Allocate tracks */
     mididata->track = (MIDITrack *)calloc(1, sizeof(MIDITrack) * mididata->nTracks);
-    if (nullptr == mididata->track) {
+    if (nullptr == mididata->track)
+    {
         goto bail;
     }
 
@@ -360,13 +375,15 @@ static bool MIDIReadFile(MIDIFile *mididata, FILE *src) {
     fread(&division, 1, 2, src);
     mididata->division = MIDI_BE_SHORT(division);
 
-    for (i = 0; i < tracks; i++) {
+    for (i = 0; i < tracks; i++)
+    {
         fread(&ID, 1, 4, src); /* We might want to verify this is MTrk... */
         fread(&size, 1, 4, src);
         size = MIDI_BE_LONG(size);
         mididata->track[i].len = size;
         mididata->track[i].data = (uint8_t *)malloc(size);
-        if (nullptr == mididata->track[i].data) {
+        if (nullptr == mididata->track[i].data)
+        {
             goto bail;
         }
         fread(mididata->track[i].data, 1, size, src);
@@ -375,7 +392,8 @@ static bool MIDIReadFile(MIDIFile *mididata, FILE *src) {
     return true;
 
 bail:
-    for (; i >= 0; i--) {
+    for (; i >= 0; i--)
+    {
         if (mididata->track[i].data)
             free(mididata->track[i].data);
     }
@@ -386,7 +404,8 @@ bail:
 /* Load a midifile to memory, converting it to a list of MIDIEvents.
    This function returns a linked lists of MIDIEvents, 0 if an error occured.
  */
-static MIDIEvent *MIDICreateEventList(FILE *src, uint16_t *division) {
+static MIDIEvent *MIDICreateEventList(FILE *src, uint16_t *division)
+{
     MIDIFile *mididata = nullptr;
     MIDIEvent *eventList;
     int trackID;
@@ -396,13 +415,17 @@ static MIDIEvent *MIDICreateEventList(FILE *src, uint16_t *division) {
         return nullptr;
 
     /* Open the file */
-    if (src != nullptr) {
+    if (src != nullptr)
+    {
         /* Read in the data */
-        if (!MIDIReadFile(mididata, src)) {
+        if (!MIDIReadFile(mididata, src))
+        {
             free(mididata);
             return nullptr;
         }
-    } else {
+    }
+    else
+    {
         free(mididata);
         return nullptr;
     }
@@ -411,11 +434,13 @@ static MIDIEvent *MIDICreateEventList(FILE *src, uint16_t *division) {
         *division = (uint16_t)mididata->division;
 
     eventList = MIDIToStream(mididata);
-    if (nullptr == eventList) {
+    if (nullptr == eventList)
+    {
         free(mididata);
         return nullptr;
     }
-    for (trackID = 0; trackID < mididata->nTracks; trackID++) {
+    for (trackID = 0; trackID < mididata->nTracks; trackID++)
+    {
         if (mididata->track[trackID].data)
             free(mididata->track[trackID].data);
     }
@@ -425,8 +450,10 @@ static MIDIEvent *MIDICreateEventList(FILE *src, uint16_t *division) {
     return eventList;
 }
 
-static bool MIDIBlockOut() {
-    if ((pMIDISong->MusicLoaded) && (pMIDISong->NewEvents)) {
+static bool MIDIBlockOut()
+{
+    if ((pMIDISong->MusicLoaded) && (pMIDISong->NewEvents))
+    {
         // proff 12/8/98: Added for safety
         pMIDISong->CurrentHdr = !pMIDISong->CurrentHdr;
         MIDIHDR *hdr = &pMIDISong->MIDIStreamHdr[pMIDISong->CurrentHdr];
@@ -453,14 +480,16 @@ static bool MIDIBlockOut() {
     return true;
 }
 
-static void MIDIToStream(MIDIEvent *evntlist) {
+static void MIDIToStream(MIDIEvent *evntlist)
+{
     int eventcount;
     MIDIEvent *evnt;
     MIDIEVENT *newevent;
 
     eventcount = 0;
     evnt = evntlist;
-    while (evnt) {
+    while (evnt)
+    {
         eventcount++;
         evnt = evnt->next;
     }
@@ -472,9 +501,11 @@ static void MIDIToStream(MIDIEvent *evntlist) {
     eventcount = 0;
     evnt = evntlist;
     newevent = pMIDISong->NewEvents;
-    while (evnt) {
+    while (evnt)
+    {
         int status = (evnt->status & 0xF0) >> 4;
-        switch (status) {
+        switch (status)
+        {
         case MIDI_STATUS_NOTE_OFF:
         case MIDI_STATUS_NOTE_ON:
         case MIDI_STATUS_AFTERTOUCH:
@@ -512,7 +543,8 @@ static void MIDIToStream(MIDIEvent *evntlist) {
         pMIDISong->NewPos = 0;
         time = 0;
         newevent = pMIDISong->NewEvents;
-        while (pMIDISong->NewPos < pMIDISong->Size) {
+        while (pMIDISong->NewPos < pMIDISong->Size)
+        {
             temptime = newevent->dwDeltaTime;
             newevent->dwDeltaTime -= time;
             time = temptime;
@@ -526,25 +558,31 @@ static void MIDIToStream(MIDIEvent *evntlist) {
     pMIDISong->MusicLoaded = true;
 }
 
-static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
+static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
+{
     UNREFERENCED_PARAMETER(hMIDI);
     UNREFERENCED_PARAMETER(dwInstance);
     UNREFERENCED_PARAMETER(dwParam2);
 
-    switch (uMsg) {
+    switch (uMsg)
+    {
     case MOM_DONE:
         if ((pMIDISong->MusicLoaded) && (dwParam1 == (DWORD_PTR)&pMIDISong->MIDIStreamHdr[pMIDISong->CurrentHdr]))
             MIDIBlockOut();
         break;
 
     case MOM_POSITIONCB:
-        if ((pMIDISong->MusicLoaded) && (dwParam1 == (DWORD_PTR)&pMIDISong->MIDIStreamHdr[pMIDISong->CurrentHdr])) {
-            if (pMIDISong->Loops) {
+        if ((pMIDISong->MusicLoaded) && (dwParam1 == (DWORD_PTR)&pMIDISong->MIDIStreamHdr[pMIDISong->CurrentHdr]))
+        {
+            if (pMIDISong->Loops)
+            {
                 if (pMIDISong->Loops > 0)
                     --pMIDISong->Loops;
                 pMIDISong->NewPos = 0;
                 MIDIBlockOut();
-            } else {
+            }
+            else
+            {
                 pMIDISong->MusicPlaying = false;
             }
         }
@@ -554,11 +592,7 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
         break;
     }
 }
-//-----------------------------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------------------------------
-// PUBLIC LIBRARY FUNCTIONS
-//-----------------------------------------------------------------------------------------------------
 /// <summary>
 /// This loads and starts playing a MIDI file.
 /// Specifying a new file while another one is playing will stop the previous file and then start playing the new one.
@@ -568,7 +602,8 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
 /// <param name="fileName">An SMF path file name</param>
 /// <param name="loops">The number of times the playback should loop</param>
 /// <returns>True if the call succeeded. False otherwise</returns>
-int8_t __MIDI_Play(const char *fileName, int loops) {
+int8_t __MIDI_Play(const char *fileName, int loops)
+{
     static bool isMIDIAvailable = false;
     static bool isMIDIAvailableChecked = false;
 
@@ -577,11 +612,13 @@ int8_t __MIDI_Play(const char *fileName, int loops) {
         return MIDI_FALSE;
 
     // if we have not tried MIDI detection then attempt it and set the detection flag
-    if (!isMIDIAvailable) {
+    if (!isMIDIAvailable)
+    {
         isMIDIAvailableChecked = true;
 
         MMRESULT merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
-        if (merr != MMSYSERR_NOERROR) {
+        if (merr != MMSYSERR_NOERROR)
+        {
             midiStreamClose(hMIDIStream);
             hMIDIStream = nullptr;
             isMIDIAvailable = false;
@@ -593,14 +630,16 @@ int8_t __MIDI_Play(const char *fileName, int loops) {
     }
 
     // Close any MIDI streams being used
-    if (hMIDIStream) {
+    if (hMIDIStream)
+    {
         midiStreamStop(hMIDIStream);
         midiStreamClose(hMIDIStream);
         hMIDIStream = nullptr;
     }
 
     // Free any playing song
-    if (pMIDISong) {
+    if (pMIDISong)
+    {
         if (pMIDISong->NewEvents)
             free(pMIDISong->NewEvents);
         free(pMIDISong);
@@ -608,16 +647,21 @@ int8_t __MIDI_Play(const char *fileName, int loops) {
     }
 
     // Open the MIDI file only if filename is not NULL
-    if (MIDI_IS_STRING_EMPTY(fileName)) {
+    if (MIDI_IS_STRING_EMPTY(fileName))
+    {
         return MIDI_TRUE; // Shutdown successfull
-    } else {
+    }
+    else
+    {
         FILE *f = fopen(fileName, "rb");
-        if (!f) {
+        if (!f)
+        {
             return MIDI_FALSE;
         }
 
         pMIDISong = (MIDISong *)malloc(sizeof(MIDISong));
-        if (!pMIDISong) {
+        if (!pMIDISong)
+        {
             fclose(f);
             return MIDI_FALSE;
         }
@@ -626,7 +670,8 @@ int8_t __MIDI_Play(const char *fileName, int loops) {
         /* Attempt to load the midi file */
         MIDIEvent *evntlist = nullptr;
         evntlist = MIDICreateEventList(f, &pMIDISong->ppqn);
-        if (!evntlist) {
+        if (!evntlist)
+        {
             free(pMIDISong);
             pMIDISong = nullptr;
             fclose(f);
@@ -637,7 +682,8 @@ int8_t __MIDI_Play(const char *fileName, int loops) {
         MIDIFreeEventList(evntlist);
 
         MMRESULT merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
-        if (merr != MMSYSERR_NOERROR) {
+        if (merr != MMSYSERR_NOERROR)
+        {
             hMIDIStream = nullptr;
             free(pMIDISong);
             pMIDISong = nullptr;
@@ -666,7 +712,8 @@ int8_t __MIDI_Play(const char *fileName, int loops) {
 /// Checks if a MIDI song is playing
 /// </summary>
 /// <returns>True if playing. False otherwise</returns>
-int8_t MIDI_IsPlaying() {
+int8_t MIDI_IsPlaying()
+{
     if (pMIDISong)
         return pMIDISong->MusicPlaying ? MIDI_TRUE : MIDI_FALSE;
 
@@ -676,7 +723,8 @@ int8_t MIDI_IsPlaying() {
 /// <summary>
 /// Pauses MIDI playback
 /// </summary>
-void MIDI_Pause() {
+void MIDI_Pause()
+{
     if (hMIDIStream)
         midiStreamPause(hMIDIStream);
 }
@@ -684,7 +732,8 @@ void MIDI_Pause() {
 /// <summary>
 /// Resumes MIDI playback
 /// </summary>
-void MIDI_Resume() {
+void MIDI_Resume()
+{
     if (hMIDIStream)
         midiStreamRestart(hMIDIStream);
 }
@@ -693,8 +742,10 @@ void MIDI_Resume() {
 /// Set the MIDI playback volume
 /// </summary>
 /// <param name="volume">A floating point value (0.0 to 1.0)</param>
-void MIDI_SetVolume(float volume) {
-    if (hMIDIStream) {
+void MIDI_SetVolume(float volume)
+{
+    if (hMIDIStream)
+    {
         volume = MIDI_CLAMP(volume, 0.0f, 1.0f);
         int calcVolume = int(65535.0f * volume);
         midiOutSetVolume((HMIDIOUT)hMIDIStream, MAKELONG(calcVolume, calcVolume));
@@ -705,13 +756,18 @@ void MIDI_SetVolume(float volume) {
 /// Returns the current MIDI volume
 /// </summary>
 /// <returns>A floating point value (0.0 to 1.0)</returns>
-float MIDI_GetVolume() {
+float MIDI_GetVolume()
+{
     DWORD dwVolume = 0xFFFF;
 
-    if (hMIDIStream) {
-        if (midiOutGetVolume((HMIDIOUT)hMIDIStream, &dwVolume) == MMSYSERR_NOERROR) {
+    if (hMIDIStream)
+    {
+        if (midiOutGetVolume((HMIDIOUT)hMIDIStream, &dwVolume) == MMSYSERR_NOERROR)
+        {
             dwVolume = LOWORD(dwVolume);
-        } else {
+        }
+        else
+        {
             dwVolume = 0xFFFF;
         }
     }
@@ -728,12 +784,14 @@ float MIDI_GetVolume() {
 /// <param name="fileName">A WAV path file name</param>
 /// <param name="looping">If this is true the sound loops forever until it is stopped</param>
 /// <returns>True if the call succeeded. False otherwise</returns>
-int8_t __Sound_Play(const char *fileName, int8_t looping) {
-    if (MIDI_IS_STRING_EMPTY(fileName)) {
-        return PlaySound(NULL, NULL, 0) ? MIDI_TRUE : MIDI_FALSE;
-    } else {
-        return PlaySound(fileName, NULL, SND_ASYNC | SND_FILENAME | (looping ? SND_LOOP : 0) | SND_NODEFAULT) ? MIDI_TRUE : MIDI_FALSE;
+int8_t __Sound_Play(const char *fileName, int8_t looping)
+{
+    if (MIDI_IS_STRING_EMPTY(fileName))
+    {
+        return PlaySoundA(NULL, NULL, 0) ? MIDI_TRUE : MIDI_FALSE;
+    }
+    else
+    {
+        return PlaySoundA(fileName, NULL, SND_ASYNC | SND_FILENAME | (looping ? SND_LOOP : 0) | SND_NODEFAULT) ? MIDI_TRUE : MIDI_FALSE;
     }
 }
-//-----------------------------------------------------------------------------------------------------
-//-----------------------------------------------------------------------------------------------------
