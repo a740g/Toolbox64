@@ -14,7 +14,7 @@ $If EASINGS_BI = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    Declare Library "reasings"
+    Declare Library "external/reasings"
         Function EaseBackIn! (ByVal t As Single, Byval b As Single, Byval c As Single, Byval d As Single)
         Function EaseBackInOut! (ByVal t As Single, Byval b As Single, Byval c As Single, Byval d As Single)
         Function EaseBackOut! (ByVal t As Single, Byval b As Single, Byval c As Single, Byval d As Single)

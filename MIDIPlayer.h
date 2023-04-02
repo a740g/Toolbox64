@@ -13,14 +13,14 @@
 
 #include <stdint.h>
 #define STB_VORBIS_HEADER_ONLY
-#include "stb_vorbis.c"
+#include "external/stb_vorbis.c"
 #define OPL_IMPLEMENTATION
-#include "opl.h"
+#include "external/opl.h"
 #define TSF_IMPLEMENTATION
-#include "tsf.h"
+#include "external/tsf.h"
 #define TML_IMPLEMENTATION
-#include "tml.h"
-#include "soundfont.h"
+#include "external/tml.h"
+#include "external/soundfont.h"
 #undef STB_VORBIS_HEADER_ONLY
 
 #define QB_FALSE TSF_FALSE
