@@ -1,5 +1,6 @@
 '---------------------------------------------------------------------------------------------------------
-' QB64-PE Immediate mode GUI Library
+' Immediate mode GUI library
+' Copyright (c) 2023 Samuel Gomes
 '
 ' This is very loosely based on Terry Ritchie's GLINPUT & RQBL
 ' The library has an input manager, tabbed focus and implements text box and push button widgets (so far)
@@ -7,8 +8,6 @@
 ' The framebuffer needs to be redrawn every frame and nothing the widgets drawn over is preserved
 ' This was born because I needed a small, fast and intuitive GUI libary for games and graphic applications
 ' This is a work in progress
-'
-' Copyright (c) 2022 Samuel Gomes
 '---------------------------------------------------------------------------------------------------------
 
 '---------------------------------------------------------------------------------------------------------

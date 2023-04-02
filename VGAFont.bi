@@ -22,13 +22,6 @@ $If VGAFONT_BI = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
-    ' A simple 2D vector
-    Type Vector2DType
-        x As Long
-        y As Long
-    End Type
-
-
     ' An in-memory PSF representation
     Type PSFType
         size As Vector2DType ' this just holds the font width and height

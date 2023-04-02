@@ -1,5 +1,5 @@
 '---------------------------------------------------------------------------------------------------------------------------------------------------------------
-' C Runtime Library bindings + support functions
+' C Runtime Library bindings + low level support functions
 ' Copyright (c) 2023 Samuel Gomes
 '
 ' See https://en.cppreference.com/w/ for CRT documentation

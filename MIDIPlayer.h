@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------------------------------
-// QB64 MIDI Player Library
+// MIDI Player Library
 // Copyright (c) 2023 Samuel Gomes
 //
 // This uses:

@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
-// QB64-PE support routines
+// QB64-PE low level support functions
 // Copyright (c) 2023 Samuel Gomes
 //
 // Some of these came from my old game library and some from:
