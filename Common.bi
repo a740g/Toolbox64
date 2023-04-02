@@ -73,6 +73,7 @@ $If COMMON_BI = UNDEFINED Then
     Const KEY_LESS_THAN = 60
     Const KEY_EQUALS = 61
     Const KEY_GREATER_THAN = 62
+    Const KEY_QUESTION_MARK = 63
     Const KEY_UPPER_A = 65
     Const KEY_UPPER_B = 66
     Const KEY_UPPER_C = 67
