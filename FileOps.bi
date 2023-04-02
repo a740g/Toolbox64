@@ -9,8 +9,8 @@
 '$Include:'Common.bi'
 '-----------------------------------------------------------------------------------------------------------------------
 
-$If FILEOPERATIONS_BI = UNDEFINED Then
-    $Let FILEOPERATIONS_BI = TRUE
+$If FILEOPS_BI = UNDEFINED Then
+    $Let FILEOPS_BI = TRUE
 
     '-------------------------------------------------------------------------------------------------------------------
     ' METACOMMANDS

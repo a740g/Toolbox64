@@ -7,6 +7,8 @@
 // Adapted from OpenCP Module Player (https://github.com/mywave82/opencubicplayer)
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+#pragma once
+
 #include <algorithm>
 #include <math.h>
 #include <stdint.h>

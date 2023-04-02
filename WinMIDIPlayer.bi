@@ -9,12 +9,12 @@
 '$Include:'Common.bi'
 '---------------------------------------------------------------------------------------------------------
 
-$If LIBNATIVEMIDI_BI = UNDEFINED Then
-    $Let LIBNATIVEMIDI_BI = TRUE
+$If WINMIDIPLAYER_BI = UNDEFINED Then
+    $Let WINMIDIPLAYER_BI = TRUE
     '-----------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-----------------------------------------------------------------------------------------------------
-    Declare Library "LibNativeMIDI"
+    Declare Library "WinMIDIPlayer"
         ' <summary>
         ' Include LibNativeMIDI.bas and call MIDI_Play() instead of this!
         ' This loads and starts playing a MIDI file.
