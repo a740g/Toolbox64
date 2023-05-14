@@ -179,6 +179,12 @@ $If ANSIPRINT_BAS = UNDEFINED Then
                     Case ANSI_ESC ' handle escape character
                         __ANSIEmu.state = ANSI_STATE_BEGIN ' beginning a new escape sequence
 
+                    Case ANSI_RS, ANSI_US ' QB64 does non-ANSI stuff with these two when ControlChar is On
+                        ControlChr Off
+                        Print Chr$(ch); ' print escaped ESC character
+                        ControlChr On
+                        If __ANSIEmu.CPS > 0 Then Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
+
                     Case Else ' print the character
                         Print Chr$(ch);
                         If __ANSIEmu.CPS > 0 Then Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
