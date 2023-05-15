@@ -23,7 +23,6 @@ $If MIDIPLAYER_BI = UNDEFINED Then
     Const __MIDI_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
     Const __MIDI_SOUND_BUFFER_SAMPLE_SIZE = 4 ' 4 bytes (32-bits floating point)
     Const __MIDI_SOUND_BUFFER_FRAME_SIZE = __MIDI_SOUND_BUFFER_SAMPLE_SIZE * __MIDI_SOUND_BUFFER_CHANNELS
-    Const __MIDI_SOUND_TIME_MIN = 0.2 ' we will check that we have this amount of time left in the QB64 sound pipe
 
     Const MIDI_VOLUME_MAX = 1 ' max volume
     Const MIDI_VOLUME_MIN = 0 ' min volume

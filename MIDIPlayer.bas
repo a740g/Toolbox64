@@ -26,7 +26,7 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
     '        MIDI_StartPlayer
     '        MIDI_SetLooping TRUE
     '        Do
-    '            MIDI_UpdatePlayer
+    '            MIDI_UpdatePlayer 0.2
     '            Select Case KeyHit
     '                Case 27
     '                    Exit Do
@@ -120,11 +120,11 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
 
     ' This handles playback and keeping track of the render buffer
     ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
-    Sub MIDI_UpdatePlayer
+    Sub MIDI_UpdatePlayer (bufferTime As Single)
         Shared __MIDI_Player As __MIDI_PlayerType
 
         ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
-        If MIDI_IsPlaying And Not __MIDI_Player.isPaused And SndRawLen(__MIDI_Player.soundHandle) < __MIDI_SOUND_TIME_MIN Then
+        If MIDI_IsPlaying And Not __MIDI_Player.isPaused And SndRawLen(__MIDI_Player.soundHandle) < bufferTime Then
 
             ' Clear the render buffer
             MemFill __MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferSize, NULL As BYTE
