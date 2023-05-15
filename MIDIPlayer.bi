@@ -46,7 +46,7 @@ $If MIDIPLAYER_BI = UNDEFINED Then
     ' Anything with a '__' prefix is not supposed to be called directly
     ' There are QB64 wrappers for these functions
     Declare CustomType Library "MIDIPlayer"
-        Function __MIDI_Initialize& (ByVal nSampleRate As Unsigned Long, Byval useOPL3 As Long)
+        Function __MIDI_Initialize& (ByVal sampleRate As Unsigned Long, Byval useOPL3 As Long)
         Function MIDI_IsInitialized&
         Sub __MIDI_Finalize
         Function __MIDI_LoadTuneFromFile& (sFilename As String)
@@ -55,15 +55,15 @@ $If MIDIPLAYER_BI = UNDEFINED Then
         Sub MIDI_StartPlayer
         Sub MIDI_StopPlayer
         Function MIDI_IsPlaying&
-        Sub MIDI_SetLooping (ByVal nLooping As Long)
+        Sub MIDI_SetLooping (ByVal isLooping As Long)
         Function MIDI_IsLooping&
         Function MIDI_GetVolume!
-        Sub MIDI_SetVolume (ByVal nVolume As Single)
+        Sub MIDI_SetVolume (ByVal volume As Single)
         Function MIDI_GetTotalTime#
         Function MIDI_GetCurrentTime#
         Function MIDI_GetActiveVoices~&
         Function MIDI_IsFMSynthesis&
-        Sub __MIDI_Render (ByVal oBuffer As Offset, Byval nSize As Unsigned Long)
+        Sub __MIDI_Render (ByVal buffer As Offset, Byval size As Unsigned Long)
     End Declare
     '-----------------------------------------------------------------------------------------------------
 
