@@ -9,8 +9,8 @@
 '$Include:'CRTLib.bi'
 '-----------------------------------------------------------------------------------------------------------------------
 
-$If GRAPHEXT_BI = UNDEFINED Then
-    $Let GRAPHEXT_BI = TRUE
+$If GFXEX_BI = UNDEFINED Then
+    $Let GFXEX_BI = TRUE
     ' Calculates and returns the FPS when repeatedly called inside a loop
     Function CalculateFPS~&
         Static As Unsigned Long counter, finalFPS
@@ -98,15 +98,15 @@ $If GRAPHEXT_BI = UNDEFINED Then
     ' isIn%% - 0 or -1. -1 is fade in, 0 is fade out
     ' fps& - speed (updates / second)
     ' stopat& - %age when to bail out (use for partial fades). -1 to ignore
-    Sub FadeScreen32 (nImg As Long, isIn As Byte, nFPS As Unsigned Byte, nStopAt As Unsigned Byte)
+    Sub FadeScreen32 (img As Long, isIn As Byte, fps As Unsigned Byte, stopPercent As Unsigned Byte)
         Dim As Long tmp, x, y, i
 
-        tmp = CopyImage(nImg)
+        tmp = CopyImage(img)
         x = Width(tmp) - 1
         y = Height(tmp) - 1
 
         For i = 0 To 255
-            If nStopAt > -1 And ((i * 100) \ 255) > nStopAt Then Exit For
+            If stopPercent > -1 And ((i * 100) \ 255) > stopPercent Then Exit For
 
             PutImage (0, 0), tmp
 
@@ -118,7 +118,7 @@ $If GRAPHEXT_BI = UNDEFINED Then
 
             Display
 
-            Limit nFPS
+            Limit fps
         Next
 
         FreeImage tmp
