@@ -98,7 +98,7 @@ $If GFXEX_BI = UNDEFINED Then
     ' isIn%% - 0 or -1. -1 is fade in, 0 is fade out
     ' fps& - speed (updates / second)
     ' stopat& - %age when to bail out (use for partial fades). -1 to ignore
-    Sub FadeScreen32 (img As Long, isIn As Byte, fps As Unsigned Byte, stopPercent As Unsigned Byte)
+    Sub FadeScreen32 (img As Long, isIn As Byte, maxFPS As Unsigned Byte, stopPercent As Unsigned Byte)
         Dim As Long tmp, x, y, i
 
         tmp = CopyImage(img)
@@ -118,7 +118,7 @@ $If GFXEX_BI = UNDEFINED Then
 
             Display
 
-            Limit fps
+            Limit maxFPS
         Next
 
         FreeImage tmp
