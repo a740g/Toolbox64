@@ -8,32 +8,33 @@
 '-----------------------------------------------------------------------------------------------------------------------
 '$Include:'CRTLib.bi'
 '-----------------------------------------------------------------------------------------------------------------------
-
 $If GFXEX_BI = UNDEFINED Then
     $Let GFXEX_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' FUNCTIONS & SUBROUTINES
+    '-------------------------------------------------------------------------------------------------------------------
     ' Calculates and returns the FPS when repeatedly called inside a loop
-    Function CalculateFPS~&
+    Function GetFPS~&
         Static As Unsigned Long counter, finalFPS
-        Static lastTime As Integer64
-        Dim currentTime As Integer64
+        Static lastTime As Unsigned Integer64
 
         counter = counter + 1
 
-        currentTime = GetTicks
-        If currentTime > lastTime + 1000 Then
+        Dim currentTime As Unsigned Integer64: currentTime = GetTicks
+
+        If currentTime >= lastTime + 1000 Then
             lastTime = currentTime
             finalFPS = counter
             counter = 0
         End If
 
-        CalculateFPS = finalFPS
+        GetFPS = finalFPS
     End Function
 
 
-    ' Draws a filled circle
-    ' CX = center x coordinate
-    ' CY = center y coordinate
-    '  R = radius
+    ' Draws a filled circle using _DEFAULTCOLOR
+    ' cx, cy - circle center x, y
+    ' R - circle radius
     Sub CircleFill (cx As Long, cy As Long, r As Long)
         Dim As Long radius, radiusError, X, Y
 
@@ -94,21 +95,21 @@ $If GFXEX_BI = UNDEFINED Then
 
 
     ' Fades the screen to / from black
-    ' img& - image to use. can be the screen or _DEST
-    ' isIn%% - 0 or -1. -1 is fade in, 0 is fade out
+    ' img - image to use. can be the screen or _DEST
+    ' isIn - True or False. True is fade in, False is fade out
     ' fps& - speed (updates / second)
-    ' stopat& - %age when to bail out (use for partial fades). -1 to ignore
-    Sub FadeScreen32 (img As Long, isIn As Byte, maxFPS As Unsigned Byte, stopPercent As Unsigned Byte)
+    ' stopPercent - %age when to bail out (use for partial fades)
+    Sub FadeScreen (img As Long, isIn As Byte, maxFPS As Unsigned Integer, stopPercent As Byte)
+        ' TOD0: Add support for palette based screen
         Dim As Long tmp, x, y, i
-
         tmp = CopyImage(img)
         x = Width(tmp) - 1
         y = Height(tmp) - 1
 
         For i = 0 To 255
-            If stopPercent > -1 And ((i * 100) \ 255) > stopPercent Then Exit For
+            If stopPercent < (i * 100) \ 255 Then Exit For ' bail if < 100% we hit the limit
 
-            PutImage (0, 0), tmp
+            PutImage , tmp, _Display ' always stretch and blit to the screen
 
             If isIn Then
                 Line (0, 0)-(x, y), RGBA32(0, 0, 0, 255 - i), BF
@@ -123,6 +124,7 @@ $If GFXEX_BI = UNDEFINED Then
 
         FreeImage tmp
     End Sub
+    '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------------------------------------
