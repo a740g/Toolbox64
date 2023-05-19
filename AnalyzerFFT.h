@@ -1,18 +1,18 @@
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // FFT routines for spectrum analyzers
 // Copyright (c) 1994-2005 Niklas Beisert
 // Copyright (c) 2004-2022 Stian Skjelstad
 // Copyright (c) 2023 Samuel Gomes
 //
 // Adapted from OpenCP Module Player (https://github.com/mywave82/opencubicplayer)
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
 
 #include <algorithm>
-#include <math.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 
 #define FFT_POW 11
 #define FFT_SAMPLES (1 << FFT_POW)

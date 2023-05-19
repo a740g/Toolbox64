@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // MIDI Player Library
 // Copyright (c) 2023 Samuel Gomes
 //
@@ -7,11 +7,11 @@
 // TinyMidiLoader from https://github.com/schellingb/TinySoundFont/blob/master/tml.h
 // opl.h from https://github.com/mattiasgustavsson/libs/blob/main/opl.h
 // stb_vorbis.c from https://github.com/nothings/stb/blob/master/stb_vorbis.c
-//-----------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"
 #define OPL_IMPLEMENTATION
