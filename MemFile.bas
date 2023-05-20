@@ -14,13 +14,15 @@ $If MEMFILE_BAS = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-----------------------------------------------------------------------------------------------------
-    $Debug
-    $Console
-    Dim g As String: g = "Hello, world!"
-    Dim f As Unsigned Offset: f = MemFile_Create(g)
-    Print MemFile_GetSize(f)
-    MemFile_Destroy f
-    End
+    '$Debug
+    '$Console
+    'Dim g As String: g = "Hello, world!"
+    'Dim f As Unsigned Offset: f = MemFile_Create(g)
+    'Dim buf As String: buf = Space$(MemFile_GetSize(f))
+    'Print MemFile_Read(f, buf); ": "; buf
+    'Print "EOF = "; MemFile_IsEOF(f)
+    'MemFile_Destroy f
+    'End
     '-----------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------

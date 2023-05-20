@@ -317,7 +317,7 @@ static MIDIEvent *MIDIToStream(MIDIFile *mididata)
     return currentEvent;
 }
 
-static bool MIDIReadFile(MIDIFile *mididata, MemFile *src)
+static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
 {
     int i = 0;
     uint32_t ID;
@@ -375,7 +375,7 @@ static bool MIDIReadFile(MIDIFile *mididata, MemFile *src)
         {
             goto bail;
         }
-        __MemFile_Read(src, mididata->track[i].data, size);
+        __MemFile_Read(src, reinterpret_cast<char *>(mididata->track[i].data), size);
     }
 
     return true;
@@ -393,7 +393,7 @@ bail:
 /* Load a midifile to memory, converting it to a list of MIDIEvents.
    This function returns a linked lists of MIDIEvents, 0 if an error occured.
  */
-static MIDIEvent *MIDICreateEventList(MemFile *src, uint16_t *division)
+static MIDIEvent *MIDICreateEventList(uintptr_t src, uint16_t *division)
 {
     MIDIFile *mididata = nullptr;
     MIDIEvent *eventList;
@@ -404,7 +404,7 @@ static MIDIEvent *MIDICreateEventList(MemFile *src, uint16_t *division)
         return nullptr;
 
     /* Open the file */
-    if (src != nullptr)
+    if (src)
     {
         /* Read in the data */
         if (!MIDIReadFile(mididata, src))
@@ -588,7 +588,7 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
 /// @param buffer A buffer containing a Standard MIDI file
 /// @param bufferSize The size of the buffer
 /// @return QB_TRUE if the call succeeded. QB_FALSE otherwise
-qb_bool __MIDI_PlayFromMemory(const uint8_t *buffer, size_t bufferSize)
+qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
 {
     static auto isMIDIAvailable = false;
     static auto isMIDIAvailableChecked = false;
