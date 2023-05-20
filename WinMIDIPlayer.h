@@ -679,7 +679,7 @@ qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
 
         pMIDISong->NewPos = 0;
         pMIDISong->MusicPlaying = true;
-        pMIDISong->Loops = 1; // play only once by default
+        pMIDISong->Loops = 0; // play only once by default
         MIDIPROPTIMEDIV mptd = {};
         mptd.cbStruct = sizeof(MIDIPROPTIMEDIV);
         mptd.dwTimeDiv = pMIDISong->ppqn;
@@ -775,9 +775,9 @@ float MIDI_GetVolume()
 /// @param fileName A .WAV file path name
 /// @param loop If this is true the sound loops forever until it is stopped
 /// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
-qb_bool __Sound_PlayFromFile(const uint8_t *fileName, int8_t loop)
+qb_bool __Sound_PlayFromFile(const char *fileName, int8_t loop)
 {
-    return (IS_STRING_EMPTY(fileName) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA((LPCSTR)fileName, NULL, SND_ASYNC | SND_FILENAME | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
+    return (IS_STRING_EMPTY(fileName) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA(fileName, NULL, SND_ASYNC | SND_FILENAME | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
@@ -785,9 +785,9 @@ qb_bool __Sound_PlayFromFile(const uint8_t *fileName, int8_t loop)
 /// @param buffer A pointer to .WAV file in memory
 /// @param loop If this is true the sound loops forever until it is stopped
 /// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
-qb_bool Sound_PlayFromMemory(const uint8_t *buffer, int8_t loop)
+qb_bool Sound_PlayFromMemory(const char *buffer, int8_t loop)
 {
-    return (IS_STRING_EMPTY(buffer) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA((LPCSTR)buffer, NULL, SND_ASYNC | SND_MEMORY | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
+    return (IS_STRING_EMPTY(buffer) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA(buffer, NULL, SND_ASYNC | SND_MEMORY | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Stops any playing sound
