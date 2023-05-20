@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <algorithm>
-#define TOOLBOX64_DEBUG 1
 #include "Common.h"
 
 #ifdef MEMFILE_HEADER_ONLY
