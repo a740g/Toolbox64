@@ -24,13 +24,11 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
+#define MEMFILE_HEADER_ONLY
+#include "MemFile.h"
+#undef MEMFILE_HEADER_ONLY
 #include <windows.h>
 
-// In QuickBASIC false means 0 and true means -1 (sad, but true XD)
-#define MIDI_FALSE FALSE
-#define MIDI_TRUE -TRUE
 /* MIDI Status Bytes */
 #define MIDI_STATUS_NOTE_OFF 0x8
 #define MIDI_STATUS_NOTE_ON 0x9
@@ -42,12 +40,6 @@
 #define MIDI_STATUS_SYSEX 0xF
 /* The constant 'MThd' */
 #define MIDI_MAGIC 0x4d546864
-
-#define MIDI_IS_STRING_EMPTY(s) ((s) == nullptr || (s)[0] == NULL)
-#define MIDI_CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-/* Some macros that help us stay endianess-independant */
-#define MIDI_BE_SHORT(x) ((((x)&0xFF) << 8) | (((x) >> 8) & 0xFF))
-#define MIDI_BE_LONG(x) ((((x)&0x0000FF) << 24) | (((x)&0x00FF00) << 8) | (((x)&0xFF0000) >> 8) | (((x) >> 24) & 0xFF))
 
 /* We store the midi events in a linked list; this way it is
    easy to shuffle the tracks together later on; and we are
@@ -114,9 +106,7 @@ static int MIDIGetVLQ(MIDITrack *track, int *currentPos)
 /* Create a single MIDIEvent */
 static MIDIEvent *MIDICreateEvent(uint32_t time, uint8_t evnt, uint8_t a, uint8_t b)
 {
-    MIDIEvent *newEvent;
-
-    newEvent = (MIDIEvent *)calloc(1, sizeof(MIDIEvent));
+    auto newEvent = (MIDIEvent *)calloc(1, sizeof(MIDIEvent));
 
     if (newEvent)
     {
@@ -327,7 +317,7 @@ static MIDIEvent *MIDIToStream(MIDIFile *mididata)
     return currentEvent;
 }
 
-static bool MIDIReadFile(MIDIFile *mididata, FILE *src)
+static bool MIDIReadFile(MIDIFile *mididata, MemFile *src)
 {
     int i = 0;
     uint32_t ID;
@@ -342,24 +332,24 @@ static bool MIDIReadFile(MIDIFile *mididata, FILE *src)
         return false;
 
     /* Make sure this is really a MIDI file */
-    fread(&ID, 1, 4, src);
-    if (MIDI_BE_LONG(ID) != MIDI_MAGIC)
+    MemFile_ReadLong(src, &ID);
+    if (GET_BE_LONG(ID) != MIDI_MAGIC)
         return false;
 
     /* Header size must be 6 */
-    fread(&size, 1, 4, src);
-    size = MIDI_BE_LONG(size);
+    MemFile_ReadLong(src, &size);
+    size = GET_BE_LONG(size);
     if (size != 6)
         return false;
 
     /* We only support format 0 and 1, but not 2 */
-    fread(&format, 1, 2, src);
-    format = MIDI_BE_SHORT(format);
+    MemFile_ReadInteger(src, &format);
+    format = GET_BE_SHORT(format);
     if (format != 0 && format != 1)
         return false;
 
-    fread(&tracks, 1, 2, src);
-    tracks = MIDI_BE_SHORT(tracks);
+    MemFile_ReadInteger(src, &tracks);
+    tracks = GET_BE_SHORT(tracks);
     mididata->nTracks = tracks;
 
     /* Allocate tracks */
@@ -370,21 +360,22 @@ static bool MIDIReadFile(MIDIFile *mididata, FILE *src)
     }
 
     /* Retrieve the PPQN value, needed for playback */
-    fread(&division, 1, 2, src);
-    mididata->division = MIDI_BE_SHORT(division);
+    MemFile_ReadInteger(src, &division);
+    mididata->division = GET_BE_SHORT(division);
 
     for (i = 0; i < tracks; i++)
     {
-        fread(&ID, 1, 4, src); /* We might want to verify this is MTrk... */
-        fread(&size, 1, 4, src);
-        size = MIDI_BE_LONG(size);
+        MemFile_ReadLong(src, &ID); /* We might want to verify this is MTrk... */
+        TOOLBOX64_DEBUG_CHECK(GET_BE_LONG(ID) == 0x4d54726b);
+        MemFile_ReadLong(src, &size);
+        size = GET_BE_LONG(size);
         mididata->track[i].len = size;
         mididata->track[i].data = (uint8_t *)malloc(size);
         if (nullptr == mididata->track[i].data)
         {
             goto bail;
         }
-        fread(mididata->track[i].data, 1, size, src);
+        __MemFile_Read(src, mididata->track[i].data, size);
     }
 
     return true;
@@ -402,7 +393,7 @@ bail:
 /* Load a midifile to memory, converting it to a list of MIDIEvents.
    This function returns a linked lists of MIDIEvents, 0 if an error occured.
  */
-static MIDIEvent *MIDICreateEventList(FILE *src, uint16_t *division)
+static MIDIEvent *MIDICreateEventList(MemFile *src, uint16_t *division)
 {
     MIDIFile *mididata = nullptr;
     MIDIEvent *eventList;
@@ -558,9 +549,9 @@ static void MIDIToStream(MIDIEvent *evntlist)
 
 static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
 {
-    UNREFERENCED_PARAMETER(hMIDI);
-    UNREFERENCED_PARAMETER(dwInstance);
-    UNREFERENCED_PARAMETER(dwParam2);
+    (void)hMIDI;
+    (void)dwInstance;
+    (void)dwParam2;
 
     switch (uMsg)
     {
@@ -591,36 +582,33 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
     }
 }
 
-/// <summary>
-/// This loads and starts playing a MIDI file.
+/// @brief This loads and starts playing a MIDI file from memory.
 /// Specifying a new file while another one is playing will stop the previous file and then start playing the new one.
-/// The playback can be looped. The playback can be seemingly looped forever by specifying an absudly large value for 'loops'.
-/// Passing null as the filename will shutdown MIDI playback and free allocated resources.
-/// </summary>
-/// <param name="fileName">An SMF path file name</param>
-/// <param name="loops">The number of times the playback should loop</param>
-/// <returns>True if the call succeeded. False otherwise</returns>
-int8_t __MIDI_Play(const char *fileName, int loops)
+/// If buffer is NULL, then it will shutdown MIDI playback and free allocated resources
+/// @param buffer A buffer containing a Standard MIDI file
+/// @param bufferSize The size of the buffer
+/// @return QB_TRUE if the call succeeded. QB_FALSE otherwise
+qb_bool __MIDI_PlayFromMemory(const uint8_t *buffer, size_t bufferSize)
 {
-    static bool isMIDIAvailable = false;
-    static bool isMIDIAvailableChecked = false;
+    static auto isMIDIAvailable = false;
+    static auto isMIDIAvailableChecked = false;
 
     // If initial detection failed then don't bother
     if (isMIDIAvailableChecked && !isMIDIAvailable)
-        return MIDI_FALSE;
+        return QB_FALSE;
 
     // if we have not tried MIDI detection then attempt it and set the detection flag
     if (!isMIDIAvailable)
     {
         isMIDIAvailableChecked = true;
 
-        MMRESULT merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
+        auto merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
         if (merr != MMSYSERR_NOERROR)
         {
             midiStreamClose(hMIDIStream);
             hMIDIStream = nullptr;
             isMIDIAvailable = false;
-            return MIDI_FALSE;
+            return QB_FALSE;
         }
 
         // The MIDI steam will be closed by the if block below
@@ -645,23 +633,23 @@ int8_t __MIDI_Play(const char *fileName, int loops)
     }
 
     // Open the MIDI file only if filename is not NULL
-    if (MIDI_IS_STRING_EMPTY(fileName))
+    if (!buffer || !bufferSize)
     {
-        return MIDI_TRUE; // Shutdown successfull
+        return QB_TRUE; // Shutdown successfull
     }
     else
     {
-        FILE *f = fopen(fileName, "rb");
+        auto f = __MemFile_Create(buffer, bufferSize);
         if (!f)
         {
-            return MIDI_FALSE;
+            return QB_FALSE;
         }
 
         pMIDISong = (MIDISong *)malloc(sizeof(MIDISong));
         if (!pMIDISong)
         {
-            fclose(f);
-            return MIDI_FALSE;
+            MemFile_Destroy(f);
+            return QB_FALSE;
         }
         memset(pMIDISong, 0, sizeof(MIDISong));
 
@@ -672,88 +660,101 @@ int8_t __MIDI_Play(const char *fileName, int loops)
         {
             free(pMIDISong);
             pMIDISong = nullptr;
-            fclose(f);
-            return MIDI_FALSE;
+            MemFile_Destroy(f);
+            return QB_FALSE;
         }
 
         MIDIToStream(evntlist);
         MIDIFreeEventList(evntlist);
 
-        MMRESULT merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
+        auto merr = midiStreamOpen(&hMIDIStream, &MIDIDevice, (DWORD)1, (DWORD_PTR)MIDIProc, (DWORD_PTR)0, CALLBACK_FUNCTION);
         if (merr != MMSYSERR_NOERROR)
         {
             hMIDIStream = nullptr;
             free(pMIDISong);
             pMIDISong = nullptr;
-            fclose(f);
-            return MIDI_FALSE;
+            MemFile_Destroy(f);
+            return QB_FALSE;
         }
 
         pMIDISong->NewPos = 0;
         pMIDISong->MusicPlaying = true;
-        pMIDISong->Loops = loops;
+        pMIDISong->Loops = 1; // play only once by default
         MIDIPROPTIMEDIV mptd = {};
         mptd.cbStruct = sizeof(MIDIPROPTIMEDIV);
         mptd.dwTimeDiv = pMIDISong->ppqn;
         merr = midiStreamProperty(hMIDIStream, (LPBYTE)&mptd, MIDIPROP_SET | MIDIPROP_TIMEDIV);
         MIDIBlockOut();
         merr = midiStreamRestart(hMIDIStream);
-        fclose(f);
+        MemFile_Destroy(f);
 
-        return MIDI_TRUE;
+        return QB_TRUE;
     }
 
-    return MIDI_FALSE;
+    return QB_FALSE;
+}
+
+/// @brief Stops playback, unloads the MIDI file from memory and frees any allocated resource
+void MIDI_Stop()
+{
+    __MIDI_PlayFromMemory(nullptr, 0);
 }
 
 /// <summary>
 /// Checks if a MIDI song is playing
 /// </summary>
 /// <returns>True if playing. False otherwise</returns>
-int8_t MIDI_IsPlaying()
+qb_bool MIDI_IsPlaying()
 {
     if (pMIDISong)
-        return pMIDISong->MusicPlaying ? MIDI_TRUE : MIDI_FALSE;
+        return pMIDISong->MusicPlaying ? QB_TRUE : QB_FALSE;
 
-    return MIDI_FALSE;
+    return QB_FALSE;
 }
 
-/// <summary>
-/// Pauses MIDI playback
-/// </summary>
+/// @brief Sets a MIDI tune to loop
+/// @param loops The number of times the playback should loop. Playback can be looped forever by specifying a negative number (like QB_TRUE)
+void MIDI_SetLooping(int32_t loops)
+{
+    if (pMIDISong)
+        pMIDISong->Loops = loops;
+}
+
+/// @brief Returns true if the file is set to loop forever or is still looping
+/// @return QB_TRUE if looping, QB_FALSE otherwise
+qb_bool MIDI_IsLooping()
+{
+    return pMIDISong && pMIDISong->Loops ? QB_TRUE : QB_FALSE;
+}
+
+/// @brief Pauses MIDI playback
 void MIDI_Pause()
 {
     if (hMIDIStream)
         midiStreamPause(hMIDIStream);
 }
 
-/// <summary>
-/// Resumes MIDI playback
-/// </summary>
+/// @brief Resumes MIDI playback
 void MIDI_Resume()
 {
     if (hMIDIStream)
         midiStreamRestart(hMIDIStream);
 }
 
-/// <summary>
-/// Set the MIDI playback volume
-/// </summary>
-/// <param name="volume">A floating point value (0.0 to 1.0)</param>
+/// @brief Set the MIDI playback volume
+/// @param volume A floating point value (0.0 to 1.0)
 void MIDI_SetVolume(float volume)
 {
     if (hMIDIStream)
     {
-        volume = MIDI_CLAMP(volume, 0.0f, 1.0f);
-        int calcVolume = int(65535.0f * volume);
+        volume = CLAMP(volume, 0.0f, 1.0f);
+        auto calcVolume = int(65535.0f * volume);
         midiOutSetVolume((HMIDIOUT)hMIDIStream, MAKELONG(calcVolume, calcVolume));
     }
 }
 
-/// <summary>
-/// Returns the current MIDI volume
-/// </summary>
-/// <returns>A floating point value (0.0 to 1.0)</returns>
+/// @brief Returns the current MIDI volume
+/// @return A floating point value (0.0 to 1.0)
 float MIDI_GetVolume()
 {
     DWORD dwVolume = 0xFFFF;
@@ -761,35 +762,36 @@ float MIDI_GetVolume()
     if (hMIDIStream)
     {
         if (midiOutGetVolume((HMIDIOUT)hMIDIStream, &dwVolume) == MMSYSERR_NOERROR)
-        {
             dwVolume = LOWORD(dwVolume);
-        }
         else
-        {
             dwVolume = 0xFFFF;
-        }
     }
 
     return (float)dwVolume / 65535.0f;
 }
 
-/// <summary>
-/// This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
+/// @brief This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
 /// This can playback WAV files that use compressed audio using Windows ACM codecs!
-/// Specifying a new file while another one is playing will stop the previous file and then start playing the new one.
-/// Specifying an empty string will stop all sound playback. The playback can be looped.
-/// </summary>
-/// <param name="fileName">A WAV path file name</param>
-/// <param name="looping">If this is true the sound loops forever until it is stopped</param>
-/// <returns>True if the call succeeded. False otherwise</returns>
-int8_t __Sound_Play(const char *fileName, int8_t looping)
+/// @param fileName A .WAV file path name
+/// @param loop If this is true the sound loops forever until it is stopped
+/// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
+qb_bool __Sound_PlayFromFile(const uint8_t *fileName, int8_t loop)
 {
-    if (MIDI_IS_STRING_EMPTY(fileName))
-    {
-        return PlaySoundA(NULL, NULL, 0) ? MIDI_TRUE : MIDI_FALSE;
-    }
-    else
-    {
-        return PlaySoundA(fileName, NULL, SND_ASYNC | SND_FILENAME | (looping ? SND_LOOP : 0) | SND_NODEFAULT) ? MIDI_TRUE : MIDI_FALSE;
-    }
+    return (IS_STRING_EMPTY(fileName) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA((LPCSTR)fileName, NULL, SND_ASYNC | SND_FILENAME | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
+}
+
+/// @brief This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
+/// This can playback WAV files that use compressed audio using Windows ACM codecs!
+/// @param buffer A pointer to .WAV file in memory
+/// @param loop If this is true the sound loops forever until it is stopped
+/// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
+qb_bool Sound_PlayFromMemory(const uint8_t *buffer, int8_t loop)
+{
+    return (IS_STRING_EMPTY(buffer) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA((LPCSTR)buffer, NULL, SND_ASYNC | SND_MEMORY | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
+}
+
+/// @brief Stops any playing sound
+void Sound_Stop()
+{
+    PlaySoundA(NULL, NULL, 0);
 }

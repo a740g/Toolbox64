@@ -69,7 +69,7 @@ int32_t MIDI_IsLooping()
 
 /// @brief Sets the MIDI to until unit it is stopped
 /// @param looping QB64 TRUE or FALSE
-void MIDI_SetLooping(const int32_t looping)
+void MIDI_SetLooping(int32_t looping)
 {
     if (contextTSFOPL3 && tinyMIDILoader)
         isLooping = looping; // Save the looping flag
@@ -77,7 +77,7 @@ void MIDI_SetLooping(const int32_t looping)
 
 /// @brief Sets the playback volume when a file is loaded
 /// @param volume 0.0 = none, 1.0 = full
-void MIDI_SetVolume(const float volume)
+void MIDI_SetVolume(float volume)
 {
     if (contextTSFOPL3 && tinyMIDILoader)
     {
@@ -172,7 +172,7 @@ int32_t __MIDI_LoadTuneFromFile(const char *midi_filename)
 /// @param buffer The memory buffer containing the full file
 /// @param bufferSize The size of the memory buffer
 /// @return Returns QB64 TRUE if the operation was successful
-int32_t __MIDI_LoadTuneFromMemory(const void *buffer, const uint32_t bufferSize)
+int32_t __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
 {
     if (MIDI_IsTuneLoaded())
         MIDI_StopPlayer(); // stop if anything is playing
@@ -221,7 +221,7 @@ void __MIDI_Finalize()
 /// @param sampleRateQB64 QB64 device sample rate
 /// @param useOPL3 If this is true then the OPL3 emulation is used instead of TSF
 /// @return Returns QB64 TRUE if everything went well
-int32_t __MIDI_Initialize(const uint32_t sampleRateQB64, const int32_t useOPL3)
+int32_t __MIDI_Initialize(uint32_t sampleRateQB64, int32_t useOPL3)
 {
     // Return success if we are already initialized
     if (contextTSFOPL3)
@@ -273,7 +273,7 @@ int32_t MIDI_IsFMSynthesis()
 /// @brief This is used to render the MIDI audio when sample synthesis is in use
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-static void __MIDI_RenderTSF(uint8_t *buffer, const uint32_t bufferSize)
+static void __MIDI_RenderTSF(uint8_t *buffer, uint32_t bufferSize)
 {
     // Number of samples to process
     uint32_t sampleBlock, sampleCount = (bufferSize / (2 * sizeof(float))); // 2 channels, 32-bit FP (4 bytes) samples
@@ -365,7 +365,7 @@ static uint64_t __MIDI_ResampleAndConvertFP32(const int16_t *input, float *outpu
 /// @brief This is used to render the MIDI audio when FM synthesis is in use
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-static void __MIDI_RenderOPL(uint8_t *buffer, const uint32_t bufferSize)
+static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
 {
     // The sample frame count we can render that can be fully copied to the buffer after converting and resampling
     uint64_t sourceSampleFrameCount = ceil(((double)bufferSize * OPL_DEFAULT_SAMPLE_RATE) / (2.0 * sizeof(float) * (double)sampleRate));
@@ -427,7 +427,7 @@ static void __MIDI_RenderOPL(uint8_t *buffer, const uint32_t bufferSize)
 /// @brief The calls the correct render function based on which renderer was chosen
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-void __MIDI_Render(uint8_t *buffer, const uint32_t bufferSize)
+void __MIDI_Render(uint8_t *buffer, uint32_t bufferSize)
 {
     if (isOPL3Active)
         __MIDI_RenderOPL(buffer, bufferSize);
