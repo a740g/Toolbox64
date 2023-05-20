@@ -25,7 +25,6 @@
 #pragma once
 
 #define MEMFILE_HEADER_ONLY
-#define TOOLBOX64_DEBUG 1
 #include "MemFile.h"
 #undef MEMFILE_HEADER_ONLY
 #include <windows.h>
