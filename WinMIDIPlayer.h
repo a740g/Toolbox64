@@ -725,23 +725,22 @@ qb_bool MIDI_IsLooping()
     return pMIDISong && pMIDISong->Loops ? QB_TRUE : QB_FALSE;
 }
 
-/// @brief Pauses MIDI playback
-void MIDI_Pause()
+/// @brief Pauses or unpauses MIDI playback
+/// @param pause True to pause or False to unpause
+void MIDI_SetPause(int8_t pause)
 {
-    if (hMIDIStream && pMIDISong && !pMIDISong->MusicPaused)
+    if (hMIDIStream && pMIDISong)
     {
-        midiStreamPause(hMIDIStream);
-        pMIDISong->MusicPaused = true;
-    }
-}
-
-/// @brief Resumes MIDI playback
-void MIDI_Resume()
-{
-    if (hMIDIStream && pMIDISong && pMIDISong->MusicPaused)
-    {
-        midiStreamRestart(hMIDIStream);
-        pMIDISong->MusicPaused = false;
+        if (pMIDISong->MusicPaused)
+        {
+            midiStreamRestart(hMIDIStream);
+            pMIDISong->MusicPaused = false;
+        }
+        else
+        {
+            midiStreamPause(hMIDIStream);
+            pMIDISong->MusicPaused = true;
+        }
     }
 }
 
