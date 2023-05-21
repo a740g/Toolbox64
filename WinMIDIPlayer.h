@@ -74,6 +74,7 @@ struct MIDISong
 {
     bool MusicLoaded;
     bool MusicPlaying;
+    bool MusicPaused;
     int Loops;
     int CurrentHdr;
     MIDIHDR MIDIStreamHdr[2];
@@ -651,7 +652,7 @@ qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
             MemFile_Destroy(f);
             return QB_FALSE;
         }
-        memset(pMIDISong, 0, sizeof(MIDISong));
+        ZERO_OBJECT(pMIDISong);
 
         /* Attempt to load the midi file */
         MIDIEvent *evntlist = nullptr;
@@ -706,10 +707,7 @@ void MIDI_Stop()
 /// <returns>True if playing. False otherwise</returns>
 qb_bool MIDI_IsPlaying()
 {
-    if (pMIDISong)
-        return pMIDISong->MusicPlaying ? QB_TRUE : QB_FALSE;
-
-    return QB_FALSE;
+    return pMIDISong && pMIDISong->MusicPlaying ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Sets a MIDI tune to loop
@@ -730,15 +728,28 @@ qb_bool MIDI_IsLooping()
 /// @brief Pauses MIDI playback
 void MIDI_Pause()
 {
-    if (hMIDIStream)
+    if (hMIDIStream && pMIDISong && !pMIDISong->MusicPaused)
+    {
         midiStreamPause(hMIDIStream);
+        pMIDISong->MusicPaused = true;
+    }
 }
 
 /// @brief Resumes MIDI playback
 void MIDI_Resume()
 {
-    if (hMIDIStream)
+    if (hMIDIStream && pMIDISong && pMIDISong->MusicPaused)
+    {
         midiStreamRestart(hMIDIStream);
+        pMIDISong->MusicPaused = false;
+    }
+}
+
+/// @brief Returns true if MIDI playback is paused
+/// @return QB_TRUE if paused, QB_FALSE otherwise
+qb_bool MIDI_IsPaused()
+{
+    return pMIDISong && pMIDISong->MusicPlaying && !pMIDISong->MusicPaused ? QB_FALSE : QB_TRUE;
 }
 
 /// @brief Set the MIDI playback volume

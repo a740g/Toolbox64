@@ -22,6 +22,7 @@ $If WINMIDIPLAYER_BI = UNDEFINED Then
         Function MIDI_IsLooping%%
         Sub MIDI_Pause
         Sub MIDI_Resume
+        Function MIDI_IsPaused%%
         Sub MIDI_SetVolume (ByVal volume As Single)
         Function MIDI_GetVolume!
         Function __Sound_PlayFromFile%% (fileName As String, Byval looping As Byte)
