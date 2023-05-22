@@ -112,6 +112,10 @@ $If IMGUI_BAS = UNDEFINED Then
 
         ' Check if the user is trying to click on something to change focus
         For h = 1 To UBound(Widget)
+            ' Reset some stuff that the user should have handled last time
+            Widget(h).clicked = FALSE
+            Widget(h).txt.entered = FALSE
+
             If Widget(h).inUse And Widget(h).visible And Not Widget(h).disabled And h <> WidgetManager.current Then
 
                 ' Find the bounding box
