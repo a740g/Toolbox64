@@ -712,7 +712,7 @@ qb_bool MIDI_IsPlaying()
 
 /// @brief Sets a MIDI tune to loop
 /// @param loops The number of times the playback should loop. Playback can be looped forever by specifying a negative number (like QB_TRUE)
-void MIDI_SetLooping(int32_t loops)
+void MIDI_Loop(int32_t loops)
 {
     if (pMIDISong)
         pMIDISong->Loops = loops;
@@ -727,19 +727,19 @@ qb_bool MIDI_IsLooping()
 
 /// @brief Pauses or unpauses MIDI playback
 /// @param pause True to pause or False to unpause
-void MIDI_SetPause(int8_t pause)
+void MIDI_Pause(int8_t state)
 {
     if (hMIDIStream && pMIDISong)
     {
-        if (pMIDISong->MusicPaused)
-        {
-            midiStreamRestart(hMIDIStream);
-            pMIDISong->MusicPaused = false;
-        }
-        else
+        if (state)
         {
             midiStreamPause(hMIDIStream);
             pMIDISong->MusicPaused = true;
+        }
+        else
+        {
+            midiStreamRestart(hMIDIStream);
+            pMIDISong->MusicPaused = false;
         }
     }
 }

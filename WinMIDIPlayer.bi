@@ -18,9 +18,9 @@ $If WINMIDIPLAYER_BI = UNDEFINED Then
         Function __MIDI_PlayFromMemory%% (buffer As String, Byval bufferSize As Offset)
         Sub MIDI_Stop
         Function MIDI_IsPlaying%%
-        Sub MIDI_SetLooping (ByVal loops As Long)
+        Sub MIDI_Loop (ByVal loops As Long)
         Function MIDI_IsLooping%%
-        Sub MIDI_SetPause (ByVal pause As Byte)
+        Sub MIDI_Pause (ByVal state As Byte)
         Function MIDI_IsPaused%%
         Sub MIDI_SetVolume (ByVal volume As Single)
         Function MIDI_GetVolume!
