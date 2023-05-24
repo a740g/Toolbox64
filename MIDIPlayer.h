@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <cstdint>
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"
 #define OPL_IMPLEMENTATION
@@ -22,9 +21,7 @@
 #include "external/tml.h"
 #include "external/soundfont.h"
 #undef STB_VORBIS_HEADER_ONLY
-
-#define QB_FALSE TSF_FALSE
-#define QB_TRUE -TSF_TRUE
+#include "Common.h"
 
 #define OPL_DEFAULT_SAMPLE_RATE 44100.0
 
@@ -35,44 +32,44 @@ static uint32_t totalMsec = 0;                 // total duration of the MIDI son
 static double currentMsec = 0;                 // current playback time
 static uint32_t sampleRate = 0;                // the mixing sample rate (should be same as SndRate in QB64)
 static float globalVolume = 1.0f;              // this is the global volume (0.0 - 1.0)
-static int32_t isLooping = QB_FALSE;           // flag to indicate if we should loop a song
-static int32_t isOPL3Active = QB_FALSE;        // flag to indicate if we are using TSF or OPL3
+static qb_bool isLooping = QB_FALSE;           // flag to indicate if we should loop a song
+static qb_bool isOPL3Active = QB_FALSE;        // flag to indicate if we are using TSF or OPL3
 static int16_t *bufferOPL = nullptr;           // this buffer will be used to render 16-bit 44100 samples from the OPL
 
 /// @brief Check if MIDI library is initialized
 /// @return Returns QB64 TRUE if it is initialized
-int32_t MIDI_IsInitialized()
+qb_bool MIDI_IsInitialized()
 {
     return contextTSFOPL3 ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Checks if a MIDI file is loaded into memory
 /// @return Returns QB64 TRUE if a MIDI tune is loaded
-int32_t MIDI_IsTuneLoaded()
+qb_bool MIDI_IsTuneLoaded()
 {
     return contextTSFOPL3 && tinyMIDILoader ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Check if a MIDI file is playing
 /// @return Returns QB64 TRUE if we are playing a MIDI file
-int32_t MIDI_IsPlaying()
+qb_bool MIDI_IsPlaying()
 {
     return contextTSFOPL3 && tinyMIDIMessage ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Checks the MIDI file is set to loop
 /// @return Returns QB64 TRUE if a file is set to loop
-int32_t MIDI_IsLooping()
+qb_bool MIDI_IsLooping()
 {
     return contextTSFOPL3 && tinyMIDIMessage ? isLooping : QB_FALSE;
 }
 
 /// @brief Sets the MIDI to until unit it is stopped
 /// @param looping QB64 TRUE or FALSE
-void MIDI_SetLooping(int32_t looping)
+void MIDI_Loop(int8_t looping)
 {
     if (contextTSFOPL3 && tinyMIDILoader)
-        isLooping = looping; // Save the looping flag
+        isLooping = (qb_bool)looping; // Save the looping flag
 }
 
 /// @brief Sets the playback volume when a file is loaded
@@ -117,7 +114,7 @@ uint32_t MIDI_GetActiveVoices()
 }
 
 /// @brief Kickstarts playback if library is initalized and MIDI file is loaded
-void MIDI_StartPlayer()
+void MIDI_Play()
 {
     if (contextTSFOPL3 && tinyMIDILoader)
     {
@@ -130,7 +127,7 @@ void MIDI_StartPlayer()
 }
 
 /// @brief Stops playback and unloads the MIDI file from memory
-void MIDI_StopPlayer()
+void MIDI_Stop()
 {
     if (contextTSFOPL3 && tinyMIDILoader)
     {
@@ -148,10 +145,10 @@ void MIDI_StopPlayer()
 /// @brief This frees resources (if a file was previously loaded) and then loads a MIDI file into memory for playback
 /// @param midi_filename A valid file name
 /// @return Returns QB64 TRUE if the operation was successful
-int32_t __MIDI_LoadTuneFromFile(const char *midi_filename)
+qb_bool __MIDI_LoadTuneFromFile(const char *midi_filename)
 {
     if (MIDI_IsTuneLoaded())
-        MIDI_StopPlayer(); // stop if anything is playing
+        MIDI_Stop(); // stop if anything is playing
 
     if (contextTSFOPL3)
     {
@@ -172,10 +169,10 @@ int32_t __MIDI_LoadTuneFromFile(const char *midi_filename)
 /// @param buffer The memory buffer containing the full file
 /// @param bufferSize The size of the memory buffer
 /// @return Returns QB64 TRUE if the operation was successful
-int32_t __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
+qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
 {
     if (MIDI_IsTuneLoaded())
-        MIDI_StopPlayer(); // stop if anything is playing
+        MIDI_Stop(); // stop if anything is playing
 
     if (contextTSFOPL3)
     {
@@ -196,7 +193,7 @@ int32_t __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
 void __MIDI_Finalize()
 {
     if (MIDI_IsTuneLoaded())
-        MIDI_StopPlayer(); // stop if anything is playing
+        MIDI_Stop(); // stop if anything is playing
 
     // Free TSF/OPL resources if initialized
     if (contextTSFOPL3)
@@ -221,7 +218,7 @@ void __MIDI_Finalize()
 /// @param sampleRateQB64 QB64 device sample rate
 /// @param useOPL3 If this is true then the OPL3 emulation is used instead of TSF
 /// @return Returns QB64 TRUE if everything went well
-int32_t __MIDI_Initialize(uint32_t sampleRateQB64, int32_t useOPL3)
+qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
 {
     // Return success if we are already initialized
     if (contextTSFOPL3)
@@ -249,8 +246,8 @@ int32_t __MIDI_Initialize(uint32_t sampleRateQB64, int32_t useOPL3)
         }
     }
 
-    isOPL3Active = useOPL3;      // same the type of renderer
-    sampleRate = sampleRateQB64; // save the sample rate. No checks are done. Bad stuff may happen if this is garbage
+    isOPL3Active = (qb_bool)useOPL3; // same the type of renderer
+    sampleRate = sampleRateQB64;     // save the sample rate. No checks are done. Bad stuff may happen if this is garbage
 
     if (!isOPL3Active)
     {
@@ -265,7 +262,7 @@ int32_t __MIDI_Initialize(uint32_t sampleRateQB64, int32_t useOPL3)
 
 /// @brief Check what kind of MIDI renderer is being used
 /// @return Return QB64 TRUE if using FM synthesis. Sample synthesis otherwise
-int32_t MIDI_IsFMSynthesis()
+qb_bool MIDI_IsFMSynthesis()
 {
     return contextTSFOPL3 ? isOPL3Active : QB_FALSE;
 }

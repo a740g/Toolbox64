@@ -173,7 +173,7 @@ inline void PokeString(uint8_t *s, uintptr_t o, uint8_t n)
 /// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
 /// @param n Any number
 /// @return Next (ceiling) power of 2 for x
-inline uint32_t NextPowerOfTwo(uint32_t n)
+inline uint32_t RoundUpToPowerOf2(uint32_t n)
 {
     --n;
     n |= n >> 1;
@@ -187,7 +187,7 @@ inline uint32_t NextPowerOfTwo(uint32_t n)
 /// @brief Returns the previous (floor) power of 2 for x. E.g. n = 600 then returns 512
 /// @param n Any number
 /// @return Previous (floor) power of 2 for x
-inline uint32_t PreviousPowerOfTwo(uint32_t n)
+inline uint32_t RoundDownToPowerOf2(uint32_t n)
 {
     n |= (n >> 1);
     n |= (n >> 2);
