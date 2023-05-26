@@ -18,15 +18,15 @@ $If GFXEX_BI = UNDEFINED Then
         Static As Unsigned Long counter, finalFPS
         Static lastTime As Unsigned Integer64
 
-        counter = counter + 1
-
         Dim currentTime As Unsigned Integer64: currentTime = GetTicks
 
-        If currentTime >= lastTime + 1000 Then
+        If currentTime > lastTime + 1000 Then
             lastTime = currentTime
             finalFPS = counter
             counter = 0
         End If
+
+        counter = counter + 1
 
         GetFPS = finalFPS
     End Function
@@ -85,9 +85,9 @@ $If GFXEX_BI = UNDEFINED Then
 
         Dim a As Single, x0 As Single, y0 As Single
         a = Atan2(ye - ys, xe - xs)
-        a = a + Pi(0.5)
-        x0 = 0.5 * lineWeight * Cos(a)
-        y0 = 0.5 * lineWeight * Sin(a)
+        a = a + Pi(0.5!)
+        x0 = 0.5! * lineWeight * Cos(a)
+        y0 = 0.5! * lineWeight * Sin(a)
 
         MapTriangle Seamless(0, 0)-(0, 0)-(0, 0), colorSample To(xs - x0, ys - y0)-(xs + x0, ys + y0)-(xe + x0, ye + y0), , Smooth
         MapTriangle Seamless(0, 0)-(0, 0)-(0, 0), colorSample To(xs - x0, ys - y0)-(xe + x0, ye + y0)-(xe - x0, ye - y0), , Smooth
@@ -124,8 +124,23 @@ $If GFXEX_BI = UNDEFINED Then
 
         FreeImage tmp
     End Sub
+
+
+    '  Loads an image in 8bpp or 32bpp and optionally sets a transparent color
+    Function LoadImageTransparent& (fileName As String, transparentColor As Unsigned Long, is8bpp As Byte, options As String)
+        Dim handle As Long
+
+        If is8bpp Then
+            handle = LoadImage(fileName, 256, options)
+        Else
+            handle = LoadImage(fileName, , options)
+        End If
+
+        If handle < -1 Then ClearColor transparentColor, handle
+
+        LoadImageTransparent = handle
+    End Function
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------------------------------------
-

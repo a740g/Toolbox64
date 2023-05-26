@@ -163,34 +163,6 @@ $If FILEOPS_BAS = UNDEFINED Then
             CopyFile = TRUE ' success
         End If
     End Function
-
-
-    ' This is a simple text parser that can take an input string from OpenFileDialog$ and spit out discrete filepaths in an array
-    ' Returns the number of strings parsed
-    Function ParseOpenFileDialogList& (ofdList As String, ofdArray() As String)
-        Dim As Long p, c
-        Dim ts As String
-
-        ReDim ofdArray(0 To 0) As String
-        ts = ofdList
-
-        Do
-            p = InStr(ts, "|")
-
-            If p = 0 Then
-                ofdArray(c) = ts
-
-                ParseOpenFileDialogList& = c + 1
-                Exit Function
-            End If
-
-            ofdArray(c) = Left$(ts, p - 1)
-            ts = Mid$(ts, p + 1)
-
-            c = c + 1
-            ReDim Preserve ofdArray(0 To c) As String
-        Loop
-    End Function
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
