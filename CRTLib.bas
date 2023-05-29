@@ -16,14 +16,14 @@ $If CRTLIB_BAS = UNDEFINED Then
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' Returns a BASIC string (bstring) from a NULL terminated C string (cstring) pointer
-    Function CStrPtrToBStr$ (cStrPtr As Offset)
+    Function CStrPtrToBStr$ (cStrPtr As _Offset)
         If cStrPtr <> NULL Then
             Dim bufferSize As Long: bufferSize = StrLen(cStrPtr)
 
             If bufferSize > 0 Then
                 Dim buffer As String: buffer = String$(bufferSize + 1, NULL)
 
-                StrNCpy Offset(buffer), cStrPtr, bufferSize
+                StrNCpy _Offset(buffer), cStrPtr, bufferSize
 
                 CStrPtrToBStr = Left$(buffer, bufferSize)
             End If
@@ -45,4 +45,3 @@ $If CRTLIB_BAS = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
-

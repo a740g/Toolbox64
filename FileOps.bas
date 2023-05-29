@@ -39,7 +39,7 @@ $If FILEOPS_BAS = UNDEFINED Then
     ' Gets the filename portion from a file path or URL
     ' If no part seperator is found it assumes the whole string is a filename
     Function GetFileNameFromPathOrURL$ (PathOrURL As String)
-        Dim As Unsigned Long i, j: j = Len(PathOrURL)
+        Dim As _Unsigned Long i, j: j = Len(PathOrURL)
 
         ' Retrieve the position of the first / or \ in the parameter from the
         For i = j To 1 Step -1
@@ -61,7 +61,7 @@ $If FILEOPS_BAS = UNDEFINED Then
     ' Returns the pathname portion from a file path or URL
     ' If no path seperator is found it return an empty string
     Function GetFilePathFromPathOrURL$ (PathOrURL As String)
-        Dim As Unsigned Long i, j: j = Len(PathOrURL)
+        Dim As _Unsigned Long i, j: j = Len(PathOrURL)
         For i = j To 1 Step -1
             Select Case Asc(PathOrURL, i)
                 Case KEY_SLASH, KEY_BACKSLASH
@@ -77,7 +77,7 @@ $If FILEOPS_BAS = UNDEFINED Then
     ' Note this will return anything after a dot if the URL/path is just a directory name
     Function GetFileExtensionFromPathOrURL$ (PathOrURL As String)
         Dim fileName As String: fileName = GetFileNameFromPathOrURL(PathOrURL)
-        Dim i As Unsigned Long: i = InStrRev(fileName, Chr$(KEY_DOT))
+        Dim i As _Unsigned Long: i = _InStrRev(fileName, Chr$(KEY_DOT))
 
         If i <> NULL Then
             GetFileExtensionFromPathOrURL = Right$(fileName, Len(fileName) - i + 1)
@@ -87,7 +87,7 @@ $If FILEOPS_BAS = UNDEFINED Then
 
     ' Gets the drive or scheme from a path name (ex. C:, HTTPS: etc.)
     Function GetDriveOrSchemeFromPathOrURL$ (PathOrURL As String)
-        Dim i As Unsigned Long: i = InStr(PathOrURL, Chr$(KEY_COLON))
+        Dim i As _Unsigned Long: i = InStr(PathOrURL, Chr$(KEY_COLON))
 
         If i <> NULL Then
             GetDriveOrSchemeFromPathOrURL = Left$(PathOrURL, i)
@@ -109,7 +109,7 @@ $If FILEOPS_BAS = UNDEFINED Then
 
     ' Loads a whole file from disk into memory
     Function LoadFileFromDisk$ (path As String)
-        If FileExists(path) Then
+        If _FileExists(path) Then
             Dim As Long fh: fh = FreeFile
 
             Open path For Binary Access Read As fh
@@ -123,13 +123,13 @@ $If FILEOPS_BAS = UNDEFINED Then
 
     ' Loads a whole file from a URL into memory
     Function LoadFileFromURL$ (url As String)
-        Dim h As Long: h = OpenClient("HTTP:" + url)
+        Dim h As Long: h = _OpenClient("HTTP:" + url)
 
         If h <> NULL Then
             Dim As String content, buffer
 
             While Not EOF(h)
-                Limit __HTTP_UPDATES_PER_SECOND
+                _Limit __HTTP_UPDATES_PER_SECOND
                 Get h, , buffer
                 content = content + buffer
             Wend
@@ -142,11 +142,11 @@ $If FILEOPS_BAS = UNDEFINED Then
 
 
     ' Copies file src to dst. Src file must exist and dst file must not
-    Function CopyFile%% (fileSrc As String, fileDst As String, overwrite As Byte)
+    Function CopyFile%% (fileSrc As String, fileDst As String, overwrite As _Byte)
         ' Check if source file exists
-        If FileExists(fileSrc) Then
+        If _FileExists(fileSrc) Then
             ' Check if dest file exists
-            If FileExists(fileDst) And Not overwrite Then
+            If _FileExists(fileDst) And Not overwrite Then
                 Exit Function
             End If
 
@@ -166,4 +166,3 @@ $If FILEOPS_BAS = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
-

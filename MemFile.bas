@@ -33,23 +33,22 @@ $If MEMFILE_BAS = UNDEFINED Then
     End Function
 
     $If 32BIT Then
-            Function MemFile_Read~& (memFile As Unsigned Offset, dst As String)
+            Function MemFile_Read~& (memFile As _Unsigned _Offset, dst As String)
             MemFile_Read = __MemFile_Read(memFile, dst, Len(dst))
             End Function
 
-            Function MemFile_Write~& (memFile As Unsigned Offset, src As String)
+            Function MemFile_Write~& (memFile As _Unsigned _Offset, src As String)
             MemFile_Write = __MemFile_Write(memFile, src, Len(src))
             End Function
     $Else
-        Function MemFile_Read~&& (memFile As Unsigned Offset, dst As String)
+        Function MemFile_Read~&& (memFile As _Unsigned _Offset, dst As String)
             MemFile_Read = __MemFile_Read(memFile, dst, Len(dst))
         End Function
 
-        Function MemFile_Write~&& (memFile As Unsigned Offset, src As String)
+        Function MemFile_Write~&& (memFile As _Unsigned _Offset, src As String)
             MemFile_Write = __MemFile_Write(memFile, src, Len(src))
         End Function
     $End If
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
-

@@ -15,10 +15,10 @@ $If GFXEX_BI = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
     ' Calculates and returns the FPS when repeatedly called inside a loop
     Function GetFPS~&
-        Static As Unsigned Long counter, finalFPS
-        Static lastTime As Unsigned Integer64
+        Static As _Unsigned Long counter, finalFPS
+        Static lastTime As _Unsigned _Integer64
 
-        Dim currentTime As Unsigned Integer64: currentTime = GetTicks
+        Dim currentTime As _Unsigned _Integer64: currentTime = GetTicks
 
         If currentTime > lastTime + 1000 Then
             lastTime = currentTime
@@ -73,24 +73,24 @@ $If GFXEX_BI = UNDEFINED Then
     ' xs, ys - start x, y
     ' xe, ye - end x, y
     ' lineWeight - thickness
-    Sub LineThick (xs As Single, ys As Single, xe As Single, ye As Single, lineWeight As Unsigned Integer)
+    Sub LineThick (xs As Single, ys As Single, xe As Single, ye As Single, lineWeight As _Unsigned Integer)
         Static colorSample As Long ' static, so that we do not allocate an image on every call
 
         If colorSample = 0 Then colorSample = _NewImage(1, 1, 32) ' done only once
 
-        Dim prevDest As Long: prevDest = Dest
-        Dest colorSample
+        Dim prevDest As Long: prevDest = _Dest
+        _Dest colorSample
         PSet (0, 0) ' set it to _DEFAULTCOLOR
-        Dest prevDest
+        _Dest prevDest
 
         Dim a As Single, x0 As Single, y0 As Single
-        a = Atan2(ye - ys, xe - xs)
-        a = a + Pi(0.5!)
+        a = _Atan2(ye - ys, xe - xs)
+        a = a + _Pi(0.5!)
         x0 = 0.5! * lineWeight * Cos(a)
         y0 = 0.5! * lineWeight * Sin(a)
 
-        MapTriangle Seamless(0, 0)-(0, 0)-(0, 0), colorSample To(xs - x0, ys - y0)-(xs + x0, ys + y0)-(xe + x0, ye + y0), , Smooth
-        MapTriangle Seamless(0, 0)-(0, 0)-(0, 0), colorSample To(xs - x0, ys - y0)-(xe + x0, ye + y0)-(xe - x0, ye - y0), , Smooth
+        _MapTriangle _Seamless(0, 0)-(0, 0)-(0, 0), colorSample To(xs - x0, ys - y0)-(xs + x0, ys + y0)-(xe + x0, ye + y0), , _Smooth
+        _MapTriangle _Seamless(0, 0)-(0, 0)-(0, 0), colorSample To(xs - x0, ys - y0)-(xe + x0, ye + y0)-(xe - x0, ye - y0), , _Smooth
     End Sub
 
 
@@ -99,44 +99,44 @@ $If GFXEX_BI = UNDEFINED Then
     ' isIn - True or False. True is fade in, False is fade out
     ' fps& - speed (updates / second)
     ' stopPercent - %age when to bail out (use for partial fades)
-    Sub FadeScreen (img As Long, isIn As Byte, maxFPS As Unsigned Integer, stopPercent As Byte)
+    Sub FadeScreen (img As Long, isIn As _Byte, maxFPS As _Unsigned Integer, stopPercent As _Byte)
         ' TOD0: Add support for palette based screen
         Dim As Long tmp, x, y, i
-        tmp = CopyImage(img)
-        x = Width(tmp) - 1
-        y = Height(tmp) - 1
+        tmp = _CopyImage(img)
+        x = _Width(tmp) - 1
+        y = _Height(tmp) - 1
 
         For i = 0 To 255
             If stopPercent < (i * 100) \ 255 Then Exit For ' bail if < 100% we hit the limit
 
-            PutImage , tmp, _Display ' always stretch and blit to the screen
+            _PutImage , tmp, _Display ' always stretch and blit to the screen
 
             If isIn Then
-                Line (0, 0)-(x, y), RGBA32(0, 0, 0, 255 - i), BF
+                Line (0, 0)-(x, y), _RGBA32(0, 0, 0, 255 - i), BF
             Else
-                Line (0, 0)-(x, y), RGBA32(0, 0, 0, i), BF
+                Line (0, 0)-(x, y), _RGBA32(0, 0, 0, i), BF
             End If
 
-            Display
+            _Display
 
-            Limit maxFPS
+            _Limit maxFPS
         Next
 
-        FreeImage tmp
+        _FreeImage tmp
     End Sub
 
 
     '  Loads an image in 8bpp or 32bpp and optionally sets a transparent color
-    Function LoadImageTransparent& (fileName As String, transparentColor As Unsigned Long, is8bpp As Byte, options As String)
+    Function LoadImageTransparent& (fileName As String, transparentColor As _Unsigned Long, is8bpp As _Byte, options As String)
         Dim handle As Long
 
         If is8bpp Then
-            handle = LoadImage(fileName, 256, options)
+            handle = _LoadImage(fileName, 256, options)
         Else
-            handle = LoadImage(fileName, , options)
+            handle = _LoadImage(fileName, , options)
         End If
 
-        If handle < -1 Then ClearColor transparentColor, handle
+        If handle < -1 Then _ClearColor transparentColor, handle
 
         LoadImageTransparent = handle
     End Function

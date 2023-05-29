@@ -47,30 +47,30 @@ $If IMGUI_BAS = UNDEFINED Then
     ' Draws a basic 3D box
     ' This can be improved ... a lot XD
     ' Also all colors are hardcoded
-    Sub WidgetDrawBox3D (r As RectangleType, depressed As Byte)
+    Sub WidgetDrawBox3D (r As RectangleType, depressed As _Byte)
         If depressed Then ' sunken
-            Line (r.a.x, r.a.y)-(r.b.x - 1, r.a.y), DimGray
-            Line (r.a.x, r.a.y)-(r.a.x, r.b.y - 1), DimGray
-            Line (r.a.x, r.b.y)-(r.b.x, r.b.y), LightGray
-            Line (r.b.x, r.a.y)-(r.b.x, r.b.y - 1), LightGray
+            Line (r.a.x, r.a.y)-(r.b.x - 1, r.a.y), &HFF696969
+            Line (r.a.x, r.a.y)-(r.a.x, r.b.y - 1), &HFF696969
+            Line (r.a.x, r.b.y)-(r.b.x, r.b.y), &HFFD3D3D3
+            Line (r.b.x, r.a.y)-(r.b.x, r.b.y - 1), &HFFD3D3D3
         Else ' raised
-            Line (r.a.x, r.a.y)-(r.b.x - 1, r.a.y), LightGray
-            Line (r.a.x, r.a.y)-(r.a.x, r.b.y - 1), LightGray
-            Line (r.a.x, r.b.y)-(r.b.x, r.b.y), DimGray
-            Line (r.b.x, r.a.y)-(r.b.x, r.b.y - 1), DimGray
+            Line (r.a.x, r.a.y)-(r.b.x - 1, r.a.y), &HFFD3D3D3
+            Line (r.a.x, r.a.y)-(r.a.x, r.b.y - 1), &HFFD3D3D3
+            Line (r.a.x, r.b.y)-(r.b.x, r.b.y), &HFF696969
+            Line (r.b.x, r.a.y)-(r.b.x, r.b.y - 1), &HFF696969
         End If
 
-        Line (r.a.x + 1, r.a.y + 1)-(r.b.x - 1, r.b.y - 1), Gray, BF
+        Line (r.a.x + 1, r.a.y + 1)-(r.b.x - 1, r.b.y - 1), &HFF808080, BF
     End Sub
 
 
     ' This routine ties the whole update system and makes everything go
     Sub WidgetUpdate
-        Static blinkTick As Integer64 ' stores the last blink tick (oooh!)
+        Static blinkTick As _Integer64 ' stores the last blink tick (oooh!)
         Shared Widget() As WidgetType
         Shared WidgetManager As WidgetManagerType
         Shared InputManager As InputManagerType
-        Dim h As Long, r As RectangleType, currentTick As Integer64
+        Dim h As Long, r As RectangleType, currentTick As _Integer64
 
         InputManagerUpdate ' We will gather input even if there are no widgets
 
@@ -162,15 +162,15 @@ $If IMGUI_BAS = UNDEFINED Then
 
     Sub InputManagerUpdate
         Shared InputManager As InputManagerType
-        Static As Byte mouseLeftButtonDown, mouseRightButtonDown ' keeps track if the mouse buttons were held down
+        Static As _Byte mouseLeftButtonDown, mouseRightButtonDown ' keeps track if the mouse buttons were held down
 
         ' Collect mouse input
-        Do While MouseInput
-            InputManager.mousePosition.x = MouseX
-            InputManager.mousePosition.y = MouseY
+        Do While _MouseInput
+            InputManager.mousePosition.x = _MouseX
+            InputManager.mousePosition.y = _MouseY
 
-            InputManager.mouseLeftButton = MouseButton(1)
-            InputManager.mouseRightButton = MouseButton(2)
+            InputManager.mouseLeftButton = _MouseButton(1)
+            InputManager.mouseRightButton = _MouseButton(2)
 
             ' Check if the left button were previously held down and update the up position if released
             If Not InputManager.mouseLeftButton And mouseLeftButtonDown Then
@@ -202,7 +202,7 @@ $If IMGUI_BAS = UNDEFINED Then
         Loop
 
         ' Get keyboard input from the keyboard buffer
-        InputManager.keyCode = KeyHit
+        InputManager.keyCode = _KeyHit
     End Sub
 
 
@@ -386,7 +386,7 @@ $If IMGUI_BAS = UNDEFINED Then
 
         If Widget(h).inUse Then ' last one in use?
             h = h + 1 ' use next handle
-            ReDim Preserve Widget(1 To h) As WidgetType ' increase array size
+            ReDim _Preserve Widget(1 To h) As WidgetType ' increase array size
         End If
 
         Dim temp As WidgetType
@@ -419,7 +419,7 @@ $If IMGUI_BAS = UNDEFINED Then
 
 
     ' Creates a new button
-    Function PushButtonNew& (text As String, x As Long, y As Long, w As Unsigned Long, h As Unsigned Long, toggleButton As Byte)
+    Function PushButtonNew& (text As String, x As Long, y As Long, w As _Unsigned Long, h As _Unsigned Long, toggleButton As _Byte)
         Shared Widget() As WidgetType
         Dim b As Long
 
@@ -440,7 +440,7 @@ $If IMGUI_BAS = UNDEFINED Then
 
 
     ' Create a new input box
-    Function TextBoxNew& (text As String, x As Long, y As Long, w As Unsigned Long, h As Unsigned Long, flags As Unsigned Long)
+    Function TextBoxNew& (text As String, x As Long, y As Long, w As _Unsigned Long, h As _Unsigned Long, flags As _Unsigned Long)
         Shared Widget() As WidgetType
 
         Dim t As Long ' the new handle number
@@ -458,7 +458,7 @@ $If IMGUI_BAS = UNDEFINED Then
         Widget(t).flags = flags ' store the flags
         Widget(t).txt.textPosition = 1 ' set the cursor at the beginning of the input line
         Widget(t).txt.boxPosition = 1
-        Widget(t).txt.boxTextLength = (w - PrintWidth("W") * 2) \ PrintWidth("W") ' calculate the number of character we can show at a time
+        Widget(t).txt.boxTextLength = (w - _PrintWidth("W") * 2) \ _PrintWidth("W") ' calculate the number of character we can show at a time
         Widget(t).txt.boxStartCharacter = 1
         Widget(t).txt.insertMode = TRUE ' initial insert mode to insert
 
@@ -467,7 +467,7 @@ $If IMGUI_BAS = UNDEFINED Then
 
 
     ' Hides / shows a widget on screen
-    Sub WidgetVisible (handle As Long, visible As Byte)
+    Sub WidgetVisible (handle As Long, visible As _Byte)
         Shared Widget() As WidgetType
 
         If UBound(Widget) = NULL Then Exit Sub
@@ -495,7 +495,7 @@ $If IMGUI_BAS = UNDEFINED Then
 
 
     ' Sets all active widget to visible or invisible
-    Sub WidgetVisibleAll (visible As Byte)
+    Sub WidgetVisibleAll (visible As _Byte)
         Shared Widget() As WidgetType
 
         If UBound(Widget) = NULL Then Exit Sub ' leave if nothing is active
@@ -509,7 +509,7 @@ $If IMGUI_BAS = UNDEFINED Then
 
 
     ' Hides / shows a widget on screen
-    Sub WidgetDisabled (handle As Long, disabled As Byte)
+    Sub WidgetDisabled (handle As Long, disabled As _Byte)
         Shared Widget() As WidgetType
 
         If UBound(Widget) = NULL Then Exit Sub
@@ -653,7 +653,7 @@ $If IMGUI_BAS = UNDEFINED Then
     End Function
 
 
-    Sub PushButtonDepressed (handle As Long, depressed As Byte)
+    Sub PushButtonDepressed (handle As Long, depressed As _Byte)
         Shared Widget() As WidgetType
 
         If UBound(Widget) = NULL Then Exit Sub
@@ -699,7 +699,7 @@ $If IMGUI_BAS = UNDEFINED Then
         Shared Widget() As WidgetType
         Shared WidgetManager As WidgetManagerType
         Shared InputManager As InputManagerType
-        Dim r As RectangleType, clicked As Byte
+        Dim r As RectangleType, clicked As _Byte
 
         ' Find the bounding box
         RectangleCreate Widget(WidgetManager.current).position, Widget(WidgetManager.current).size, r
@@ -925,16 +925,16 @@ $If IMGUI_BAS = UNDEFINED Then
         Shared Widget() As WidgetType
         Shared WidgetManager As WidgetManagerType
         Shared InputManager As InputManagerType
-        Dim r As RectangleType, depressed As Byte, textColor As Unsigned Long
+        Dim r As RectangleType, depressed As _Byte, textColor As _Unsigned Long
 
         ' Create the bounding box for the widget
         RectangleCreate Widget(handle).position, Widget(handle).size, r
 
         If Widget(handle).disabled Then ' Draw a widget with dull colors and disregard any user interaction
-            textColor = DarkGray
+            textColor = &HFFA9A9A9
             depressed = Widget(handle).cmd.depressed
         Else
-            textColor = Black
+            textColor = &HFF000000
 
             ' Flip depressed state if mouse was clicked and is being held inside the bounding box
             If (InputManager.mouseLeftButton Or InputManager.mouseRightButton) And PointCollidesWithRectangle(InputManager.mousePosition, r) And (PointCollidesWithRectangle(InputManager.mouseLeftButtonClickedRectangle.a, r) Or PointCollidesWithRectangle(InputManager.mouseRightButtonClickedRectangle.a, r)) Then
@@ -946,15 +946,15 @@ $If IMGUI_BAS = UNDEFINED Then
 
         ' Draw now
         WidgetDrawBox3D r, depressed
-        Color textColor, Gray ' disabled text color
+        Color textColor, &HFF808080 ' disabled text color
         If depressed Then
-            PrintString (1 + Widget(handle).position.x + Widget(handle).size.x \ 2 - PrintWidth(Widget(handle).text) \ 2, 1 + Widget(handle).position.y + Widget(handle).size.y \ 2 - FontHeight \ 2), Widget(handle).text
+            _PrintString (1 + Widget(handle).position.x + Widget(handle).size.x \ 2 - _PrintWidth(Widget(handle).text) \ 2, 1 + Widget(handle).position.y + Widget(handle).size.y \ 2 - _FontHeight \ 2), Widget(handle).text
         Else
-            PrintString (Widget(handle).position.x + Widget(handle).size.x \ 2 - PrintWidth(Widget(handle).text) \ 2, Widget(handle).position.y + Widget(handle).size.y \ 2 - FontHeight \ 2), Widget(handle).text
+            _PrintString (Widget(handle).position.x + Widget(handle).size.x \ 2 - _PrintWidth(Widget(handle).text) \ 2, Widget(handle).position.y + Widget(handle).size.y \ 2 - _FontHeight \ 2), Widget(handle).text
         End If
 
         ' Draw a decorated box inside the bounding box if the button is focused
-        If handle = WidgetManager.current And WidgetManager.focusBlink Then Line (r.a.x + 4, r.a.y + 4)-(r.b.x - 4, r.b.y - 4), Black, B , &B1100110011001100
+        If handle = WidgetManager.current And WidgetManager.focusBlink Then Line (r.a.x + 4, r.a.y + 4)-(r.b.x - 4, r.b.y - 4), &HFF000000, B , &B1100110011001100
     End Sub
 
 
@@ -964,15 +964,15 @@ $If IMGUI_BAS = UNDEFINED Then
     Sub __TextBoxDraw (handle As Long)
         Shared Widget() As WidgetType
         Shared WidgetManager As WidgetManagerType
-        Dim visibleText As String, r As RectangleType, textColor As Unsigned Long, textY As Long
+        Dim visibleText As String, r As RectangleType, textColor As _Unsigned Long, textY As Long
 
         RectangleCreate Widget(handle).position, Widget(handle).size, r ' create the bounding box for the widget
 
         ' Draw a widget with dull colors if disabled
         If Widget(handle).disabled Then
-            textColor = DarkGray
+            textColor = &HFFA9A9A9
         Else
-            textColor = Black
+            textColor = &HFF000000
         End If
 
         ' Draw the depressed box first
@@ -982,33 +982,32 @@ $If IMGUI_BAS = UNDEFINED Then
         visibleText = Mid$(Widget(handle).text, Widget(handle).txt.boxStartCharacter, Widget(handle).txt.boxTextLength)
 
         ' Calculate the Y position of the text in the box
-        textY = 2 + Widget(handle).position.y + (Widget(handle).size.y - 4) \ 2 - FontHeight \ 2
+        textY = 2 + Widget(handle).position.y + (Widget(handle).size.y - 4) \ 2 - _FontHeight \ 2
 
         ' Draw the text over the box
-        Color textColor, Gray
+        Color textColor, &HFF808080
         If Widget(handle).flags And TEXT_BOX_PASSWORD Then
-            PrintString (2 + Widget(handle).position.x, textY), String$(Widget(handle).txt.boxTextLength, Chr$(7))
+            _PrintString (2 + Widget(handle).position.x, textY), String$(Widget(handle).txt.boxTextLength, Chr$(7))
         Else
-            PrintString (2 + Widget(handle).position.x, textY), visibleText
+            _PrintString (2 + Widget(handle).position.x, textY), visibleText
         End If
 
         ' Draw the cursor only if below conditions are met
         If handle = WidgetManager.current And WidgetManager.focusBlink And Not Widget(handle).disabled Then
             Dim charHeight As Long, charWidth As Long, curPosX As Long
 
-            charHeight = FontHeight ' get the font height
-            charWidth = FontWidth
-            If charWidth = 0 Then charWidth = PrintWidth("X")
+            charHeight = _FontHeight ' get the font height
+            charWidth = _FontWidth
+            If charWidth = 0 Then charWidth = _PrintWidth("X")
 
             curPosX = 2 + Widget(handle).position.x + (charWidth * (Widget(handle).txt.boxPosition - 1))
             If Widget(handle).txt.insertMode Then
-                Line (curPosX, textY + charHeight - 4)-(curPosX + charWidth - 1, textY + charHeight - 1), Black, BF
+                Line (curPosX, textY + charHeight - 4)-(curPosX + charWidth - 1, textY + charHeight - 1), &HFF000000, BF
             Else
-                Line (curPosX, textY)-(curPosX + charWidth - 1, textY + charHeight - 1), Black, BF
+                Line (curPosX, textY)-(curPosX + charWidth - 1, textY + charHeight - 1), &HFF000000, BF
             End If
         End If
     End Sub
-
     '-----------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------

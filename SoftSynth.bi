@@ -29,13 +29,13 @@ $If SOFTSYNTH_BI = UNDEFINED Then
     ' USER DEFINED TYPES
     '-----------------------------------------------------------------------------------------------------
     Type SoftSynthType
-        voices As Unsigned Byte ' Number of mixer voices requested
-        samples As Unsigned Byte ' Number of samples slots requested
+        voices As _Unsigned _Byte ' Number of mixer voices requested
+        samples As _Unsigned _Byte ' Number of samples slots requested
         mixerRate As Long ' This is always set by QB64 internal audio engine
         soundHandle As Long ' QB64 sound pipe that we will use to stream the mixed audio
         volume As Single ' Global volume (0 - 255) (fp32)
-        useHQMixer As Byte ' If this is set to true, then we are using linear interpolation mixing
-        activeVoices As Unsigned Byte ' Just a count of voices we really mixed
+        useHQMixer As _Byte ' If this is set to true, then we are using linear interpolation mixing
+        activeVoices As _Unsigned _Byte ' Just a count of voices we really mixed
     End Type
 
     Type VoiceType
@@ -44,7 +44,7 @@ $If SOFTSYNTH_BI = UNDEFINED Then
         panning As Single ' Position 0 is leftmost ... 255 is rightmost (fp32)
         pitch As Single ' Sample pitch. The mixer code uses this to step through the sample correctly (fp32)
         position As Single ' Where are we in the sample buffer (fp32)
-        playType As Unsigned Byte ' How should the sample be played
+        playType As _Unsigned _Byte ' How should the sample be played
         startPosition As Single ' Start poistion. This can be loop start or just start depending on play type
         endPosition As Single ' End position. This can be loop end or just end depending on play type
     End Type
@@ -61,4 +61,3 @@ $If SOFTSYNTH_BI = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------
-

@@ -18,14 +18,14 @@ $If BASE64_BAS = UNDEFINED Then
     ' Convert a normal string to a base64 string
     Function EncodeBase64$ (s As String)
         Dim As String buffer, result
-        Dim As Unsigned Long i
+        Dim As _Unsigned Long i
 
         For i = 1 To Len(s)
             buffer = buffer + Chr$(Asc(s, i))
             If Len(buffer) = 3 Then
-                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShR(Asc(buffer, 1), 2))))
-                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShL((Asc(buffer, 1) And 3), 4) Or ShR(Asc(buffer, 2), 4))))
-                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShL((Asc(buffer, 2) And 15), 2) Or ShR(Asc(buffer, 3), 6))))
+                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShR(Asc(buffer, 1), 2))))
+                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShL((Asc(buffer, 1) And 3), 4) Or _ShR(Asc(buffer, 2), 4))))
+                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShL((Asc(buffer, 2) And 15), 2) Or _ShR(Asc(buffer, 3), 6))))
                 result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (Asc(buffer, 3) And 63)))
                 buffer = NULLSTRING
             End If
@@ -33,13 +33,13 @@ $If BASE64_BAS = UNDEFINED Then
 
         ' Add padding
         If Len(buffer) > 0 Then
-            result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShR(Asc(buffer, 1), 2))))
+            result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShR(Asc(buffer, 1), 2))))
             If Len(buffer) = 1 Then
-                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShL(Asc(buffer, 1) And 3, 4))))
+                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShL(Asc(buffer, 1) And 3, 4))))
                 result = result + "=="
             Else
-                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShL((Asc(buffer, 1) And 3), 4) Or ShR(Asc(buffer, 2), 4))))
-                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (ShL(Asc(buffer, 2) And 15, 2))))
+                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShL((Asc(buffer, 1) And 3), 4) Or _ShR(Asc(buffer, 2), 4))))
+                result = result + Chr$(Asc(__BASE64_CHARACTERS, 1 + (_ShL(Asc(buffer, 2) And 15, 2))))
                 result = result + "="
             End If
         End If
@@ -51,15 +51,15 @@ $If BASE64_BAS = UNDEFINED Then
     ' Convert a base64 string to a normal string
     Function DecodeBase64$ (s As String)
         Dim As String buffer, result
-        Dim As Unsigned Long i
-        Dim As Unsigned Byte char1, char2, char3, char4
+        Dim As _Unsigned Long i
+        Dim As _Unsigned _Byte char1, char2, char3, char4
 
         For i = 1 To Len(s) Step 4
             char1 = InStr(__BASE64_CHARACTERS, Chr$(Asc(s, i))) - 1
             char2 = InStr(__BASE64_CHARACTERS, Chr$(Asc(s, i + 1))) - 1
             char3 = InStr(__BASE64_CHARACTERS, Chr$(Asc(s, i + 2))) - 1
             char4 = InStr(__BASE64_CHARACTERS, Chr$(Asc(s, i + 3))) - 1
-            buffer = Chr$(ShL(char1, 2) Or ShR(char2, 4)) + Chr$(ShL(char2 And 15, 4) Or ShR(char3, 2)) + Chr$(ShL(char3 And 3, 6) Or char4)
+            buffer = Chr$(_ShL(char1, 2) Or _ShR(char2, 4)) + Chr$(_ShL(char2 And 15, 4) Or _ShR(char3, 2)) + Chr$(_ShL(char3 And 3, 6) Or char4)
 
             result = result + buffer
         Next
@@ -84,8 +84,8 @@ $If BASE64_BAS = UNDEFINED Then
     '       Dim buffer As String
     '       buffer = LoadResource   ' buffer will now hold the contents of the file
     Function LoadResource$
-        Dim As Unsigned Long ogSize, resSize
-        Dim As Byte isCompressed
+        Dim As _Unsigned Long ogSize, resSize
+        Dim As _Byte isCompressed
 
         Read ogSize, resSize, isCompressed ' read the header
 
@@ -102,7 +102,7 @@ $If BASE64_BAS = UNDEFINED Then
 
         ' Expand the data if needed
         If isCompressed Then
-            result = Inflate$(buffer, ogSize)
+            result = _Inflate$(buffer, ogSize)
         Else
             result = buffer
         End If
@@ -112,4 +112,3 @@ $If BASE64_BAS = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
-

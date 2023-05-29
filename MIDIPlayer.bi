@@ -35,10 +35,10 @@ $If MIDIPLAYER_BI = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
     ' QB64 specific stuff
     Type __MIDI_PlayerType
-        isPaused As Byte ' set to true if tune is paused
-        soundBuffer As MEM ' this is the buffer that holds the rendered samples from the library
-        soundBufferFrames As Unsigned Long ' size of the render buffer in frames
-        soundBufferBytes As Unsigned Long ' size of the render buffer in bytes
+        isPaused As _Byte ' set to true if tune is paused
+        soundBuffer As _MEM ' this is the buffer that holds the rendered samples from the library
+        soundBufferFrames As _Unsigned Long ' size of the render buffer in frames
+        soundBufferBytes As _Unsigned Long ' size of the render buffer in bytes
         soundHandle As Long ' the sound pipe that we wll use to play the rendered samples
     End Type
     '-------------------------------------------------------------------------------------------------------------------
@@ -49,16 +49,16 @@ $If MIDIPLAYER_BI = UNDEFINED Then
     ' Anything with a '__' prefix is not supposed to be called directly
     ' There are QB64 wrappers for these functions
     Declare CustomType Library "MIDIPlayer"
-        Function __MIDI_Initialize%% (ByVal sampleRate As Unsigned Long, Byval useOPL3 As Byte)
+        Function __MIDI_Initialize%% (ByVal sampleRate As _Unsigned Long, Byval useOPL3 As _Byte)
         Function MIDI_IsInitialized%%
         Sub __MIDI_Finalize
         Function __MIDI_LoadTuneFromFile%% (filename As String)
-        Function __MIDI_LoadTuneFromMemory%% (buffer As String, Byval size As Unsigned Long)
+        Function __MIDI_LoadTuneFromMemory%% (buffer As String, Byval size As _Unsigned Long)
         Function MIDI_IsTuneLoaded%%
         Sub MIDI_Play
         Sub MIDI_Stop
         Function MIDI_IsPlaying%%
-        Sub MIDI_Loop (ByVal isLooping As Byte)
+        Sub MIDI_Loop (ByVal isLooping As _Byte)
         Function MIDI_IsLooping%%
         Function MIDI_GetVolume!
         Sub MIDI_SetVolume (ByVal volume As Single)
@@ -66,7 +66,7 @@ $If MIDIPLAYER_BI = UNDEFINED Then
         Function MIDI_GetCurrentTime#
         Function MIDI_GetActiveVoices~&
         Function MIDI_IsFMSynthesis%%
-        Sub __MIDI_Render (ByVal buffer As Offset, Byval size As Unsigned Long)
+        Sub __MIDI_Render (ByVal buffer As _Offset, Byval size As _Unsigned Long)
     End Declare
     '-------------------------------------------------------------------------------------------------------------------
 

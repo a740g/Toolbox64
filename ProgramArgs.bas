@@ -70,9 +70,9 @@ $If PROGRAMARGS_BAS = UNDEFINED Then
     ' argumentIndex is the index where the function should check
     ' Returns the ASCII value of the argument name found at index. 0 if something else was found. -1 if end of list was reached
     Function GetProgramArgument% (arguments As String, argumentIndex As Long)
-        Dim currentArgument As String, argument As Unsigned Byte
+        Dim currentArgument As String, argument As _Unsigned _Byte
 
-        If argumentIndex > CommandCount Then ' we've reached the end
+        If argumentIndex > _CommandCount Then ' we've reached the end
             GetProgramArgument = -1 ' signal end of arguments
             Exit Function
         End If
@@ -82,7 +82,7 @@ $If PROGRAMARGS_BAS = UNDEFINED Then
         If Len(currentArgument) = 2 Then ' proceed only if we have 2 characters at index
             argument = Asc(currentArgument, 2)
 
-            If (KEY_SLASH = Asc(currentArgument, 1) Or KEY_MINUS = Asc(currentArgument, 1)) And Not FileExists(currentArgument) And Not DirExists(currentArgument) And InStr(arguments, Chr$(argument)) > 0 Then
+            If (KEY_SLASH = Asc(currentArgument, 1) Or KEY_MINUS = Asc(currentArgument, 1)) And Not _FileExists(currentArgument) And Not _DirExists(currentArgument) And InStr(arguments, Chr$(argument)) > 0 Then
                 GetProgramArgument = argument ' return the argument name
                 Exit Function ' avoid "unknown" path below
             End If
@@ -94,15 +94,15 @@ $If PROGRAMARGS_BAS = UNDEFINED Then
 
     ' Checks if a parameter is present in the command line
     ' Returns the position of the argument or -1 if it was not found
-    Function GetProgramArgumentIndex& (argument As Unsigned Byte)
+    Function GetProgramArgumentIndex& (argument As _Unsigned _Byte)
         Dim i As Long, currentArgument As String
 
-        For i = 1 To CommandCount
+        For i = 1 To _CommandCount
             currentArgument = Command$(i)
 
             If Len(currentArgument) = 2 Then ' proceed only if we have 2 characters at index
 
-                If (KEY_SLASH = Asc(currentArgument, 1) Or KEY_MINUS = Asc(currentArgument, 1)) And Not FileExists(currentArgument) And Not DirExists(currentArgument) And Asc(currentArgument, 2) = argument Then
+                If (KEY_SLASH = Asc(currentArgument, 1) Or KEY_MINUS = Asc(currentArgument, 1)) And Not _FileExists(currentArgument) And Not _DirExists(currentArgument) And Asc(currentArgument, 2) = argument Then
                     GetProgramArgumentIndex = i
                     Exit Function
                 End If
@@ -120,4 +120,3 @@ $If PROGRAMARGS_BAS = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
-

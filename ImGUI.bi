@@ -53,18 +53,18 @@ $If IMGUI_BI = UNDEFINED Then
     Type InputManagerType ' simple input manager
         keyCode As Long ' buffer keyboard input
         mousePosition As Vector2DType ' mouse position
-        mouseLeftButton As Byte ' mouse left button down
-        mouseRightButton As Byte ' mouse right button down
-        mouseLeftClicked As Byte ' If this true mouseLeftButtonClickedRectangle is the rectangle where the click happened
+        mouseLeftButton As _Byte ' mouse left button down
+        mouseRightButton As _Byte ' mouse right button down
+        mouseLeftClicked As _Byte ' If this true mouseLeftButtonClickedRectangle is the rectangle where the click happened
         mouseLeftButtonClickedRectangle As RectangleType ' the rectangle where the mouse left button was clicked
-        mouseRightClicked As Byte ' If this true mouseRightButtonClickedRectangle is the rectangle where the click happened
+        mouseRightClicked As _Byte ' If this true mouseRightButtonClickedRectangle is the rectangle where the click happened
         mouseRightButtonClickedRectangle As RectangleType ' the rectangle where the mouse left button was clicked
     End Type
 
     Type WidgetManagerType ' widget state information
         forced As Long ' widget that is forced to get focus
         current As Long ' current widget that has focus
-        focusBlink As Byte ' should the focused widget "blink"
+        focusBlink As _Byte ' should the focused widget "blink"
     End Type
 
     Type TextBoxType ' text box specific stuff
@@ -72,23 +72,23 @@ $If IMGUI_BI = UNDEFINED Then
         boxPosition As Long ' cursor character position in the box
         boxTextLength As Long ' how much charcters will be visible in the box
         boxStartCharacter As Long ' starting visible character
-        insertMode As Byte ' current cursor insert mode (-1 = INSERT, 0 = OVERWRITE)
-        entered As Byte ' ENTER has been pressed on this input field (T/F)
+        insertMode As _Byte ' current cursor insert mode (-1 = INSERT, 0 = OVERWRITE)
+        entered As _Byte ' ENTER has been pressed on this input field (T/F)
     End Type
 
     Type PushButtonType ' push button specific stuff
-        depressed As Byte ' state of button (down or up)
+        depressed As _Byte ' state of button (down or up)
     End Type
 
     Type WidgetType
-        inUse As Byte ' is this widget in use?
-        visible As Byte ' is this widget visible on screen?
-        disabled As Byte ' is the widget disabled?
+        inUse As _Byte ' is this widget in use?
+        visible As _Byte ' is this widget visible on screen?
+        disabled As _Byte ' is the widget disabled?
         position As Vector2DType ' position of the widget on the screen
         size As Vector2DType ' size of the widget on the screen
         text As String ' text associated with the widget
-        changed As Byte ' true if the text was changed somehow
-        clicked As Byte ' was the widget pressed / clicked?
+        changed As _Byte ' true if the text was changed somehow
+        clicked As _Byte ' was the widget pressed / clicked?
         flags As Long ' widget flags
         ' Type of widget
         class As Long

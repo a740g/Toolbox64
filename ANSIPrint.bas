@@ -47,32 +47,32 @@ $If ANSIPRINT_BAS = UNDEFINED Then
     ' Initializes library global variables and tables and then sets the init flag to true
     Sub InitializeANSIEmulator
         Shared __ANSIEmu As ANSIEmulatorType
-        Shared __ANSIColorLUT() As Unsigned Long
+        Shared __ANSIColorLUT() As _Unsigned Long
         Shared __ANSIArg() As Long
 
         If __ANSIEmu.isInitialized Then Exit Sub ' leave if we have already initialized
 
-        If PixelSize < 4 Then Error ERROR_FEATURE_UNAVAILABLE ' we only support rendering to 32bpp images
+        If _PixelSize < 4 Then Error ERROR_FEATURE_UNAVAILABLE ' we only support rendering to 32bpp images
 
         Dim As Long c, i, r, g, b
 
         ' The first 16 are the standard 16 ANSI colors (VGA style)
-        __ANSIColorLUT(0) = Black ' exact match
-        __ANSIColorLUT(1) = RGB32(170, 0, 0) '  1 red
-        __ANSIColorLUT(2) = RGB32(0, 170, 0) '  2 green
-        __ANSIColorLUT(3) = RGB32(170, 85, 0) '  3 yellow (not really yellow; oh well)
-        __ANSIColorLUT(4) = RGB32(0, 0, 170) '  4 blue
-        __ANSIColorLUT(5) = RGB32(170, 0, 170) '  5 magenta
-        __ANSIColorLUT(6) = RGB32(0, 170, 170) '  6 cyan
-        __ANSIColorLUT(7) = DarkGray ' white (well VGA defines this as (170, 170, 170); darkgray is (169, 169, 169); so we are super close)
-        __ANSIColorLUT(8) = RGB32(85, 85, 85) '  8 grey
-        __ANSIColorLUT(9) = RGB32(255, 85, 85) '  9 bright red
-        __ANSIColorLUT(10) = RGB32(85, 255, 85) ' 10 bright green
-        __ANSIColorLUT(11) = RGB32(255, 255, 85) ' 11 bright yellow
-        __ANSIColorLUT(12) = RGB32(85, 85, 255) ' 12 bright blue
-        __ANSIColorLUT(13) = RGB32(255, 85, 255) ' 13 bright magenta
-        __ANSIColorLUT(14) = RGB32(85, 255, 255) ' 14 bright cyan
-        __ANSIColorLUT(15) = White ' exact match
+        __ANSIColorLUT(0) = _RGB32(0, 0, 0) ' 0 black
+        __ANSIColorLUT(1) = _RGB32(170, 0, 0) '  1 red
+        __ANSIColorLUT(2) = _RGB32(0, 170, 0) '  2 green
+        __ANSIColorLUT(3) = _RGB32(170, 85, 0) '  3 yellow (not really yellow; oh well)
+        __ANSIColorLUT(4) = _RGB32(0, 0, 170) '  4 blue
+        __ANSIColorLUT(5) = _RGB32(170, 0, 170) '  5 magenta
+        __ANSIColorLUT(6) = _RGB32(0, 170, 170) '  6 cyan
+        __ANSIColorLUT(7) = _RGB32(170, 170, 170) ' white
+        __ANSIColorLUT(8) = _RGB32(85, 85, 85) '  8 grey
+        __ANSIColorLUT(9) = _RGB32(255, 85, 85) '  9 bright red
+        __ANSIColorLUT(10) = _RGB32(85, 255, 85) ' 10 bright green
+        __ANSIColorLUT(11) = _RGB32(255, 255, 85) ' 11 bright yellow
+        __ANSIColorLUT(12) = _RGB32(85, 85, 255) ' 12 bright blue
+        __ANSIColorLUT(13) = _RGB32(255, 85, 255) ' 13 bright magenta
+        __ANSIColorLUT(14) = _RGB32(85, 255, 255) ' 14 bright cyan
+        __ANSIColorLUT(15) = _RGB32(255, 255, 255) ' 15 bright white
 
         ' The next 216 colors (16-231) are formed by a 3bpc RGB value offset by 16, packed into a single value
         For c = 16 To 231
@@ -85,13 +85,13 @@ $If ANSIPRINT_BAS = UNDEFINED Then
             i = ((c - 16) \ 1) Mod 6
             If i = 0 Then b = 0 Else b = (14135 + 10280 * i) \ 256
 
-            __ANSIColorLUT(c) = RGB32(r, g, b)
+            __ANSIColorLUT(c) = _RGB32(r, g, b)
         Next
 
         ' The final 24 colors (232-255) are grayscale starting from a shade slighly lighter than black, ranging up to shade slightly darker than white
         For c = 232 To 255
             g = (2056 + 2570 * (c - 232)) \ 256
-            __ANSIColorLUT(c) = RGB32(g, g, g)
+            __ANSIColorLUT(c) = _RGB32(g, g, g)
         Next
 
         ReDim __ANSIArg(1 To UBound(__ANSIArg)) As Long ' reset the CSI arg list
@@ -117,7 +117,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
 
         __ANSIEmu.CPS = 0 ' disable any speed control
 
-        ControlChr On ' get assist from QB64's control character handling (only for tabs; we are pretty much doing the rest ourselves)
+        _ControlChr On ' get assist from QB64's control character handling (only for tabs; we are pretty much doing the rest ourselves)
 
         __ANSIEmu.isInitialized = TRUE ' set to true to indicate init is done
     End Sub
@@ -142,7 +142,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
 
 
     ' Processes a single byte and decides what to do with it based on the current emulation state
-    Function PrintANSICharacter& (ch As Unsigned Byte)
+    Function PrintANSICharacter& (ch As _Unsigned _Byte)
         Shared __ANSIEmu As ANSIEmulatorType
         Shared __ANSIArg() As Long
 
@@ -180,24 +180,24 @@ $If ANSIPRINT_BAS = UNDEFINED Then
                         __ANSIEmu.state = ANSI_STATE_BEGIN ' beginning a new escape sequence
 
                     Case ANSI_RS, ANSI_US ' QB64 does non-ANSI stuff with these two when ControlChar is On
-                        ControlChr Off
+                        _ControlChr Off
                         Print Chr$(ch); ' print escaped ESC character
-                        ControlChr On
-                        If __ANSIEmu.CPS > 0 Then Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
+                        _ControlChr On
+                        If __ANSIEmu.CPS > 0 Then _Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
 
                     Case Else ' print the character
                         Print Chr$(ch);
-                        If __ANSIEmu.CPS > 0 Then Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
+                        If __ANSIEmu.CPS > 0 Then _Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
 
                 End Select
 
             Case ANSI_STATE_BEGIN ' handle escape sequence
                 Select Case ch
                     Case Is < ANSI_SP ' handle escaped character
-                        ControlChr Off
+                        _ControlChr Off
                         Print Chr$(ch); ' print escaped ESC character
-                        ControlChr On
-                        If __ANSIEmu.CPS > 0 Then Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
+                        _ControlChr On
+                        If __ANSIEmu.CPS > 0 Then _Limit __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
                         __ANSIEmu.state = ANSI_STATE_TEXT
 
                     Case ANSI_ESC_DECSC ' Save Cursor Position in Memory
@@ -236,7 +236,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
 
                             Case ANSI_SEMICOLON ' handle sequence argument seperators
                                 __ANSIEmu.argIndex = __ANSIEmu.argIndex + 1 ' increment the argument index
-                                If __ANSIEmu.argIndex > UBound(__ANSIArg) Then ReDim Preserve __ANSIArg(1 To __ANSIEmu.argIndex) As Long ' dynamically expand the argument list if needed
+                                If __ANSIEmu.argIndex > UBound(__ANSIArg) Then ReDim _Preserve __ANSIArg(1 To __ANSIEmu.argIndex) As Long ' dynamically expand the argument list if needed
 
                             Case ANSI_EQUALS_SIGN, ANSI_GREATER_THAN_SIGN, ANSI_QUESTION_MARK ' handle lead-in prefix
                                 ' NOP: leadInPrefix = ch ' just save the prefix type
@@ -387,7 +387,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
                                             z = __ANSIEmu.argIndex - x ' get the number of arguments remaining
 
                                             If __ANSIArg(x + 1) = 2 And z >= 4 Then ' 32bpp color with 5 arguments
-                                                __ANSIEmu.fC = RGB32(__ANSIArg(x + 2) And &HFF, __ANSIArg(x + 3) And &HFF, __ANSIArg(x + 4) And &HFF)
+                                                __ANSIEmu.fC = _RGB32(__ANSIArg(x + 2) And &HFF, __ANSIArg(x + 3) And &HFF, __ANSIArg(x + 4) And &HFF)
                                                 SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, FALSE
 
                                                 x = x + 4 ' skip to last used arg
@@ -416,7 +416,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
                                             z = __ANSIEmu.argIndex - x ' get the number of arguments remaining
 
                                             If __ANSIArg(x + 1) = 2 And z >= 4 Then ' 32bpp color with 5 arguments
-                                                __ANSIEmu.bC = RGB32(__ANSIArg(x + 2) And &HFF, __ANSIArg(x + 3) And &HFF, __ANSIArg(x + 4) And &HFF)
+                                                __ANSIEmu.bC = _RGB32(__ANSIArg(x + 2) And &HFF, __ANSIArg(x + 3) And &HFF, __ANSIArg(x + 4) And &HFF)
                                                 SetANSICanvasColor __ANSIEmu.bC, Not __ANSIEmu.isInvert, FALSE
 
                                                 x = x + 4 ' skip to last used arg
@@ -466,7 +466,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
                             Case ANSI_ESC_CSI_PABLODRAW_24BPP ' PabloDraw 24-bit ANSI sequences
                                 If __ANSIEmu.argIndex <> 4 Then Error ERROR_CANNOT_CONTINUE ' we need 4 arguments
 
-                                SetANSICanvasColor RGB32(__ANSIArg(2) And &HFF, __ANSIArg(3) And &HFF, __ANSIArg(4) And &HFF), __ANSIArg(1) = FALSE, FALSE
+                                SetANSICanvasColor _RGB32(__ANSIArg(2) And &HFF, __ANSIArg(3) And &HFF, __ANSIArg(4) And &HFF), __ANSIArg(1) = FALSE, FALSE
 
                             Case ANSI_ESC_CSI_CUP, ANSI_ESC_CSI_HVP ' Cursor position or Horizontal and vertical position
                                 If __ANSIEmu.argIndex > 2 Then Error ERROR_CANNOT_CONTINUE ' was not expecting more than 2 args
@@ -625,7 +625,7 @@ $If ANSIPRINT_BAS = UNDEFINED Then
         Dim As Long oldControlChr ' to save old ContolChr
 
         ' Save the old ControlChr state
-        oldControlChr = ControlChr
+        oldControlChr = _ControlChr
 
         ResetANSIEmulator ' reset the emulator
 
@@ -633,18 +633,18 @@ $If ANSIPRINT_BAS = UNDEFINED Then
 
         ' Set ControlChr the way we found it
         If oldControlChr Then
-            ControlChr Off
+            _ControlChr Off
         Else
-            ControlChr On
+            _ControlChr On
         End If
     End Sub
 
 
     ' Set the foreground or background color
-    Sub SetANSICanvasColor (c As Unsigned Long, isBackground As Long, isLegacy As Long)
-        Shared __ANSIColorLUT() As Unsigned Long
+    Sub SetANSICanvasColor (c As _Unsigned Long, isBackground As Long, isLegacy As Long)
+        Shared __ANSIColorLUT() As _Unsigned Long
 
-        Dim nRGB As Unsigned Long
+        Dim nRGB As _Unsigned Long
 
         If isLegacy Then
             nRGB = __ANSIColorLUT(c)
@@ -664,31 +664,31 @@ $If ANSIPRINT_BAS = UNDEFINED Then
 
     ' Returns the number of characters per line
     Function GetANSICanvasWidth&
-        GetANSICanvasWidth = Width \ FontWidth ' this will cause a divide by zero if a variable width font is used; use monospaced fonts to avoid this
+        GetANSICanvasWidth = _Width \ _FontWidth ' this will cause a divide by zero if a variable width font is used; use monospaced fonts to avoid this
     End Function
 
 
     ' Returns the number of lines
     Function GetANSICanvasHeight&
-        GetANSICanvasHeight = Height \ FontHeight
+        GetANSICanvasHeight = _Height \ _FontHeight
     End Function
 
 
     ' Clears a given portion of screen without disturbing the cursor location and colors
     Sub ClearANSICanvasArea (l As Long, t As Long, r As Long, b As Long)
         Dim As Long i, w, x, y
-        Dim As Unsigned Long fc, bc
+        Dim As _Unsigned Long fc, bc
 
         w = 1 + r - l ' calculate width
 
         If w > 0 And t <= b Then ' only proceed is width is > 0 and height is > 0
             ' Save some stuff
-            fc = DefaultColor
-            bc = BackgroundColor
+            fc = _DefaultColor
+            bc = _BackgroundColor
             x = Pos(0)
             y = CsrLin
 
-            Color Black, Black ' lights out
+            Color &HFF000000, &HFF000000 ' lights out
 
             For i = t To b
                 Locate i, l: Print Space$(w); ' fill with SPACE
@@ -702,4 +702,3 @@ $If ANSIPRINT_BAS = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------------------------------------------------------------
-

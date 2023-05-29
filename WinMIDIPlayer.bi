@@ -15,20 +15,19 @@ $If WINMIDIPLAYER_BI = UNDEFINED Then
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
     Declare Library "WinMIDIPlayer"
-        Function __MIDI_PlayFromMemory%% (buffer As String, Byval bufferSize As Offset)
+        Function __MIDI_PlayFromMemory%% (buffer As String, Byval bufferSize As _Offset)
         Sub MIDI_Stop
         Function MIDI_IsPlaying%%
         Sub MIDI_Loop (ByVal loops As Long)
         Function MIDI_IsLooping%%
-        Sub MIDI_Pause (ByVal state As Byte)
+        Sub MIDI_Pause (ByVal state As _Byte)
         Function MIDI_IsPaused%%
         Sub MIDI_SetVolume (ByVal volume As Single)
         Function MIDI_GetVolume!
-        Function __Sound_PlayFromFile%% (fileName As String, Byval looping As Byte)
-        Function Sound_PlayFromMemory%% (buffer As String, Byval looping As Byte)
+        Function __Sound_PlayFromFile%% (fileName As String, Byval looping As _Byte)
+        Function Sound_PlayFromMemory%% (buffer As String, Byval looping As _Byte)
         Sub Sound_Stop
     End Declare
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
-

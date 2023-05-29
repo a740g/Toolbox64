@@ -13,29 +13,20 @@ $If COMMON_BI = UNDEFINED Then
             $Error This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
     $End If
 
-    ' We don't want an underscore prefix when writing new code. Leading underscores are ugly
-    $NoPrefix
-
     ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64
     DefLng A-Z
 
-    ' Force all arrays to be defined
-    Option ExplicitArray
+    ' Force all arrays to be defined (technically not required since we use _EXPLICIT below)
+    Option _ExplicitArray
 
     ' Force all variables to be defined
-    Option Explicit
+    Option _Explicit
 
     ' All arrays should be static. If dynamic arrays are required use "ReDim"
     '$Static
 
     ' Start array lower bound from 1. If 0 is required, then it should be explicitly specified as (0 To X)
     Option Base 1
-
-    ' We want our window to be resizeable. "Smooth" is a personal preference. Use "Stretch" if preferred
-    $Resize:Smooth
-
-    ' We want all 32bpp color constants
-    $Color:32
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------

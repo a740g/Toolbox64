@@ -22,13 +22,13 @@ $If STRINGOPS_BAS = UNDEFINED Then
     ' returnDelims - if True, then the routine will also return the delimiters in the correct position in the tokens array
     ' quoteChars - is the string containing the opening and closing "quote" characters. Should be 2 chars only or nothing
     ' Returns: the number of tokens parsed
-    Function TokenizeString& (text As String, delims As String, returnDelims As Byte, quoteChars As String, tokens() As String)
+    Function TokenizeString& (text As String, delims As String, returnDelims As _Byte, quoteChars As String, tokens() As String)
         Dim strLen As Long: strLen = Len(text)
 
         If strLen = NULL Then Exit Function ' nothing to be done
 
         Dim arrIdx As Long: arrIdx = LBound(tokens) ' we'll always start from the array lower bound - whatever it is
-        Dim insideQuote As Byte ' flag to track if currently inside a quote
+        Dim insideQuote As _Byte ' flag to track if currently inside a quote
 
         Dim token As String ' holds a token until it is ready to be added to the array
         Dim char As String * 1 ' this is a single char from text we are iterating through
@@ -63,7 +63,7 @@ $If STRINGOPS_BAS = UNDEFINED Then
 
         GoSub add_token ' add the final token if there is any
 
-        If count > NULL Then ReDim Preserve tokens(LBound(tokens) To arrIdx - 1) As String ' resize the array to the exact size
+        If count > NULL Then ReDim _Preserve tokens(LBound(tokens) To arrIdx - 1) As String ' resize the array to the exact size
 
         TokenizeString = count
 
@@ -88,13 +88,13 @@ $If STRINGOPS_BAS = UNDEFINED Then
         increment_counters_and_resize_array:
         count = count + 1 ' increment the token count
         arrIdx = arrIdx + 1 ' move to next position
-        If arrIdx > UBound(tokens) Then ReDim Preserve tokens(LBound(tokens) To UBound(tokens) + 512) As String ' resize in 512 chunks
+        If arrIdx > UBound(tokens) Then ReDim _Preserve tokens(LBound(tokens) To UBound(tokens) + 512) As String ' resize in 512 chunks
         Return
     End Function
 
 
     ' Gets a string form of the boolean value passed
-    Function BoolToStr$ (expression As Long, style As Unsigned Byte)
+    Function BoolToStr$ (expression As Long, style As _Unsigned _Byte)
         Select Case style
             Case 1
                 If expression Then BoolToStr = "On" Else BoolToStr = "Off"

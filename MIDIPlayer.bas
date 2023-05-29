@@ -47,7 +47,7 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' This basically allocate stuff on the QB64 side and initializes the underlying C library
-    Function MIDI_Initialize%% (useOPL3 As Byte)
+    Function MIDI_Initialize%% (useOPL3 As _Byte)
         Shared __MIDI_Player As __MIDI_PlayerType
 
         ' Exit if we are already initialized
@@ -58,19 +58,19 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
 
         __MIDI_Player.soundBufferFrames = RoundDownToPowerOf2(_SndRate * 0.04) ' 40 ms buffer round down to power of 2
         __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferFrames * __MIDI_SOUND_BUFFER_FRAME_SIZE ' calculate the mixer buffer size
-        __MIDI_Player.soundBuffer = MemNew(__MIDI_Player.soundBufferBytes) ' allocate the mixer buffer
+        __MIDI_Player.soundBuffer = _MemNew(__MIDI_Player.soundBufferBytes) ' allocate the mixer buffer
 
         If __MIDI_Player.soundBuffer.SIZE = 0 Then Exit Function ' exit if memory was not allocated
 
-        __MIDI_Player.soundHandle = SndOpenRaw ' allocate a sound pipe
+        __MIDI_Player.soundHandle = _SndOpenRaw ' allocate a sound pipe
 
         If __MIDI_Player.soundHandle < 1 Then
             _MemFree __MIDI_Player.soundBuffer
             Exit Function
         End If
 
-        If Not __MIDI_Initialize(SndRate, useOPL3) Then
-            SndClose __MIDI_Player.soundHandle
+        If Not __MIDI_Initialize(_SndRate, useOPL3) Then
+            _SndClose __MIDI_Player.soundHandle
             _MemFree __MIDI_Player.soundBuffer
             Exit Function
         End If
@@ -84,9 +84,9 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
         Shared __MIDI_Player As __MIDI_PlayerType
 
         If MIDI_IsInitialized Then
-            SndRawDone __MIDI_Player.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
-            SndClose __MIDI_Player.soundHandle ' close and free the QB64 sound pipe
-            MemFree __MIDI_Player.soundBuffer ' free the mixer buffer
+            _SndRawDone __MIDI_Player.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
+            _SndClose __MIDI_Player.soundHandle ' close and free the QB64 sound pipe
+            _MemFree __MIDI_Player.soundBuffer ' free the mixer buffer
             __MIDI_Finalize ' call the C side finalizer
         End If
     End Sub
@@ -105,7 +105,7 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
 
 
     ' Pause any MIDI playback
-    Sub MIDI_Pause (state As Byte)
+    Sub MIDI_Pause (state As _Byte)
         Shared __MIDI_Player As __MIDI_PlayerType
 
         If MIDI_IsTuneLoaded Then
@@ -130,17 +130,17 @@ $If MIDIPLAYER_BAS = UNDEFINED Then
         Shared __MIDI_Player As __MIDI_PlayerType
 
         ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
-        If MIDI_IsPlaying And Not __MIDI_Player.isPaused And SndRawLen(__MIDI_Player.soundHandle) < bufferTime Then
+        If MIDI_IsPlaying And Not __MIDI_Player.isPaused And _SndRawLen(__MIDI_Player.soundHandle) < bufferTime Then
             ' Clear the render buffer
-            MemFill __MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferBytes, NULL As BYTE
+            _MemFill __MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferBytes, NULL As _BYTE
 
             ' Render some samples to the buffer
             __MIDI_Render __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferBytes
 
             ' Push the samples to the sound pipe
-            Dim i As Unsigned Long
+            Dim i As _Unsigned Long
             For i = 0 To __MIDI_Player.soundBufferBytes - __MIDI_SOUND_BUFFER_SAMPLE_SIZE Step __MIDI_SOUND_BUFFER_FRAME_SIZE
-                SndRaw MemGet(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i, Single), MemGet(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i + __MIDI_SOUND_BUFFER_SAMPLE_SIZE, Single), __MIDI_Player.soundHandle
+                _SndRaw _MemGet(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i, Single), _MemGet(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i + __MIDI_SOUND_BUFFER_SAMPLE_SIZE, Single), __MIDI_Player.soundHandle
             Next
         End If
     End Sub

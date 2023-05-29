@@ -15,15 +15,15 @@ $If VGAFONT_BAS = UNDEFINED Then
     ' FUNCTIONS & SUBROUTINES
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
     ' Draws a single character at x, y using the active font
-    Sub DrawCharacter (cp As Unsigned Byte, x As Long, y As Long)
+    Sub DrawCharacter (cp As _Unsigned _Byte, x As Long, y As Long)
         $Checking:Off
         Shared __CurPSF As PSFType
         Dim As Long uy, r, t, p, bc, pm
 
         r = x + __CurPSF.size.x - 1 ' calculate right just once
 
-        bc = BackgroundColor
-        pm = PrintMode
+        bc = _BackgroundColor
+        pm = _PrintMode
 
         ' Go through the scan line one at a time
         For uy = 1 To __CurPSF.size.y
@@ -45,8 +45,8 @@ $If VGAFONT_BAS = UNDEFINED Then
         Shared __CurPSF As PSFType
         Dim As Long uy, l, r, t, p, cidx, bc, pm, cp
 
-        bc = BackgroundColor
-        pm = PrintMode
+        bc = _BackgroundColor
+        pm = _PrintMode
 
         ' We will iterate through the whole text
         For cidx = 1 To Len(text)
@@ -105,8 +105,8 @@ $If VGAFONT_BAS = UNDEFINED Then
 
 
     ' Loads a font file from disk
-    Function ReadFont%% (sFile As String, ignoreMode As Byte, psf As PSFType)
-        If FileExists(sFile) Then
+    Function ReadFont%% (sFile As String, ignoreMode As _Byte, psf As PSFType)
+        If _FileExists(sFile) Then
             Dim As Long hFile
 
             ' Open the file for reading
@@ -148,7 +148,7 @@ $If VGAFONT_BAS = UNDEFINED Then
 
     ' Changes the font height of the active font
     ' This will wipe out whatever bitmap the font already has
-    Sub SetFontHeight (h As Unsigned Byte)
+    Sub SetFontHeight (h As _Unsigned _Byte)
         Shared __CurPSF As PSFType
         __CurPSF.size.x = 8 ' the width is always 8 for PSFv1
         __CurPSF.size.y = h ' change the font height
@@ -163,87 +163,87 @@ $If VGAFONT_BAS = UNDEFINED Then
 
 
     ' Returns the entire bitmap of a glyph in a string
-    Function GetGlyphBitmap$ (cp As Unsigned Byte)
+    Function GetGlyphBitmap$ (cp As _Unsigned _Byte)
         Shared __CurPSF As PSFType
         GetGlyphBitmap = Mid$(__CurPSF.bitmap, 1 + __CurPSF.size.y * cp, __CurPSF.size.y)
     End Function
 
 
     ' Sets the entire bitmap of a glyph with bmp
-    Sub SetGlyphBitmap (cp As Unsigned Byte, bmp As String)
+    Sub SetGlyphBitmap (cp As _Unsigned _Byte, bmp As String)
         Shared __CurPSF As PSFType
         Mid$(__CurPSF.bitmap, 1 + __CurPSF.size.y * cp, __CurPSF.size.y) = bmp
     End Sub
 
 
     ' Set the glyph's bitmap to QB64's current font glyph
-    Sub SetGlyphDefaultBitmap (cp As Unsigned Byte)
+    Sub SetGlyphDefaultBitmap (cp As _Unsigned _Byte)
         Shared __CurPSF As PSFType
 
-        Dim img As Long: img = NewImage(FontWidth, FontHeight, 32)
+        Dim img As Long: img = _NewImage(_FontWidth, _FontHeight, 32)
         If img >= -1 Then Exit Sub ' leave if we failed to allocate the image
 
-        Dim dst As Long: dst = Dest ' save dest
-        Dest img ' set img as dest
+        Dim dst As Long: dst = _Dest ' save dest
+        _Dest img ' set img as dest
 
-        Dim f As Long: f = Font ' save the current font
+        Dim f As Long: f = _Font ' save the current font
 
         ' Select the best builtin font to use
         Select Case __CurPSF.size.y
             Case Is > 15
-                Font 16
+                _Font 16
 
             Case Is > 13
-                Font 14
+                _Font 14
 
             Case Else
-                Font 8
+                _Font 8
         End Select
 
-        PrintString (0, 0), Chr$(cp) ' render the glyph to our image
+        _PrintString (0, 0), Chr$(cp) ' render the glyph to our image
 
         ' Find the starting x, y on the font bitmap where we should start to render
-        Dim sx As Long: sx = __CurPSF.size.x \ 2 - FontWidth \ 2
-        Dim sy As Long: sy = __CurPSF.size.y \ 2 - FontHeight \ 2
+        Dim sx As Long: sx = __CurPSF.size.x \ 2 - _FontWidth \ 2
+        Dim sy As Long: sy = __CurPSF.size.y \ 2 - _FontHeight \ 2
 
-        Dim src As Long: src = Source ' save the old source
-        Source img ' change source to img
+        Dim src As Long: src = _Source ' save the old source
+        _Source img ' change source to img
 
         ' Copy the QB64 glyph
         Dim As Long x, y
-        For y = 0 To FontHeight - 1
-            For x = 0 To FontWidth - 1
-                SetGlyphPixel cp, sx + x, sy + y, Point(x, y) <> Black
+        For y = 0 To _FontHeight - 1
+            For x = 0 To _FontWidth - 1
+                SetGlyphPixel cp, sx + x, sy + y, Point(x, y) <> &HFF000000 ' black
             Next
         Next
 
-        Source src ' restore source
-        Font f ' restore font
-        Dest dst
-        FreeImage img ' free img
+        _Source src ' restore source
+        _Font f ' restore font
+        _Dest dst
+        _FreeImage img ' free img
     End Sub
 
 
     ' Return true if the pixel-bit at the glyphs x, y is set
-    Function GetGlyphPixel%% (cp As Unsigned Byte, x As Long, y As Long)
+    Function GetGlyphPixel%% (cp As _Unsigned _Byte, x As Long, y As Long)
         Shared __CurPSF As PSFType
 
         If x < 0 Or x >= __CurPSF.size.x Or y < 0 Or y >= __CurPSF.size.y Then Exit Function
 
-        GetGlyphPixel = ReadBit(Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
+        GetGlyphPixel = _ReadBit(Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
     End Function
 
 
     ' Sets or unsets pixel at the glyphs x, y
-    Sub SetGlyphPixel (cp As Unsigned Byte, x As Long, y As Long, b As Byte)
+    Sub SetGlyphPixel (cp As _Unsigned _Byte, x As Long, y As Long, b As _Byte)
         Shared __CurPSF As PSFType
 
         If x < 0 Or x >= __CurPSF.size.x Or y < 0 Or y >= __CurPSF.size.y Then Exit Sub
 
         If Not b Then
-            Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = ResetBit(Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
+            Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = _ResetBit(Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
         Else
-            Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = SetBit(Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
+            Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = _SetBit(Asc(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
         End If
     End Sub
 
@@ -285,4 +285,3 @@ $If VGAFONT_BAS = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------------------------------------------------------------
-

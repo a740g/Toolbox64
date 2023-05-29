@@ -114,8 +114,8 @@ $If ANSIPRINT_BI = UNDEFINED Then
         isInitialized As Long ' was the library initialized?
         state As Long ' the current parser state
         argIndex As Long ' the current CSI argument index & count; 0 means no arguments
-        fC As Unsigned Long ' foreground color
-        bC As Unsigned Long ' background color
+        fC As _Unsigned Long ' foreground color
+        bC As _Unsigned Long ' background color
         isBold As Long ' text attributes - high intensity bg color
         isBlink As Long ' text attributes - we make this high intensity as well
         isInvert As Long ' text attributes - inverted colors (fg <> bg)
@@ -129,9 +129,8 @@ $If ANSIPRINT_BI = UNDEFINED Then
     ' GLOBAL VARIABLES
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
     Dim __ANSIEmu As ANSIEmulatorType ' emulator state
-    Dim __ANSIColorLUT(0 To 255) As Unsigned Long ' this table is used to get the RGB for legacy ANSI colors
+    Dim __ANSIColorLUT(0 To 255) As _Unsigned Long ' this table is used to get the RGB for legacy ANSI colors
     ReDim __ANSIArg(1 To ANSI_ARG_COUNT) As Long ' CSI dynamic argument list
     '-----------------------------------------------------------------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------------------------------------------------------------
-

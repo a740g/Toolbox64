@@ -27,71 +27,71 @@ $If MODPLAYER_BI = UNDEFINED Then
     ' USER DEFINED TYPES
     '-----------------------------------------------------------------------------------------------------
     Type NoteType
-        note As Unsigned Byte ' Contains info on 1 note
-        sample As Unsigned Byte ' Sample number to play
-        volume As Unsigned Byte ' Volume value. Not used for MODs. 255 = no volume
-        effect As Unsigned Byte ' Effect number
-        operand As Unsigned Byte ' Effect parameters
+        note As _Unsigned _Byte ' Contains info on 1 note
+        sample As _Unsigned _Byte ' Sample number to play
+        volume As _Unsigned _Byte ' Volume value. Not used for MODs. 255 = no volume
+        effect As _Unsigned _Byte ' Effect number
+        operand As _Unsigned _Byte ' Effect parameters
     End Type
 
     Type SampleType
         sampleName As String * 22 ' Sample name or message
         length As Long ' Sample length in bytes
-        c2Spd As Unsigned Integer ' Sample finetune is converted to c2spd
-        volume As Unsigned Byte ' Volume: 0 - 64
+        c2Spd As _Unsigned Integer ' Sample finetune is converted to c2spd
+        volume As _Unsigned _Byte ' Volume: 0 - 64
         loopStart As Long ' Loop start in bytes
         loopLength As Long ' Loop length in bytes
         loopEnd As Long ' Loop end in bytes
     End Type
 
     Type ChannelType
-        sample As Unsigned Byte ' Sample number to be mixed
+        sample As _Unsigned _Byte ' Sample number to be mixed
         volume As Integer ' Channel volume. This is a signed int because we need -ve values & to clip properly
-        restart As Byte ' Set this to true to retrigger the sample
-        note As Unsigned Byte ' Last note set in channel
+        restart As _Byte ' Set this to true to retrigger the sample
+        note As _Unsigned _Byte ' Last note set in channel
         period As Long ' This is the period of the playing sample used by various effects
         lastPeriod As Long ' Last period set in channel
         startPosition As Long ' This is starting position of the sample. Usually zero else value from sample offset effect
         patternLoopRow As Integer ' This (signed) is the beginning of the loop in the pattern for effect E6x
-        patternLoopRowCounter As Unsigned Byte ' This is a loop counter for effect E6x
+        patternLoopRowCounter As _Unsigned _Byte ' This is a loop counter for effect E6x
         portamentoTo As Long ' Frequency to porta to value for E3x
-        portamentoSpeed As Unsigned Byte ' Porta speed for E3x
-        vibratoPosition As Byte ' Vibrato position in the sine table for E4x (signed)
-        vibratoSpeed As Unsigned Byte ' Vibrato speed
-        vibratoDepth As Unsigned Byte ' Vibrato depth
-        tremoloPosition As Byte ' Tremolo position in the sine table (signed)
-        tremoloSpeed As Unsigned Byte ' Tremolo speed
-        tremoloDepth As Unsigned Byte ' Tremolo depth
-        waveControl As Unsigned Byte ' Waveform type for vibrato and tremolo (4 bits each)
-        useGlissando As Byte ' Flag to enable glissando (E3x) for subsequent porta-to-note effect
-        invertLoopSpeed As Unsigned Byte ' Invert loop speed for EFx
-        invertLoopDelay As Unsigned Integer ' Invert loop delay for EFx
+        portamentoSpeed As _Unsigned _Byte ' Porta speed for E3x
+        vibratoPosition As _Byte ' Vibrato position in the sine table for E4x (signed)
+        vibratoSpeed As _Unsigned _Byte ' Vibrato speed
+        vibratoDepth As _Unsigned _Byte ' Vibrato depth
+        tremoloPosition As _Byte ' Tremolo position in the sine table (signed)
+        tremoloSpeed As _Unsigned _Byte ' Tremolo speed
+        tremoloDepth As _Unsigned _Byte ' Tremolo depth
+        waveControl As _Unsigned _Byte ' Waveform type for vibrato and tremolo (4 bits each)
+        useGlissando As _Byte ' Flag to enable glissando (E3x) for subsequent porta-to-note effect
+        invertLoopSpeed As _Unsigned _Byte ' Invert loop speed for EFx
+        invertLoopDelay As _Unsigned Integer ' Invert loop delay for EFx
         invertLoopPosition As Long ' Position in the sample where we are for the invert loop effect
     End Type
 
     Type SongType
         songName As String * 20 ' Song name
         subtype As String * 4 ' 4 char MOD type - use this to find out what tracker was used
-        channels As Unsigned Byte ' Number of channels in the song - can be any number depending on the MOD file
-        samples As Unsigned Byte ' Number of samples in the song - can be 15 or 31 depending on the MOD file
-        orders As Unsigned Byte ' Song length in orders
-        endJumpOrder As Unsigned Byte ' This is used for jumping to an order if global looping is on
-        highestPattern As Unsigned Byte ' The highest pattern number read from the MOD file
+        channels As _Unsigned _Byte ' Number of channels in the song - can be any number depending on the MOD file
+        samples As _Unsigned _Byte ' Number of samples in the song - can be 15 or 31 depending on the MOD file
+        orders As _Unsigned _Byte ' Song length in orders
+        endJumpOrder As _Unsigned _Byte ' This is used for jumping to an order if global looping is on
+        highestPattern As _Unsigned _Byte ' The highest pattern number read from the MOD file
         orderPosition As Integer ' The position in the order list. Signed so that we can properly wrap
         patternRow As Integer ' Points to the pattern row to be played. This is signed because sometimes we need to set it to -1
-        tickPattern As Unsigned Byte ' Pattern number for UpdateMODRow() & UpdateMODTick()
+        tickPattern As _Unsigned _Byte ' Pattern number for UpdateMODRow() & UpdateMODTick()
         tickPatternRow As Integer ' Pattern row number for UpdateMODRow() & UpdateMODTick() (signed)
-        isLooping As Byte ' Set this to true to loop the song once we reach the max order specified in the song
-        isPlaying As Byte ' This is set to true as long as the song is playing
-        isPaused As Byte ' Set this to true to pause playback
-        patternDelay As Unsigned Byte ' Number of times to delay pattern for effect EE
-        periodTableMax As Unsigned Byte ' We need this for searching through the period table for E3x
-        speed As Unsigned Byte ' Current song speed
-        bpm As Unsigned Byte ' Current song BPM
-        tick As Unsigned Byte ' Current song tick
-        tempoTimerValue As Unsigned Long ' (mixer_sample_rate * default_bpm) / 50
-        samplesPerTick As Unsigned Long ' This is the amount of samples we have to mix per tick based on mixerRate & bpm
-        activeChannels As Unsigned Byte ' Just a count of channels that are "active"
+        isLooping As _Byte ' Set this to true to loop the song once we reach the max order specified in the song
+        isPlaying As _Byte ' This is set to true as long as the song is playing
+        isPaused As _Byte ' Set this to true to pause playback
+        patternDelay As _Unsigned _Byte ' Number of times to delay pattern for effect EE
+        periodTableMax As _Unsigned _Byte ' We need this for searching through the period table for E3x
+        speed As _Unsigned _Byte ' Current song speed
+        bpm As _Unsigned _Byte ' Current song BPM
+        tick As _Unsigned _Byte ' Current song tick
+        tempoTimerValue As _Unsigned Long ' (mixer_sample_rate * default_bpm) / 50
+        samplesPerTick As _Unsigned Long ' This is the amount of samples we have to mix per tick based on mixerRate & bpm
+        activeChannels As _Unsigned _Byte ' Just a count of channels that are "active"
     End Type
     '-----------------------------------------------------------------------------------------------------
 
@@ -99,14 +99,13 @@ $If MODPLAYER_BI = UNDEFINED Then
     ' GLOBAL VARIABLES
     '-----------------------------------------------------------------------------------------------------
     Dim Song As SongType
-    Dim Order(0 To ORDER_TABLE_MAX) As Unsigned Byte ' Order list
+    Dim Order(0 To ORDER_TABLE_MAX) As _Unsigned _Byte ' Order list
     ReDim Pattern(0 To 0, 0 To 0, 0 To 0) As NoteType ' Pattern data strored as (pattern, row, channel)
     ReDim Sample(0 To 0) As SampleType ' Sample info array
     ReDim Channel(0 To 0) As ChannelType ' Channel info array
-    ReDim PeriodTable(0 To 0) As Unsigned Integer ' Amiga period table
-    ReDim SineTable(0 To 0) As Unsigned Byte ' Sine table used for effects
-    ReDim InvertLoopSpeedTable(0 To 0) As Unsigned Byte ' Invert loop speed table for EFx
+    ReDim PeriodTable(0 To 0) As _Unsigned Integer ' Amiga period table
+    ReDim SineTable(0 To 0) As _Unsigned _Byte ' Sine table used for effects
+    ReDim InvertLoopSpeedTable(0 To 0) As _Unsigned _Byte ' Invert loop speed table for EFx
     '-----------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------
-

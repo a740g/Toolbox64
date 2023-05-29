@@ -16,7 +16,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------
     ' Initialize the sample mixer
     ' This allocates all required resources
-    Sub InitializeMixer (nVoices As Unsigned Byte)
+    Sub InitializeMixer (nVoices As _Unsigned _Byte)
         Shared SoftSynth As SoftSynthType
         Shared Voice() As VoiceType
 
@@ -27,15 +27,15 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
         ReDim Voice(0 To nVoices - 1) As VoiceType
 
         ' Set the mix rate to match that of the system
-        SoftSynth.mixerRate = SndRate
+        SoftSynth.mixerRate = _SndRate
 
         ' Allocate a QB64 sound pipe
-        SoftSynth.soundHandle = SndOpenRaw
+        SoftSynth.soundHandle = _SndOpenRaw
 
         ' Reset the global volume
         SoftSynth.volume = GLOBAL_VOLUME_MAX
 
-        Dim i As Unsigned Byte
+        Dim i As _Unsigned _Byte
 
         ' Set all voice defaults
         For i = 0 To nVoices - 1
@@ -53,7 +53,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
     ' This initialized the sample manager
     ' All previous samples will be lost!
-    Sub InitializeSampleManager (nSamples As Unsigned Byte)
+    Sub InitializeSampleManager (nSamples As _Unsigned _Byte)
         Shared SoftSynth As SoftSynthType
         Shared SampleData() As String
 
@@ -69,8 +69,8 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
     Sub FinalizeMixer
         Shared SoftSynth As SoftSynthType
 
-        SndRawDone SoftSynth.soundHandle ' Sumbit whatever is remaining in the raw buffer for playback
-        SndClose SoftSynth.soundHandle ' Close QB64 sound pipe
+        _SndRawDone SoftSynth.soundHandle ' Sumbit whatever is remaining in the raw buffer for playback
+        _SndClose SoftSynth.soundHandle ' Close QB64 sound pipe
     End Sub
 
     ' Returns true if more samples needs to be mixed
@@ -78,13 +78,13 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
         $Checking:Off
         Shared SoftSynth As SoftSynthType
 
-        NeedsSoundRefill = (SndRawLen(SoftSynth.soundHandle) < SOUND_TIME_MIN)
+        NeedsSoundRefill = (_SndRawLen(SoftSynth.soundHandle) < SOUND_TIME_MIN)
         $Checking:On
     End Function
 
     ' This should be called by code using the mixer at regular intervals
     ' All mixing calculations are done using floating-point math (it's 2022 :)
-    Sub UpdateMixer (nSamples As Unsigned Integer)
+    Sub UpdateMixer (nSamples As _Unsigned Integer)
         $Checking:Off
         Shared SoftSynth As SoftSynthType
         Shared SampleData() As String
@@ -94,7 +94,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
         Dim As Long v, s, nSample, nPos, nPlayType, sLen
         Dim As Single fVolume, fPan, fPitch, fPos, fStartPos, fEndPos, fSam
-        Dim As Byte bSam1, bSam2
+        Dim As _Byte bSam1, bSam2
 
         ' Reallocate the mixer buffers that will hold sample data for both channels
         ' This is conveniently zeroed by QB64, so that is nice. We don't have to do it
@@ -190,7 +190,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
             ' Obviously, this means that the quality of OpenAL version will suffer. But that's ok, it is on it's way to sunset :)
 
             ' Feed the samples to the QB64 sound pipe
-            SndRaw MixerBufferLeft(s), MixerBufferRight(s), SoftSynth.soundHandle
+            _SndRaw MixerBufferLeft(s), MixerBufferRight(s), SoftSynth.soundHandle
         Next
         $Checking:On
     End Sub
@@ -198,7 +198,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
     ' Stores a sample in the sample data array. This will add some silence samples at the end
     ' If the sample is looping then it will anti-click by copying a couple of samples from the beginning to the end of the loop
-    Sub LoadSample (nSample As Unsigned Byte, sData As String, isLooping As Byte, nLoopStart As Long, nLoopEnd As Long)
+    Sub LoadSample (nSample As _Unsigned _Byte, sData As String, isLooping As _Byte, nLoopStart As Long, nLoopEnd As Long)
         Shared SampleData() As String
 
         Dim i As Long
@@ -216,7 +216,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
 
     ' Get a sample value for a sample from position
-    Function PeekSample%% (nSample As Unsigned Byte, nPosition As Long)
+    Function PeekSample%% (nSample As _Unsigned _Byte, nPosition As Long)
         $Checking:Off
         Shared SampleData() As String
 
@@ -229,7 +229,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
     ' Writes a sample value to a sample at position
     ' Don't worry about the nValue being unsigned. Just feed signed 8-bit sample values to it
     ' It's unsigned to prevent Asc from throwing up XD
-    Sub PokeSample (nSample As Unsigned Byte, nPosition As Long, nValue As Unsigned Byte)
+    Sub PokeSample (nSample As _Unsigned _Byte, nPosition As Long, nValue As _Unsigned _Byte)
         $Checking:Off
         Shared SampleData() As String
 
@@ -240,7 +240,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
 
     ' Set the volume for a voice (0 - 64)
-    Sub SetVoiceVolume (nVoice As Unsigned Byte, nVolume As Single)
+    Sub SetVoiceVolume (nVoice As _Unsigned _Byte, nVolume As Single)
         $Checking:Off
         Shared Voice() As VoiceType
 
@@ -256,7 +256,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
 
     ' Set panning for a voice (0 - 255)
-    Sub SetVoicePanning (nVoice As Unsigned Byte, nPanning As Single)
+    Sub SetVoicePanning (nVoice As _Unsigned _Byte, nPanning As Single)
         $Checking:Off
         Shared Voice() As VoiceType
 
@@ -273,7 +273,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
     ' Set a frequency for a voice
     ' This will be responsible for correctly setting the mixer sample pitch
-    Sub SetVoiceFrequency (nVoice As Unsigned Byte, nFrequency As Single)
+    Sub SetVoiceFrequency (nVoice As _Unsigned _Byte, nFrequency As Single)
         $Checking:Off
         Shared SoftSynth As SoftSynthType
         Shared Voice() As VoiceType
@@ -284,7 +284,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
 
     ' Stops playback for a voice
-    Sub StopVoice (nVoice As Unsigned Byte)
+    Sub StopVoice (nVoice As _Unsigned _Byte)
         $Checking:Off
         Shared Voice() As VoiceType
 
@@ -302,7 +302,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
     ' Starts playback of a sample
     ' This can be used to playback a sample from a particular offset or loop the sample
-    Sub PlayVoice (nVoice As Unsigned Byte, nSample As Unsigned Byte, nPosition As Single, nPlayType As Unsigned Byte, nStart As Single, nEnd As Single)
+    Sub PlayVoice (nVoice As _Unsigned _Byte, nSample As _Unsigned _Byte, nPosition As Single, nPlayType As _Unsigned _Byte, nStart As Single, nEnd As Single)
         $Checking:Off
         Shared Voice() As VoiceType
 
@@ -329,7 +329,7 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
 
 
     ' Enables or disable HQ mixer
-    Sub EnableHQMixer (nFlag As Byte)
+    Sub EnableHQMixer (nFlag As _Byte)
         Shared SoftSynth As SoftSynthType
 
         SoftSynth.useHQMixer = (nFlag <> FALSE) ' This will accept all kinds of garbage :)
@@ -337,4 +337,3 @@ $If SOFTSYNTH_BAS = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------
 $End If
 '---------------------------------------------------------------------------------------------------------
-

@@ -35,16 +35,16 @@ $If MODPLAYER_BAS = UNDEFINED Then
     ' Loads the MOD file into memory and prepares all required gobals
     Function LoadMODFile%% (sFileName As String)
         Shared Song As SongType
-        Shared Order() As Unsigned Byte
+        Shared Order() As _Unsigned _Byte
         Shared Pattern() As NoteType
         Shared Sample() As SampleType
-        Shared PeriodTable() As Unsigned Integer
+        Shared PeriodTable() As _Unsigned Integer
 
         ' By default we assume a failure
         LoadMODFile = FALSE
 
         ' Check if the file exists
-        If Not FileExists(sFileName) Then Exit Function
+        If Not _FileExists(sFileName) Then Exit Function
 
         ' Attempt to open the file
         Dim fileHandle As Long
@@ -54,7 +54,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
         ' Check what kind of MOD file this is
         ' Seek to offset 1080 (438h) in the file & read in 4 bytes
-        Dim i As Unsigned Integer
+        Dim i As _Unsigned Integer
         Get fileHandle, 1081, Song.subtype
 
         ' Also, seek to the beginning of the file and get the song title
@@ -115,7 +115,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
         ' Initialize the sample manager
         ReDim Sample(0 To Song.samples - 1) As SampleType
-        Dim As Unsigned Byte byte1, byte2
+        Dim As _Unsigned _Byte byte1, byte2
 
         ' Load the sample headers
         For i = 0 To Song.samples - 1
@@ -174,14 +174,14 @@ $If MODPLAYER_BAS = UNDEFINED Then
         Restore PeriodTab
         Read Song.periodTableMax ' Read the size
         Song.periodTableMax = Song.periodTableMax - 1 ' Change to ubound
-        ReDim PeriodTable(0 To Song.periodTableMax) As Unsigned Integer ' Allocate size elements
+        ReDim PeriodTable(0 To Song.periodTableMax) As _Unsigned Integer ' Allocate size elements
         ' Now read size values
         For i = 0 To Song.periodTableMax
             Read PeriodTable(i)
         Next
 
-        Dim As Unsigned Byte byte3, byte4
-        Dim As Unsigned Integer a, b, c, period
+        Dim As _Unsigned _Byte byte3, byte4
+        Dim As _Unsigned Integer a, b, c, period
 
         ' Load the patterns
         ' +-------------------------------------+
@@ -198,9 +198,9 @@ $If MODPLAYER_BAS = UNDEFINED Then
                     Get fileHandle, , byte3
                     Get fileHandle, , byte4
 
-                    Pattern(i, a, b).sample = (byte1 And &HF0) Or ShR(byte3, 4)
+                    Pattern(i, a, b).sample = (byte1 And &HF0) Or _ShR(byte3, 4)
 
-                    period = ShL(byte1 And &HF, 8) Or byte2
+                    period = _ShL(byte1 And &HF, 8) Or byte2
 
                     ' Do the look up in the table against what is read in and store note
                     Pattern(i, a, b).note = NOTE_NONE
@@ -257,16 +257,16 @@ $If MODPLAYER_BAS = UNDEFINED Then
     Sub StartMODPlayer
         Shared Song As SongType
         Shared Channel() As ChannelType
-        Shared SineTable() As Unsigned Byte
-        Shared InvertLoopSpeedTable() As Unsigned Byte
+        Shared SineTable() As _Unsigned _Byte
+        Shared InvertLoopSpeedTable() As _Unsigned _Byte
         Shared SoftSynth As SoftSynthType
 
-        Dim As Unsigned Integer i, s
+        Dim As _Unsigned Integer i, s
 
         ' Load the sine table
         Restore SineTab
         Read s
-        ReDim SineTable(0 To s - 1) As Unsigned Byte
+        ReDim SineTable(0 To s - 1) As _Unsigned _Byte
         For i = 0 To s - 1
             Read SineTable(i)
         Next
@@ -274,7 +274,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
         ' Load the invert loop table
         Restore ILSpdTab
         Read s
-        ReDim InvertLoopSpeedTable(0 To s - 1) As Unsigned Byte
+        ReDim InvertLoopSpeedTable(0 To s - 1) As _Unsigned _Byte
         For i = 0 To s - 1
             Read InvertLoopSpeedTable(i)
         Next
@@ -346,7 +346,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
     ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
     Sub UpdateMODPlayer
         Shared Song As SongType
-        Shared Order() As Unsigned Byte
+        Shared Order() As _Unsigned _Byte
 
         ' Check conditions for which we should just exit and not process anything
         If Song.orderPosition >= Song.orders Then Exit Sub
@@ -414,11 +414,11 @@ $If MODPLAYER_BAS = UNDEFINED Then
         Shared Pattern() As NoteType
         Shared Sample() As SampleType
         Shared Channel() As ChannelType
-        Shared PeriodTable() As Unsigned Integer
+        Shared PeriodTable() As _Unsigned Integer
 
-        Dim As Unsigned Byte nChannel, nNote, nSample, nVolume, nEffect, nOperand, nOpX, nOpY
+        Dim As _Unsigned _Byte nChannel, nNote, nSample, nVolume, nEffect, nOperand, nOpX, nOpY
         ' The effect flags below are set to true when a pattern jump effect and pattern break effect are triggered
-        Dim As Byte jumpEffectFlag, breakEffectFlag, noFrequency
+        Dim As _Byte jumpEffectFlag, breakEffectFlag, noFrequency
 
         ' Set the active channel count to zero
         Song.activeChannels = 0
@@ -430,7 +430,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
             nVolume = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).volume
             nEffect = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).effect
             nOperand = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).operand
-            nOpX = ShR(nOperand, 4)
+            nOpX = _ShR(nOperand, 4)
             nOpY = nOperand And &HF
             noFrequency = FALSE
 
@@ -453,7 +453,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
                 ' Retrigger tremolo and vibrato waveforms
                 If Channel(nChannel).waveControl And &HF < 4 Then Channel(nChannel).vibratoPosition = 0
-                If ShR(Channel(nChannel).waveControl, 4) < 4 Then Channel(nChannel).tremoloPosition = 0
+                If _ShR(Channel(nChannel).waveControl, 4) < 4 Then Channel(nChannel).tremoloPosition = 0
 
                 ' ONLY RESET FREQUENCY IF THERE IS A NOTE VALUE AND PORTA NOT SET
                 If nEffect <> &H3 And nEffect <> &H5 Then
@@ -490,7 +490,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
                     SetVoicePanning nChannel, nOperand
 
                 Case &H9 ' 9: Set Sample Offset
-                    If nOperand > 0 Then Channel(nChannel).startPosition = ShL(nOperand, 8)
+                    If nOperand > 0 Then Channel(nChannel).startPosition = _ShL(nOperand, 8)
 
                 Case &HB ' 11: Jump To Pattern
                     Song.orderPosition = nOperand
@@ -517,10 +517,10 @@ $If MODPLAYER_BAS = UNDEFINED Then
                             EnableHQMixer nOpY
 
                         Case &H1 ' 1: Fine Portamento Up
-                            Channel(nChannel).period = Channel(nChannel).period - ShL(nOpY, 2)
+                            Channel(nChannel).period = Channel(nChannel).period - _ShL(nOpY, 2)
 
                         Case &H2 ' 2: Fine Portamento Down
-                            Channel(nChannel).period = Channel(nChannel).period + ShL(nOpY, 2)
+                            Channel(nChannel).period = Channel(nChannel).period + _ShL(nOpY, 2)
 
                         Case &H3 ' 3: Glissando Control
                             Channel(nChannel).useGlissando = (nOpY <> FALSE)
@@ -546,7 +546,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
                         Case &H7 ' 7: Set Tremolo WaveForm
                             Channel(nChannel).waveControl = Channel(nChannel).waveControl And &HF
-                            Channel(nChannel).waveControl = Channel(nChannel).waveControl Or ShL(nOpY, 4)
+                            Channel(nChannel).waveControl = Channel(nChannel).waveControl Or _ShL(nOpY, 4)
 
                         Case &H8 ' 8: 16 position panning
                             If nOpY > 15 Then nOpY = 15
@@ -607,9 +607,9 @@ $If MODPLAYER_BAS = UNDEFINED Then
         Shared Pattern() As NoteType
         Shared Sample() As SampleType
         Shared Channel() As ChannelType
-        Shared PeriodTable() As Unsigned Integer
+        Shared PeriodTable() As _Unsigned Integer
 
-        Dim As Unsigned Byte nChannel, nVolume, nEffect, nOperand, nOpX, nOpY
+        Dim As _Unsigned _Byte nChannel, nVolume, nEffect, nOperand, nOpX, nOpY
 
         ' Process all channels
         For nChannel = 0 To Song.channels - 1
@@ -620,7 +620,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
                 nVolume = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).volume
                 nEffect = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).effect
                 nOperand = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).operand
-                nOpX = ShR(nOperand, 4)
+                nOpX = _ShR(nOperand, 4)
                 nOpY = nOperand And &HF
 
                 DoInvertLoop nChannel ' called every tick
@@ -639,12 +639,12 @@ $If MODPLAYER_BAS = UNDEFINED Then
                         End If
 
                     Case &H1 ' 1: Porta Up
-                        Channel(nChannel).period = Channel(nChannel).period - ShL(nOperand, 2)
+                        Channel(nChannel).period = Channel(nChannel).period - _ShL(nOperand, 2)
                         SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
                         If Channel(nChannel).period < 56 Then Channel(nChannel).period = 56
 
                     Case &H2 ' 2: Porta Down
-                        Channel(nChannel).period = Channel(nChannel).period + ShL(nOperand, 2)
+                        Channel(nChannel).period = Channel(nChannel).period + _ShL(nOperand, 2)
                         SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
 
                     Case &H3 ' 3: Porta To Note
@@ -706,7 +706,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' We always set the global BPM using this and never directly
-    Sub SetBPM (nBPM As Unsigned Byte)
+    Sub SetBPM (nBPM As _Unsigned _Byte)
         Shared Song As SongType
 
         Song.bpm = nBPM
@@ -721,7 +721,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
     Function GetClosestPeriod& (target As Long)
         Shared Song As SongType
         Shared Channel() As ChannelType
-        Shared PeriodTable() As Unsigned Integer
+        Shared PeriodTable() As _Unsigned Integer
 
         Dim As Long startPos, endPos, midPos, leftVal, rightVal
 
@@ -756,15 +756,15 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' Carry out a tone portamento to a certain note
-    Sub DoPortamento (chan As Unsigned Byte)
+    Sub DoPortamento (chan As _Unsigned _Byte)
         Shared Channel() As ChannelType
 
         ' Slide up/down and clamp to destination
         If Channel(chan).period < Channel(chan).portamentoTo Then
-            Channel(chan).period = Channel(chan).period + ShL(Channel(chan).portamentoSpeed, 2)
+            Channel(chan).period = Channel(chan).period + _ShL(Channel(chan).portamentoSpeed, 2)
             If Channel(chan).period > Channel(chan).portamentoTo Then Channel(chan).period = Channel(chan).portamentoTo
         ElseIf Channel(chan).period > Channel(chan).portamentoTo Then
-            Channel(chan).period = Channel(chan).period - ShL(Channel(chan).portamentoSpeed, 2)
+            Channel(chan).period = Channel(chan).period - _ShL(Channel(chan).portamentoSpeed, 2)
             If Channel(chan).period < Channel(chan).portamentoTo Then Channel(chan).period = Channel(chan).portamentoTo
         End If
 
@@ -777,7 +777,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' Carry out a volume slide using +x -y
-    Sub DoVolumeSlide (chan As Unsigned Byte, x As Unsigned Byte, y As Unsigned Byte)
+    Sub DoVolumeSlide (chan As _Unsigned _Byte, x As _Unsigned _Byte, y As _Unsigned _Byte)
         Shared Channel() As ChannelType
 
         Channel(chan).volume = Channel(chan).volume + x - y
@@ -789,12 +789,12 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' Carry out a vibrato at a certain depth and speed
-    Sub DoVibrato (chan As Unsigned Byte)
+    Sub DoVibrato (chan As _Unsigned _Byte)
         Shared Channel() As ChannelType
-        Shared SineTable() As Unsigned Byte
+        Shared SineTable() As _Unsigned _Byte
 
-        Dim delta As Unsigned Integer
-        Dim temp As Unsigned Byte
+        Dim delta As _Unsigned Integer
+        Dim temp As _Unsigned _Byte
 
         temp = Channel(chan).vibratoPosition And 31
 
@@ -803,7 +803,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
                 delta = SineTable(temp)
 
             Case 1 ' Saw down
-                temp = ShL(temp, 3)
+                temp = _ShL(temp, 3)
                 If Channel(chan).vibratoPosition < 0 Then temp = 255 - temp
                 delta = temp
 
@@ -814,7 +814,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
                 delta = Rnd * 255
         End Select
 
-        delta = ShL(ShR(delta * Channel(chan).vibratoDepth, 7), 2)
+        delta = _ShL(_ShR(delta * Channel(chan).vibratoDepth, 7), 2)
 
         If Channel(chan).vibratoPosition >= 0 Then
             SetVoiceFrequency chan, GetFrequencyFromPeriod(Channel(chan).period + delta)
@@ -828,21 +828,21 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' Carry out a tremolo at a certain depth and speed
-    Sub DoTremolo (chan As Unsigned Byte)
+    Sub DoTremolo (chan As _Unsigned _Byte)
         Shared Channel() As ChannelType
-        Shared SineTable() As Unsigned Byte
+        Shared SineTable() As _Unsigned _Byte
 
-        Dim delta As Unsigned Integer
-        Dim temp As Unsigned Byte
+        Dim delta As _Unsigned Integer
+        Dim temp As _Unsigned _Byte
 
         temp = Channel(chan).tremoloPosition And 31
 
-        Select Case ShR(Channel(chan).waveControl, 4) And 3
+        Select Case _ShR(Channel(chan).waveControl, 4) And 3
             Case 0 ' Sine
                 delta = SineTable(temp)
 
             Case 1 ' Saw down
-                temp = ShL(temp, 3)
+                temp = _ShL(temp, 3)
                 If Channel(chan).tremoloPosition < 0 Then temp = 255 - temp
                 delta = temp
 
@@ -853,7 +853,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
                 delta = Rnd * 255
         End Select
 
-        delta = ShR(delta * Channel(chan).tremoloDepth, 6)
+        delta = _ShR(delta * Channel(chan).tremoloDepth, 6)
 
         If Channel(chan).tremoloPosition >= 0 Then
             If Channel(chan).volume + delta > SAMPLE_VOLUME_MAX Then delta = SAMPLE_VOLUME_MAX - Channel(chan).volume
@@ -870,10 +870,10 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
     ' Carry out an invert loop (EFx) effect
     ' This will trash the sample managed by the SoftSynth
-    Sub DoInvertLoop (chan As Unsigned Byte)
+    Sub DoInvertLoop (chan As _Unsigned _Byte)
         Shared Channel() As ChannelType
         Shared Sample() As SampleType
-        Shared InvertLoopSpeedTable() As Unsigned Byte
+        Shared InvertLoopSpeedTable() As _Unsigned _Byte
 
         Channel(chan).invertLoopDelay = Channel(chan).invertLoopDelay + InvertLoopSpeedTable(Channel(chan).invertLoopSpeed)
 
@@ -896,7 +896,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' Return C2 speed for a finetune
-    Function GetC2Spd~% (ft As Unsigned Byte)
+    Function GetC2Spd~% (ft As _Unsigned _Byte)
         Select Case ft
             Case 0
                 GetC2Spd = 8363
@@ -943,4 +943,3 @@ $End If
 '$Include:'SoftSynth.bas'
 '---------------------------------------------------------------------------------------------------------
 '---------------------------------------------------------------------------------------------------------
-
