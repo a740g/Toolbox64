@@ -23,9 +23,9 @@ $If STRINGOPS_BAS = UNDEFINED Then
     ' quoteChars - is the string containing the opening and closing "quote" characters. Should be 2 chars only or nothing
     ' Returns: the number of tokens parsed
     Function TokenizeString& (text As String, delims As String, returnDelims As _Byte, quoteChars As String, tokens() As String)
-        Dim strLen As Long: strLen = Len(text)
+        Dim sLen As Long: sLen = Len(text)
 
-        If strLen = NULL Then Exit Function ' nothing to be done
+        If sLen = NULL Then Exit Function ' nothing to be done
 
         Dim arrIdx As Long: arrIdx = LBound(tokens) ' we'll always start from the array lower bound - whatever it is
         Dim insideQuote As _Byte ' flag to track if currently inside a quote
@@ -35,7 +35,7 @@ $If STRINGOPS_BAS = UNDEFINED Then
         Dim As Long i, count
 
         ' Iterate through the characters in the text string
-        For i = 1 To strLen
+        For i = 1 To sLen
             char = Chr$(Asc(text, i))
             If insideQuote Then
                 If char = Right$(quoteChars, 1) Then
