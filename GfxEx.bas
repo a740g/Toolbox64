@@ -140,6 +140,12 @@ $If GFXEX_BI = UNDEFINED Then
 
         LoadImageTransparent = handle
     End Function
+
+    ' Converts a web color in hex format to a 32-bit RGB color
+    Function HexToRGB32~& (hexColor As String)
+        If Len(hexColor) <> 6 Then Error 17
+        HexToRGB32 = _RGB32(Val("&H" + Left$(hexColor, 2)), Val("&H" + Mid$(hexColor, 3, 2)), Val("&H" + Right$(hexColor, 2)))
+    End Function
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------
