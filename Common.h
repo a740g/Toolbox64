@@ -26,6 +26,8 @@ enum qb_bool : int8_t
 };
 
 // Use these with care. Expressions passed to macros can be evaluated multiple times
+#define TO_C_BOOL(_exp_) ((_exp_) != false)
+#define TO_QB_BOOL(_exp_) ((qb_bool)(-TO_C_BOOL(_exp_)))
 #define IS_STRING_EMPTY(_s_) ((_s_) == nullptr || (_s_)[0] == 0)
 #define CLAMP(_x_, _low_, _high_) (((_x_) > (_high_)) ? (_high_) : (((_x_) < (_low_)) ? (_low_) : (_x_)))
 #define ZERO_MEMORY(_m_, _l_) memset((_m_), 0, (_l_))

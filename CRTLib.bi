@@ -54,6 +54,8 @@ $If CRTLIB_BI = UNDEFINED Then
         $Else
             Function CLngPtr~&& (ByVal p As _Unsigned _Offset)
         $End If
+        Function ToQBBool%% (ByVal x As Long)
+        Function ToCBool%% (ByVal x As Long)
         Function PeekByteAtOffset~%% (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
         Sub PokeByteAtOffset (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned _Byte)
         Function PeekIntegerAtOffset~% (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)

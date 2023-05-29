@@ -26,6 +26,22 @@ inline uintptr_t CLngPtr(const void *p)
     return (uintptr_t)p;
 }
 
+/// @brief Returns QB style bool
+/// @param x Any number
+/// @return 0 when x is 0 and -1 when x is non-zero
+inline qb_bool ToQBBool(int32_t x)
+{
+    return TO_QB_BOOL(x);
+}
+
+/// @brief Returns C style bool
+/// @param x Any number
+/// @return 0 when x is 0 and 1 when x is non-zero
+inline bool ToCBool(int32_t x)
+{
+    return TO_C_BOOL(x);
+}
+
 /// @brief Peeks a BYTE (8-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
