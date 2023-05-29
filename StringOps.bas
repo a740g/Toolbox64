@@ -18,11 +18,11 @@ $If STRINGOPS_BAS = UNDEFINED Then
     ' Tokenizes a string to a dynamic string array
     ' text - is the input string
     ' delims - is a list of delimiters (multiple delimiters can be specified)
-    ' tokens() - is the array that will hold the tokens
-    ' returnDelims - if True, then the routine will also return the delimiters in the correct position in the tokens array
     ' quoteChars - is the string containing the opening and closing "quote" characters. Should be 2 chars only or nothing
+    ' returnDelims - if True, then the routine will also return the delimiters in the correct position in the tokens array
+    ' tokens() - is the array that will hold the tokens
     ' Returns: the number of tokens parsed
-    Function TokenizeString& (text As String, delims As String, returnDelims As _Byte, quoteChars As String, tokens() As String)
+    Function TokenizeString& (text As String, delims As String, quoteChars As String, returnDelims As _Byte, tokens() As String)
         Dim sLen As Long: sLen = Len(text)
 
         If sLen = NULL Then Exit Function ' nothing to be done
