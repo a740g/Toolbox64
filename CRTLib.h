@@ -17,14 +17,7 @@
 #include "Common.h"
 #include <cstdlib>
 #include <climits>
-
-/// @brief Casts a QB64 OFFSET to an unsigned integer
-/// @param p A pointer
-/// @return Pointer value
-inline uintptr_t CLngPtr(const void *p)
-{
-    return (uintptr_t)p;
-}
+#include <cstring>
 
 /// @brief Returns QB style bool
 /// @param x Any number
@@ -42,11 +35,19 @@ inline bool ToCBool(int32_t x)
     return TO_C_BOOL(x);
 }
 
+/// @brief Casts a QB64 OFFSET to an unsigned integer
+/// @param p A pointer
+/// @return Pointer value
+inline uintptr_t CLngPtr(const void *p)
+{
+    return (uintptr_t)p;
+}
+
 /// @brief Peeks a BYTE (8-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return BYTE value
-inline uint8_t PeekByteAtOffset(const void *p, uintptr_t o)
+inline uint8_t PeekByteAtOffset(uintptr_t p, uintptr_t o)
 {
     return *((uint8_t *)p + o);
 }
@@ -55,7 +56,7 @@ inline uint8_t PeekByteAtOffset(const void *p, uintptr_t o)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n BYTE value
-inline void PokeByteAtOffset(void *p, uintptr_t o, uint8_t n)
+inline void PokeByteAtOffset(uintptr_t p, uintptr_t o, uint8_t n)
 {
     *((uint8_t *)p + o) = n;
 }
@@ -64,7 +65,7 @@ inline void PokeByteAtOffset(void *p, uintptr_t o, uint8_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return INTEGER value
-inline uint16_t PeekIntegerAtOffset(const void *p, uintptr_t o)
+inline uint16_t PeekIntegerAtOffset(uintptr_t p, uintptr_t o)
 {
     return *((uint16_t *)p + o);
 }
@@ -73,7 +74,7 @@ inline uint16_t PeekIntegerAtOffset(const void *p, uintptr_t o)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n INTEGER value
-inline void PokeIntegerAtOffset(void *p, uintptr_t o, uint16_t n)
+inline void PokeIntegerAtOffset(uintptr_t p, uintptr_t o, uint16_t n)
 {
     *((uint16_t *)p + o) = n;
 }
@@ -82,7 +83,7 @@ inline void PokeIntegerAtOffset(void *p, uintptr_t o, uint16_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return LONG value
-inline uint32_t PeekLongAtOffset(const void *p, uintptr_t o)
+inline uint32_t PeekLongAtOffset(uintptr_t p, uintptr_t o)
 {
     return *((uint32_t *)p + o);
 }
@@ -91,7 +92,7 @@ inline uint32_t PeekLongAtOffset(const void *p, uintptr_t o)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n LONG value
-inline void PokeLongAtOffset(void *p, uintptr_t o, uint32_t n)
+inline void PokeLongAtOffset(uintptr_t p, uintptr_t o, uint32_t n)
 {
     *((uint32_t *)p + o) = n;
 }
@@ -100,7 +101,7 @@ inline void PokeLongAtOffset(void *p, uintptr_t o, uint32_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return INTEGER64 value
-inline uint64_t PeekInteger64AtOffset(const void *p, uintptr_t o)
+inline uint64_t PeekInteger64AtOffset(uintptr_t p, uintptr_t o)
 {
     return *((uint64_t *)p + o);
 }
@@ -109,7 +110,7 @@ inline uint64_t PeekInteger64AtOffset(const void *p, uintptr_t o)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n INTEGER64 value
-inline void PokeInteger64AtOffset(void *p, uintptr_t o, uint64_t n)
+inline void PokeInteger64AtOffset(uintptr_t p, uintptr_t o, uint64_t n)
 {
     *((uint64_t *)p + o) = n;
 }
@@ -118,7 +119,7 @@ inline void PokeInteger64AtOffset(void *p, uintptr_t o, uint64_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return SINGLE value
-inline float PeekSingleAtOffset(const void *p, uintptr_t o)
+inline float PeekSingleAtOffset(uintptr_t p, uintptr_t o)
 {
     return *((float *)p + o);
 }
@@ -127,7 +128,7 @@ inline float PeekSingleAtOffset(const void *p, uintptr_t o)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n SINGLE value
-inline void PokeSingleAtOffset(void *p, uintptr_t o, float n)
+inline void PokeSingleAtOffset(uintptr_t p, uintptr_t o, float n)
 {
     *((float *)p + o) = n;
 }
@@ -136,7 +137,7 @@ inline void PokeSingleAtOffset(void *p, uintptr_t o, float n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return DOUBLE value
-inline double PeekDoubleAtOffset(const void *p, uintptr_t o)
+inline double PeekDoubleAtOffset(uintptr_t p, uintptr_t o)
 {
     return *((double *)p + o);
 }
@@ -145,7 +146,7 @@ inline double PeekDoubleAtOffset(const void *p, uintptr_t o)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n DOUBLE value
-inline void PokeDoubleAtOffset(void *p, uintptr_t o, double n)
+inline void PokeDoubleAtOffset(uintptr_t p, uintptr_t o, double n)
 {
     *((double *)p + o) = n;
 }
@@ -154,18 +155,38 @@ inline void PokeDoubleAtOffset(void *p, uintptr_t o, double n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return DOUBLE value
-inline void *PeekOffsetAtOffset(const void *p, uintptr_t o)
+inline uintptr_t PeekOffsetAtOffset(uintptr_t p, uintptr_t o)
 {
-    return (void *)*((uintptr_t *)p + o);
+    return *((uintptr_t *)p + o);
 }
 
 /// @brief Poke an OFFSET (32/64-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n DOUBLE value
-inline void PokeOffsetAtOffset(void *p, uintptr_t o, void *n)
+inline void PokeOffsetAtOffset(uintptr_t p, uintptr_t o, uintptr_t n)
 {
-    *((uintptr_t *)p + o) = (uintptr_t)n;
+    *((uintptr_t *)p + o) = n;
+}
+
+/// @brief Gets a UDT value from a pointer positon offset by o. Same as t = p[o]
+/// @param p The base pointer
+/// @param o Offset from base (each offset is t_size bytes)
+/// @param t A pointer to the UDT variable
+/// @param t_size The size of the UTD variable in bytes
+inline void PeekTypeAtOffset(uintptr_t p, uintptr_t o, uintptr_t t, size_t t_size)
+{
+    memcpy((void *)t, (const uint8_t *)p + (o * t_size), t_size);
+}
+
+/// @brief Sets a UDT value to a pointer position offset by o. Same as p[o] = t
+/// @param p The base pointer
+/// @param o Offset from base (each offset is t_size bytes)
+/// @param t A pointer to the UDT variable
+/// @param t_size The size of the UTD variable in bytes
+inline void PokeTypeAtOffset(uintptr_t p, uintptr_t o, uintptr_t t, size_t t_size)
+{
+    memcpy((uint8_t *)p + (o * t_size), (void *)t, t_size);
 }
 
 /// @brief Peek a character value in a string. Zero based, faster and unsafe than ASC
@@ -184,6 +205,65 @@ inline uint8_t PeekString(const uint8_t *s, uintptr_t o)
 inline void PokeString(uint8_t *s, uintptr_t o, uint8_t n)
 {
     s[o] = n;
+}
+
+/// @brief Makes a RGBA color from RGBA components (the return value is the same as raylib Color in memory)
+/// @param r Red (0 - 255)
+/// @param g Green (0 - 255)
+/// @param b Blue (0 - 255)
+/// @param a Alpha (0 - 255)
+/// @return Returns an RGBA color
+inline uint32_t MakeRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    return ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)(r);
+}
+
+/// @brief Returns the Red component
+/// @param rgba An RGBA color
+/// @return Red
+inline uint8_t GetRGBARed(uint32_t rgba)
+{
+    return (uint8_t)(rgba & 0xFF);
+}
+
+/// @brief Returns the Green component
+/// @param rgba An RGBA color
+/// @return Green
+inline uint8_t GetRGBAGreen(uint32_t rgba)
+{
+    return (uint8_t)((rgba >> 8) & 0xFF);
+}
+
+/// @brief Returns the Blue component
+/// @param rgba An RGBA color
+/// @return Blue
+inline uint8_t GetRGBABlue(uint32_t rgba)
+{
+    return (uint8_t)((rgba >> 16) & 0xFF);
+}
+
+/// @brief Returns the Alpha value
+/// @param rgba An RGBA color
+/// @return Alpha
+inline uint8_t GetRGBAAlpha(uint32_t rgba)
+{
+    return (uint8_t)((rgba >> 24) & 0xFF);
+}
+
+/// @brief Gets the RGB value without the alpha
+/// @param rgba An RGBA color
+/// @return RGB value
+inline uint32_t GetRGBARGB(uint32_t rgba)
+{
+    return rgba & 0xFFFFFF;
+}
+
+/// @brief Helps convert a BGRA color to an RGBA color and back
+/// @param bgra A BGRA color or an RGBA color
+/// @return An RGBA color or a BGRA color
+inline uint32_t SwapRedBlue(uint32_t clr)
+{
+    return (clr & 0xFF00FF00) | ((clr & 0x00FF0000) >> 16) | ((clr & 0x000000FF) << 16);
 }
 
 /// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
