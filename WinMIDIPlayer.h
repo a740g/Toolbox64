@@ -334,23 +334,23 @@ static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
 
     /* Make sure this is really a MIDI file */
     MemFile_ReadLong(src, &ID);
-    if (GET_BE_LONG(ID) != MIDI_MAGIC)
+    if (TO_BE_LONG(ID) != MIDI_MAGIC)
         return false;
 
     /* Header size must be 6 */
     MemFile_ReadLong(src, &size);
-    size = GET_BE_LONG(size);
+    size = TO_BE_LONG(size);
     if (size != 6)
         return false;
 
     /* We only support format 0 and 1, but not 2 */
     MemFile_ReadInteger(src, &format);
-    format = GET_BE_SHORT(format);
+    format = TO_BE_SHORT(format);
     if (format != 0 && format != 1)
         return false;
 
     MemFile_ReadInteger(src, &tracks);
-    tracks = GET_BE_SHORT(tracks);
+    tracks = TO_BE_SHORT(tracks);
     mididata->nTracks = tracks;
 
     /* Allocate tracks */
@@ -362,14 +362,14 @@ static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
 
     /* Retrieve the PPQN value, needed for playback */
     MemFile_ReadInteger(src, &division);
-    mididata->division = GET_BE_SHORT(division);
+    mididata->division = TO_BE_SHORT(division);
 
     for (i = 0; i < tracks; i++)
     {
         MemFile_ReadLong(src, &ID); /* We might want to verify this is MTrk... */
-        TOOLBOX64_DEBUG_CHECK(GET_BE_LONG(ID) == 0x4d54726b);
+        TOOLBOX64_DEBUG_CHECK(TO_BE_LONG(ID) == 0x4d54726b);
         MemFile_ReadLong(src, &size);
-        size = GET_BE_LONG(size);
+        size = TO_BE_LONG(size);
         mididata->track[i].len = size;
         mididata->track[i].data = (uint8_t *)malloc(size);
         if (nullptr == mididata->track[i].data)
