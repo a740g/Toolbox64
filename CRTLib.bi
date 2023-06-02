@@ -88,6 +88,8 @@ $If CRTLIB_BI = UNDEFINED Then
         Function RoundUpToPowerOf2~& (ByVal n As _Unsigned Long)
         Function RoundDownToPowerOf2~& (ByVal n As _Unsigned Long)
         Function LeftShiftOneCount~& (ByVal n As _Unsigned Long)
+        Function ReverseBitsByte~%% (ByVal n As _Unsigned _Byte)
+        Function ReverseBitsInteger~% (ByVal n As _Unsigned Integer)
         Function ReverseBitsLong~& (ByVal n As _Unsigned Long)
         Function ReverseBitsInteger64~&& (ByVal n As _Unsigned _Integer64)
         Function ClampLong& (ByVal n As Long, Byval lo As Long, Byval hi As Long)

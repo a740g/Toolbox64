@@ -321,7 +321,29 @@ inline uint32_t LeftShiftOneCount(uint32_t n)
     return n == 0 ? 0 : (CHAR_BIT * sizeof(n)) - 1 - __builtin_clz(n);
 }
 
-/// @brief Reverses bits in a number
+/// @brief Reverses bits in a 8-bit number
+/// @param x The number
+/// @return A number with bits reversed
+inline uint8_t ReverseBitsByte(uint8_t x)
+{
+    x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
+    x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
+    x = (((x & 0xf0) >> 4) | ((x & 0x0f) << 4));
+    return x;
+}
+
+/// @brief Reverses bits in a 16-bit number
+/// @param x The number
+/// @return A number with bits reversed
+inline uint16_t ReverseBitsInteger(uint16_t x)
+{
+    x = (((x & 0xaaaa) >> 1) | ((x & 0x5555) << 1));
+    x = (((x & 0xcccc) >> 2) | ((x & 0x3333) << 2));
+    x = (((x & 0xf0f0) >> 4) | ((x & 0x0f0f) << 4));
+    return ((x >> 8) | (x << 8));
+}
+
+/// @brief Reverses bits in a 32-bit number
 /// @param x The number
 /// @return A number with bits reversed
 inline uint32_t ReverseBitsLong(uint32_t x)
@@ -333,7 +355,7 @@ inline uint32_t ReverseBitsLong(uint32_t x)
     return ((x >> 16) | (x << 16));
 }
 
-/// @brief Reverses bits in a number
+/// @brief Reverses bits in a 64-bit number
 /// @param x The number
 /// @return A number with bits reversed
 inline uint64_t ReverseBitsInteger64(uint64_t x)
