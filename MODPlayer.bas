@@ -51,7 +51,6 @@ $If MODPLAYER_BAS = UNDEFINED Then
         ' Seek to offset 1080 (438h) in the file & read in 4 bytes
         Dim i As _Unsigned Integer, result As Long
         result = MemFile_Seek(memFile, 1080)
-        _MessageBox , Str$(MemFile_GetSize(memFile))
         _Assert result
         result = MemFile_ReadString(memFile, __Song.subtype)
         _Assert (result = Len(__Song.subtype))
