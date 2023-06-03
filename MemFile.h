@@ -15,10 +15,11 @@ uintptr_t __MemFile_Create(const char *data, size_t size);
 void MemFile_Destroy(uintptr_t p);
 qb_bool MemFile_IsEOF(uintptr_t p);
 size_t MemFile_GetSize(uintptr_t p);
-qb_bool MemFile_Seek(uintptr_t p, size_t position);
+size_t MemFile_GetPosition(uintptr_t p)
+    qb_bool MemFile_Seek(uintptr_t p, size_t position);
 void MemFile_Resize(uintptr_t p, size_t newSize);
-size_t __MemFile_Read(uintptr_t p, char *data, size_t size);
-size_t __MemFile_Write(uintptr_t p, const char *data, size_t size);
+size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size);
+size_t __MemFile_Write(uintptr_t p, uintptr_t data, size_t size);
 qb_bool MemFile_ReadByte(uintptr_t p, uint8_t *byte);
 qb_bool MemFile_WriteByte(uintptr_t p, uint8_t byte);
 qb_bool MemFile_ReadInteger(uintptr_t p, uint16_t *word);
@@ -107,6 +108,22 @@ size_t MemFile_GetSize(uintptr_t p)
     return 0;
 }
 
+/// @brief Returns the cursor position
+/// @param p A valid pointer to a MemFile object
+/// @return The position from the origin
+size_t MemFile_GetPosition(uintptr_t p)
+{
+    auto memFile = reinterpret_cast<const MemFile *>(p);
+    if (memFile)
+    {
+        TOOLBOX64_DEBUG_PRINT("Position: %zu", memFile->cursor);
+
+        return memFile->cursor;
+    }
+
+    return 0;
+}
+
 /// @brief Position the read / write cursor inside the data buffer
 /// @param p A valid pointer to a MemFile object
 /// @param position A value that is less than or equal to the size of the buffer
@@ -151,7 +168,7 @@ void MemFile_Resize(uintptr_t p, size_t newSize)
 /// @param data Pointer to the buffer the data needs to be written to
 /// @param size The size of the chuck that needs to be read
 /// @return The actual number of bytes read. This can be less than `size`
-size_t __MemFile_Read(uintptr_t p, char *data, size_t size)
+size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
 {
     auto memFile = reinterpret_cast<MemFile *>(p);
     if (memFile && data)
@@ -159,7 +176,7 @@ size_t __MemFile_Read(uintptr_t p, char *data, size_t size)
         auto bytesToRead = std::min(size, memFile->buffer.size() - memFile->cursor);
         if (bytesToRead > 0)
         {
-            std::copy(memFile->buffer.begin() + memFile->cursor, memFile->buffer.begin() + memFile->cursor + bytesToRead, data);
+            std::copy(memFile->buffer.begin() + memFile->cursor, memFile->buffer.begin() + memFile->cursor + bytesToRead, (uint8_t *)data);
             memFile->cursor += bytesToRead;
 
             TOOLBOX64_DEBUG_PRINT("Read %zu bytes and moved cursor to %zu", bytesToRead, memFile->cursor);
@@ -178,12 +195,12 @@ size_t __MemFile_Read(uintptr_t p, char *data, size_t size)
 /// @param data Pointer to the buffer the data needs to be read from
 /// @param size The size of the chuck that needs to be written
 /// @return The number of bytes written
-size_t __MemFile_Write(uintptr_t p, const char *data, size_t size)
+size_t __MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
 {
     auto memFile = reinterpret_cast<MemFile *>(p);
     if (memFile && data)
     {
-        memFile->buffer.insert(memFile->buffer.begin() + memFile->cursor, data, data + size);
+        memFile->buffer.insert(memFile->buffer.begin() + memFile->cursor, (uint8_t *)data, (uint8_t *)data + size);
         memFile->cursor += size;
 
         TOOLBOX64_DEBUG_PRINT("Wrote %zu bytes and moved cursor to %zu", size, memFile->cursor);
@@ -202,7 +219,7 @@ size_t __MemFile_Write(uintptr_t p, const char *data, size_t size)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_ReadByte(uintptr_t p, uint8_t *byte)
 {
-    return __MemFile_Read(p, reinterpret_cast<char *>(byte), sizeof(uint8_t)) == sizeof(uint8_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Read(p, reinterpret_cast<uintptr_t>(byte), sizeof(uint8_t)) == sizeof(uint8_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Writes a byte (1 byte) to the buffer at the cursor position
@@ -211,7 +228,7 @@ qb_bool MemFile_ReadByte(uintptr_t p, uint8_t *byte)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_WriteByte(uintptr_t p, uint8_t byte)
 {
-    return __MemFile_Write(p, reinterpret_cast<const char *>(&byte), sizeof(uint8_t)) == sizeof(uint8_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&byte), sizeof(uint8_t)) == sizeof(uint8_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Reads a 16-bit word (2 bytes) from the buffer at the cursor position
@@ -220,7 +237,7 @@ qb_bool MemFile_WriteByte(uintptr_t p, uint8_t byte)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_ReadInteger(uintptr_t p, uint16_t *word)
 {
-    return __MemFile_Read(p, reinterpret_cast<char *>(word), sizeof(uint16_t)) == sizeof(uint16_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Read(p, reinterpret_cast<uintptr_t>(word), sizeof(uint16_t)) == sizeof(uint16_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Writes a 16-bit word (2 bytes) to the buffer at the cursor position
@@ -229,7 +246,7 @@ qb_bool MemFile_ReadInteger(uintptr_t p, uint16_t *word)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_WriteInteger(uintptr_t p, uint16_t word)
 {
-    return __MemFile_Write(p, reinterpret_cast<const char *>(&word), sizeof(uint16_t)) == sizeof(uint16_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&word), sizeof(uint16_t)) == sizeof(uint16_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Reads a 32-bit double word (4 bytes) from the buffer at the cursor position
@@ -238,7 +255,7 @@ qb_bool MemFile_WriteInteger(uintptr_t p, uint16_t word)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_ReadLong(uintptr_t p, uint32_t *dword)
 {
-    return __MemFile_Read(p, reinterpret_cast<char *>(dword), sizeof(uint32_t)) == sizeof(uint32_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Read(p, reinterpret_cast<uintptr_t>(dword), sizeof(uint32_t)) == sizeof(uint32_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Writes a 32-bit double word (4 bytes) to the buffer at the cursor position
@@ -247,7 +264,7 @@ qb_bool MemFile_ReadLong(uintptr_t p, uint32_t *dword)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_WriteLong(uintptr_t p, uint32_t dword)
 {
-    return __MemFile_Write(p, reinterpret_cast<const char *>(&dword), sizeof(uint32_t)) == sizeof(uint32_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&dword), sizeof(uint32_t)) == sizeof(uint32_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Reads a fp32 (4 bytes) from the buffer at the cursor position
@@ -256,7 +273,7 @@ qb_bool MemFile_WriteLong(uintptr_t p, uint32_t dword)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_ReadSingle(uintptr_t p, float *fp32)
 {
-    return __MemFile_Read(p, reinterpret_cast<char *>(fp32), sizeof(float)) == sizeof(float) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Read(p, reinterpret_cast<uintptr_t>(fp32), sizeof(float)) == sizeof(float) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Writes a fp32 (4 bytes) to the buffer at the cursor position
@@ -265,7 +282,7 @@ qb_bool MemFile_ReadSingle(uintptr_t p, float *fp32)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_WriteSingle(uintptr_t p, float fp32)
 {
-    return __MemFile_Write(p, reinterpret_cast<const char *>(&fp32), sizeof(float)) == sizeof(float) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&fp32), sizeof(float)) == sizeof(float) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Reads a 64-bit qword (8 bytes) from the buffer at the cursor position
@@ -274,7 +291,7 @@ qb_bool MemFile_WriteSingle(uintptr_t p, float fp32)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_ReadInteger64(uintptr_t p, uint64_t *qword)
 {
-    return __MemFile_Read(p, reinterpret_cast<char *>(qword), sizeof(uint64_t)) == sizeof(uint64_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Read(p, reinterpret_cast<uintptr_t>(qword), sizeof(uint64_t)) == sizeof(uint64_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Writes a 64-bit qword (8 bytes) to the buffer at the cursor position
@@ -283,7 +300,7 @@ qb_bool MemFile_ReadInteger64(uintptr_t p, uint64_t *qword)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_WriteInteger64(uintptr_t p, uint64_t qword)
 {
-    return __MemFile_Write(p, reinterpret_cast<const char *>(&qword), sizeof(uint64_t)) == sizeof(uint64_t) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&qword), sizeof(uint64_t)) == sizeof(uint64_t) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Reads a fp64 (8 bytes) from the buffer at the cursor position
@@ -292,7 +309,7 @@ qb_bool MemFile_WriteInteger64(uintptr_t p, uint64_t qword)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_ReadDouble(uintptr_t p, double *fp64)
 {
-    return __MemFile_Read(p, reinterpret_cast<char *>(fp64), sizeof(double)) == sizeof(double) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Read(p, reinterpret_cast<uintptr_t>(fp64), sizeof(double)) == sizeof(double) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Writes a fp64 (8 bytes) to the buffer at the cursor position
@@ -301,7 +318,7 @@ qb_bool MemFile_ReadDouble(uintptr_t p, double *fp64)
 /// @return QB_TRUE if successful, QB_FALSE otherwise
 qb_bool MemFile_WriteDouble(uintptr_t p, double fp64)
 {
-    return __MemFile_Write(p, reinterpret_cast<const char *>(&fp64), sizeof(double)) == sizeof(double) ? QB_TRUE : QB_FALSE;
+    return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&fp64), sizeof(double)) == sizeof(double) ? QB_TRUE : QB_FALSE;
 }
 
 #endif

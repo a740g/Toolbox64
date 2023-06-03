@@ -1,32 +1,32 @@
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 ' MOD Player Library
 ' Copyright (c) 2023 Samuel Gomes
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 ' HEADER FILES
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 '$include:'SoftSynth.bi'
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 
 $If MODPLAYER_BI = UNDEFINED Then
     $Let MODPLAYER_BI = TRUE
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
-    '-----------------------------------------------------------------------------------------------------
-    Const PATTERN_ROW_MAX = 63 ' Max row number in a pattern
-    Const NOTE_NONE = 132 ' Note will be set to this when there is nothing
-    Const NOTE_KEY_OFF = 133 ' We'll use this in a future version
-    Const NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
-    Const ORDER_TABLE_MAX = 127 ' Max position in the order table
-    Const SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
-    Const SONG_BPM_DEFAULT = 125 ' Default song BPM
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
+    Const __PATTERN_ROW_MAX = 63 ' Max row number in a pattern
+    Const __NOTE_NONE = 132 ' Note will be set to this when there is nothing
+    Const __NOTE_KEY_OFF = 133 ' We'll use this in a future version
+    Const __NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
+    Const __ORDER_TABLE_MAX = 127 ' Max position in the order table
+    Const __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
+    Const __SONG_BPM_DEFAULT = 125 ' Default song BPM
+    '-------------------------------------------------------------------------------------------------------------------
 
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
-    '-----------------------------------------------------------------------------------------------------
-    Type NoteType
+    '-------------------------------------------------------------------------------------------------------------------
+    Type __NoteType
         note As _Unsigned _Byte ' Contains info on 1 note
         sample As _Unsigned _Byte ' Sample number to play
         volume As _Unsigned _Byte ' Volume value. Not used for MODs. 255 = no volume
@@ -34,7 +34,7 @@ $If MODPLAYER_BI = UNDEFINED Then
         operand As _Unsigned _Byte ' Effect parameters
     End Type
 
-    Type SampleType
+    Type __SampleType
         sampleName As String * 22 ' Sample name or message
         length As Long ' Sample length in bytes
         c2Spd As _Unsigned Integer ' Sample finetune is converted to c2spd
@@ -44,7 +44,7 @@ $If MODPLAYER_BI = UNDEFINED Then
         loopEnd As Long ' Loop end in bytes
     End Type
 
-    Type ChannelType
+    Type __ChannelType
         sample As _Unsigned _Byte ' Sample number to be mixed
         volume As Integer ' Channel volume. This is a signed int because we need -ve values & to clip properly
         restart As _Byte ' Set this to true to retrigger the sample
@@ -69,7 +69,7 @@ $If MODPLAYER_BI = UNDEFINED Then
         invertLoopPosition As Long ' Position in the sample where we are for the invert loop effect
     End Type
 
-    Type SongType
+    Type __SongType
         songName As String * 20 ' Song name
         subtype As String * 4 ' 4 char MOD type - use this to find out what tracker was used
         channels As _Unsigned _Byte ' Number of channels in the song - can be any number depending on the MOD file
@@ -93,19 +93,19 @@ $If MODPLAYER_BI = UNDEFINED Then
         samplesPerTick As _Unsigned Long ' This is the amount of samples we have to mix per tick based on mixerRate & bpm
         activeChannels As _Unsigned _Byte ' Just a count of channels that are "active"
     End Type
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
 
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' GLOBAL VARIABLES
-    '-----------------------------------------------------------------------------------------------------
-    Dim Song As SongType
-    Dim Order(0 To ORDER_TABLE_MAX) As _Unsigned _Byte ' Order list
-    ReDim Pattern(0 To 0, 0 To 0, 0 To 0) As NoteType ' Pattern data strored as (pattern, row, channel)
-    ReDim Sample(0 To 0) As SampleType ' Sample info array
-    ReDim Channel(0 To 0) As ChannelType ' Channel info array
-    ReDim PeriodTable(0 To 0) As _Unsigned Integer ' Amiga period table
-    ReDim SineTable(0 To 0) As _Unsigned _Byte ' Sine table used for effects
-    ReDim InvertLoopSpeedTable(0 To 0) As _Unsigned _Byte ' Invert loop speed table for EFx
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
+    Dim __Song As __SongType
+    Dim __Order(0 To __ORDER_TABLE_MAX) As _Unsigned _Byte ' Order list
+    ReDim __Pattern(0 To 0, 0 To 0, 0 To 0) As __NoteType ' Pattern data strored as (pattern, row, channel)
+    ReDim __Sample(0 To 0) As __SampleType ' Sample info array
+    ReDim __Channel(0 To 0) As __ChannelType ' Channel info array
+    ReDim __PeriodTable(0 To 0) As _Unsigned Integer ' Amiga period table
+    ReDim __SineTable(0 To 0) As _Unsigned _Byte ' Sine table used for effects
+    ReDim __InvertLoopSpeedTable(0 To 0) As _Unsigned _Byte ' Invert loop speed table for EFx
+    '-------------------------------------------------------------------------------------------------------------------
 $End If
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------

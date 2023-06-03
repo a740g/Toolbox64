@@ -6,6 +6,8 @@
 '---------------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '---------------------------------------------------------------------------------------------------------
+'$Include:'MemFile.bi'
+'$Include:'FileOps.bi'
 '$Include:'MODPlayer.bi'
 '---------------------------------------------------------------------------------------------------------
 
@@ -15,15 +17,16 @@ $If MODPLAYER_BAS = UNDEFINED Then
     ' Small test code for debugging the library
     '-----------------------------------------------------------------------------------------------------
     '$Debug
-    'If LoadMODFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\dope.mod") Then
+    '$Asserts
+    'If LoadMODFromDisk("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\emax-doz.mod") Then
     '    EnableHQMixer TRUE
     '    StartMODPlayer
     '    Do
     '        UpdateMODPlayer
     '        Locate 1, 1
-    '        Print Using "Order: ### / ###    Pattern: ### / ###    Row: ## / 64    BPM: ###    Speed: ###"; Song.orderPosition + 1; Song.orders; Order(Song.orderPosition) + 1; Song.highestPattern + 1; Song.patternRow + 1; Song.bpm; Song.speed;
-    '        Limit 60
-    '    Loop While KeyHit <> 27 And Song.isPlaying
+    '        Print Using "__Order: ### / ###    Pattern: ### / ###    Row: ## / 64    BPM: ###    Speed: ###"; __Song.orderPosition + 1; __Song.orders; __Order(__Song.orderPosition) + 1; __Song.highestPattern + 1; __Song.patternRow + 1; __Song.bpm; __Song.speed;
+    '        _Limit 60
+    '    Loop While _KeyHit <> 27 And __Song.isPlaying
     '    StopMODPlayer
     'End If
     'End
@@ -33,151 +36,165 @@ $If MODPLAYER_BAS = UNDEFINED Then
     ' FUNCTIONS & SUBROUTINES
     '-----------------------------------------------------------------------------------------------------
     ' Loads the MOD file into memory and prepares all required gobals
-    Function LoadMODFile%% (sFileName As String)
-        Shared Song As SongType
-        Shared Order() As _Unsigned _Byte
-        Shared Pattern() As NoteType
-        Shared Sample() As SampleType
-        Shared PeriodTable() As _Unsigned Integer
-
-        ' By default we assume a failure
-        LoadMODFile = FALSE
-
-        ' Check if the file exists
-        If Not _FileExists(sFileName) Then Exit Function
+    Function LoadMODFromMemory%% (buffer As String)
+        Shared __Song As __SongType
+        Shared __Order() As _Unsigned _Byte
+        Shared __Pattern() As __NoteType
+        Shared __Sample() As __SampleType
+        Shared __PeriodTable() As _Unsigned Integer
 
         ' Attempt to open the file
-        Dim fileHandle As Long
-        fileHandle = FreeFile
-
-        Open sFileName For Binary Access Read As fileHandle
+        Dim memFile As _Unsigned _Offset: memFile = MemFile_Create(buffer)
+        If memFile = NULL Then Exit Function
 
         ' Check what kind of MOD file this is
         ' Seek to offset 1080 (438h) in the file & read in 4 bytes
-        Dim i As _Unsigned Integer
-        Get fileHandle, 1081, Song.subtype
+        Dim i As _Unsigned Integer, result As Long
+        result = MemFile_Seek(memFile, 1080)
+        _Assert result
+        result = MemFile_ReadString(memFile, __Song.subtype)
+        _Assert (result = Len(__Song.subtype))
 
         ' Also, seek to the beginning of the file and get the song title
-        Get fileHandle, 1, Song.songName
+        result = MemFile_Seek(memFile, 0)
+        _Assert result
+        result = MemFile_ReadString(memFile, __Song.songName)
+        _Assert (result = Len(__Song.songName))
 
-        Song.channels = 0
-        Song.samples = 0
+        __Song.channels = 0
+        __Song.samples = 0
 
-        Select Case Song.subtype
+        Select Case __Song.subtype
             Case "FEST", "FIST", "LARD", "M!K!", "M&K!", "M.K.", "N.T.", "NSMS", "PATT"
-                Song.channels = 4
-                Song.samples = 31
+                __Song.channels = 4
+                __Song.samples = 31
             Case "OCTA", "OKTA"
-                Song.channels = 8
-                Song.samples = 31
+                __Song.channels = 8
+                __Song.samples = 31
             Case Else
                 ' Parse the subtype string to check for more variants
-                If Right$(Song.subtype, 3) = "CHN" Then
+                If Right$(__Song.subtype, 3) = "CHN" Then
                     ' Check xCNH types
-                    Song.channels = Val(Left$(Song.subtype, 1))
-                    Song.samples = 31
-                ElseIf Right$(Song.subtype, 2) = "CH" Or Right$(Song.subtype, 2) = "CN" Then
+                    __Song.channels = Val(Left$(__Song.subtype, 1))
+                    __Song.samples = 31
+                ElseIf Right$(__Song.subtype, 2) = "CH" Or Right$(__Song.subtype, 2) = "CN" Then
                     ' Check for xxCH & xxCN types
-                    Song.channels = Val(Left$(Song.subtype, 2))
-                    Song.samples = 31
-                ElseIf Left$(Song.subtype, 3) = "FLT" Or Left$(Song.subtype, 3) = "TDZ" Or Left$(Song.subtype, 3) = "EXO" Then
+                    __Song.channels = Val(Left$(__Song.subtype, 2))
+                    __Song.samples = 31
+                ElseIf Left$(__Song.subtype, 3) = "FLT" Or Left$(__Song.subtype, 3) = "TDZ" Or Left$(__Song.subtype, 3) = "EXO" Then
                     ' Check for FLTx, TDZx & EXOx types
-                    Song.channels = Val(Right$(Song.subtype, 1))
-                    Song.samples = 31
-                ElseIf Left$(Song.subtype, 2) = "CD" And Right$(Song.subtype, 1) = "1" Then
+                    __Song.channels = Val(Right$(__Song.subtype, 1))
+                    __Song.samples = 31
+                ElseIf Left$(__Song.subtype, 2) = "CD" And Right$(__Song.subtype, 1) = "1" Then
                     ' Check for CDx1 types
-                    Song.channels = Val(Mid$(Song.subtype, 3, 1))
-                    Song.samples = 31
-                ElseIf Left$(Song.subtype, 2) = "FA" Then
+                    __Song.channels = Val(Mid$(__Song.subtype, 3, 1))
+                    __Song.samples = 31
+                ElseIf Left$(__Song.subtype, 2) = "FA" Then
                     ' Check for FAxx types
-                    Song.channels = Val(Right$(Song.subtype, 2))
-                    Song.samples = 31
+                    __Song.channels = Val(Right$(__Song.subtype, 2))
+                    __Song.samples = 31
                 Else
                     ' Extra checks for 15 sample MOD
-                    For i = 1 To Len(Song.songName)
-                        If Asc(Song.songName, i) < KEY_SPACE_BAR And Asc(Song.songName, i) <> NULL Then
+                    For i = 1 To Len(__Song.songName)
+                        If Asc(__Song.songName, i) < KEY_SPACE_BAR And Asc(__Song.songName, i) <> NULL Then
                             ' This is probably not a 15 sample MOD file
-                            Close fileHandle
+                            MemFile_Destroy memFile
                             Exit Function
                         End If
                     Next
-                    Song.channels = 4
-                    Song.samples = 15
-                    Song.subtype = "MODF" ' Change subtype to reflect 15 (Fh) sample mod, otherwise it will contain garbage
+                    __Song.channels = 4
+                    __Song.samples = 15
+                    __Song.subtype = "MODF" ' Change subtype to reflect 15 (Fh) sample mod, otherwise it will contain garbage
                 End If
         End Select
 
         ' Sanity check
-        If (Song.samples = 0 Or Song.channels = 0) Then
-            Close fileHandle
+        If (__Song.samples = 0 Or __Song.channels = 0) Then
+            MemFile_Destroy memFile
             Exit Function
         End If
 
         ' Initialize the sample manager
-        ReDim Sample(0 To Song.samples - 1) As SampleType
+        ReDim __Sample(0 To __Song.samples - 1) As __SampleType
         Dim As _Unsigned _Byte byte1, byte2
 
         ' Load the sample headers
-        For i = 0 To Song.samples - 1
+        For i = 0 To __Song.samples - 1
             ' Read the sample name
-            Get fileHandle, , Sample(i).sampleName
+            result = MemFile_ReadString(memFile, __Sample(i).sampleName)
+            _Assert (result = Len(__Sample(i).sampleName))
 
             ' Read sample length
-            Get fileHandle, , byte1
-            Get fileHandle, , byte2
-            Sample(i).length = (byte1 * &H100 + byte2) * 2
-            If Sample(i).length = 2 Then Sample(i).length = 0 ' Sanity check
+            result = MemFile_ReadByte(memFile, byte1)
+            _Assert result
+            result = MemFile_ReadByte(memFile, byte2)
+            _Assert result
+
+            __Sample(i).length = (byte1 * &H100 + byte2) * 2
+            If __Sample(i).length = 2 Then __Sample(i).length = 0 ' Sanity check
 
             ' Read finetune
-            Sample(i).c2Spd = GetC2Spd(Asc(Input$(1, fileHandle))) ' Convert finetune to c2spd
+            result = MemFile_ReadByte(memFile, __Sample(i).c2Spd)
+            _Assert result
+            __Sample(i).c2Spd = __GetC2Spd(__Sample(i).c2Spd) ' Convert finetune to c2spd
 
             ' Read volume
-            Sample(i).volume = Asc(Input$(1, fileHandle))
-            If Sample(i).volume > SAMPLE_VOLUME_MAX Then Sample(i).volume = SAMPLE_VOLUME_MAX ' Sanity check
+            result = MemFile_ReadByte(memFile, __Sample(i).volume)
+            _Assert result
+            If __Sample(i).volume > SAMPLE_VOLUME_MAX Then __Sample(i).volume = SAMPLE_VOLUME_MAX ' Sanity check
 
             ' Read loop start
-            Get fileHandle, , byte1
-            Get fileHandle, , byte2
-            Sample(i).loopStart = (byte1 * &H100 + byte2) * 2
-            If Sample(i).loopStart >= Sample(i).length Then Sample(i).loopStart = 0 ' Sanity check
+            result = MemFile_ReadByte(memFile, byte1)
+            _Assert result
+            result = MemFile_ReadByte(memFile, byte2)
+            _Assert result
+            __Sample(i).loopStart = (byte1 * &H100 + byte2) * 2
+            If __Sample(i).loopStart >= __Sample(i).length Then __Sample(i).loopStart = 0 ' Sanity check
 
             ' Read loop length
-            Get fileHandle, , byte1
-            Get fileHandle, , byte2
-            Sample(i).loopLength = (byte1 * &H100 + byte2) * 2
-            If Sample(i).loopLength = 2 Then Sample(i).loopLength = 0 ' Sanity check
+            result = MemFile_ReadByte(memFile, byte1)
+            _Assert result
+            result = MemFile_ReadByte(memFile, byte2)
+            _Assert result
+            __Sample(i).loopLength = (byte1 * &H100 + byte2) * 2
+            If __Sample(i).loopLength = 2 Then __Sample(i).loopLength = 0 ' Sanity check
 
             ' Calculate repeat end
-            Sample(i).loopEnd = Sample(i).loopStart + Sample(i).loopLength
-            If Sample(i).loopEnd > Sample(i).length Then Sample(i).loopEnd = Sample(i).length ' Sanity check
+            __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength
+            If __Sample(i).loopEnd > __Sample(i).length Then __Sample(i).loopEnd = __Sample(i).length ' Sanity check
         Next
 
-        Song.orders = Asc(Input$(1, fileHandle))
-        If Song.orders > ORDER_TABLE_MAX + 1 Then Song.orders = ORDER_TABLE_MAX + 1
-        Song.endJumpOrder = Asc(Input$(1, fileHandle))
-        If Song.endJumpOrder >= Song.orders Then Song.endJumpOrder = 0
+        result = MemFile_ReadByte(memFile, __Song.orders)
+        _Assert result
+        If __Song.orders > __ORDER_TABLE_MAX + 1 Then __Song.orders = __ORDER_TABLE_MAX + 1
+        result = MemFile_ReadByte(memFile, __Song.endJumpOrder)
+        _Assert result
+        If __Song.endJumpOrder >= __Song.orders Then __Song.endJumpOrder = 0
 
         'Load the pattern table, and find the highest pattern to load.
-        Song.highestPattern = 0
-        For i = 0 To ORDER_TABLE_MAX
-            Order(i) = Asc(Input$(1, fileHandle))
-            If Order(i) > Song.highestPattern Then Song.highestPattern = Order(i)
+        __Song.highestPattern = 0
+        For i = 0 To __ORDER_TABLE_MAX
+            result = MemFile_ReadByte(memFile, __Order(i))
+            _Assert result
+            If __Order(i) > __Song.highestPattern Then __Song.highestPattern = __Order(i)
         Next
 
         ' Resize pattern data array
-        ReDim Pattern(0 To Song.highestPattern, 0 To PATTERN_ROW_MAX, 0 To Song.channels - 1) As NoteType
+        ReDim __Pattern(0 To __Song.highestPattern, 0 To __PATTERN_ROW_MAX, 0 To __Song.channels - 1) As __NoteType
 
         ' Skip past the 4 byte marker if this is a 31 sample mod
-        If Song.samples = 31 Then Seek fileHandle, Loc(1) + 5
+        If __Song.samples = 31 Then
+            result = MemFile_Seek(memFile, MemFile_GetPosition(memFile) + 4)
+        End If
 
         ' Load the period table
         Restore PeriodTab
-        Read Song.periodTableMax ' Read the size
-        Song.periodTableMax = Song.periodTableMax - 1 ' Change to ubound
-        ReDim PeriodTable(0 To Song.periodTableMax) As _Unsigned Integer ' Allocate size elements
+        Read __Song.periodTableMax ' Read the size
+        __Song.periodTableMax = __Song.periodTableMax - 1 ' Change to ubound
+        ReDim __PeriodTable(0 To __Song.periodTableMax) As _Unsigned Integer ' Allocate size elements
         ' Now read size values
-        For i = 0 To Song.periodTableMax
-            Read PeriodTable(i)
+        For i = 0 To __Song.periodTableMax
+            Read __PeriodTable(i)
         Next
 
         Dim As _Unsigned _Byte byte3, byte4
@@ -190,49 +207,56 @@ $If MODPLAYER_BAS = UNDEFINED Then
         ' |aaaaBBBB CCCCCCCCC DDDDeeee FFFFFFFFF|
         ' +-------------------------------------+
         ' TODO: special handling for FLT8?
-        For i = 0 To Song.highestPattern
-            For a = 0 To PATTERN_ROW_MAX
-                For b = 0 To Song.channels - 1
-                    Get fileHandle, , byte1
-                    Get fileHandle, , byte2
-                    Get fileHandle, , byte3
-                    Get fileHandle, , byte4
+        For i = 0 To __Song.highestPattern
+            For a = 0 To __PATTERN_ROW_MAX
+                For b = 0 To __Song.channels - 1
+                    result = MemFile_ReadByte(memFile, byte1)
+                    _Assert result
+                    result = MemFile_ReadByte(memFile, byte2)
+                    _Assert result
+                    result = MemFile_ReadByte(memFile, byte3)
+                    _Assert result
+                    result = MemFile_ReadByte(memFile, byte4)
+                    _Assert result
 
-                    Pattern(i, a, b).sample = (byte1 And &HF0) Or _ShR(byte3, 4)
+                    __Pattern(i, a, b).sample = (byte1 And &HF0) Or _ShR(byte3, 4)
 
                     period = _ShL(byte1 And &HF, 8) Or byte2
 
                     ' Do the look up in the table against what is read in and store note
-                    Pattern(i, a, b).note = NOTE_NONE
+                    __Pattern(i, a, b).note = __NOTE_NONE
                     For c = 0 To 107
-                        If period >= PeriodTable(c + 24) Then
-                            Pattern(i, a, b).note = c
+                        If period >= __PeriodTable(c + 24) Then
+                            __Pattern(i, a, b).note = c
                             Exit For
                         End If
                     Next
 
-                    Pattern(i, a, b).volume = NOTE_NO_VOLUME ' MODs don't have any volume field in the pattern
-                    Pattern(i, a, b).effect = byte3 And &HF
-                    Pattern(i, a, b).operand = byte4
+                    __Pattern(i, a, b).volume = __NOTE_NO_VOLUME ' MODs don't have any volume field in the pattern
+                    __Pattern(i, a, b).effect = byte3 And &HF
+                    __Pattern(i, a, b).operand = byte4
 
                     ' Some sanity check
-                    If Pattern(i, a, b).sample > Song.samples Then Pattern(i, a, b).sample = 0 ' Sample 0 means no sample. So valid sample are 1-15/31
+                    If __Pattern(i, a, b).sample > __Song.samples Then __Pattern(i, a, b).sample = 0 ' Sample 0 means no sample. So valid sample are 1-15/31
                 Next
             Next
         Next
 
         ' Initialize the softsynth sample manager
-        InitializeSampleManager Song.samples
+        InitializeSampleManager __Song.samples
 
+        Dim sampBuf As String
         ' Load the samples
-        For i = 0 To Song.samples - 1
+        For i = 0 To __Song.samples - 1
+            sampBuf = Space$(__Sample(i).length)
+            result = MemFile_ReadString(memFile, sampBuf)
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            LoadSample i, Input$(Sample(i).length, fileHandle), Sample(i).loopLength > 0, Sample(i).loopStart, Sample(i).loopEnd
+            LoadSample i, sampBuf, __Sample(i).loopLength > 0, __Sample(i).loopStart, __Sample(i).loopEnd
         Next
 
-        Close fileHandle
+        MemFile_Destroy memFile
 
-        LoadMODFile = TRUE
+        LoadMODFromMemory = TRUE
 
         ' Amiga period table data for 11 octaves
         PeriodTab:
@@ -253,12 +277,18 @@ $If MODPLAYER_BAS = UNDEFINED Then
     End Function
 
 
+    ' Load the MOD file from disk or a URL
+    Function LoadMODFromDisk%% (fileName As String)
+        LoadMODFromDisk = LoadMODFromMemory(LoadFile(fileName))
+    End Function
+
+
     ' Initializes the audio mixer, prepares eveything else for playback and kick starts the timer and hence song playback
     Sub StartMODPlayer
-        Shared Song As SongType
-        Shared Channel() As ChannelType
-        Shared SineTable() As _Unsigned _Byte
-        Shared InvertLoopSpeedTable() As _Unsigned _Byte
+        Shared __Song As __SongType
+        Shared __Channel() As __ChannelType
+        Shared __SineTable() As _Unsigned _Byte
+        Shared __InvertLoopSpeedTable() As _Unsigned _Byte
         Shared SoftSynth As SoftSynthType
 
         Dim As _Unsigned Integer i, s
@@ -266,48 +296,48 @@ $If MODPLAYER_BAS = UNDEFINED Then
         ' Load the sine table
         Restore SineTab
         Read s
-        ReDim SineTable(0 To s - 1) As _Unsigned _Byte
+        ReDim __SineTable(0 To s - 1) As _Unsigned _Byte
         For i = 0 To s - 1
-            Read SineTable(i)
+            Read __SineTable(i)
         Next
 
         ' Load the invert loop table
         Restore ILSpdTab
         Read s
-        ReDim InvertLoopSpeedTable(0 To s - 1) As _Unsigned _Byte
+        ReDim __InvertLoopSpeedTable(0 To s - 1) As _Unsigned _Byte
         For i = 0 To s - 1
-            Read InvertLoopSpeedTable(i)
+            Read __InvertLoopSpeedTable(i)
         Next
 
         ' Initialize the softsynth sample mixer
-        InitializeMixer Song.channels
+        InitializeMixer __Song.channels
 
         ' Initialize some important stuff
-        Song.tempoTimerValue = (SoftSynth.mixerRate * SONG_BPM_DEFAULT) \ 50
-        Song.orderPosition = 0
-        Song.patternRow = 0
-        Song.speed = SONG_SPEED_DEFAULT
-        Song.tick = Song.speed
-        Song.isPaused = FALSE
+        __Song.tempoTimerValue = (SoftSynth.mixerRate * __SONG_BPM_DEFAULT) \ 50
+        __Song.orderPosition = 0
+        __Song.patternRow = 0
+        __Song.speed = __SONG_SPEED_DEFAULT
+        __Song.tick = __Song.speed
+        __Song.isPaused = FALSE
 
         ' Set default BPM
-        SetBPM SONG_BPM_DEFAULT
+        __SetBPM __SONG_BPM_DEFAULT
 
         ' Setup the channel array
-        ReDim Channel(0 To Song.channels - 1) As ChannelType
+        ReDim __Channel(0 To __Song.channels - 1) As __ChannelType
 
         ' Setup panning for all channels per AMIGA PAULA's panning setup - LRRLLRRL...
         ' If we have < 4 channels, then 0 & 1 are set as left & right
         ' If we have > 4 channels all prefect 4 groups are set as LRRL
         ' Any channels that are left out are simply centered by the SoftSynth
         ' We will also not do hard left or hard right. ~25% of sound from each channel is blended with the other
-        If Song.channels > 1 And Song.channels < 4 Then
+        If __Song.channels > 1 And __Song.channels < 4 Then
             ' Just setup channels 0 and 1
             ' If we have a 3rd channel it will be handle by the SoftSynth
             SetVoicePanning 0, SAMPLE_PAN_LEFT + SAMPLE_PAN_CENTER / 2
             SetVoicePanning 1, SAMPLE_PAN_RIGHT - SAMPLE_PAN_CENTER / 2
         Else
-            For i = 0 To Song.channels - 1 - (Song.channels Mod 4) Step 4
+            For i = 0 To __Song.channels - 1 - (__Song.channels Mod 4) Step 4
                 SetVoicePanning i + 0, SAMPLE_PAN_LEFT + SAMPLE_PAN_CENTER / 2
                 SetVoicePanning i + 1, SAMPLE_PAN_RIGHT - SAMPLE_PAN_CENTER / 2
                 SetVoicePanning i + 2, SAMPLE_PAN_RIGHT - SAMPLE_PAN_CENTER / 2
@@ -315,7 +345,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
             Next
         End If
 
-        Song.isPlaying = TRUE
+        __Song.isPlaying = TRUE
 
         ' Sine table data for tremolo & vibrato
         SineTab:
@@ -333,103 +363,103 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
     ' Frees all allocated resources, stops the timer and hence song playback
     Sub StopMODPlayer
-        Shared Song As SongType
+        Shared __Song As __SongType
 
         ' Tell softsynth we are done
         FinalizeMixer
 
-        Song.isPlaying = FALSE
+        __Song.isPlaying = FALSE
     End Sub
 
 
     ' This should be called at regular intervals to run the mod player and mixer code
     ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
     Sub UpdateMODPlayer
-        Shared Song As SongType
-        Shared Order() As _Unsigned _Byte
+        Shared __Song As __SongType
+        Shared __Order() As _Unsigned _Byte
 
         ' Check conditions for which we should just exit and not process anything
-        If Song.orderPosition >= Song.orders Then Exit Sub
+        If __Song.orderPosition >= __Song.orders Then Exit Sub
 
         ' Set the playing flag to true
-        Song.isPlaying = TRUE
+        __Song.isPlaying = TRUE
 
         ' If song is paused or we already have enough samples to play then exit
-        If Song.isPaused Or Not NeedsSoundRefill Then Exit Sub
+        If __Song.isPaused Or Not NeedsSoundRefill Then Exit Sub
 
-        If Song.tick >= Song.speed Then
+        If __Song.tick >= __Song.speed Then
             ' Reset song tick
-            Song.tick = 0
+            __Song.tick = 0
 
             ' Process pattern row if pattern delay is over
-            If Song.patternDelay = 0 Then
+            If __Song.patternDelay = 0 Then
 
                 ' Save the pattern and row for UpdateMODTick()
-                ' The pattern that we are playing is always Song.tickPattern
-                Song.tickPattern = Order(Song.orderPosition)
-                Song.tickPatternRow = Song.patternRow
+                ' The pattern that we are playing is always __Song.tickPattern
+                __Song.tickPattern = __Order(__Song.orderPosition)
+                __Song.tickPatternRow = __Song.patternRow
 
                 ' Process the row
-                UpdateMODRow
+                __UpdateMODRow
 
                 ' Increment the row counter
                 ' Note UpdateMODTick() should pickup stuff using tickPattern & tickPatternRow
                 ' This is because we are already at a new row not processed by UpdateMODRow()
-                Song.patternRow = Song.patternRow + 1
+                __Song.patternRow = __Song.patternRow + 1
 
                 ' Check if we have finished the pattern and then move to the next one
-                If Song.patternRow > PATTERN_ROW_MAX Then
-                    Song.orderPosition = Song.orderPosition + 1
-                    Song.patternRow = 0
+                If __Song.patternRow > __PATTERN_ROW_MAX Then
+                    __Song.orderPosition = __Song.orderPosition + 1
+                    __Song.patternRow = 0
 
                     ' Check if we need to loop or stop
-                    If Song.orderPosition >= Song.orders Then
-                        If Song.isLooping Then
-                            Song.orderPosition = Song.endJumpOrder
-                            Song.speed = SONG_SPEED_DEFAULT
-                            Song.tick = Song.speed
+                    If __Song.orderPosition >= __Song.orders Then
+                        If __Song.isLooping Then
+                            __Song.orderPosition = __Song.endJumpOrder
+                            __Song.speed = __SONG_SPEED_DEFAULT
+                            __Song.tick = __Song.speed
                         Else
-                            Song.isPlaying = FALSE
+                            __Song.isPlaying = FALSE
                         End If
                     End If
                 End If
             Else
-                Song.patternDelay = Song.patternDelay - 1
+                __Song.patternDelay = __Song.patternDelay - 1
             End If
         Else
-            UpdateMODTick
+            __UpdateMODTick
         End If
 
         ' Mix the current tick
-        UpdateMixer Song.samplesPerTick
+        UpdateMixer __Song.samplesPerTick
 
         ' Increment song tick on each update
-        Song.tick = Song.tick + 1
+        __Song.tick = __Song.tick + 1
     End Sub
 
 
     ' Updates a row of notes and play them out on tick 0
-    Sub UpdateMODRow
-        Shared Song As SongType
-        Shared Pattern() As NoteType
-        Shared Sample() As SampleType
-        Shared Channel() As ChannelType
-        Shared PeriodTable() As _Unsigned Integer
+    Sub __UpdateMODRow
+        Shared __Song As __SongType
+        Shared __Pattern() As __NoteType
+        Shared __Sample() As __SampleType
+        Shared __Channel() As __ChannelType
+        Shared __PeriodTable() As _Unsigned Integer
 
         Dim As _Unsigned _Byte nChannel, nNote, nSample, nVolume, nEffect, nOperand, nOpX, nOpY
         ' The effect flags below are set to true when a pattern jump effect and pattern break effect are triggered
         Dim As _Byte jumpEffectFlag, breakEffectFlag, noFrequency
 
         ' Set the active channel count to zero
-        Song.activeChannels = 0
+        __Song.activeChannels = 0
 
         ' Process all channels
-        For nChannel = 0 To Song.channels - 1
-            nNote = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).note
-            nSample = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).sample
-            nVolume = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).volume
-            nEffect = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).effect
-            nOperand = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).operand
+        For nChannel = 0 To __Song.channels - 1
+            nNote = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).note
+            nSample = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).sample
+            nVolume = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).volume
+            nEffect = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).effect
+            nOperand = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).operand
             nOpX = _ShR(nOperand, 4)
             nOpY = nOperand And &HF
             noFrequency = FALSE
@@ -437,77 +467,77 @@ $If MODPLAYER_BAS = UNDEFINED Then
             ' Set volume. We never play if sample number is zero. Our sample array is 1 based
             ' ONLY RESET VOLUME IF THERE IS A SAMPLE NUMBER
             If nSample > 0 Then
-                Channel(nChannel).sample = nSample - 1
+                __Channel(nChannel).sample = nSample - 1
                 ' Don't get the volume if delay note, set it when the delay note actually happens
                 If Not (nEffect = &HE And nOpX = &HD) Then
-                    Channel(nChannel).volume = Sample(Channel(nChannel).sample).volume
+                    __Channel(nChannel).volume = __Sample(__Channel(nChannel).sample).volume
                 End If
             End If
 
-            If nNote < NOTE_NONE Then
-                Channel(nChannel).lastPeriod = 8363 * PeriodTable(nNote) \ Sample(Channel(nChannel).sample).c2Spd
-                Channel(nChannel).note = nNote
-                Channel(nChannel).restart = TRUE
-                Channel(nChannel).startPosition = 0
-                Song.activeChannels = nChannel
+            If nNote < __NOTE_NONE Then
+                __Channel(nChannel).lastPeriod = 8363 * __PeriodTable(nNote) \ __Sample(__Channel(nChannel).sample).c2Spd
+                __Channel(nChannel).note = nNote
+                __Channel(nChannel).restart = TRUE
+                __Channel(nChannel).startPosition = 0
+                __Song.activeChannels = nChannel
 
                 ' Retrigger tremolo and vibrato waveforms
-                If Channel(nChannel).waveControl And &HF < 4 Then Channel(nChannel).vibratoPosition = 0
-                If _ShR(Channel(nChannel).waveControl, 4) < 4 Then Channel(nChannel).tremoloPosition = 0
+                If __Channel(nChannel).waveControl And &HF < 4 Then __Channel(nChannel).vibratoPosition = 0
+                If _ShR(__Channel(nChannel).waveControl, 4) < 4 Then __Channel(nChannel).tremoloPosition = 0
 
                 ' ONLY RESET FREQUENCY IF THERE IS A NOTE VALUE AND PORTA NOT SET
                 If nEffect <> &H3 And nEffect <> &H5 Then
-                    Channel(nChannel).period = Channel(nChannel).lastPeriod
+                    __Channel(nChannel).period = __Channel(nChannel).lastPeriod
                 End If
             Else
-                Channel(nChannel).restart = FALSE
+                __Channel(nChannel).restart = FALSE
             End If
 
-            If nVolume <= SAMPLE_VOLUME_MAX Then Channel(nChannel).volume = nVolume
-            If nNote = NOTE_KEY_OFF Then Channel(nChannel).volume = 0
+            If nVolume <= SAMPLE_VOLUME_MAX Then __Channel(nChannel).volume = nVolume
+            If nNote = __NOTE_KEY_OFF Then __Channel(nChannel).volume = 0
 
             ' Process tick 0 effects
             Select Case nEffect
                 Case &H3 ' 3: Porta To Note
-                    If nOperand > 0 Then Channel(nChannel).portamentoSpeed = nOperand
-                    Channel(nChannel).portamentoTo = Channel(nChannel).lastPeriod
-                    Channel(nChannel).restart = FALSE
+                    If nOperand > 0 Then __Channel(nChannel).portamentoSpeed = nOperand
+                    __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
+                    __Channel(nChannel).restart = FALSE
 
                 Case &H5 ' 5: Tone Portamento + Volume Slide
-                    Channel(nChannel).portamentoTo = Channel(nChannel).lastPeriod
-                    Channel(nChannel).restart = FALSE
+                    __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
+                    __Channel(nChannel).restart = FALSE
 
                 Case &H4 ' 4: Vibrato
-                    If nOpX > 0 Then Channel(nChannel).vibratoSpeed = nOpX
-                    If nOpY > 0 Then Channel(nChannel).vibratoDepth = nOpY
+                    If nOpX > 0 Then __Channel(nChannel).vibratoSpeed = nOpX
+                    If nOpY > 0 Then __Channel(nChannel).vibratoDepth = nOpY
 
                 Case &H7 ' 7: Tremolo
-                    If nOpX > 0 Then Channel(nChannel).tremoloSpeed = nOpX
-                    If nOpY > 0 Then Channel(nChannel).tremoloDepth = nOpY
+                    If nOpX > 0 Then __Channel(nChannel).tremoloSpeed = nOpX
+                    If nOpY > 0 Then __Channel(nChannel).tremoloDepth = nOpY
 
                 Case &H8 ' 8: Set Panning Position
                     ' Don't care about DMP panning BS. We are doing this Fasttracker style
                     SetVoicePanning nChannel, nOperand
 
                 Case &H9 ' 9: Set Sample Offset
-                    If nOperand > 0 Then Channel(nChannel).startPosition = _ShL(nOperand, 8)
+                    If nOperand > 0 Then __Channel(nChannel).startPosition = _ShL(nOperand, 8)
 
                 Case &HB ' 11: Jump To Pattern
-                    Song.orderPosition = nOperand
-                    If Song.orderPosition >= Song.orders Then Song.orderPosition = Song.endJumpOrder
-                    Song.patternRow = -1 ' This will increment right after & we will start at 0
+                    __Song.orderPosition = nOperand
+                    If __Song.orderPosition >= __Song.orders Then __Song.orderPosition = __Song.endJumpOrder
+                    __Song.patternRow = -1 ' This will increment right after & we will start at 0
                     jumpEffectFlag = TRUE
 
                 Case &HC ' 12: Set Volume
-                    Channel(nChannel).volume = nOperand ' Operand can never be -ve cause it is unsigned. So we only clip for max below
-                    If Channel(nChannel).volume > SAMPLE_VOLUME_MAX Then Channel(nChannel).volume = SAMPLE_VOLUME_MAX
+                    __Channel(nChannel).volume = nOperand ' Operand can never be -ve cause it is unsigned. So we only clip for max below
+                    If __Channel(nChannel).volume > SAMPLE_VOLUME_MAX Then __Channel(nChannel).volume = SAMPLE_VOLUME_MAX
 
                 Case &HD ' 13: Pattern Break
-                    Song.patternRow = (nOpX * 10) + nOpY - 1
-                    If Song.patternRow > PATTERN_ROW_MAX Then Song.patternRow = -1
+                    __Song.patternRow = (nOpX * 10) + nOpY - 1
+                    If __Song.patternRow > __PATTERN_ROW_MAX Then __Song.patternRow = -1
                     If Not breakEffectFlag And Not jumpEffectFlag Then
-                        Song.orderPosition = Song.orderPosition + 1
-                        If Song.orderPosition >= Song.orders Then Song.orderPosition = Song.endJumpOrder
+                        __Song.orderPosition = __Song.orderPosition + 1
+                        If __Song.orderPosition >= __Song.orders Then __Song.orderPosition = __Song.endJumpOrder
                     End If
                     breakEffectFlag = TRUE
 
@@ -517,36 +547,36 @@ $If MODPLAYER_BAS = UNDEFINED Then
                             EnableHQMixer nOpY
 
                         Case &H1 ' 1: Fine Portamento Up
-                            Channel(nChannel).period = Channel(nChannel).period - _ShL(nOpY, 2)
+                            __Channel(nChannel).period = __Channel(nChannel).period - _ShL(nOpY, 2)
 
                         Case &H2 ' 2: Fine Portamento Down
-                            Channel(nChannel).period = Channel(nChannel).period + _ShL(nOpY, 2)
+                            __Channel(nChannel).period = __Channel(nChannel).period + _ShL(nOpY, 2)
 
                         Case &H3 ' 3: Glissando Control
-                            Channel(nChannel).useGlissando = (nOpY <> FALSE)
+                            __Channel(nChannel).useGlissando = (nOpY <> FALSE)
 
                         Case &H4 ' 4: Set Vibrato Waveform
-                            Channel(nChannel).waveControl = Channel(nChannel).waveControl And &HF0
-                            Channel(nChannel).waveControl = Channel(nChannel).waveControl Or nOpY
+                            __Channel(nChannel).waveControl = __Channel(nChannel).waveControl And &HF0
+                            __Channel(nChannel).waveControl = __Channel(nChannel).waveControl Or nOpY
 
                         Case &H5 ' 5: Set Finetune
-                            Sample(Channel(nChannel).sample).c2Spd = GetC2Spd(nOpY)
+                            __Sample(__Channel(nChannel).sample).c2Spd = __GetC2Spd(nOpY)
 
                         Case &H6 ' 6: Pattern Loop
                             If nOpY = 0 Then
-                                Channel(nChannel).patternLoopRow = Song.tickPatternRow
+                                __Channel(nChannel).patternLoopRow = __Song.tickPatternRow
                             Else
-                                If Channel(nChannel).patternLoopRowCounter = 0 Then
-                                    Channel(nChannel).patternLoopRowCounter = nOpY
+                                If __Channel(nChannel).patternLoopRowCounter = 0 Then
+                                    __Channel(nChannel).patternLoopRowCounter = nOpY
                                 Else
-                                    Channel(nChannel).patternLoopRowCounter = Channel(nChannel).patternLoopRowCounter - 1
+                                    __Channel(nChannel).patternLoopRowCounter = __Channel(nChannel).patternLoopRowCounter - 1
                                 End If
-                                If Channel(nChannel).patternLoopRowCounter > 0 Then Song.patternRow = Channel(nChannel).patternLoopRow - 1
+                                If __Channel(nChannel).patternLoopRowCounter > 0 Then __Song.patternRow = __Channel(nChannel).patternLoopRow - 1
                             End If
 
                         Case &H7 ' 7: Set Tremolo WaveForm
-                            Channel(nChannel).waveControl = Channel(nChannel).waveControl And &HF
-                            Channel(nChannel).waveControl = Channel(nChannel).waveControl Or _ShL(nOpY, 4)
+                            __Channel(nChannel).waveControl = __Channel(nChannel).waveControl And &HF
+                            __Channel(nChannel).waveControl = __Channel(nChannel).waveControl Or _ShL(nOpY, 4)
 
                         Case &H8 ' 8: 16 position panning
                             If nOpY > 15 Then nOpY = 15
@@ -554,47 +584,47 @@ $If MODPLAYER_BAS = UNDEFINED Then
                             SetVoicePanning nChannel, nOpY * ((SAMPLE_PAN_RIGHT - SAMPLE_PAN_LEFT) / 15)
 
                         Case &HA ' 10: Fine Volume Slide Up
-                            Channel(nChannel).volume = Channel(nChannel).volume + nOpY
-                            If Channel(nChannel).volume > SAMPLE_VOLUME_MAX Then Channel(nChannel).volume = SAMPLE_VOLUME_MAX
+                            __Channel(nChannel).volume = __Channel(nChannel).volume + nOpY
+                            If __Channel(nChannel).volume > SAMPLE_VOLUME_MAX Then __Channel(nChannel).volume = SAMPLE_VOLUME_MAX
 
                         Case &HB ' 11: Fine Volume Slide Down
-                            Channel(nChannel).volume = Channel(nChannel).volume - nOpY
-                            If Channel(nChannel).volume < 0 Then Channel(nChannel).volume = 0
+                            __Channel(nChannel).volume = __Channel(nChannel).volume - nOpY
+                            If __Channel(nChannel).volume < 0 Then __Channel(nChannel).volume = 0
 
                         Case &HD ' 13: Delay Note
-                            Channel(nChannel).restart = FALSE
+                            __Channel(nChannel).restart = FALSE
                             noFrequency = TRUE
 
                         Case &HE ' 14: Pattern Delay
-                            Song.patternDelay = nOpY
+                            __Song.patternDelay = nOpY
 
                         Case &HF ' 15: Invert Loop
-                            Channel(nChannel).invertLoopSpeed = nOpY
+                            __Channel(nChannel).invertLoopSpeed = nOpY
                     End Select
 
                 Case &HF ' 15: Set Speed
                     If nOperand < 32 Then
-                        Song.speed = nOperand
+                        __Song.speed = nOperand
                     Else
-                        SetBPM nOperand
+                        __SetBPM nOperand
                     End If
             End Select
 
-            DoInvertLoop nChannel ' called every tick
+            __DoInvertLoop nChannel ' called every tick
 
             If Not noFrequency Then
-                If nEffect <> 7 Then SetVoiceVolume nChannel, Channel(nChannel).volume
-                If Channel(nChannel).period > 0 Then SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
+                If nEffect <> 7 Then SetVoiceVolume nChannel, __Channel(nChannel).volume
+                If __Channel(nChannel).period > 0 Then SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
             End If
         Next
 
         ' Now play all samples that needs to be played
-        For nChannel = 0 To Song.activeChannels
-            If Channel(nChannel).restart Then
-                If Sample(Channel(nChannel).sample).loopLength > 0 Then
-                    PlayVoice nChannel, Channel(nChannel).sample, Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, Sample(Channel(nChannel).sample).loopStart, Sample(Channel(nChannel).sample).loopEnd
+        For nChannel = 0 To __Song.activeChannels
+            If __Channel(nChannel).restart Then
+                If __Sample(__Channel(nChannel).sample).loopLength > 0 Then
+                    PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
                 Else
-                    PlayVoice nChannel, Channel(nChannel).sample, Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, Sample(Channel(nChannel).sample).length
+                    PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
                 End If
             End If
         Next
@@ -602,100 +632,100 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' Updates any tick based effects after tick 0
-    Sub UpdateMODTick
-        Shared Song As SongType
-        Shared Pattern() As NoteType
-        Shared Sample() As SampleType
-        Shared Channel() As ChannelType
-        Shared PeriodTable() As _Unsigned Integer
+    Sub __UpdateMODTick
+        Shared __Song As __SongType
+        Shared __Pattern() As __NoteType
+        Shared __Sample() As __SampleType
+        Shared __Channel() As __ChannelType
+        Shared __PeriodTable() As _Unsigned Integer
 
         Dim As _Unsigned _Byte nChannel, nVolume, nEffect, nOperand, nOpX, nOpY
 
         ' Process all channels
-        For nChannel = 0 To Song.channels - 1
+        For nChannel = 0 To __Song.channels - 1
             ' Only process if we have a period set
-            If Channel(nChannel).period > 0 Then
+            If __Channel(nChannel).period > 0 Then
                 ' We are not processing a new row but tick 1+ effects
                 ' So we pick these using tickPattern and tickPatternRow
-                nVolume = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).volume
-                nEffect = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).effect
-                nOperand = Pattern(Song.tickPattern, Song.tickPatternRow, nChannel).operand
+                nVolume = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).volume
+                nEffect = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).effect
+                nOperand = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).operand
                 nOpX = _ShR(nOperand, 4)
                 nOpY = nOperand And &HF
 
-                DoInvertLoop nChannel ' called every tick
+                __DoInvertLoop nChannel ' called every tick
 
                 Select Case nEffect
                     Case &H0 ' 0: Arpeggio
                         If (nOperand > 0) Then
-                            Select Case Song.tick Mod 3 'TODO: Check why 0, 1, 2 sounds wierd
+                            Select Case __Song.tick Mod 3 'TODO: Check why 0, 1, 2 sounds wierd
                                 Case 0
-                                    SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
+                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
                                 Case 1
-                                    SetVoiceFrequency nChannel, GetFrequencyFromPeriod(PeriodTable(Channel(nChannel).note + nOpX))
+                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpX))
                                 Case 2
-                                    SetVoiceFrequency nChannel, GetFrequencyFromPeriod(PeriodTable(Channel(nChannel).note + nOpY))
+                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpY))
                             End Select
                         End If
 
                     Case &H1 ' 1: Porta Up
-                        Channel(nChannel).period = Channel(nChannel).period - _ShL(nOperand, 2)
-                        SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
-                        If Channel(nChannel).period < 56 Then Channel(nChannel).period = 56
+                        __Channel(nChannel).period = __Channel(nChannel).period - _ShL(nOperand, 2)
+                        SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                        If __Channel(nChannel).period < 56 Then __Channel(nChannel).period = 56
 
                     Case &H2 ' 2: Porta Down
-                        Channel(nChannel).period = Channel(nChannel).period + _ShL(nOperand, 2)
-                        SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
+                        __Channel(nChannel).period = __Channel(nChannel).period + _ShL(nOperand, 2)
+                        SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
 
                     Case &H3 ' 3: Porta To Note
-                        DoPortamento nChannel
+                        __DoPortamento nChannel
 
                     Case &H4 ' 4: Vibrato
-                        DoVibrato nChannel
+                        __DoVibrato nChannel
 
                     Case &H5 ' 5: Tone Portamento + Volume Slide
-                        DoPortamento nChannel
-                        DoVolumeSlide nChannel, nOpX, nOpY
+                        __DoPortamento nChannel
+                        __DoVolumeSlide nChannel, nOpX, nOpY
 
                     Case &H6 ' 6: Vibrato + Volume Slide
-                        DoVibrato nChannel
-                        DoVolumeSlide nChannel, nOpX, nOpY
+                        __DoVibrato nChannel
+                        __DoVolumeSlide nChannel, nOpX, nOpY
 
                     Case &H7 ' 7: Tremolo
-                        DoTremolo nChannel
+                        __DoTremolo nChannel
 
                     Case &HA ' 10: Volume Slide
-                        DoVolumeSlide nChannel, nOpX, nOpY
+                        __DoVolumeSlide nChannel, nOpX, nOpY
 
                     Case &HE ' 14: Extended Effects
                         Select Case nOpX
                             Case &H9 ' 9: Retrigger Note
                                 If nOpY <> 0 Then
-                                    If Song.tick Mod nOpY = 0 Then
-                                        If Sample(Channel(nChannel).sample).loopLength > 0 Then
-                                            PlayVoice nChannel, Channel(nChannel).sample, Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, Sample(Channel(nChannel).sample).loopStart, Sample(Channel(nChannel).sample).loopEnd
+                                    If __Song.tick Mod nOpY = 0 Then
+                                        If __Sample(__Channel(nChannel).sample).loopLength > 0 Then
+                                            PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
                                         Else
-                                            PlayVoice nChannel, Channel(nChannel).sample, Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, Sample(Channel(nChannel).sample).length
+                                            PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
                                         End If
                                     End If
                                 End If
 
                             Case &HC ' 12: Cut Note
-                                If Song.tick = nOpY Then
-                                    Channel(nChannel).volume = 0
-                                    SetVoiceVolume nChannel, Channel(nChannel).volume
+                                If __Song.tick = nOpY Then
+                                    __Channel(nChannel).volume = 0
+                                    SetVoiceVolume nChannel, __Channel(nChannel).volume
                                 End If
 
                             Case &HD ' 13: Delay Note
-                                If Song.tick = nOpY Then
-                                    Channel(nChannel).volume = Sample(Channel(nChannel).sample).volume
-                                    If nVolume <= SAMPLE_VOLUME_MAX Then Channel(nChannel).volume = nVolume
-                                    SetVoiceFrequency nChannel, GetFrequencyFromPeriod(Channel(nChannel).period)
-                                    SetVoiceVolume nChannel, Channel(nChannel).volume
-                                    If Sample(Channel(nChannel).sample).loopLength > 0 Then
-                                        PlayVoice nChannel, Channel(nChannel).sample, Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, Sample(Channel(nChannel).sample).loopStart, Sample(Channel(nChannel).sample).loopEnd
+                                If __Song.tick = nOpY Then
+                                    __Channel(nChannel).volume = __Sample(__Channel(nChannel).sample).volume
+                                    If nVolume <= SAMPLE_VOLUME_MAX Then __Channel(nChannel).volume = nVolume
+                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                                    SetVoiceVolume nChannel, __Channel(nChannel).volume
+                                    If __Sample(__Channel(nChannel).sample).loopLength > 0 Then
+                                        PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
                                     Else
-                                        PlayVoice nChannel, Channel(nChannel).sample, Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, Sample(Channel(nChannel).sample).length
+                                        PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
                                     End If
                                 End If
                         End Select
@@ -706,105 +736,105 @@ $If MODPLAYER_BAS = UNDEFINED Then
 
 
     ' We always set the global BPM using this and never directly
-    Sub SetBPM (nBPM As _Unsigned _Byte)
-        Shared Song As SongType
+    Sub __SetBPM (nBPM As _Unsigned _Byte)
+        Shared __Song As __SongType
 
-        Song.bpm = nBPM
+        __Song.bpm = nBPM
 
         ' Calculate the number of samples we have to mix per tick
-        Song.samplesPerTick = Song.tempoTimerValue \ nBPM
+        __Song.samplesPerTick = __Song.tempoTimerValue \ nBPM
     End Sub
 
 
     ' Binary search the period table to find the closest value
     ' I hope this is the right way to do glissando. Oh well...
-    Function GetClosestPeriod& (target As Long)
-        Shared Song As SongType
-        Shared Channel() As ChannelType
-        Shared PeriodTable() As _Unsigned Integer
+    Function __GetClosestPeriod& (target As Long)
+        Shared __Song As __SongType
+        Shared __Channel() As __ChannelType
+        Shared __PeriodTable() As _Unsigned Integer
 
         Dim As Long startPos, endPos, midPos, leftVal, rightVal
 
         If target > 27392 Then
-            GetClosestPeriod = target
+            __GetClosestPeriod = target
             Exit Function
         ElseIf target < 14 Then
-            GetClosestPeriod = target
+            __GetClosestPeriod = target
             Exit Function
         End If
 
         startPos = 0
-        endPos = Song.periodTableMax
+        endPos = __Song.periodTableMax
         While startPos + 1 < endPos
             midPos = startPos + (endPos - startPos) \ 2
-            If PeriodTable(midPos) <= target Then
+            If __PeriodTable(midPos) <= target Then
                 endPos = midPos
             Else
                 startPos = midPos
             End If
         Wend
 
-        rightVal = Abs(PeriodTable(startPos) - target)
-        leftVal = Abs(PeriodTable(endPos) - target)
+        rightVal = Abs(__PeriodTable(startPos) - target)
+        leftVal = Abs(__PeriodTable(endPos) - target)
 
         If leftVal <= rightVal Then
-            GetClosestPeriod = PeriodTable(endPos)
+            __GetClosestPeriod = __PeriodTable(endPos)
         Else
-            GetClosestPeriod = PeriodTable(startPos)
+            __GetClosestPeriod = __PeriodTable(startPos)
         End If
     End Function
 
 
     ' Carry out a tone portamento to a certain note
-    Sub DoPortamento (chan As _Unsigned _Byte)
-        Shared Channel() As ChannelType
+    Sub __DoPortamento (chan As _Unsigned _Byte)
+        Shared __Channel() As __ChannelType
 
         ' Slide up/down and clamp to destination
-        If Channel(chan).period < Channel(chan).portamentoTo Then
-            Channel(chan).period = Channel(chan).period + _ShL(Channel(chan).portamentoSpeed, 2)
-            If Channel(chan).period > Channel(chan).portamentoTo Then Channel(chan).period = Channel(chan).portamentoTo
-        ElseIf Channel(chan).period > Channel(chan).portamentoTo Then
-            Channel(chan).period = Channel(chan).period - _ShL(Channel(chan).portamentoSpeed, 2)
-            If Channel(chan).period < Channel(chan).portamentoTo Then Channel(chan).period = Channel(chan).portamentoTo
+        If __Channel(chan).period < __Channel(chan).portamentoTo Then
+            __Channel(chan).period = __Channel(chan).period + _ShL(__Channel(chan).portamentoSpeed, 2)
+            If __Channel(chan).period > __Channel(chan).portamentoTo Then __Channel(chan).period = __Channel(chan).portamentoTo
+        ElseIf __Channel(chan).period > __Channel(chan).portamentoTo Then
+            __Channel(chan).period = __Channel(chan).period - _ShL(__Channel(chan).portamentoSpeed, 2)
+            If __Channel(chan).period < __Channel(chan).portamentoTo Then __Channel(chan).period = __Channel(chan).portamentoTo
         End If
 
-        If Channel(chan).useGlissando Then
-            SetVoiceFrequency chan, GetFrequencyFromPeriod(GetClosestPeriod(Channel(chan).period))
+        If __Channel(chan).useGlissando Then
+            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__GetClosestPeriod(__Channel(chan).period))
         Else
-            SetVoiceFrequency chan, GetFrequencyFromPeriod(Channel(chan).period)
+            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period)
         End If
     End Sub
 
 
     ' Carry out a volume slide using +x -y
-    Sub DoVolumeSlide (chan As _Unsigned _Byte, x As _Unsigned _Byte, y As _Unsigned _Byte)
-        Shared Channel() As ChannelType
+    Sub __DoVolumeSlide (chan As _Unsigned _Byte, x As _Unsigned _Byte, y As _Unsigned _Byte)
+        Shared __Channel() As __ChannelType
 
-        Channel(chan).volume = Channel(chan).volume + x - y
-        If Channel(chan).volume < 0 Then Channel(chan).volume = 0
-        If Channel(chan).volume > SAMPLE_VOLUME_MAX Then Channel(chan).volume = SAMPLE_VOLUME_MAX
+        __Channel(chan).volume = __Channel(chan).volume + x - y
+        If __Channel(chan).volume < 0 Then __Channel(chan).volume = 0
+        If __Channel(chan).volume > SAMPLE_VOLUME_MAX Then __Channel(chan).volume = SAMPLE_VOLUME_MAX
 
-        SetVoiceVolume chan, Channel(chan).volume
+        SetVoiceVolume chan, __Channel(chan).volume
     End Sub
 
 
     ' Carry out a vibrato at a certain depth and speed
-    Sub DoVibrato (chan As _Unsigned _Byte)
-        Shared Channel() As ChannelType
-        Shared SineTable() As _Unsigned _Byte
+    Sub __DoVibrato (chan As _Unsigned _Byte)
+        Shared __Channel() As __ChannelType
+        Shared __SineTable() As _Unsigned _Byte
 
         Dim delta As _Unsigned Integer
         Dim temp As _Unsigned _Byte
 
-        temp = Channel(chan).vibratoPosition And 31
+        temp = __Channel(chan).vibratoPosition And 31
 
-        Select Case Channel(chan).waveControl And 3
+        Select Case __Channel(chan).waveControl And 3
             Case 0 ' Sine
-                delta = SineTable(temp)
+                delta = __SineTable(temp)
 
             Case 1 ' Saw down
                 temp = _ShL(temp, 3)
-                If Channel(chan).vibratoPosition < 0 Then temp = 255 - temp
+                If __Channel(chan).vibratoPosition < 0 Then temp = 255 - temp
                 delta = temp
 
             Case 2 ' Square
@@ -814,36 +844,36 @@ $If MODPLAYER_BAS = UNDEFINED Then
                 delta = Rnd * 255
         End Select
 
-        delta = _ShL(_ShR(delta * Channel(chan).vibratoDepth, 7), 2)
+        delta = _ShL(_ShR(delta * __Channel(chan).vibratoDepth, 7), 2)
 
-        If Channel(chan).vibratoPosition >= 0 Then
-            SetVoiceFrequency chan, GetFrequencyFromPeriod(Channel(chan).period + delta)
+        If __Channel(chan).vibratoPosition >= 0 Then
+            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period + delta)
         Else
-            SetVoiceFrequency chan, GetFrequencyFromPeriod(Channel(chan).period - delta)
+            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period - delta)
         End If
 
-        Channel(chan).vibratoPosition = Channel(chan).vibratoPosition + Channel(chan).vibratoSpeed
-        If Channel(chan).vibratoPosition > 31 Then Channel(chan).vibratoPosition = Channel(chan).vibratoPosition - 64
+        __Channel(chan).vibratoPosition = __Channel(chan).vibratoPosition + __Channel(chan).vibratoSpeed
+        If __Channel(chan).vibratoPosition > 31 Then __Channel(chan).vibratoPosition = __Channel(chan).vibratoPosition - 64
     End Sub
 
 
     ' Carry out a tremolo at a certain depth and speed
-    Sub DoTremolo (chan As _Unsigned _Byte)
-        Shared Channel() As ChannelType
-        Shared SineTable() As _Unsigned _Byte
+    Sub __DoTremolo (chan As _Unsigned _Byte)
+        Shared __Channel() As __ChannelType
+        Shared __SineTable() As _Unsigned _Byte
 
         Dim delta As _Unsigned Integer
         Dim temp As _Unsigned _Byte
 
-        temp = Channel(chan).tremoloPosition And 31
+        temp = __Channel(chan).tremoloPosition And 31
 
-        Select Case _ShR(Channel(chan).waveControl, 4) And 3
+        Select Case _ShR(__Channel(chan).waveControl, 4) And 3
             Case 0 ' Sine
-                delta = SineTable(temp)
+                delta = __SineTable(temp)
 
             Case 1 ' Saw down
                 temp = _ShL(temp, 3)
-                If Channel(chan).tremoloPosition < 0 Then temp = 255 - temp
+                If __Channel(chan).tremoloPosition < 0 Then temp = 255 - temp
                 delta = temp
 
             Case 2 ' Square
@@ -853,85 +883,85 @@ $If MODPLAYER_BAS = UNDEFINED Then
                 delta = Rnd * 255
         End Select
 
-        delta = _ShR(delta * Channel(chan).tremoloDepth, 6)
+        delta = _ShR(delta * __Channel(chan).tremoloDepth, 6)
 
-        If Channel(chan).tremoloPosition >= 0 Then
-            If Channel(chan).volume + delta > SAMPLE_VOLUME_MAX Then delta = SAMPLE_VOLUME_MAX - Channel(chan).volume
-            SetVoiceVolume chan, Channel(chan).volume + delta
+        If __Channel(chan).tremoloPosition >= 0 Then
+            If __Channel(chan).volume + delta > SAMPLE_VOLUME_MAX Then delta = SAMPLE_VOLUME_MAX - __Channel(chan).volume
+            SetVoiceVolume chan, __Channel(chan).volume + delta
         Else
-            If Channel(chan).volume - delta < 0 Then delta = Channel(chan).volume
-            SetVoiceVolume chan, Channel(chan).volume - delta
+            If __Channel(chan).volume - delta < 0 Then delta = __Channel(chan).volume
+            SetVoiceVolume chan, __Channel(chan).volume - delta
         End If
 
-        Channel(chan).tremoloPosition = Channel(chan).tremoloPosition + Channel(chan).tremoloSpeed
-        If Channel(chan).tremoloPosition > 31 Then Channel(chan).tremoloPosition = Channel(chan).tremoloPosition - 64
+        __Channel(chan).tremoloPosition = __Channel(chan).tremoloPosition + __Channel(chan).tremoloSpeed
+        If __Channel(chan).tremoloPosition > 31 Then __Channel(chan).tremoloPosition = __Channel(chan).tremoloPosition - 64
     End Sub
 
 
     ' Carry out an invert loop (EFx) effect
     ' This will trash the sample managed by the SoftSynth
-    Sub DoInvertLoop (chan As _Unsigned _Byte)
-        Shared Channel() As ChannelType
-        Shared Sample() As SampleType
-        Shared InvertLoopSpeedTable() As _Unsigned _Byte
+    Sub __DoInvertLoop (chan As _Unsigned _Byte)
+        Shared __Channel() As __ChannelType
+        Shared __Sample() As __SampleType
+        Shared __InvertLoopSpeedTable() As _Unsigned _Byte
 
-        Channel(chan).invertLoopDelay = Channel(chan).invertLoopDelay + InvertLoopSpeedTable(Channel(chan).invertLoopSpeed)
+        __Channel(chan).invertLoopDelay = __Channel(chan).invertLoopDelay + __InvertLoopSpeedTable(__Channel(chan).invertLoopSpeed)
 
-        If Sample(Channel(chan).sample).loopLength > 0 And Channel(chan).invertLoopDelay >= 128 Then
-            Channel(chan).invertLoopDelay = 0 ' reset delay
-            If Channel(chan).invertLoopPosition < Sample(Channel(chan).sample).loopStart Then Channel(chan).invertLoopPosition = Sample(Channel(chan).sample).loopStart
-            Channel(chan).invertLoopPosition = Channel(chan).invertLoopPosition + 1 ' increment position by 1
-            If Channel(chan).invertLoopPosition > Sample(Channel(chan).sample).loopEnd Then Channel(chan).invertLoopPosition = Sample(Channel(chan).sample).loopStart
+        If __Sample(__Channel(chan).sample).loopLength > 0 And __Channel(chan).invertLoopDelay >= 128 Then
+            __Channel(chan).invertLoopDelay = 0 ' reset delay
+            If __Channel(chan).invertLoopPosition < __Sample(__Channel(chan).sample).loopStart Then __Channel(chan).invertLoopPosition = __Sample(__Channel(chan).sample).loopStart
+            __Channel(chan).invertLoopPosition = __Channel(chan).invertLoopPosition + 1 ' increment position by 1
+            If __Channel(chan).invertLoopPosition > __Sample(__Channel(chan).sample).loopEnd Then __Channel(chan).invertLoopPosition = __Sample(__Channel(chan).sample).loopStart
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
-            PokeSample Channel(chan).sample, Channel(chan).invertLoopPosition, Not PeekSample(Channel(chan).sample, Channel(chan).invertLoopPosition)
+            PokeSample __Channel(chan).sample, __Channel(chan).invertLoopPosition, Not PeekSample(__Channel(chan).sample, __Channel(chan).invertLoopPosition)
         End If
     End Sub
 
 
     ' This gives us the frequency in khz based on the period
-    Function GetFrequencyFromPeriod! (period As Long)
-        GetFrequencyFromPeriod = 14317056 / period
+    Function __GetFrequencyFromPeriod! (period As Long)
+        __GetFrequencyFromPeriod = 14317056 / period
     End Function
 
 
     ' Return C2 speed for a finetune
-    Function GetC2Spd~% (ft As _Unsigned _Byte)
+    Function __GetC2Spd~% (ft As _Unsigned _Byte)
         Select Case ft
             Case 0
-                GetC2Spd = 8363
+                __GetC2Spd = 8363
             Case 1
-                GetC2Spd = 8413
+                __GetC2Spd = 8413
             Case 2
-                GetC2Spd = 8463
+                __GetC2Spd = 8463
             Case 3
-                GetC2Spd = 8529
+                __GetC2Spd = 8529
             Case 4
-                GetC2Spd = 8581
+                __GetC2Spd = 8581
             Case 5
-                GetC2Spd = 8651
+                __GetC2Spd = 8651
             Case 6
-                GetC2Spd = 8723
+                __GetC2Spd = 8723
             Case 7
-                GetC2Spd = 8757
+                __GetC2Spd = 8757
             Case 8
-                GetC2Spd = 7895
+                __GetC2Spd = 7895
             Case 9
-                GetC2Spd = 7941
+                __GetC2Spd = 7941
             Case 10
-                GetC2Spd = 7985
+                __GetC2Spd = 7985
             Case 11
-                GetC2Spd = 8046
+                __GetC2Spd = 8046
             Case 12
-                GetC2Spd = 8107
+                __GetC2Spd = 8107
             Case 13
-                GetC2Spd = 8169
+                __GetC2Spd = 8169
             Case 14
-                GetC2Spd = 8232
+                __GetC2Spd = 8232
             Case 15
-                GetC2Spd = 8280
+                __GetC2Spd = 8280
             Case Else
-                GetC2Spd = 8363
+                __GetC2Spd = 8363
         End Select
     End Function
     '-----------------------------------------------------------------------------------------------------
@@ -940,6 +970,8 @@ $End If
 '---------------------------------------------------------------------------------------------------------
 ' MODULE FILES
 '---------------------------------------------------------------------------------------------------------
+'$Include:'MemFile.bas'
+'$Include:'FileOps.bas'
 '$Include:'SoftSynth.bas'
 '---------------------------------------------------------------------------------------------------------
 '---------------------------------------------------------------------------------------------------------

@@ -20,12 +20,14 @@ $If MEMFILE_BI = UNDEFINED Then
         Function MemFile_IsEOF%% (ByVal memFile As _Unsigned _Offset)
         $If 32BIT Then
             Function MemFile_GetSize~& (ByVal memFile As _Unsigned _Offset)
-            Function __MemFile_Read~& (ByVal memFile As _Unsigned _Offset, dst As String, Byval size As _Unsigned _Offset)
-            Function __MemFile_Write~& (ByVal memFile As _Unsigned _Offset, src As String, Byval size As _Unsigned _Offset)
+            Function MemFile_GetPosition~& (ByVal memFile As _Unsigned _Offset)
+            Function __MemFile_Read~& (ByVal memFile As _Unsigned _Offset, Byval dst As _Unsigned _Offset, Byval size As _Unsigned _Offset)
+            Function __MemFile_Write~& (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval size As _Unsigned _Offset)
         $Else
             Function MemFile_GetSize~&& (ByVal memFile As _Unsigned _Offset)
-            Function __MemFile_Read~&& (ByVal memFile As _Unsigned _Offset, dst As String, Byval size As _Unsigned _Offset)
-            Function __MemFile_Write~&& (ByVal memFile As _Unsigned _Offset, src As String, Byval size As _Unsigned _Offset)
+            Function MemFile_GetPosition~&& (ByVal memFile As _Unsigned _Offset)
+            Function __MemFile_Read~&& (ByVal memFile As _Unsigned _Offset, Byval dst As _Unsigned _Offset, Byval size As _Unsigned _Offset)
+            Function __MemFile_Write~&& (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval size As _Unsigned _Offset)
         $End If
         Function MemFile_Seek%% (ByVal memFile As _Unsigned _Offset, Byval position As _Unsigned _Offset)
         Sub MemFile_Resize (ByVal memFile As _Unsigned _Offset, Byval newSize As _Unsigned _Offset)
