@@ -154,7 +154,7 @@ $If FILEOPS_BAS = UNDEFINED Then
                 Get h, , buffer
                 content = content + buffer
                 If __HTTPDownloader.updatesPerSecond > 0 Then _Limit __HTTPDownloader.updatesPerSecond
-                If __HTTPDownloader.timeoutTicks > 0 And (GetTicks - startTick) < __HTTPDownloader.timeoutTicks Then Exit While
+                If __HTTPDownloader.timeoutTicks > 0 And (GetTicks - startTick) > __HTTPDownloader.timeoutTicks Then Exit While
             Wend
 
             Close h

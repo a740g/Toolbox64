@@ -18,7 +18,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
     '-----------------------------------------------------------------------------------------------------
     '$Debug
     '$Asserts
-    'If LoadMODFromDisk("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\emax-doz.mod") Then
+    'If LoadMODFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/digital%20bass-line.mod") Then
     '    EnableHQMixer TRUE
     '    StartMODPlayer
     '    Do
@@ -51,6 +51,7 @@ $If MODPLAYER_BAS = UNDEFINED Then
         ' Seek to offset 1080 (438h) in the file & read in 4 bytes
         Dim i As _Unsigned Integer, result As Long
         result = MemFile_Seek(memFile, 1080)
+        _MessageBox , Str$(MemFile_GetSize(memFile))
         _Assert result
         result = MemFile_ReadString(memFile, __Song.subtype)
         _Assert (result = Len(__Song.subtype))
