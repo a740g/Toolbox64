@@ -213,7 +213,7 @@ $If VGAFONT_BAS = UNDEFINED Then
         Dim As Long x, y
         For y = 0 To _FontHeight - 1
             For x = 0 To _FontWidth - 1
-                SetGlyphPixel cp, sx + x, sy + y, Point(x, y) <> &HFF000000 ' black
+                SetGlyphPixel cp, sx + x, sy + y, Point(x, y) <> 4278190080 ' black
             Next
         Next
 
