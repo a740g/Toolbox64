@@ -11,6 +11,22 @@
 
 $If FILEOPS_BAS = UNDEFINED Then
     $Let FILEOPS_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Small test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$Debug
+    'Const SEARCH_URL = "https://api.modarchive.org/downloads.php?moduleid="
+
+    'SetDownloaderProperties 0, 0
+
+    'Dim buffer As String: buffer = LoadFileFromURL("https://modarchive.org/index.php?request=view_random")
+    'Dim bufPos As Long: bufPos = InStr(buffer, SEARCH_URL)
+    'If bufPos > 0 Then
+    '    Print Mid$(buffer, bufPos, InStr(bufPos, buffer, Chr$(34)) - bufPos)
+    'End If
+
+    'End
+    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
@@ -123,15 +139,22 @@ $If FILEOPS_BAS = UNDEFINED Then
 
     ' Loads a whole file from a URL into memory
     Function LoadFileFromURL$ (url As String)
+        Shared __HTTPDownloader As __HTTPDownloaderType
+
+        ' Set default properties if this is the first time
+        If Not __HTTPDownloader.initialized Then SetDownloaderProperties __HTTP_UPDATES_PER_SECOND_DEFAULT, __HTTP_TIMEOUT_DEFAULT
+
         Dim h As Long: h = _OpenClient("HTTP:" + url)
 
         If h <> NULL Then
+            Dim startTick As _Unsigned _Integer64: startTick = GetTicks ' record the current tick
             Dim As String content, buffer
 
             While Not EOF(h)
-                _Limit __HTTP_UPDATES_PER_SECOND
                 Get h, , buffer
                 content = content + buffer
+                If __HTTPDownloader.updatesPerSecond > 0 Then _Limit __HTTPDownloader.updatesPerSecond
+                If __HTTPDownloader.timeoutTicks > 0 And (GetTicks - startTick) < __HTTPDownloader.timeoutTicks Then Exit While
             Wend
 
             Close h
@@ -139,6 +162,16 @@ $If FILEOPS_BAS = UNDEFINED Then
             LoadFileFromURL = content
         End If
     End Function
+
+
+    ' Changes the default settings for the HTTP downloader
+    Sub SetDownloaderProperties (updatesPerSecond As _Unsigned Long, timeoutSeconds As _Unsigned Long)
+        Shared __HTTPDownloader As __HTTPDownloaderType
+
+        __HTTPDownloader.updatesPerSecond = updatesPerSecond
+        __HTTPDownloader.timeoutTicks = 1000 * timeoutSeconds ' convert to ticks
+        __HTTPDownloader.initialized = TRUE
+    End Sub
 
 
     ' Copies file src to dst. Src file must exist and dst file must not
