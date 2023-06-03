@@ -6,11 +6,26 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' HEADER FILES
 '-----------------------------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
+'$Include:'CRTLib.bi'
 '-----------------------------------------------------------------------------------------------------------------------
 
 $If STRINGOPS_BAS = UNDEFINED Then
     $Let STRINGOPS_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    'Dim As String myStr1, myStr2
+
+    'myStr1 = "Toolbox64"
+    'myStr2 = "Shadow Warrior"
+
+    'Print ReverseString(myStr1)
+    'ReverseString myStr2
+    'Print myStr2
+    'Print myStr1
+
+    'End
+    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
@@ -106,6 +121,20 @@ $If STRINGOPS_BAS = UNDEFINED Then
                 If expression Then BoolToStr = "True" Else BoolToStr = "False"
         End Select
     End Function
+
+
+    ' Reverses and returns the characters of a string
+    Function ReverseString$ (s As String)
+        Dim tmp As String: tmp = s
+        ReverseBytes _Offset(tmp), Len(tmp)
+        ReverseString = tmp
+    End Function
+
+
+    ' Reverses the characters of a string in-place
+    Sub ReverseString (s As String)
+        ReverseBytes _Offset(s), Len(s)
+    End Sub
     '-------------------------------------------------------------------------------------------------------------------
 
 $End If

@@ -92,6 +92,7 @@ $If CRTLIB_BI = UNDEFINED Then
         Function ReverseBitsInteger~% (ByVal n As _Unsigned Integer)
         Function ReverseBitsLong~& (ByVal n As _Unsigned Long)
         Function ReverseBitsInteger64~&& (ByVal n As _Unsigned _Integer64)
+        Sub ReverseBytes (ByVal ptr As _Unsigned _Offset, Byval size As _Unsigned _Offset)
         Function ClampLong& (ByVal n As Long, Byval lo As Long, Byval hi As Long)
         Function ClampInteger64&& (ByVal n As _Integer64, Byval lo As _Integer64, Byval hi As _Integer64)
         Function ClampSingle! (ByVal n As Single, Byval lo As Single, Byval hi As Single)

@@ -326,10 +326,9 @@ inline uint32_t LeftShiftOneCount(uint32_t n)
 /// @return A number with bits reversed
 inline uint8_t ReverseBitsByte(uint8_t x)
 {
-    x = (((x & 0xaa) >> 1) | ((x & 0x55) << 1));
-    x = (((x & 0xcc) >> 2) | ((x & 0x33) << 2));
-    x = (((x & 0xf0) >> 4) | ((x & 0x0f) << 4));
-    return x;
+    x = ((x & 0x55) << 1) | ((x & 0xAA) >> 1);
+    x = ((x & 0x33) << 2) | ((x & 0xCC) >> 2);
+    return (x >> 4) | (x << 4);
 }
 
 /// @brief Reverses bits in a 16-bit number
@@ -337,10 +336,10 @@ inline uint8_t ReverseBitsByte(uint8_t x)
 /// @return A number with bits reversed
 inline uint16_t ReverseBitsInteger(uint16_t x)
 {
-    x = (((x & 0xaaaa) >> 1) | ((x & 0x5555) << 1));
-    x = (((x & 0xcccc) >> 2) | ((x & 0x3333) << 2));
-    x = (((x & 0xf0f0) >> 4) | ((x & 0x0f0f) << 4));
-    return ((x >> 8) | (x << 8));
+    x = ((x & 0xaaaa) >> 1) | ((x & 0x5555) << 1);
+    x = ((x & 0xcccc) >> 2) | ((x & 0x3333) << 2);
+    x = ((x & 0xf0f0) >> 4) | ((x & 0x0f0f) << 4);
+    return (x >> 8) | (x << 8);
 }
 
 /// @brief Reverses bits in a 32-bit number
@@ -348,11 +347,11 @@ inline uint16_t ReverseBitsInteger(uint16_t x)
 /// @return A number with bits reversed
 inline uint32_t ReverseBitsLong(uint32_t x)
 {
-    x = (((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1));
-    x = (((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2));
-    x = (((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4));
-    x = (((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8));
-    return ((x >> 16) | (x << 16));
+    x = ((x & 0xaaaaaaaa) >> 1) | ((x & 0x55555555) << 1);
+    x = ((x & 0xcccccccc) >> 2) | ((x & 0x33333333) << 2);
+    x = ((x & 0xf0f0f0f0) >> 4) | ((x & 0x0f0f0f0f) << 4);
+    x = ((x & 0xff00ff00) >> 8) | ((x & 0x00ff00ff) << 8);
+    return (x >> 16) | (x << 16);
 }
 
 /// @brief Reverses bits in a 64-bit number
@@ -360,12 +359,31 @@ inline uint32_t ReverseBitsLong(uint32_t x)
 /// @return A number with bits reversed
 inline uint64_t ReverseBitsInteger64(uint64_t x)
 {
-    x = (((x & 0xaaaaaaaaaaaaaaaa) >> 1) | ((x & 0x5555555555555555) << 1));
-    x = (((x & 0xcccccccccccccccc) >> 2) | ((x & 0x3333333333333333) << 2));
-    x = (((x & 0xf0f0f0f0f0f0f0f0) >> 4) | ((x & 0x0f0f0f0f0f0f0f0f) << 4));
-    x = (((x & 0xff00ff00ff00ff00) >> 8) | ((x & 0x00ff00ff00ff00ff) << 8));
-    x = (((x & 0xffff0000ffff0000) >> 16) | ((x & 0x0000ffff0000ffff) << 16));
-    return ((x >> 32) | (x << 32));
+    x = ((x & 0xaaaaaaaaaaaaaaaa) >> 1) | ((x & 0x5555555555555555) << 1);
+    x = ((x & 0xcccccccccccccccc) >> 2) | ((x & 0x3333333333333333) << 2);
+    x = ((x & 0xf0f0f0f0f0f0f0f0) >> 4) | ((x & 0x0f0f0f0f0f0f0f0f) << 4);
+    x = ((x & 0xff00ff00ff00ff00) >> 8) | ((x & 0x00ff00ff00ff00ff) << 8);
+    x = ((x & 0xffff0000ffff0000) >> 16) | ((x & 0x0000ffff0000ffff) << 16);
+    return (x >> 32) | (x << 32);
+}
+
+/// @brief Reverses the order of bytes in memory
+/// @param ptr A pointer to a memory buffer
+/// @param size The size of the memory buffer
+inline void ReverseBytes(void *ptr, size_t size)
+{
+    auto start = (uint8_t *)ptr;
+    auto end = start + size - 1;
+
+    while (start < end)
+    {
+        *start ^= *end;
+        *end ^= *start;
+        *start ^= *end;
+
+        start++;
+        end--;
+    }
 }
 
 /// @brief Returns a random number between lo and hi (inclusive). Use srand() to seed RNG
