@@ -177,6 +177,20 @@ $If FILEOPS_BAS = UNDEFINED Then
     End Sub
 
 
+    ' Save a buffer to a file
+    Function SaveFile%% (buffer As String, fileName As String, overwrite As _Byte)
+        If _FileExists(fileName) And Not overwrite Then Exit Function
+
+        Dim fh As Long: fh = FreeFile
+        Open fileName For Output As fh: Close fh ' open file in text mode to wipe out the file and then close
+        Open fileName For Binary Access Write As fh ' reopen file in binary mode
+        Put fh, , buffer ' write the buffer to the file
+        Close fh
+
+        SaveFile = TRUE
+    End Function
+
+
     ' Copies file src to dst. Src file must exist and dst file must not
     Function CopyFile%% (fileSrc As String, fileDst As String, overwrite As _Byte)
         ' Check if source file exists
@@ -186,11 +200,17 @@ $If FILEOPS_BAS = UNDEFINED Then
                 Exit Function
             End If
 
-            Dim sfh As Long: sfh = FreeFile: Open fileSrc For Binary Access Read As sfh ' open source
-            Dim dfh As Long: dfh = FreeFile: Open fileDst For Binary Access Write As dfh ' open destination
+            Dim sfh As Long: sfh = FreeFile
+            Open fileSrc For Binary Access Read As sfh ' open source
             Dim buffer As String: buffer = Input$(LOF(sfh), sfh) ' allocate buffer memory and read the file in one go
+            Close sfh ' close source
+
+            Dim dfh As Long: dfh = FreeFile
+            Open fileDst For Output As dfh ' open destination in text mode to wipe out the file
+            Close dfh ' and then close
+            Open fileDst For Binary Access Write As dfh ' reopen destination in binary mode
             Put dfh, , buffer ' write the buffer to the new file
-            Close sfh, dfh ' close source and destination
+            Close dfh ' close destination
 
             CopyFile = TRUE ' success
         End If
