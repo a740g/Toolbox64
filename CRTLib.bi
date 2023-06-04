@@ -19,32 +19,36 @@ $If CRTLIB_BI = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
     ' This only includes CRT library functions that makes sense in QB64
     Declare CustomType Library
-        Function IsAlNum& Alias isalnum (ByVal ch As Long)
-        Function IsAlpha& Alias isalpha (ByVal ch As Long)
-        Function IsLower& Alias islower (ByVal ch As Long)
-        Function IsUpper& Alias isupper (ByVal ch As Long)
-        Function IsDigit& Alias isdigit (ByVal ch As Long)
-        Function IsXDigit& Alias isxdigit (ByVal ch As Long)
-        Function IsCntrl& Alias iscntrl (ByVal ch As Long)
-        Function IsGraph& Alias isgraph (ByVal ch As Long)
-        Function IsSpace& Alias isspace (ByVal ch As Long)
-        Function IsBlank& Alias isblank (ByVal ch As Long)
-        Function IsPrint& Alias isprint (ByVal ch As Long)
-        Function IsPunct& Alias ispunct (ByVal ch As Long)
-        Function ToLower& Alias tolower (ByVal ch As Long)
-        Function ToUpper& Alias toupper (ByVal ch As Long)
-        Function StrLen~& Alias strlen (ByVal str As _Unsigned _Offset)
-        Sub StrNCpy Alias strncpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Function MemChr%& Alias memchr (ByVal ptr As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
-        Function MemCmp& Alias memcmp (ByVal lhs As _Unsigned _Offset, Byval rhs As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Sub MemSet Alias memset (ByVal dst As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
-        Sub MemCpy Alias memcpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Sub MemMove Alias memmove (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Sub MemCCpy Alias memccpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval c As Long, Byval count As _Unsigned _Offset)
-        Function Rand& Alias rand
-        Sub SRand Alias srand (ByVal seed As _Unsigned Long)
-        Function GetChar& Alias getchar
-        Sub PutChar Alias putchar (ByVal ch As Long)
+        Function isalnum& (ByVal ch As Long)
+        Function isalpha& (ByVal ch As Long)
+        Function islower& (ByVal ch As Long)
+        Function isupper& (ByVal ch As Long)
+        Function isdigit& (ByVal ch As Long)
+        Function isxdigit& (ByVal ch As Long)
+        Function iscntrl& (ByVal ch As Long)
+        Function isgraph& (ByVal ch As Long)
+        Function isspace& (ByVal ch As Long)
+        Function isblank& (ByVal ch As Long)
+        Function isprint& (ByVal ch As Long)
+        Function ispunct& (ByVal ch As Long)
+        Function tolower& (ByVal ch As Long)
+        Function toupper& (ByVal ch As Long)
+        $If 32BIT Then
+            Function strlen~& (ByVal str As _Unsigned _Offset)
+        $Else
+            Function strlen~&& (ByVal str As _Unsigned _Offset)
+        $End If
+        Sub strncpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
+        Function memchr~%& (ByVal ptr As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
+        Function memcmp& (ByVal lhs As _Unsigned _Offset, Byval rhs As _Unsigned _Offset, Byval count As _Unsigned _Offset)
+        Sub memset (ByVal dst As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
+        Sub memcpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
+        Sub memmove (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
+        Sub memccpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval c As Long, Byval count As _Unsigned _Offset)
+        Function rand&
+        Sub srand (ByVal seed As _Unsigned Long)
+        Function getchar&
+        Sub putchar (ByVal ch As Long)
         Function GetTicks~&&
     End Declare
 
@@ -69,7 +73,7 @@ $If CRTLIB_BI = UNDEFINED Then
         Sub PokeSingle (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As Single)
         Function PeekDouble# (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
         Sub PokeDouble (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As Double)
-        Function PeekOffset%& (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
+        Function PeekOffset~%& (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
         Sub PokeOffset (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned _Offset)
         Sub PeekType (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval t As _Unsigned _Offset, Byval t_size As _Unsigned _Offset)
         Sub PokeType (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval t As _Unsigned _Offset, Byval t_size As _Unsigned _Offset)
