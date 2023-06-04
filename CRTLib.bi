@@ -39,7 +39,6 @@ $If CRTLIB_BI = UNDEFINED Then
             Function strlen~&& (ByVal str As _Unsigned _Offset)
         $End If
         Sub strncpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Function memchr~%& (ByVal ptr As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
         Function memcmp& (ByVal lhs As _Unsigned _Offset, Byval rhs As _Unsigned _Offset, Byval count As _Unsigned _Offset)
         Sub memset (ByVal dst As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
         Sub memcpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
