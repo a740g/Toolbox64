@@ -21,25 +21,26 @@ $If FILEOPS_BI = UNDEFINED Then
     '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
     '-------------------------------------------------------------------------------------------------------------------
-    Const __HTTP_UPDATES_PER_SECOND_DEFAULT = 120 ' refresh happens 120 times a second
-    Const __HTTP_TIMEOUT_DEFAULT = 60 * 5 ' timeout happens after 5 mins by default
+    Const __FILEOPS_UPDATES_PER_SECOND_DEFAULT = 120 ' refresh happens 120 times a second
+    Const __FILEOPS_TIMEOUT_DEFAULT = 60 * 5 ' timeout happens after 5 mins by default
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
     '-------------------------------------------------------------------------------------------------------------------
     ' This keeps track of the settings used by LoadFileFromURL()
-    Type __HTTPDownloaderType
+    Type __FileOpsType
         initialized As _Byte
         updatesPerSecond As _Unsigned Long
         timeoutTicks As _Unsigned _Integer64
+        percentCompleted As _Unsigned _Byte
     End Type
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' GLOBAL VARIABLES
     '-------------------------------------------------------------------------------------------------------------------
-    Dim __HTTPDownloader As __HTTPDownloaderType
+    Dim __FileOps As __FileOpsType
     '-------------------------------------------------------------------------------------------------------------------
 $End If
 '-----------------------------------------------------------------------------------------------------------------------

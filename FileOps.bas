@@ -139,10 +139,12 @@ $If FILEOPS_BAS = UNDEFINED Then
 
     ' Loads a whole file from a URL into memory
     Function LoadFileFromURL$ (url As String)
-        Shared __HTTPDownloader As __HTTPDownloaderType
+        Shared __FileOps As __FileOpsType
 
         ' Set default properties if this is the first time
-        If Not __HTTPDownloader.initialized Then SetDownloaderProperties __HTTP_UPDATES_PER_SECOND_DEFAULT, __HTTP_TIMEOUT_DEFAULT
+        If Not __FileOps.initialized Then SetDownloaderProperties __FILEOPS_UPDATES_PER_SECOND_DEFAULT, __FILEOPS_TIMEOUT_DEFAULT
+
+        __FileOps.percentCompleted = 0
 
         Dim h As Long: h = _OpenClient("HTTP:" + url)
 
@@ -153,8 +155,9 @@ $If FILEOPS_BAS = UNDEFINED Then
             While Not EOF(h)
                 Get h, , buffer
                 content = content + buffer
-                If __HTTPDownloader.updatesPerSecond > 0 Then _Limit __HTTPDownloader.updatesPerSecond
-                If __HTTPDownloader.timeoutTicks > 0 And (GetTicks - startTick) > __HTTPDownloader.timeoutTicks Then Exit While
+                If __FileOps.updatesPerSecond > 0 Then _Limit __FileOps.updatesPerSecond
+                If __FileOps.timeoutTicks > 0 And (GetTicks - startTick) > __FileOps.timeoutTicks Then Exit While
+                __FileOps.percentCompleted = (Len(content) / LOF(h)) * 100!
             Wend
 
             Close h
@@ -166,11 +169,11 @@ $If FILEOPS_BAS = UNDEFINED Then
 
     ' Changes the default settings for the HTTP downloader
     Sub SetDownloaderProperties (updatesPerSecond As _Unsigned Long, timeoutSeconds As _Unsigned Long)
-        Shared __HTTPDownloader As __HTTPDownloaderType
+        Shared __FileOps As __FileOpsType
 
-        __HTTPDownloader.updatesPerSecond = updatesPerSecond
-        __HTTPDownloader.timeoutTicks = 1000 * timeoutSeconds ' convert to ticks
-        __HTTPDownloader.initialized = TRUE
+        __FileOps.updatesPerSecond = updatesPerSecond
+        __FileOps.timeoutTicks = 1000 * timeoutSeconds ' convert to ticks
+        __FileOps.initialized = TRUE
     End Sub
 
 
@@ -185,12 +188,8 @@ $If FILEOPS_BAS = UNDEFINED Then
 
             Dim sfh As Long: sfh = FreeFile: Open fileSrc For Binary Access Read As sfh ' open source
             Dim dfh As Long: dfh = FreeFile: Open fileDst For Binary Access Write As dfh ' open destination
-
-            Dim buffer As String: buffer = Space$(LOF(sfh)) ' allocate buffer memory to read the file in one go
-
-            Get sfh, , buffer ' load the whole file into memory
+            Dim buffer As String: buffer = Input$(LOF(sfh), sfh) ' allocate buffer memory and read the file in one go
             Put dfh, , buffer ' write the buffer to the new file
-
             Close sfh, dfh ' close source and destination
 
             CopyFile = TRUE ' success
