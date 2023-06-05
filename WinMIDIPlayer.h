@@ -376,7 +376,7 @@ static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
         {
             goto bail;
         }
-        __MemFile_Read(src, reinterpret_cast<char *>(mididata->track[i].data), size);
+        __MemFile_Read(src, reinterpret_cast<uintptr_t>(mididata->track[i].data), size);
     }
 
     return true;

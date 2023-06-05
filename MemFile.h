@@ -15,8 +15,8 @@ uintptr_t __MemFile_Create(const char *data, size_t size);
 void MemFile_Destroy(uintptr_t p);
 qb_bool MemFile_IsEOF(uintptr_t p);
 size_t MemFile_GetSize(uintptr_t p);
-size_t MemFile_GetPosition(uintptr_t p)
-    qb_bool MemFile_Seek(uintptr_t p, size_t position);
+size_t MemFile_GetPosition(uintptr_t p);
+qb_bool MemFile_Seek(uintptr_t p, size_t position);
 void MemFile_Resize(uintptr_t p, size_t newSize);
 size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size);
 size_t __MemFile_Write(uintptr_t p, uintptr_t data, size_t size);
