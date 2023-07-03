@@ -3,47 +3,47 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF MEMFILE_BI = UNDEFINED THEN
+    $LET MEMFILE_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If MEMFILE_BI = UNDEFINED Then
-    $Let MEMFILE_BI = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
-    Declare Library "MemFile"
-        Function __MemFile_Create~%& (src As String, Byval size As _Unsigned _Offset)
-        Sub MemFile_Destroy (ByVal memFile As _Unsigned _Offset)
-        Function MemFile_IsEOF%% (ByVal memFile As _Unsigned _Offset)
-        $If 32BIT Then
+    DECLARE LIBRARY "MemFile"
+        FUNCTION __MemFile_Create~%& (src AS STRING, BYVAL size AS _UNSIGNED _OFFSET)
+        SUB MemFile_Destroy (BYVAL memFile AS _UNSIGNED _OFFSET)
+        FUNCTION MemFile_IsEOF%% (BYVAL memFile AS _UNSIGNED _OFFSET)
+        $IF 32BIT THEN
             Function MemFile_GetSize~& (ByVal memFile As _Unsigned _Offset)
             Function MemFile_GetPosition~& (ByVal memFile As _Unsigned _Offset)
             Function __MemFile_Read~& (ByVal memFile As _Unsigned _Offset, Byval dst As _Unsigned _Offset, Byval size As _Unsigned _Offset)
             Function __MemFile_Write~& (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval size As _Unsigned _Offset)
-        $Else
-            Function MemFile_GetSize~&& (ByVal memFile As _Unsigned _Offset)
-            Function MemFile_GetPosition~&& (ByVal memFile As _Unsigned _Offset)
-            Function __MemFile_Read~&& (ByVal memFile As _Unsigned _Offset, Byval dst As _Unsigned _Offset, Byval size As _Unsigned _Offset)
-            Function __MemFile_Write~&& (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval size As _Unsigned _Offset)
-        $End If
-        Function MemFile_Seek%% (ByVal memFile As _Unsigned _Offset, Byval position As _Unsigned _Offset)
-        Sub MemFile_Resize (ByVal memFile As _Unsigned _Offset, Byval newSize As _Unsigned _Offset)
-        Function MemFile_ReadByte%% (ByVal memFile As _Unsigned _Offset, dst As _Unsigned _Byte)
-        Function MemFile_WriteByte% (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Byte)
-        Function MemFile_ReadInteger%% (ByVal memFile As _Unsigned _Offset, dst As _Unsigned Integer)
-        Function MemFile_WriteInteger%% (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned Integer)
-        Function MemFile_ReadLong%% (ByVal memFile As _Unsigned _Offset, dst As _Unsigned Long)
-        Function MemFile_WriteLong%% (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned Long)
-        Function MemFile_ReadSingle%% (ByVal memFile As _Unsigned _Offset, dst As Single)
-        Function MemFile_WriteSingle%% (ByVal memFile As _Unsigned _Offset, Byval src As Single)
-        Function MemFile_ReadInteger64%% (ByVal memFile As _Unsigned _Offset, dst As _Unsigned _Integer64)
-        Function MemFile_WriteInteger64%% (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Integer64)
-        Function MemFile_ReadDouble%% (ByVal memFile As _Unsigned _Offset, dst As Double)
-        Function MemFile_WriteDouble%% (ByVal memFile As _Unsigned _Offset, Byval src As Double)
-    End Declare
+        $ELSE
+            FUNCTION MemFile_GetSize~&& (BYVAL memFile AS _UNSIGNED _OFFSET)
+            FUNCTION MemFile_GetPosition~&& (BYVAL memFile AS _UNSIGNED _OFFSET)
+            FUNCTION __MemFile_Read~&& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL dst AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+            FUNCTION __MemFile_Write~&& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+        $END IF
+        FUNCTION MemFile_Seek%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL position AS _UNSIGNED _OFFSET)
+        SUB MemFile_Resize (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL newSize AS _UNSIGNED _OFFSET)
+        FUNCTION MemFile_ReadByte%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS _UNSIGNED _BYTE)
+        FUNCTION MemFile_WriteByte% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _BYTE)
+        FUNCTION MemFile_ReadInteger%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS _UNSIGNED INTEGER)
+        FUNCTION MemFile_WriteInteger%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED INTEGER)
+        FUNCTION MemFile_ReadLong%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS _UNSIGNED LONG)
+        FUNCTION MemFile_WriteLong%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED LONG)
+        FUNCTION MemFile_ReadSingle%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS SINGLE)
+        FUNCTION MemFile_WriteSingle%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS SINGLE)
+        FUNCTION MemFile_ReadInteger64%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS _UNSIGNED _INTEGER64)
+        FUNCTION MemFile_WriteInteger64%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _INTEGER64)
+        FUNCTION MemFile_ReadDouble%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS DOUBLE)
+        FUNCTION MemFile_WriteDouble%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS DOUBLE)
+    END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

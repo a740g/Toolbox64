@@ -3,14 +3,14 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'CRTLib.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF STRINGOPS_BAS = UNDEFINED THEN
+    $LET STRINGOPS_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'CRTLib.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If STRINGOPS_BAS = UNDEFINED Then
-    $Let STRINGOPS_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
@@ -37,105 +37,105 @@ $If STRINGOPS_BAS = UNDEFINED Then
     ' returnDelims - if True, then the routine will also return the delimiters in the correct position in the tokens array
     ' tokens() - is the array that will hold the tokens
     ' Returns: the number of tokens parsed
-    Function TokenizeString& (text As String, delims As String, quoteChars As String, returnDelims As _Byte, tokens() As String)
-        Dim sLen As Long: sLen = Len(text)
+    FUNCTION TokenizeString& (text AS STRING, delims AS STRING, quoteChars AS STRING, returnDelims AS _BYTE, tokens() AS STRING)
+        DIM sLen AS LONG: sLen = LEN(text)
 
-        If sLen = NULL Then Exit Function ' nothing to be done
+        IF sLen = NULL THEN EXIT FUNCTION ' nothing to be done
 
-        Dim arrIdx As Long: arrIdx = LBound(tokens) ' we'll always start from the array lower bound - whatever it is
-        Dim insideQuote As _Byte ' flag to track if currently inside a quote
+        DIM arrIdx AS LONG: arrIdx = LBOUND(tokens) ' we'll always start from the array lower bound - whatever it is
+        DIM insideQuote AS _BYTE ' flag to track if currently inside a quote
 
-        Dim token As String ' holds a token until it is ready to be added to the array
-        Dim char As String * 1 ' this is a single char from text we are iterating through
-        Dim As Long i, count
+        DIM token AS STRING ' holds a token until it is ready to be added to the array
+        DIM char AS STRING * 1 ' this is a single char from text we are iterating through
+        DIM AS LONG i, count
 
         ' Iterate through the characters in the text string
-        For i = 1 To sLen
-            char = Chr$(Asc(text, i))
-            If insideQuote Then
-                If char = Right$(quoteChars, 1) Then
+        FOR i = 1 TO sLen
+            char = CHR$(ASC(text, i))
+            IF insideQuote THEN
+                IF char = RIGHT$(quoteChars, 1) THEN
                     ' Closing quote char encountered, resume delimiting
                     insideQuote = FALSE
-                    GoSub add_token ' add the token to the array
-                    If returnDelims Then GoSub add_delim ' add the closing quote char as delimiter if required
-                Else
+                    GOSUB add_token ' add the token to the array
+                    IF returnDelims THEN GOSUB add_delim ' add the closing quote char as delimiter if required
+                ELSE
                     token = token + char ' add the character to the current token
-                End If
-            Else
-                If char = Left$(quoteChars, 1) Then
+                END IF
+            ELSE
+                IF char = LEFT$(quoteChars, 1) THEN
                     ' Opening quote char encountered, temporarily stop delimiting
                     insideQuote = TRUE
-                    GoSub add_token ' add the token to the array
-                    If returnDelims Then GoSub add_delim ' add the opening quote char as delimiter if required
-                ElseIf InStr(delims, char) = NULL Then
+                    GOSUB add_token ' add the token to the array
+                    IF returnDelims THEN GOSUB add_delim ' add the opening quote char as delimiter if required
+                ELSEIF INSTR(delims, char) = NULL THEN
                     token = token + char ' add the character to the current token
-                Else
-                    GoSub add_token ' found a delimiter, add the token to the array
-                    If returnDelims Then GoSub add_delim ' found a delimiter, add it to the array if required
-                End If
-            End If
-        Next
+                ELSE
+                    GOSUB add_token ' found a delimiter, add the token to the array
+                    IF returnDelims THEN GOSUB add_delim ' found a delimiter, add it to the array if required
+                END IF
+            END IF
+        NEXT
 
-        GoSub add_token ' add the final token if there is any
+        GOSUB add_token ' add the final token if there is any
 
-        If count > NULL Then ReDim _Preserve tokens(LBound(tokens) To arrIdx - 1) As String ' resize the array to the exact size
+        IF count > NULL THEN REDIM _PRESERVE tokens(LBOUND(tokens) TO arrIdx - 1) AS STRING ' resize the array to the exact size
 
         TokenizeString = count
 
-        Exit Function
+        EXIT FUNCTION
 
         ' Add the token to the array if there is any
         add_token:
-        If Len(token) > NULL Then
+        IF LEN(token) > NULL THEN
             tokens(arrIdx) = token ' add the token to the token array
-            token = NULLSTRING ' clear the current token
-            GoSub increment_counters_and_resize_array
-        End If
-        Return
+            token = EMPTY_STRING ' clear the current token
+            GOSUB increment_counters_and_resize_array
+        END IF
+        RETURN
 
         ' Add delimiter to array if required
         add_delim:
         tokens(arrIdx) = char ' add delimiter to array
-        GoSub increment_counters_and_resize_array
-        Return
+        GOSUB increment_counters_and_resize_array
+        RETURN
 
         ' Increment the count and array index and resize the array if needed
         increment_counters_and_resize_array:
         count = count + 1 ' increment the token count
         arrIdx = arrIdx + 1 ' move to next position
-        If arrIdx > UBound(tokens) Then ReDim _Preserve tokens(LBound(tokens) To UBound(tokens) + 512) As String ' resize in 512 chunks
-        Return
-    End Function
+        IF arrIdx > UBOUND(tokens) THEN REDIM _PRESERVE tokens(LBOUND(tokens) TO UBOUND(tokens) + 512) AS STRING ' resize in 512 chunks
+        RETURN
+    END FUNCTION
 
 
     ' Gets a string form of the boolean value passed
-    Function BoolToStr$ (expression As Long, style As _Unsigned _Byte)
-        Select Case style
-            Case 1
-                If expression Then BoolToStr = "On" Else BoolToStr = "Off"
-            Case 2
-                If expression Then BoolToStr = "Enabled" Else BoolToStr = "Disabled"
-            Case 3
-                If expression Then BoolToStr = "1" Else BoolToStr = "0"
-            Case Else
-                If expression Then BoolToStr = "True" Else BoolToStr = "False"
-        End Select
-    End Function
+    FUNCTION BoolToStr$ (expression AS LONG, style AS _UNSIGNED _BYTE)
+        SELECT CASE style
+            CASE 1
+                IF expression THEN BoolToStr = "On" ELSE BoolToStr = "Off"
+            CASE 2
+                IF expression THEN BoolToStr = "Enabled" ELSE BoolToStr = "Disabled"
+            CASE 3
+                IF expression THEN BoolToStr = "1" ELSE BoolToStr = "0"
+            CASE ELSE
+                IF expression THEN BoolToStr = "True" ELSE BoolToStr = "False"
+        END SELECT
+    END FUNCTION
 
 
     ' Reverses and returns the characters of a string
-    Function ReverseString$ (s As String)
-        Dim tmp As String: tmp = s
-        ReverseBytes _Offset(tmp), Len(tmp)
+    FUNCTION ReverseString$ (s AS STRING)
+        DIM tmp AS STRING: tmp = s
+        ReverseBytes _OFFSET(tmp), LEN(tmp)
         ReverseString = tmp
-    End Function
+    END FUNCTION
 
 
     ' Reverses the characters of a string in-place
-    Sub ReverseString (s As String)
-        ReverseBytes _Offset(s), Len(s)
-    End Sub
+    SUB ReverseString (s AS STRING)
+        ReverseBytes _OFFSET(s), LEN(s)
+    END SUB
     '-------------------------------------------------------------------------------------------------------------------
 
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

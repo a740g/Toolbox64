@@ -3,14 +3,14 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'FileOps.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF FILEOPS_BAS = UNDEFINED THEN
+    $LET FILEOPS_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'FileOps.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If FILEOPS_BAS = UNDEFINED Then
-    $Let FILEOPS_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
@@ -32,189 +32,189 @@ $If FILEOPS_BAS = UNDEFINED Then
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' Return true if path name is an absolute path (i.e. starts from the root)
-    Function IsAbsolutePath%% (pathName As String)
-        $If WIN Then
-            IsAbsolutePath = Asc(pathName, 1) = KEY_SLASH Or Asc(pathName, 1) = KEY_BACKSLASH Or Asc(pathName, 3) = KEY_SLASH Or Asc(pathName, 3) = KEY_BACKSLASH ' either / or \ or x:/ or x:\
-        $Else
+    FUNCTION IsAbsolutePath%% (pathName AS STRING)
+        $IF WIN THEN
+            IsAbsolutePath = ASC(pathName, 1) = KEY_SLASH OR ASC(pathName, 1) = KEY_BACKSLASH OR ASC(pathName, 3) = KEY_SLASH OR ASC(pathName, 3) = KEY_BACKSLASH ' either / or \ or x:/ or x:\
+        $ELSE
                 IsAbsolutePath = Asc(pathName, 1) = KEY_SLASH ' /
-        $End If
-    End Function
+        $END IF
+    END FUNCTION
 
 
     ' Adds a trailing / to a directory name if needed
     ' TODO: This needs to be more platform specific (i.e. \ should not be checked on non-windows platforms)
-    Function FixPathDirectoryName$ (PathOrURL As String)
-        If Len(PathOrURL) > 0 And (Asc(PathOrURL, Len(PathOrURL)) <> KEY_SLASH Or Asc(PathOrURL, Len(PathOrURL)) <> KEY_BACKSLASH) Then
-            FixPathDirectoryName = PathOrURL + Chr$(KEY_SLASH)
-        Else
+    FUNCTION FixPathDirectoryName$ (PathOrURL AS STRING)
+        IF LEN(PathOrURL) > 0 AND (ASC(PathOrURL, LEN(PathOrURL)) <> KEY_SLASH OR ASC(PathOrURL, LEN(PathOrURL)) <> KEY_BACKSLASH) THEN
+            FixPathDirectoryName = PathOrURL + CHR$(KEY_SLASH)
+        ELSE
             FixPathDirectoryName = PathOrURL
-        End If
-    End Function
+        END IF
+    END FUNCTION
 
 
     ' Gets the filename portion from a file path or URL
     ' If no part seperator is found it assumes the whole string is a filename
-    Function GetFileNameFromPathOrURL$ (PathOrURL As String)
-        Dim As _Unsigned Long i, j: j = Len(PathOrURL)
+    FUNCTION GetFileNameFromPathOrURL$ (PathOrURL AS STRING)
+        DIM AS _UNSIGNED LONG i, j: j = LEN(PathOrURL)
 
         ' Retrieve the position of the first / or \ in the parameter from the
-        For i = j To 1 Step -1
-            Select Case Asc(PathOrURL, i)
-                Case KEY_SLASH, KEY_BACKSLASH
-                    Exit For
-            End Select
-        Next
+        FOR i = j TO 1 STEP -1
+            SELECT CASE ASC(PathOrURL, i)
+                CASE KEY_SLASH, KEY_BACKSLASH
+                    EXIT FOR
+            END SELECT
+        NEXT
 
         ' Return the full string if pathsep was not found
-        If i = NULL Then
+        IF i = NULL THEN
             GetFileNameFromPathOrURL = PathOrURL
-        Else
-            GetFileNameFromPathOrURL = Right$(PathOrURL, j - i)
-        End If
-    End Function
+        ELSE
+            GetFileNameFromPathOrURL = RIGHT$(PathOrURL, j - i)
+        END IF
+    END FUNCTION
 
 
     ' Returns the pathname portion from a file path or URL
     ' If no path seperator is found it return an empty string
-    Function GetFilePathFromPathOrURL$ (PathOrURL As String)
-        Dim As _Unsigned Long i, j: j = Len(PathOrURL)
-        For i = j To 1 Step -1
-            Select Case Asc(PathOrURL, i)
-                Case KEY_SLASH, KEY_BACKSLASH
-                    Exit For
-            End Select
-        Next
+    FUNCTION GetFilePathFromPathOrURL$ (PathOrURL AS STRING)
+        DIM AS _UNSIGNED LONG i, j: j = LEN(PathOrURL)
+        FOR i = j TO 1 STEP -1
+            SELECT CASE ASC(PathOrURL, i)
+                CASE KEY_SLASH, KEY_BACKSLASH
+                    EXIT FOR
+            END SELECT
+        NEXT
 
-        If i <> NULL Then GetFilePathFromPathOrURL = Left$(PathOrURL, i)
-    End Function
+        IF i <> NULL THEN GetFilePathFromPathOrURL = LEFT$(PathOrURL, i)
+    END FUNCTION
 
 
     ' Get the file extension from a path name (ex. .doc, .so etc.)
     ' Note this will return anything after a dot if the URL/path is just a directory name
-    Function GetFileExtensionFromPathOrURL$ (PathOrURL As String)
-        Dim fileName As String: fileName = GetFileNameFromPathOrURL(PathOrURL)
-        Dim i As _Unsigned Long: i = _InStrRev(fileName, Chr$(KEY_DOT))
+    FUNCTION GetFileExtensionFromPathOrURL$ (PathOrURL AS STRING)
+        DIM fileName AS STRING: fileName = GetFileNameFromPathOrURL(PathOrURL)
+        DIM i AS _UNSIGNED LONG: i = _INSTRREV(fileName, CHR$(KEY_DOT))
 
-        If i <> NULL Then
-            GetFileExtensionFromPathOrURL = Right$(fileName, Len(fileName) - i + 1)
-        End If
-    End Function
+        IF i <> NULL THEN
+            GetFileExtensionFromPathOrURL = RIGHT$(fileName, LEN(fileName) - i + 1)
+        END IF
+    END FUNCTION
 
 
     ' Gets the drive or scheme from a path name (ex. C:, HTTPS: etc.)
-    Function GetDriveOrSchemeFromPathOrURL$ (PathOrURL As String)
-        Dim i As _Unsigned Long: i = InStr(PathOrURL, Chr$(KEY_COLON))
+    FUNCTION GetDriveOrSchemeFromPathOrURL$ (PathOrURL AS STRING)
+        DIM i AS _UNSIGNED LONG: i = INSTR(PathOrURL, CHR$(KEY_COLON))
 
-        If i <> NULL Then
-            GetDriveOrSchemeFromPathOrURL = Left$(PathOrURL, i)
-        End If
-    End Function
+        IF i <> NULL THEN
+            GetDriveOrSchemeFromPathOrURL = LEFT$(PathOrURL, i)
+        END IF
+    END FUNCTION
 
 
     ' Load a file from a file or URL
-    Function LoadFile$ (PathOrURL As String)
-        Select Case UCase$(GetDriveOrSchemeFromPathOrURL(PathOrURL))
-            Case "HTTP:", "HTTPS:", "FTP:"
+    FUNCTION LoadFile$ (PathOrURL AS STRING)
+        SELECT CASE UCASE$(GetDriveOrSchemeFromPathOrURL(PathOrURL))
+            CASE "HTTP:", "HTTPS:", "FTP:"
                 LoadFile = LoadFileFromURL(PathOrURL)
 
-            Case Else
+            CASE ELSE
                 LoadFile = LoadFileFromDisk(PathOrURL)
-        End Select
-    End Function
+        END SELECT
+    END FUNCTION
 
 
     ' Loads a whole file from disk into memory
-    Function LoadFileFromDisk$ (path As String)
-        If _FileExists(path) Then
-            Dim As Long fh: fh = FreeFile
+    FUNCTION LoadFileFromDisk$ (path AS STRING)
+        IF _FILEEXISTS(path) THEN
+            DIM AS LONG fh: fh = FREEFILE
 
-            Open path For Binary Access Read As fh
+            OPEN path FOR BINARY ACCESS READ AS fh
 
-            LoadFileFromDisk = Input$(LOF(fh), fh)
+            LoadFileFromDisk = INPUT$(LOF(fh), fh)
 
-            Close fh
-        End If
-    End Function
+            CLOSE fh
+        END IF
+    END FUNCTION
 
 
     ' Loads a whole file from a URL into memory
-    Function LoadFileFromURL$ (url As String)
-        Shared __FileOps As __FileOpsType
+    FUNCTION LoadFileFromURL$ (url AS STRING)
+        SHARED __FileOps AS __FileOpsType
 
         ' Set default properties if this is the first time
-        If Not __FileOps.initialized Then SetDownloaderProperties __FILEOPS_UPDATES_PER_SECOND_DEFAULT, __FILEOPS_TIMEOUT_DEFAULT
+        IF NOT __FileOps.initialized THEN SetDownloaderProperties __FILEOPS_UPDATES_PER_SECOND_DEFAULT, __FILEOPS_TIMEOUT_DEFAULT
 
         __FileOps.percentCompleted = 0
 
-        Dim h As Long: h = _OpenClient("HTTP:" + url)
+        DIM h AS LONG: h = _OPENCLIENT("HTTP:" + url)
 
-        If h <> NULL Then
-            Dim startTick As _Unsigned _Integer64: startTick = GetTicks ' record the current tick
-            Dim As String content, buffer
+        IF h <> NULL THEN
+            DIM startTick AS _UNSIGNED _INTEGER64: startTick = GetTicks ' record the current tick
+            DIM AS STRING content, buffer
 
-            While Not EOF(h)
-                Get h, , buffer
+            WHILE NOT EOF(h)
+                GET h, , buffer
                 content = content + buffer
-                If __FileOps.updatesPerSecond > 0 Then _Limit __FileOps.updatesPerSecond
-                If __FileOps.timeoutTicks > 0 And (GetTicks - startTick) > __FileOps.timeoutTicks Then Exit While
-                __FileOps.percentCompleted = (Len(content) / LOF(h)) * 100!
-            Wend
+                IF __FileOps.updatesPerSecond > 0 THEN _LIMIT __FileOps.updatesPerSecond
+                IF __FileOps.timeoutTicks > 0 AND (GetTicks - startTick) > __FileOps.timeoutTicks THEN EXIT WHILE
+                __FileOps.percentCompleted = (LEN(content) / LOF(h)) * 100!
+            WEND
 
-            Close h
+            CLOSE h
 
             LoadFileFromURL = content
-        End If
-    End Function
+        END IF
+    END FUNCTION
 
 
     ' Changes the default settings for the HTTP downloader
-    Sub SetDownloaderProperties (updatesPerSecond As _Unsigned Long, timeoutSeconds As _Unsigned Long)
-        Shared __FileOps As __FileOpsType
+    SUB SetDownloaderProperties (updatesPerSecond AS _UNSIGNED LONG, timeoutSeconds AS _UNSIGNED LONG)
+        SHARED __FileOps AS __FileOpsType
 
         __FileOps.updatesPerSecond = updatesPerSecond
         __FileOps.timeoutTicks = 1000 * timeoutSeconds ' convert to ticks
         __FileOps.initialized = TRUE
-    End Sub
+    END SUB
 
 
     ' Save a buffer to a file
-    Function SaveFile%% (buffer As String, fileName As String, overwrite As _Byte)
-        If _FileExists(fileName) And Not overwrite Then Exit Function
+    FUNCTION SaveFile%% (buffer AS STRING, fileName AS STRING, overwrite AS _BYTE)
+        IF _FILEEXISTS(fileName) AND NOT overwrite THEN EXIT FUNCTION
 
-        Dim fh As Long: fh = FreeFile
-        Open fileName For Output As fh: Close fh ' open file in text mode to wipe out the file and then close
-        Open fileName For Binary Access Write As fh ' reopen file in binary mode
-        Put fh, , buffer ' write the buffer to the file
-        Close fh
+        DIM fh AS LONG: fh = FREEFILE
+        OPEN fileName FOR OUTPUT AS fh: CLOSE fh ' open file in text mode to wipe out the file and then close
+        OPEN fileName FOR BINARY ACCESS WRITE AS fh ' reopen file in binary mode
+        PUT fh, , buffer ' write the buffer to the file
+        CLOSE fh
 
         SaveFile = TRUE
-    End Function
+    END FUNCTION
 
 
     ' Copies file src to dst. Src file must exist and dst file must not
-    Function CopyFile%% (fileSrc As String, fileDst As String, overwrite As _Byte)
+    FUNCTION CopyFile%% (fileSrc AS STRING, fileDst AS STRING, overwrite AS _BYTE)
         ' Check if source file exists
-        If _FileExists(fileSrc) Then
+        IF _FILEEXISTS(fileSrc) THEN
             ' Check if dest file exists
-            If _FileExists(fileDst) And Not overwrite Then
-                Exit Function
-            End If
+            IF _FILEEXISTS(fileDst) AND NOT overwrite THEN
+                EXIT FUNCTION
+            END IF
 
-            Dim sfh As Long: sfh = FreeFile
-            Open fileSrc For Binary Access Read As sfh ' open source
-            Dim buffer As String: buffer = Input$(LOF(sfh), sfh) ' allocate buffer memory and read the file in one go
-            Close sfh ' close source
+            DIM sfh AS LONG: sfh = FREEFILE
+            OPEN fileSrc FOR BINARY ACCESS READ AS sfh ' open source
+            DIM buffer AS STRING: buffer = INPUT$(LOF(sfh), sfh) ' allocate buffer memory and read the file in one go
+            CLOSE sfh ' close source
 
-            Dim dfh As Long: dfh = FreeFile
-            Open fileDst For Output As dfh ' open destination in text mode to wipe out the file
-            Close dfh ' and then close
-            Open fileDst For Binary Access Write As dfh ' reopen destination in binary mode
-            Put dfh, , buffer ' write the buffer to the new file
-            Close dfh ' close destination
+            DIM dfh AS LONG: dfh = FREEFILE
+            OPEN fileDst FOR OUTPUT AS dfh ' open destination in text mode to wipe out the file
+            CLOSE dfh ' and then close
+            OPEN fileDst FOR BINARY ACCESS WRITE AS dfh ' reopen destination in binary mode
+            PUT dfh, , buffer ' write the buffer to the new file
+            CLOSE dfh ' close destination
 
             CopyFile = TRUE ' success
-        End If
-    End Function
+        END IF
+    END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

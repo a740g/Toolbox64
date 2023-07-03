@@ -5,7 +5,8 @@
 // This uses:
 // TinySoundFont from https://github.com/schellingb/TinySoundFont/blob/master/tsf.h
 // TinyMidiLoader from https://github.com/schellingb/TinySoundFont/blob/master/tml.h
-// opl.h from https://github.com/mattiasgustavsson/libs/blob/main/opl.h
+// ymfm from https://github.com/aaronsgiles/ymfm
+// ymfmidi from https://github.com/devinacker/ymfmidi
 // stb_vorbis.c from https://github.com/nothings/stb/blob/master/stb_vorbis.c
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -13,8 +14,6 @@
 
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"
-#define OPL_IMPLEMENTATION
-#include "external/opl.h"
 #define TSF_IMPLEMENTATION
 #include "external/tsf.h"
 #define TML_IMPLEMENTATION
@@ -22,8 +21,13 @@
 #include "external/soundfont.h"
 #undef STB_VORBIS_HEADER_ONLY
 #include "Common.h"
-
-#define OPL_DEFAULT_SAMPLE_RATE 44100.0
+#include "external/ymfm/ymfm_adpcm.cpp"
+#include "external/ymfm/ymfm_pcm.cpp"
+#include "external/ymfm/ymfm_opl.cpp"
+#include "external/ymfmidi/patchnames.cpp"
+#include "external/ymfmidi/patches.cpp"
+#include "external/ymfmidi/ymf_player.cpp"
+#include "external/opl3_bank.h"
 
 static void *contextTSFOPL3 = nullptr;         // TSF / OPL3 context
 static tml_message *tinyMIDILoader = nullptr;  // TML context
@@ -110,7 +114,8 @@ double MIDI_GetCurrentTime()
 /// @return Count of active voices
 uint32_t MIDI_GetActiveVoices()
 {
-    return contextTSFOPL3 && tinyMIDIMessage ? (isOPL3Active ? voicescount : tsf_active_voice_count((tsf *)contextTSFOPL3)) : 0;
+    // 18 if we are in OPL3 mode else whatever TSF returns
+    return contextTSFOPL3 && tinyMIDIMessage ? (isOPL3Active ? 18 : tsf_active_voice_count((tsf *)contextTSFOPL3)) : 0;
 }
 
 /// @brief Kickstarts playback if library is initalized and MIDI file is loaded
@@ -132,7 +137,7 @@ void MIDI_Stop()
     if (contextTSFOPL3 && tinyMIDILoader)
     {
         if (isOPL3Active)
-            opl_clear((opl_t *)contextTSFOPL3); // stop playing whatever is playing
+            reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->reset(); // stop playing whatever is playing
         else
             tsf_reset((tsf *)contextTSFOPL3); // stop playing whatever is playing
 
@@ -199,7 +204,7 @@ void __MIDI_Finalize()
     if (contextTSFOPL3)
     {
         if (isOPL3Active)
-            opl_destroy((opl_t *)contextTSFOPL3);
+            delete reinterpret_cast<OPLPlayer *>(contextTSFOPL3);
         else
             tsf_close((tsf *)contextTSFOPL3);
 
@@ -224,21 +229,40 @@ qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
     if (contextTSFOPL3)
         return QB_TRUE;
 
+    sampleRate = sampleRateQB64; // save the sample rate. No checks are done. Bad stuff may happen if this is garbage
+
     if (useOPL3)
     {
-        contextTSFOPL3 = opl_create(); // use OPL3 FM synth
+        contextTSFOPL3 = new OPLPlayer(sampleRate); // use OPL3 FM synth
         if (!contextTSFOPL3)
             return QB_FALSE;
+
+        if (!reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches("fmbank.wopl") &&
+            !reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches("fmbank.op2") &&
+            !reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches("fmbank.tmb") &&
+            !reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches("fmbank.bnk") &&
+            !reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches("fmbank.ad") &&
+            !reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches("fmbank.opl"))
+        {
+            TOOLBOX64_DEBUG_PRINT("fmbank.wopl/op2/tmb/bnk/ad/opl not found");
+
+            if (!reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->loadPatches(fmbank_wopl, sizeof(fmbank_wopl)))
+            {
+                delete reinterpret_cast<OPLPlayer *>(contextTSFOPL3);
+                return QB_FALSE;
+            }
+        }
     }
     else
     {
-
         contextTSFOPL3 = tsf_load_filename("soundfont.sf3"); // attempt to load a SF3 SoundFont from a file
         if (!contextTSFOPL3)
         {
+            TOOLBOX64_DEBUG_PRINT("soundfont.sf3 not found");
             contextTSFOPL3 = tsf_load_filename("soundfont.sf2"); // attempt to load a SF2 SoundFont from a file
             if (!contextTSFOPL3)
             {
+                TOOLBOX64_DEBUG_PRINT("soundfont.sf2 not found");
                 contextTSFOPL3 = tsf_load_memory(soundfont_sf3, sizeof(soundfont_sf3)); // attempt to load the soundfont from memory
                 if (!contextTSFOPL3)
                     return QB_FALSE; // return failue if loading from memory also failed. This should not happen though
@@ -246,16 +270,13 @@ qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
         }
     }
 
-    isOPL3Active = (qb_bool)useOPL3; // same the type of renderer
-    sampleRate = sampleRateQB64;     // save the sample rate. No checks are done. Bad stuff may happen if this is garbage
+    isOPL3Active = (qb_bool)useOPL3; // save the type of renderer
 
     if (!isOPL3Active)
     {
         tsf_channel_set_bank_preset((tsf *)contextTSFOPL3, 9, 128, 0);             // initialize preset on special 10th MIDI channel to use percussion sound bank (128) if available
         tsf_set_output((tsf *)contextTSFOPL3, TSF_STEREO_INTERLEAVED, sampleRate); // set the SoundFont rendering output mode
     }
-
-    // OPL3 runs at a fixed 44100 Hz. So we need to do sample rate conversion if the device sample rate is something else
 
     return QB_TRUE;
 }
@@ -317,97 +338,45 @@ static void __MIDI_RenderTSF(uint8_t *buffer, uint32_t bufferSize)
     }
 }
 
-/// @brief A simple and efficient audio converter & resampler. Set output to NULL to get the output buffer size in samples frames
-/// @param input The input 16-bit integer sample frame buffer
-/// @param output The output 32-bit floating point sample frame buffer
-/// @param inSampleRate The input sample rate
-/// @param outSampleRate The output sample rate
-/// @param inputSize The number of samples frames in the input
-/// @param channels The number of channels for both input and output
-/// @return Returns the number of samples frames written to the output
-static uint64_t __MIDI_ResampleAndConvertFP32(const int16_t *input, float *output, uint32_t inSampleRate, uint32_t outSampleRate, uint64_t inputSampleFrames, uint32_t channels)
-{
-    if (!input)
-        return 0;
-
-    auto outputSize = (uint64_t)(inputSampleFrames * (double)outSampleRate / (double)inSampleRate);
-    outputSize -= outputSize % channels;
-
-    if (!output)
-        return outputSize;
-
-    auto stepDist = ((double)inSampleRate / (double)outSampleRate);
-    const uint64_t fixedFraction = (1LL << 32);
-    const double normFixed = (1.0 / (1LL << 32));
-    auto step = ((uint64_t)(stepDist * fixedFraction + 0.5));
-    uint64_t curOffset = 0;
-    float sampleFP1, sampleFP2;
-
-    for (uint32_t i = 0; i < outputSize; i += 1)
-    {
-        for (uint32_t c = 0; c < channels; c += 1)
-        {
-            sampleFP1 = (float)input[c] / 32768.0f;
-            sampleFP2 = (float)input[c + channels] / 32768.0f;
-            *output++ = (float)(sampleFP1 + (sampleFP2 - sampleFP1) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
-        }
-        curOffset += step;
-        input += (curOffset >> 32) * channels;
-        curOffset &= (fixedFraction - 1);
-    }
-
-    return outputSize;
-}
-
 /// @brief This is used to render the MIDI audio when FM synthesis is in use
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
 static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
 {
-    // The sample frame count we can render that can be fully copied to the buffer after converting and resampling
-    uint64_t sourceSampleFrameCount = ceil(((double)bufferSize * OPL_DEFAULT_SAMPLE_RATE) / (2.0 * sizeof(float) * (double)sampleRate));
-
-    // Re-allocate the buffer to render 16-bit samples
-    auto tempBuffer = (uint8_t *)realloc(bufferOPL, sourceSampleFrameCount * sizeof(int16_t) * 2);
-    if (!tempBuffer)
-        return; // buffer allocation failed!
-
-    bufferOPL = (int16_t *)tempBuffer; // save the pointer to the reallocated buffer
-
     // Number of samples to process
-    uint32_t sampleBlock, frameCount = sourceSampleFrameCount;
+    uint32_t sampleBlock, sampleCount = (bufferSize / (2 * sizeof(float))); // 2 channels, 32-bit FP (4 bytes) samples
 
-    for (sampleBlock = TSF_RENDER_EFFECTSAMPLEBLOCK; frameCount; frameCount -= sampleBlock, tempBuffer += (sampleBlock * (2 * sizeof(int16_t))))
+    for (sampleBlock = TSF_RENDER_EFFECTSAMPLEBLOCK; sampleCount; sampleCount -= sampleBlock, buffer += (sampleBlock * (2 * sizeof(float))))
     {
         // We progress the MIDI playback and then process TSF_RENDER_EFFECTSAMPLEBLOCK samples at once
-        if (sampleBlock > frameCount)
-            sampleBlock = frameCount;
+        if (sampleBlock > sampleCount)
+            sampleBlock = sampleCount;
 
         // Loop through all MIDI messages which need to be played up until the current playback time
-        for (currentMsec += sampleBlock * (1000.0 / OPL_DEFAULT_SAMPLE_RATE); tinyMIDIMessage && currentMsec >= tinyMIDIMessage->time; tinyMIDIMessage = tinyMIDIMessage->next)
+        for (currentMsec += sampleBlock * (1000.0 / sampleRate); tinyMIDIMessage && currentMsec >= tinyMIDIMessage->time; tinyMIDIMessage = tinyMIDIMessage->next)
         {
             switch (tinyMIDIMessage->type)
             {
             case TML_PROGRAM_CHANGE: // Channel program (preset) change
-                opl_midi_changeprog((opl_t *)contextTSFOPL3, tinyMIDIMessage->channel, tinyMIDIMessage->program);
+                reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->midiProgramChange(tinyMIDIMessage->channel, tinyMIDIMessage->program);
                 break;
             case TML_NOTE_ON: // Play a note
-                opl_midi_noteon((opl_t *)contextTSFOPL3, tinyMIDIMessage->channel, tinyMIDIMessage->key, tinyMIDIMessage->velocity);
+                reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->midiNoteOn(tinyMIDIMessage->channel, tinyMIDIMessage->key, tinyMIDIMessage->velocity);
                 break;
             case TML_NOTE_OFF: // Stop a note
-                opl_midi_noteoff((opl_t *)contextTSFOPL3, tinyMIDIMessage->channel, tinyMIDIMessage->key);
+                reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->midiNoteOff(tinyMIDIMessage->channel, tinyMIDIMessage->key);
                 break;
             case TML_PITCH_BEND: // Pitch wheel modification
-                opl_midi_pitchwheel((opl_t *)contextTSFOPL3, tinyMIDIMessage->channel, (tinyMIDIMessage->pitch_bend - 8192) / 64);
+                reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->midiPitchControl(tinyMIDIMessage->channel, ((double)tinyMIDIMessage->pitch_bend / 8192.0) - 1.0);
                 break;
             case TML_CONTROL_CHANGE: // MIDI controller messages
-                opl_midi_controller((opl_t *)contextTSFOPL3, tinyMIDIMessage->channel, tinyMIDIMessage->control, tinyMIDIMessage->control_value);
+                reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->midiControlChange(tinyMIDIMessage->channel, tinyMIDIMessage->control, tinyMIDIMessage->control_value);
                 break;
             }
         }
 
-        // Render the block of audio samples in int16 format
-        opl_render((opl_t *)contextTSFOPL3, (int16_t *)tempBuffer, sampleBlock, globalVolume);
+        // Render the block of audio samples in float format
+        reinterpret_cast<OPLPlayer *>(contextTSFOPL3)->generate((float *)buffer, sampleBlock);
 
         // Reset the MIDI message pointer if we are looping & have reached the end of the message list
         if (isLooping && !tinyMIDIMessage)
@@ -416,9 +385,6 @@ static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
             currentMsec = 0;
         }
     }
-
-    // Convert and resample the buffer
-    __MIDI_ResampleAndConvertFP32(bufferOPL, (float *)buffer, OPL_DEFAULT_SAMPLE_RATE, sampleRate, sourceSampleFrameCount, 2);
 }
 
 /// @brief The calls the correct render function based on which renderer was chosen

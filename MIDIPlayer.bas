@@ -5,145 +5,147 @@
 ' This uses:
 ' TinySoundFont from https://github.com/schellingb/TinySoundFont/blob/master/tsf.h
 ' TinyMidiLoader from https://github.com/schellingb/TinySoundFont/blob/master/tml.h
-' opl.h from https://github.com/mattiasgustavsson/libs/blob/main/opl.h
+' ymfm from https://github.com/aaronsgiles/ymfm
+' ymfmidi from https://github.com/devinacker/ymfmidi
 ' stb_vorbis.c from https://github.com/nothings/stb/blob/master/stb_vorbis.c
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'MIDIPlayer.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF MIDIPLAYER_BAS = UNDEFINED THEN
+    $LET MIDIPLAYER_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'MIDIPlayer.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If MIDIPLAYER_BAS = UNDEFINED Then
-    $Let MIDIPLAYER_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$Debug
-    'If MIDI_Initialize(FALSE) Then
-    '    If MIDI_LoadTuneFromFile(Environ$("SYSTEMROOT") + "/Media/onestop.mid") Then
+    '$DEBUG
+    '$CONSOLE
+    'IF MIDI_Initialize(TRUE) THEN
+    '    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
     '        MIDI_Play
     '        MIDI_Loop TRUE
-    '        Do
+    '        DO
     '            MIDI_Update MIDI_SOUND_BUFFER_TIME_DEFAULT
-    '            Select Case KeyHit
-    '                Case 27
-    '                    Exit Do
-    '                Case 32
-    '                    MIDI_Pause Not MIDI_IsPaused
-    '            End Select
-    '            Locate , 1: Print Using "Time: ########.## / ########.##   Voices: ####"; MIDI_GetCurrentTime; MIDI_GetTotalTime; MIDI_GetActiveVoices;
-    '            Limit 60
-    '        Loop While MIDI_IsPlaying
+    '            SELECT CASE _KEYHIT
+    '                CASE 27
+    '                    EXIT DO
+    '                CASE 32
+    '                    MIDI_Pause NOT MIDI_IsPaused
+    '            END SELECT
+    '            LOCATE , 1: PRINT USING "Time: ########.## / ########.##   Voices: ####"; MIDI_GetCurrentTime; MIDI_GetTotalTime; MIDI_GetActiveVoices;
+    '            _LIMIT 60
+    '        LOOP WHILE MIDI_IsPlaying
     '        MIDI_Stop
-    '    End If
+    '    END IF
     '    MIDI_Finalize
-    'End If
-    'End
+    'END IF
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' This basically allocate stuff on the QB64 side and initializes the underlying C library
-    Function MIDI_Initialize%% (useOPL3 As _Byte)
-        Shared __MIDI_Player As __MIDI_PlayerType
+    FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
+        SHARED __MIDI_Player AS __MIDI_PlayerType
 
         ' Exit if we are already initialized
-        If MIDI_IsInitialized Then
+        IF MIDI_IsInitialized THEN
             MIDI_Initialize = TRUE
-            Exit Function
-        End If
+            EXIT FUNCTION
+        END IF
 
-        __MIDI_Player.soundBufferFrames = RoundDownToPowerOf2(_SndRate * 0.04) ' 40 ms buffer round down to power of 2
+        __MIDI_Player.soundBufferFrames = RoundDownToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' 40 ms buffer round down to power of 2
         __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferFrames * __MIDI_SOUND_BUFFER_FRAME_SIZE ' calculate the mixer buffer size
-        __MIDI_Player.soundBuffer = _MemNew(__MIDI_Player.soundBufferBytes) ' allocate the mixer buffer
+        __MIDI_Player.soundBuffer = _MEMNEW(__MIDI_Player.soundBufferBytes) ' allocate the mixer buffer
 
-        If __MIDI_Player.soundBuffer.SIZE = 0 Then Exit Function ' exit if memory was not allocated
+        IF __MIDI_Player.soundBuffer.SIZE = 0 THEN EXIT FUNCTION ' exit if memory was not allocated
 
-        __MIDI_Player.soundHandle = _SndOpenRaw ' allocate a sound pipe
+        __MIDI_Player.soundHandle = _SNDOPENRAW ' allocate a sound pipe
 
-        If __MIDI_Player.soundHandle < 1 Then
-            _MemFree __MIDI_Player.soundBuffer
-            Exit Function
-        End If
+        IF __MIDI_Player.soundHandle < 1 THEN
+            _MEMFREE __MIDI_Player.soundBuffer
+            EXIT FUNCTION
+        END IF
 
-        If Not __MIDI_Initialize(_SndRate, useOPL3) Then
-            _SndClose __MIDI_Player.soundHandle
-            _MemFree __MIDI_Player.soundBuffer
-            Exit Function
-        End If
+        IF NOT __MIDI_Initialize(_SNDRATE, useOPL3) THEN
+            _SNDCLOSE __MIDI_Player.soundHandle
+            _MEMFREE __MIDI_Player.soundBuffer
+            EXIT FUNCTION
+        END IF
 
         MIDI_Initialize = TRUE
-    End Function
+    END FUNCTION
 
 
     ' The closes the library and frees all resources
-    Sub MIDI_Finalize
-        Shared __MIDI_Player As __MIDI_PlayerType
+    SUB MIDI_Finalize
+        SHARED __MIDI_Player AS __MIDI_PlayerType
 
-        If MIDI_IsInitialized Then
-            _SndRawDone __MIDI_Player.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
-            _SndClose __MIDI_Player.soundHandle ' close and free the QB64 sound pipe
-            _MemFree __MIDI_Player.soundBuffer ' free the mixer buffer
+        IF MIDI_IsInitialized THEN
+            _SNDRAWDONE __MIDI_Player.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
+            _SNDCLOSE __MIDI_Player.soundHandle ' close and free the QB64 sound pipe
+            _MEMFREE __MIDI_Player.soundBuffer ' free the mixer buffer
             __MIDI_Finalize ' call the C side finalizer
-        End If
-    End Sub
+        END IF
+    END SUB
 
 
     ' Loads a MIDI file for playback from file
-    Function MIDI_LoadTuneFromFile%% (fileName As String)
-        MIDI_LoadTuneFromFile = __MIDI_LoadTuneFromFile(fileName + Chr$(NULL))
-    End Function
+    FUNCTION MIDI_LoadTuneFromFile%% (fileName AS STRING)
+        MIDI_LoadTuneFromFile = __MIDI_LoadTuneFromFile(fileName + CHR$(NULL))
+    END FUNCTION
 
 
     ' Loads a MIDI file for playback from memory
-    Function MIDI_LoadTuneFromMemory%% (buffer As String)
-        MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, Len(buffer))
-    End Function
+    FUNCTION MIDI_LoadTuneFromMemory%% (buffer AS STRING)
+        MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer))
+    END FUNCTION
 
 
     ' Pause any MIDI playback
-    Sub MIDI_Pause (state As _Byte)
-        Shared __MIDI_Player As __MIDI_PlayerType
+    SUB MIDI_Pause (state AS _BYTE)
+        SHARED __MIDI_Player AS __MIDI_PlayerType
 
-        If MIDI_IsTuneLoaded Then
+        IF MIDI_IsTuneLoaded THEN
             __MIDI_Player.isPaused = state
-        End If
-    End Sub
+        END IF
+    END SUB
 
 
     ' Return true if playback is paused
-    Function MIDI_IsPaused%%
-        Shared __MIDI_Player As __MIDI_PlayerType
+    FUNCTION MIDI_IsPaused%%
+        SHARED __MIDI_Player AS __MIDI_PlayerType
 
-        If MIDI_IsTuneLoaded Then
+        IF MIDI_IsTuneLoaded THEN
             MIDI_IsPaused = __MIDI_Player.isPaused
-        End If
-    End Function
+        END IF
+    END FUNCTION
 
 
-    ' This handles playback and keeping track of the render buffer
+    ' This handles playback and keeps track of the render buffer
     ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
-    Sub MIDI_Update (bufferTime As Single)
-        Shared __MIDI_Player As __MIDI_PlayerType
+    SUB MIDI_Update (bufferTimeSecs AS SINGLE)
+        SHARED __MIDI_Player AS __MIDI_PlayerType
 
         ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
-        If MIDI_IsPlaying And Not __MIDI_Player.isPaused And _SndRawLen(__MIDI_Player.soundHandle) < bufferTime Then
+        IF MIDI_IsPlaying AND NOT __MIDI_Player.isPaused AND _SNDRAWLEN(__MIDI_Player.soundHandle) < bufferTimeSecs THEN
             ' Clear the render buffer
-            _MemFill __MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferBytes, NULL As _BYTE
+            _MEMFILL __MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferBytes, NULL AS _BYTE
 
             ' Render some samples to the buffer
             __MIDI_Render __MIDI_Player.soundBuffer.OFFSET, __MIDI_Player.soundBufferBytes
 
             ' Push the samples to the sound pipe
-            Dim i As _Unsigned Long
-            For i = 0 To __MIDI_Player.soundBufferBytes - __MIDI_SOUND_BUFFER_SAMPLE_SIZE Step __MIDI_SOUND_BUFFER_FRAME_SIZE
-                _SndRaw _MemGet(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i, Single), _MemGet(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i + __MIDI_SOUND_BUFFER_SAMPLE_SIZE, Single), __MIDI_Player.soundHandle
-            Next
-        End If
-    End Sub
+            DIM i AS _UNSIGNED LONG
+            FOR i = 0 TO __MIDI_Player.soundBufferBytes - __MIDI_SOUND_BUFFER_SAMPLE_SIZE STEP __MIDI_SOUND_BUFFER_FRAME_SIZE
+                _SNDRAW _MEMGET(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i, SINGLE), _MEMGET(__MIDI_Player.soundBuffer, __MIDI_Player.soundBuffer.OFFSET + i + __MIDI_SOUND_BUFFER_SAMPLE_SIZE, SINGLE), __MIDI_Player.soundHandle
+            NEXT
+        END IF
+    END SUB
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

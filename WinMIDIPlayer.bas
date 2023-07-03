@@ -3,47 +3,47 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'FileOps.bi'
-'$Include:'WinMIDIPlayer.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF WINMIDIPLAYER_BAS = UNDEFINED THEN
+    $LET WINMIDIPLAYER_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$Include:'FileOps.bi'
+    '$Include:'WinMIDIPlayer.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If WINMIDIPLAYER_BAS = UNDEFINED Then
-    $Let WINMIDIPLAYER_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
-    Function MIDI_PlayFromMemory%% (buffer As String)
-        MIDI_PlayFromMemory = __MIDI_PlayFromMemory(buffer, Len(buffer))
-    End Function
+    FUNCTION MIDI_PlayFromMemory%% (buffer AS STRING)
+        MIDI_PlayFromMemory = __MIDI_PlayFromMemory(buffer, LEN(buffer))
+    END FUNCTION
 
-    Sub MIDI_PlayFromMemory (buffer As String)
-        Dim sink As _Byte: sink = __MIDI_PlayFromMemory(buffer, Len(buffer))
-    End Sub
+    SUB MIDI_PlayFromMemory (buffer AS STRING)
+        DIM sink AS _BYTE: sink = __MIDI_PlayFromMemory(buffer, LEN(buffer))
+    END SUB
 
-    Function MIDI_PlayFromFile%% (fileName As String)
+    FUNCTION MIDI_PlayFromFile%% (fileName AS STRING)
         MIDI_PlayFromFile = MIDI_PlayFromMemory(LoadFile(fileName))
-    End Function
+    END FUNCTION
 
-    Sub MIDI_PlayFromFile (fileName As String)
+    SUB MIDI_PlayFromFile (fileName AS STRING)
         MIDI_PlayFromMemory LoadFile(fileName)
-    End Sub
+    END SUB
 
-    Function Sound_PlayFromFile%% (fileName As String, looping As _Byte)
-        Sound_PlayFromFile = __Sound_PlayFromFile(fileName + Chr$(NULL), looping)
-    End Function
+    FUNCTION Sound_PlayFromFile%% (fileName AS STRING, looping AS _BYTE)
+        Sound_PlayFromFile = __Sound_PlayFromFile(fileName + CHR$(NULL), looping)
+    END FUNCTION
 
-    Sub Sound_PlayFromFile (fileName As String, looping As _Byte)
-        Dim sink As _Byte: sink = __Sound_PlayFromFile(fileName + Chr$(NULL), looping)
-    End Sub
+    SUB Sound_PlayFromFile (fileName AS STRING, looping AS _BYTE)
+        DIM sink AS _BYTE: sink = __Sound_PlayFromFile(fileName + CHR$(NULL), looping)
+    END SUB
 
-    Sub Sound_PlayFromMemory (buffer As String, looping As _Byte)
-        Dim sink As _Byte: sink = Sound_PlayFromMemory(buffer, looping)
-    End Sub
+    SUB Sound_PlayFromMemory (buffer AS STRING, looping AS _BYTE)
+        DIM sink AS _BYTE: sink = Sound_PlayFromMemory(buffer, looping)
+    END SUB
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------
 
 '-----------------------------------------------------------------------------------------------------------------------

@@ -1,63 +1,62 @@
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 ' Simple sample-based software synthesizer
 ' Copyright (c) 2023 Samuel Gomes
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 
-'---------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'---------------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
-'$Include:'CRTLib.bi'
-'---------------------------------------------------------------------------------------------------------
+$IF SOFTSYNTH_BI = UNDEFINED THEN
+    $LET SOFTSYNTH_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'CRTLib.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If SOFTSYNTH_BI = UNDEFINED Then
-    $Let SOFTSYNTH_BI = TRUE
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
-    '-----------------------------------------------------------------------------------------------------
-    Const SAMPLE_VOLUME_MAX = 64 ' This is the maximum volume of any sample
-    Const SAMPLE_PAN_LEFT = 0 ' Leftmost pannning position
-    Const SAMPLE_PAN_RIGHT = 255 ' Rightmost pannning position
-    Const SAMPLE_PAN_CENTER = (SAMPLE_PAN_RIGHT - SAMPLE_PAN_LEFT) / 2 ' Center panning position
-    Const SAMPLE_PLAY_SINGLE = 0 ' Single-shot playback
-    Const SAMPLE_PLAY_LOOP = 1 ' Forward-looping playback
-    Const GLOBAL_VOLUME_MAX = 255 ' Max global volume
-    Const SOUND_TIME_MIN = 0.2 ' We will check that we have this amount of time left in the playback buffer
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
+    CONST SAMPLE_VOLUME_MAX = 64 ' This is the maximum volume of any sample
+    CONST SAMPLE_PAN_LEFT = 0 ' Leftmost pannning position
+    CONST SAMPLE_PAN_RIGHT = 255 ' Rightmost pannning position
+    CONST SAMPLE_PAN_CENTER = (SAMPLE_PAN_RIGHT - SAMPLE_PAN_LEFT) / 2 ' Center panning position
+    CONST SAMPLE_PLAY_SINGLE = 0 ' Single-shot playback
+    CONST SAMPLE_PLAY_LOOP = 1 ' Forward-looping playback
+    CONST GLOBAL_VOLUME_MAX = 255 ' Max global volume
+    CONST SOUND_TIME_MIN = 0.2 ' We will check that we have this amount of time left in the playback buffer
+    '-------------------------------------------------------------------------------------------------------------------
 
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
-    '-----------------------------------------------------------------------------------------------------
-    Type SoftSynthType
-        voices As _Unsigned _Byte ' Number of mixer voices requested
-        samples As _Unsigned _Byte ' Number of samples slots requested
-        mixerRate As Long ' This is always set by QB64 internal audio engine
-        soundHandle As Long ' QB64 sound pipe that we will use to stream the mixed audio
-        volume As Single ' Global volume (0 - 255) (fp32)
-        useHQMixer As _Byte ' If this is set to true, then we are using linear interpolation mixing
-        activeVoices As _Unsigned _Byte ' Just a count of voices we really mixed
-    End Type
+    '-------------------------------------------------------------------------------------------------------------------
+    TYPE SoftSynthType
+        voices AS _UNSIGNED _BYTE ' Number of mixer voices requested
+        samples AS _UNSIGNED _BYTE ' Number of samples slots requested
+        mixerRate AS LONG ' This is always set by QB64 internal audio engine
+        soundHandle AS LONG ' QB64 sound pipe that we will use to stream the mixed audio
+        volume AS SINGLE ' Global volume (0 - 255) (fp32)
+        useHQMixer AS _BYTE ' If this is set to true, then we are using linear interpolation mixing
+        activeVoices AS _UNSIGNED _BYTE ' Just a count of voices we really mixed
+    END TYPE
 
-    Type VoiceType
-        sample As Integer ' Sample number to be mixed. This is set to -1 once the mixer is done with the sample
-        volume As Single ' Voice volume (0 - 64) (fp32)
-        panning As Single ' Position 0 is leftmost ... 255 is rightmost (fp32)
-        pitch As Single ' Sample pitch. The mixer code uses this to step through the sample correctly (fp32)
-        position As Single ' Where are we in the sample buffer (fp32)
-        playType As _Unsigned _Byte ' How should the sample be played
-        startPosition As Single ' Start poistion. This can be loop start or just start depending on play type
-        endPosition As Single ' End position. This can be loop end or just end depending on play type
-    End Type
-    '-----------------------------------------------------------------------------------------------------
+    TYPE VoiceType
+        sample AS INTEGER ' Sample number to be mixed. This is set to -1 once the mixer is done with the sample
+        volume AS SINGLE ' Voice volume (0 - 64) (fp32)
+        panning AS SINGLE ' Position 0 is leftmost ... 255 is rightmost (fp32)
+        pitch AS SINGLE ' Sample pitch. The mixer code uses this to step through the sample correctly (fp32)
+        position AS SINGLE ' Where are we in the sample buffer (fp32)
+        playType AS _UNSIGNED _BYTE ' How should the sample be played
+        startPosition AS SINGLE ' Start poistion. This can be loop start or just start depending on play type
+        endPosition AS SINGLE ' End position. This can be loop end or just end depending on play type
+    END TYPE
+    '-------------------------------------------------------------------------------------------------------------------
 
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' GLOBAL VARIABLES
-    '-----------------------------------------------------------------------------------------------------
-    Dim SoftSynth As SoftSynthType
-    ReDim SampleData(0 To 0) As String ' Sample data array
-    ReDim Voice(0 To 0) As VoiceType ' Voice info array
-    ReDim MixerBufferLeft(0 To 0) As Single ' Left channel mixer buffer
-    ReDim MixerBufferRight(0 To 0) As Single ' Right channel mixer buffer
-    '-----------------------------------------------------------------------------------------------------
-$End If
-'---------------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
+    DIM SoftSynth AS SoftSynthType
+    REDIM SampleData(0 TO 0) AS STRING ' Sample data array
+    REDIM Voice(0 TO 0) AS VoiceType ' Voice info array
+    REDIM MixerBufferLeft(0 TO 0) AS SINGLE ' Left channel mixer buffer
+    REDIM MixerBufferRight(0 TO 0) AS SINGLE ' Right channel mixer buffer
+    '-------------------------------------------------------------------------------------------------------------------
+$END IF
+'-----------------------------------------------------------------------------------------------------------------------

@@ -5,22 +5,21 @@
 ' Adapted from OpenCP Module Player (https://github.com/mywave82/opencubicplayer)
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
-'-----------------------------------------------------------------------------------------------------------------------
-
-$If ANALYZERFFT_BI = UNDEFINED Then
-    $Let ANALYZERFFT_BI = TRUE
+$IF ANALYZERFFT_BI = UNDEFINED THEN
+    $LET ANALYZERFFT_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$Include:'Common.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
-    Declare CustomType Library "AnalyzerFFT"
-        Sub AnalyzerFFTInteger (ByVal ana As _Offset, Byval samp As _Offset, Byval inc As Long, Byval bits As Long)
-        Sub AnalyzerFFTSingle (ByVal ana As _Offset, Byval samp As _Offset, Byval inc As Long, Byval bits As Long)
-    End Declare
+    DECLARE CUSTOMTYPE LIBRARY "AnalyzerFFT"
+        SUB AnalyzerFFTInteger (BYVAL ana AS _OFFSET, BYVAL samp AS _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
+        SUB AnalyzerFFTSingle (BYVAL ana AS _OFFSET, BYVAL samp AS _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
+    END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

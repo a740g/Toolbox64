@@ -5,138 +5,145 @@
 ' See https://en.cppreference.com/w/ for CRT documentation
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF CRTLIB_BI = UNDEFINED THEN
+    $LET CRTLIB_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If CRTLIB_BI = UNDEFINED Then
-    $Let CRTLIB_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' CONSTANTS
+    '-------------------------------------------------------------------------------------------------------------------
+    CONST SIZE_OF_BYTE = 1
+    CONST SIZE_OF_INTEGER = 2
+    CONST SIZE_OF_LONG = 4
+    CONST SIZE_OF_INTEGER64 = 8
+    CONST SIZE_OF_SINGLE = 4
+    CONST SIZE_OF_DOUBLE = 8
+    $IF 32BIT THEN
+            CONST SIZE_OF_OFFSET = 4
+    $ELSE
+        CONST SIZE_OF_OFFSET = 8
+    $END IF
+    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
     ' This only includes CRT library functions that makes sense in QB64
-    Declare CustomType Library
-        Function isalnum& (ByVal ch As Long)
-        Function isalpha& (ByVal ch As Long)
-        Function islower& (ByVal ch As Long)
-        Function isupper& (ByVal ch As Long)
-        Function isdigit& (ByVal ch As Long)
-        Function isxdigit& (ByVal ch As Long)
-        Function iscntrl& (ByVal ch As Long)
-        Function isgraph& (ByVal ch As Long)
-        Function isspace& (ByVal ch As Long)
-        Function isblank& (ByVal ch As Long)
-        Function isprint& (ByVal ch As Long)
-        Function ispunct& (ByVal ch As Long)
-        Function tolower& (ByVal ch As Long)
-        Function toupper& (ByVal ch As Long)
-        $If 32BIT Then
+    DECLARE CUSTOMTYPE LIBRARY
+        FUNCTION isalnum& (BYVAL ch AS LONG)
+        FUNCTION isalpha& (BYVAL ch AS LONG)
+        FUNCTION islower& (BYVAL ch AS LONG)
+        FUNCTION isupper& (BYVAL ch AS LONG)
+        FUNCTION isdigit& (BYVAL ch AS LONG)
+        FUNCTION isxdigit& (BYVAL ch AS LONG)
+        FUNCTION iscntrl& (BYVAL ch AS LONG)
+        FUNCTION isgraph& (BYVAL ch AS LONG)
+        FUNCTION isspace& (BYVAL ch AS LONG)
+        FUNCTION isblank& (BYVAL ch AS LONG)
+        FUNCTION isprint& (BYVAL ch AS LONG)
+        FUNCTION ispunct& (BYVAL ch AS LONG)
+        FUNCTION tolower& (BYVAL ch AS LONG)
+        FUNCTION toupper& (BYVAL ch AS LONG)
+        $IF 32BIT THEN
             Function strlen~& (ByVal str As _Unsigned _Offset)
-        $Else
-            Function strlen~&& (ByVal str As _Unsigned _Offset)
-        $End If
-        Sub strncpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Function memcmp& (ByVal lhs As _Unsigned _Offset, Byval rhs As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Sub memset (ByVal dst As _Unsigned _Offset, Byval ch As Long, Byval count As _Unsigned _Offset)
-        Sub memcpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Sub memmove (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval count As _Unsigned _Offset)
-        Sub memccpy (ByVal dst As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval c As Long, Byval count As _Unsigned _Offset)
-        Function rand&
-        Sub srand (ByVal seed As _Unsigned Long)
-        Function getchar&
-        Sub putchar (ByVal ch As Long)
-        Function GetTicks~&&
-    End Declare
+        $ELSE
+            FUNCTION strlen~&& (BYVAL str AS _UNSIGNED _OFFSET)
+        $END IF
+        SUB strncpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        FUNCTION memcmp& (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB memset (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB memcpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB memmove (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB memccpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL c AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
+        FUNCTION rand&
+        SUB srand (BYVAL seed AS _UNSIGNED LONG)
+        FUNCTION getchar&
+        SUB putchar (BYVAL ch AS LONG)
+        FUNCTION GetTicks~&&
+    END DECLARE
 
-    Declare CustomType Library "CRTLib"
-        Function ToQBBool%% (ByVal x As Long)
-        Function ToCBool%% (ByVal x As Long)
-        $If 32BIT Then
+    DECLARE CUSTOMTYPE LIBRARY "CRTLib"
+        FUNCTION ToQBBool%% (BYVAL x AS LONG)
+        FUNCTION ToCBool%% (BYVAL x AS LONG)
+        $IF 32BIT THEN
             Function CLngPtr~& (ByVal p As _Unsigned _Offset)
-        $Else
-            Function CLngPtr~&& (ByVal p As _Unsigned _Offset)
-        $End If
-        Function CStr$ (ByVal p As _Unsigned _Offset)
-        Function PeekByte~%% (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeByte (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned _Byte)
-        Function PeekInteger~% (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeInteger (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned Integer)
-        Function PeekLong~& (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeLong (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned Long)
-        Function PeekInteger64~&& (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeInteger64 (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned _Integer64)
-        Function PeekSingle! (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeSingle (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As Single)
-        Function PeekDouble# (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeDouble (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As Double)
-        Function PeekOffset~%& (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset)
-        Sub PokeOffset (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval n As _Unsigned _Offset)
-        Sub PeekType (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval t As _Unsigned _Offset, Byval t_size As _Unsigned _Offset)
-        Sub PokeType (ByVal p As _Unsigned _Offset, Byval o As _Unsigned _Offset, Byval t As _Unsigned _Offset, Byval t_size As _Unsigned _Offset)
-        Function PeekString~%% (s As String, Byval o As _Unsigned _Offset)
-        Sub PokeString (s As String, Byval o As _Unsigned _Offset, Byval n As _Unsigned _Byte)
-        Function ToBGRA~& (ByVal r As _Unsigned _Byte, Byval g As _Unsigned _Byte, Byval b As _Unsigned _Byte, Byval a As _Unsigned _Byte)
-        Function ToRGBA~& (ByVal r As _Unsigned _Byte, Byval g As _Unsigned _Byte, Byval b As _Unsigned _Byte, Byval a As _Unsigned _Byte)
-        Function GetRedFromRGBA~%% (ByVal rgba As _Unsigned Long)
-        Function GetGreenFromRGBA~%% (ByVal rgba As _Unsigned Long)
-        Function GetBlueFromRGBA~%% (ByVal rgba As _Unsigned Long)
-        Function GetAlphaFromRGBA~%% (ByVal rgba As _Unsigned Long)
-        Function GetRGB~& (ByVal clr As _Unsigned Long)
-        Function SwapRedBlue~& (ByVal clr As _Unsigned Long)
-        Function RandomBetween& (ByVal lo As Long, Byval hi As Long)
-        Function IsPowerOfTwo& (ByVal n As _Unsigned Long)
-        Function RoundUpToPowerOf2~& (ByVal n As _Unsigned Long)
-        Function RoundDownToPowerOf2~& (ByVal n As _Unsigned Long)
-        Function LeftShiftOneCount~& (ByVal n As _Unsigned Long)
-        Function ReverseBitsByte~%% (ByVal n As _Unsigned _Byte)
-        Function ReverseBitsInteger~% (ByVal n As _Unsigned Integer)
-        Function ReverseBitsLong~& (ByVal n As _Unsigned Long)
-        Function ReverseBitsInteger64~&& (ByVal n As _Unsigned _Integer64)
-        Sub ReverseBytes (ByVal ptr As _Unsigned _Offset, Byval size As _Unsigned _Offset)
-        Function ClampLong& (ByVal n As Long, Byval lo As Long, Byval hi As Long)
-        Function ClampInteger64&& (ByVal n As _Integer64, Byval lo As _Integer64, Byval hi As _Integer64)
-        Function ClampSingle! (ByVal n As Single, Byval lo As Single, Byval hi As Single)
-        Function ClampDouble# (ByVal n As Double, Byval lo As Double, Byval hi As Double)
-        Function GetDigitFromLong& (ByVal n As _Unsigned Long, Byval p As _Unsigned Long)
-        Function GetDigitFromInteger64& (ByVal n As _Unsigned _Integer64, Byval p As _Unsigned Long)
-        Function AverageLong& (ByVal x As Long, Byval y As Long)
-        Function AverageInteger64&& (ByVal x As _Integer64, Byval y As _Integer64)
-        Function FindFirstBitSetLong& (ByVal x As _Unsigned Long)
-        Function FindFirstBitSetInteger64& (ByVal x As _Unsigned _Integer64)
-        Function CountLeadingZerosLong& (ByVal x As _Unsigned Long)
-        Function CountLeadingZerosInteger64& (ByVal x As _Unsigned _Integer64)
-        Function CountTrailingZerosLong& (ByVal x As _Unsigned Long)
-        Function CountTrailingZerosInteger64& (ByVal x As _Unsigned _Integer64)
-        Function PopulationCountLong& (ByVal x As _Unsigned Long)
-        Function PopulationCountInteger64& (ByVal x As _Unsigned _Integer64)
-        Function ByteSwapInteger~% (ByVal x As _Unsigned Integer)
-        Function ByteSwapLong~& (ByVal x As _Unsigned Long)
-        Function ByteSwapInteger64~&& (ByVal x As _Unsigned _Integer64)
-        Function MakeFourCC~& (ByVal ch0 As _Unsigned _Byte, Byval ch1 As _Unsigned _Byte, Byval ch2 As _Unsigned _Byte, Byval ch3 As _Unsigned _Byte)
-        Function MakeByte~%% (ByVal x As _Unsigned _Byte, Byval y As _Unsigned _Byte)
-        Function MakeInteger~% (ByVal x As _Unsigned _Byte, Byval y As _Unsigned _Byte)
-        Function MakeLong~& (ByVal x As _Unsigned Integer, Byval y As _Unsigned Integer)
-        Function MakeInteger64~&& (ByVal x As _Unsigned Long, Byval y As _Unsigned Long)
-        Function HiNibble~%% (ByVal x As _Unsigned _Byte)
-        Function LoNibble~%% (ByVal x As _Unsigned _Byte)
-        Function HiByte~%% (ByVal x As _Unsigned Integer)
-        Function LoByte~%% (ByVal x As _Unsigned Integer)
-        Function HiInteger~% (ByVal x As _Unsigned Long)
-        Function LoInteger~% (ByVal x As _Unsigned Long)
-        Function HiLong~& (ByVal x As _Unsigned _Integer64)
-        Function LoLong~& (ByVal x As _Unsigned _Integer64)
-        Function MaxLong& (ByVal a As Long, Byval b As Long)
-        Function MinLong& (ByVal a As Long, Byval b As Long)
-        Function MaxInteger64&& (ByVal a As _Integer64, Byval b As _Integer64)
-        Function MinInteger64&& (ByVal a As _Integer64, Byval b As _Integer64)
-        Function MaxSingle! (ByVal a As Single, Byval b As Single)
-        Function MinSingle! (ByVal a As Single, Byval b As Single)
-        Function MaxDouble# (ByVal a As Double, Byval b As Double)
-        Function MinDouble# (ByVal a As Double, Byval b As Double)
-    End Declare
+        $ELSE
+            FUNCTION CLngPtr~&& (BYVAL p AS _UNSIGNED _OFFSET)
+        $END IF
+        FUNCTION CStr$ (BYVAL p AS _UNSIGNED _OFFSET)
+        FUNCTION PeekByte~%% (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeByte (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED _BYTE)
+        FUNCTION PeekInteger~% (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeInteger (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED INTEGER)
+        FUNCTION PeekLong~& (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeLong (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED LONG)
+        FUNCTION PeekInteger64~&& (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeInteger64 (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED _INTEGER64)
+        FUNCTION PeekSingle! (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeSingle (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS SINGLE)
+        FUNCTION PeekDouble# (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeDouble (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS DOUBLE)
+        FUNCTION PeekOffset~%& (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeOffset (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED _OFFSET)
+        SUB PeekType (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL t AS _UNSIGNED _OFFSET, BYVAL t_size AS _UNSIGNED _OFFSET)
+        SUB PokeType (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL t AS _UNSIGNED _OFFSET, BYVAL t_size AS _UNSIGNED _OFFSET)
+        FUNCTION PeekString~%% (s AS STRING, BYVAL o AS _UNSIGNED _OFFSET)
+        SUB PokeString (s AS STRING, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED _BYTE)
+        FUNCTION RandomBetween& (BYVAL lo AS LONG, BYVAL hi AS LONG)
+        FUNCTION IsPowerOfTwo& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION RoundUpToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION RoundDownToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION LeftShiftOneCount~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION ReverseBitsByte~%% (BYVAL n AS _UNSIGNED _BYTE)
+        FUNCTION ReverseBitsInteger~% (BYVAL n AS _UNSIGNED INTEGER)
+        FUNCTION ReverseBitsLong~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION ReverseBitsInteger64~&& (BYVAL n AS _UNSIGNED _INTEGER64)
+        SUB ReverseBytes (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION ClampLong& (BYVAL n AS LONG, BYVAL lo AS LONG, BYVAL hi AS LONG)
+        FUNCTION ClampInteger64&& (BYVAL n AS _INTEGER64, BYVAL lo AS _INTEGER64, BYVAL hi AS _INTEGER64)
+        FUNCTION ClampSingle! (BYVAL n AS SINGLE, BYVAL lo AS SINGLE, BYVAL hi AS SINGLE)
+        FUNCTION ClampDouble# (BYVAL n AS DOUBLE, BYVAL lo AS DOUBLE, BYVAL hi AS DOUBLE)
+        FUNCTION GetDigitFromLong& (BYVAL n AS _UNSIGNED LONG, BYVAL p AS _UNSIGNED LONG)
+        FUNCTION GetDigitFromInteger64& (BYVAL n AS _UNSIGNED _INTEGER64, BYVAL p AS _UNSIGNED LONG)
+        FUNCTION AverageLong& (BYVAL x AS LONG, BYVAL y AS LONG)
+        FUNCTION AverageInteger64&& (BYVAL x AS _INTEGER64, BYVAL y AS _INTEGER64)
+        FUNCTION FindFirstBitSetLong& (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION FindFirstBitSetInteger64& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION CountLeadingZerosLong& (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION CountLeadingZerosInteger64& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION CountTrailingZerosLong& (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION CountTrailingZerosInteger64& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION PopulationCountLong& (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION PopulationCountInteger64& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION ByteSwapInteger~% (BYVAL x AS _UNSIGNED INTEGER)
+        FUNCTION ByteSwapLong~& (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION ByteSwapInteger64~&& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION MakeFourCC~& (BYVAL ch0 AS _UNSIGNED _BYTE, BYVAL ch1 AS _UNSIGNED _BYTE, BYVAL ch2 AS _UNSIGNED _BYTE, BYVAL ch3 AS _UNSIGNED _BYTE)
+        FUNCTION MakeByte~%% (BYVAL x AS _UNSIGNED _BYTE, BYVAL y AS _UNSIGNED _BYTE)
+        FUNCTION MakeInteger~% (BYVAL x AS _UNSIGNED _BYTE, BYVAL y AS _UNSIGNED _BYTE)
+        FUNCTION MakeLong~& (BYVAL x AS _UNSIGNED INTEGER, BYVAL y AS _UNSIGNED INTEGER)
+        FUNCTION MakeInteger64~&& (BYVAL x AS _UNSIGNED LONG, BYVAL y AS _UNSIGNED LONG)
+        FUNCTION HiNibble~%% (BYVAL x AS _UNSIGNED _BYTE)
+        FUNCTION LoNibble~%% (BYVAL x AS _UNSIGNED _BYTE)
+        FUNCTION HiByte~%% (BYVAL x AS _UNSIGNED INTEGER)
+        FUNCTION LoByte~%% (BYVAL x AS _UNSIGNED INTEGER)
+        FUNCTION HiInteger~% (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION LoInteger~% (BYVAL x AS _UNSIGNED LONG)
+        FUNCTION HiLong~& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION LoLong~& (BYVAL x AS _UNSIGNED _INTEGER64)
+        FUNCTION MaxLong& (BYVAL a AS LONG, BYVAL b AS LONG)
+        FUNCTION MinLong& (BYVAL a AS LONG, BYVAL b AS LONG)
+        FUNCTION MaxInteger64&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
+        FUNCTION MinInteger64&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
+        FUNCTION MaxSingle! (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
+        FUNCTION MinSingle! (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
+        FUNCTION MaxDouble# (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+        FUNCTION MinDouble# (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+    END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

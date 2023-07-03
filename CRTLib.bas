@@ -3,14 +3,14 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'CRTLib.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF CRTLIB_BAS = UNDEFINED THEN
+    $LET CRTLIB_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'CRTLib.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If CRTLIB_BAS = UNDEFINED Then
-    $Let CRTLIB_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
@@ -25,15 +25,15 @@ $If CRTLIB_BAS = UNDEFINED Then
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' Returns a BASIC string (bstring) from NULL terminated C string (cstring)
-    Function ToBString$ (s As String)
-        Dim zeroPos As Long: zeroPos = InStr(s, Chr$(NULL))
-        If zeroPos > NULL Then ToBString = Left$(s, zeroPos - 1) Else ToBString = s
-    End Function
+    FUNCTION ToBString$ (s AS STRING)
+        DIM zeroPos AS LONG: zeroPos = INSTR(s, CHR$(NULL))
+        IF zeroPos > NULL THEN ToBString = LEFT$(s, zeroPos - 1) ELSE ToBString = s
+    END FUNCTION
 
     ' Just a convenience function for use when calling external libraries
-    Function ToCString$ (s As String)
-        ToCString = s + Chr$(NULL)
-    End Function
+    FUNCTION ToCString$ (s AS STRING)
+        ToCString = s + CHR$(NULL)
+    END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------

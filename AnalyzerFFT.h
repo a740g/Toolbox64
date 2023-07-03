@@ -141,7 +141,7 @@ static void fft_do86(int32_t (*x)[2], const int n)
 /// @param samp An array of 16-bit samples
 /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
-void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, const int inc, const int bits)
+void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 {
     const auto full = 1 << bits;
     const auto half = full >> 1;
@@ -171,7 +171,7 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, const int inc, const
 /// @param samp An array of floating point (FP32) samples
 /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
-void AnalyzerFFTSingle(uint16_t *ana, const float *samp, const int inc, const int bits)
+void AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
 {
     const auto full = std::min(1 << bits, FFT_SAMPLES);
 

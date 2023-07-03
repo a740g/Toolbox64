@@ -1,4 +1,4 @@
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 ' Immediate mode GUI library
 ' Copyright (c) 2023 Samuel Gomes
 '
@@ -8,103 +8,101 @@
 ' The framebuffer needs to be redrawn every frame and nothing the widgets drawn over is preserved
 ' This was born because I needed a small, fast and intuitive GUI libary for games and graphic applications
 ' This is a work in progress
-'---------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 
-'---------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'---------------------------------------------------------------------------------------------------------
-'$Include:'CRTLib.bi'
-'---------------------------------------------------------------------------------------------------------
+$IF IMGUI_BI = UNDEFINED THEN
+    $LET IMGUI_BI = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'CRTLib.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If IMGUI_BI = UNDEFINED Then
-    $Let IMGUI_BI = TRUE
-
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' These are flags that can be used by the text box widget
-    Const TEXT_BOX_ALPHA = 1 ' alphabetic input allowed
-    Const TEXT_BOX_NUMERIC = 2 ' numeric input allowed
-    Const TEXT_BOX_SYMBOLS = 4 ' all symbols allowed
-    Const TEXT_BOX_DASH = 8 ' dash (-) symbol allowed
-    Const TEXT_BOX_DOT = 16 ' dot allowed
-    Const TEXT_BOX_PAREN = 32 ' parenthesis allowed
-    Const TEXT_BOX_EVERYTHING = TEXT_BOX_ALPHA Or TEXT_BOX_NUMERIC Or TEXT_BOX_SYMBOLS Or TEXT_BOX_DASH Or TEXT_BOX_PAREN
-    Const TEXT_BOX_LOWER = 64 ' lower case only
-    Const TEXT_BOX_UPPER = 128 ' upper case only
-    Const TEXT_BOX_PASSWORD = 256 ' password * only
+    CONST TEXT_BOX_ALPHA = 1 ' alphabetic input allowed
+    CONST TEXT_BOX_NUMERIC = 2 ' numeric input allowed
+    CONST TEXT_BOX_SYMBOLS = 4 ' all symbols allowed
+    CONST TEXT_BOX_DASH = 8 ' dash (-) symbol allowed
+    CONST TEXT_BOX_DOT = 16 ' dot allowed
+    CONST TEXT_BOX_PAREN = 32 ' parenthesis allowed
+    CONST TEXT_BOX_EVERYTHING = TEXT_BOX_ALPHA OR TEXT_BOX_NUMERIC OR TEXT_BOX_SYMBOLS OR TEXT_BOX_DASH OR TEXT_BOX_PAREN
+    CONST TEXT_BOX_LOWER = 64 ' lower case only
+    CONST TEXT_BOX_UPPER = 128 ' upper case only
+    CONST TEXT_BOX_PASSWORD = 256 ' password * only
 
     ' Widget types (add constants here for new types)
-    Const WIDGET_PUSH_BUTTON = 1
-    Const WIDGET_TEXT_BOX = 2
-    Const WIDGET_CLASS_COUNT = 2 ' this is the total number of widgets
+    CONST WIDGET_PUSH_BUTTON = 1
+    CONST WIDGET_TEXT_BOX = 2
+    CONST WIDGET_CLASS_COUNT = 2 ' this is the total number of widgets
 
-    Const WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
-    '-----------------------------------------------------------------------------------------------------
+    CONST WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
+    '-------------------------------------------------------------------------------------------------------------------
 
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
-    '-----------------------------------------------------------------------------------------------------
-    Type RectangleType ' a 2D rectangle
-        a As Vector2DType
-        b As Vector2DType
-    End Type
+    '-------------------------------------------------------------------------------------------------------------------
+    TYPE RectangleType ' a 2D rectangle
+        a AS Vector2LType
+        b AS Vector2LType
+    END TYPE
 
-    Type InputManagerType ' simple input manager
-        keyCode As Long ' buffer keyboard input
-        mousePosition As Vector2DType ' mouse position
-        mouseLeftButton As _Byte ' mouse left button down
-        mouseRightButton As _Byte ' mouse right button down
-        mouseLeftClicked As _Byte ' If this true mouseLeftButtonClickedRectangle is the rectangle where the click happened
-        mouseLeftButtonClickedRectangle As RectangleType ' the rectangle where the mouse left button was clicked
-        mouseRightClicked As _Byte ' If this true mouseRightButtonClickedRectangle is the rectangle where the click happened
-        mouseRightButtonClickedRectangle As RectangleType ' the rectangle where the mouse left button was clicked
-    End Type
+    TYPE InputManagerType ' simple input manager
+        keyCode AS LONG ' buffer keyboard input
+        mousePosition AS Vector2LType ' mouse position
+        mouseLeftButton AS _BYTE ' mouse left button down
+        mouseRightButton AS _BYTE ' mouse right button down
+        mouseLeftClicked AS _BYTE ' If this true mouseLeftButtonClickedRectangle is the rectangle where the click happened
+        mouseLeftButtonClickedRectangle AS RectangleType ' the rectangle where the mouse left button was clicked
+        mouseRightClicked AS _BYTE ' If this true mouseRightButtonClickedRectangle is the rectangle where the click happened
+        mouseRightButtonClickedRectangle AS RectangleType ' the rectangle where the mouse left button was clicked
+    END TYPE
 
-    Type WidgetManagerType ' widget state information
-        forced As Long ' widget that is forced to get focus
-        current As Long ' current widget that has focus
-        focusBlink As _Byte ' should the focused widget "blink"
-    End Type
+    TYPE WidgetManagerType ' widget state information
+        forced AS LONG ' widget that is forced to get focus
+        current AS LONG ' current widget that has focus
+        focusBlink AS _BYTE ' should the focused widget "blink"
+    END TYPE
 
-    Type TextBoxType ' text box specific stuff
-        textPosition As Long ' current cursor position within input field text
-        boxPosition As Long ' cursor character position in the box
-        boxTextLength As Long ' how much charcters will be visible in the box
-        boxStartCharacter As Long ' starting visible character
-        insertMode As _Byte ' current cursor insert mode (-1 = INSERT, 0 = OVERWRITE)
-        entered As _Byte ' ENTER has been pressed on this input field (T/F)
-    End Type
+    TYPE TextBoxType ' text box specific stuff
+        textPosition AS LONG ' current cursor position within input field text
+        boxPosition AS LONG ' cursor character position in the box
+        boxTextLength AS LONG ' how much charcters will be visible in the box
+        boxStartCharacter AS LONG ' starting visible character
+        insertMode AS _BYTE ' current cursor insert mode (-1 = INSERT, 0 = OVERWRITE)
+        entered AS _BYTE ' ENTER has been pressed on this input field (T/F)
+    END TYPE
 
-    Type PushButtonType ' push button specific stuff
-        depressed As _Byte ' state of button (down or up)
-    End Type
+    TYPE PushButtonType ' push button specific stuff
+        depressed AS _BYTE ' state of button (down or up)
+    END TYPE
 
-    Type WidgetType
-        inUse As _Byte ' is this widget in use?
-        visible As _Byte ' is this widget visible on screen?
-        disabled As _Byte ' is the widget disabled?
-        position As Vector2DType ' position of the widget on the screen
-        size As Vector2DType ' size of the widget on the screen
-        text As String ' text associated with the widget
-        changed As _Byte ' true if the text was changed somehow
-        clicked As _Byte ' was the widget pressed / clicked?
-        flags As Long ' widget flags
+    TYPE WidgetType
+        inUse AS _BYTE ' is this widget in use?
+        visible AS _BYTE ' is this widget visible on screen?
+        disabled AS _BYTE ' is the widget disabled?
+        position AS Vector2LType ' position of the widget on the screen
+        size AS Vector2LType ' size of the widget on the screen
+        text AS STRING ' text associated with the widget
+        changed AS _BYTE ' true if the text was changed somehow
+        clicked AS _BYTE ' was the widget pressed / clicked?
+        flags AS LONG ' widget flags
         ' Type of widget
-        class As Long
+        class AS LONG
         ' Type specific stuff (add new widget stuff here)
-        cmd As PushButtonType
-        txt As TextBoxType
-    End Type
-    '-----------------------------------------------------------------------------------------------------
+        cmd AS PushButtonType
+        txt AS TextBoxType
+    END TYPE
+    '-------------------------------------------------------------------------------------------------------------------
 
-    '-----------------------------------------------------------------------------------------------------
+    '-------------------------------------------------------------------------------------------------------------------
     ' SHARED VARIABLES
-    '-----------------------------------------------------------------------------------------------------
-    Dim InputManager As InputManagerType 'input manager global variable. Use this to check for input
-    Dim WidgetManager As WidgetManagerType ' widget manager global variable. This contains top level widget state
-    ReDim Widget(NULL To NULL) As WidgetType ' this is the widget array and contains info for all widgets used by the program
-    '-----------------------------------------------------------------------------------------------------
-$End If
-'---------------------------------------------------------------------------------------------------------
-
+    '-------------------------------------------------------------------------------------------------------------------
+    DIM InputManager AS InputManagerType 'input manager global variable. Use this to check for input
+    DIM WidgetManager AS WidgetManagerType ' widget manager global variable. This contains top level widget state
+    REDIM Widget(NULL TO NULL) AS WidgetType ' this is the widget array and contains info for all widgets used by the program
+    '-------------------------------------------------------------------------------------------------------------------
+$END IF
+'-----------------------------------------------------------------------------------------------------------------------

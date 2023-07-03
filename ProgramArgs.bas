@@ -3,14 +3,14 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-'-----------------------------------------------------------------------------------------------------------------------
-' HEADER FILES
-'-----------------------------------------------------------------------------------------------------------------------
-'$Include:'Common.bi'
-'-----------------------------------------------------------------------------------------------------------------------
+$IF PROGRAMARGS_BAS = UNDEFINED THEN
+    $LET PROGRAMARGS_BAS = TRUE
+    '-------------------------------------------------------------------------------------------------------------------
+    ' HEADER FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+    '-------------------------------------------------------------------------------------------------------------------
 
-$If PROGRAMARGS_BAS = UNDEFINED Then
-    $Let PROGRAMARGS_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
@@ -69,54 +69,54 @@ $If PROGRAMARGS_BAS = UNDEFINED Then
     ' arguments is a string containing a list of valid arguments (e.g. "gensda") where each character is a argument name
     ' argumentIndex is the index where the function should check
     ' Returns the ASCII value of the argument name found at index. 0 if something else was found. -1 if end of list was reached
-    Function GetProgramArgument% (arguments As String, argumentIndex As Long)
-        Dim currentArgument As String, argument As _Unsigned _Byte
+    FUNCTION GetProgramArgument% (arguments AS STRING, argumentIndex AS LONG)
+        DIM currentArgument AS STRING, argument AS _UNSIGNED _BYTE
 
-        If argumentIndex > _CommandCount Then ' we've reached the end
+        IF argumentIndex > _COMMANDCOUNT THEN ' we've reached the end
             GetProgramArgument = -1 ' signal end of arguments
-            Exit Function
-        End If
+            EXIT FUNCTION
+        END IF
 
-        currentArgument = Command$(argumentIndex) ' get the argument at index
+        currentArgument = COMMAND$(argumentIndex) ' get the argument at index
 
-        If Len(currentArgument) = 2 Then ' proceed only if we have 2 characters at index
-            argument = Asc(currentArgument, 2)
+        IF LEN(currentArgument) = 2 THEN ' proceed only if we have 2 characters at index
+            argument = ASC(currentArgument, 2)
 
-            If (KEY_SLASH = Asc(currentArgument, 1) Or KEY_MINUS = Asc(currentArgument, 1)) And Not _FileExists(currentArgument) And Not _DirExists(currentArgument) And InStr(arguments, Chr$(argument)) > 0 Then
+            IF (KEY_SLASH = ASC(currentArgument, 1) OR KEY_MINUS = ASC(currentArgument, 1)) AND NOT _FILEEXISTS(currentArgument) AND NOT _DIREXISTS(currentArgument) AND INSTR(arguments, CHR$(argument)) > 0 THEN
                 GetProgramArgument = argument ' return the argument name
-                Exit Function ' avoid "unknown" path below
-            End If
-        End If
+                EXIT FUNCTION ' avoid "unknown" path below
+            END IF
+        END IF
 
         GetProgramArgument = NULL ' signal we have something unknown
-    End Function
+    END FUNCTION
 
 
     ' Checks if a parameter is present in the command line
     ' Returns the position of the argument or -1 if it was not found
-    Function GetProgramArgumentIndex& (argument As _Unsigned _Byte)
-        Dim i As Long, currentArgument As String
+    FUNCTION GetProgramArgumentIndex& (argument AS _UNSIGNED _BYTE)
+        DIM i AS LONG, currentArgument AS STRING
 
-        For i = 1 To _CommandCount
-            currentArgument = Command$(i)
+        FOR i = 1 TO _COMMANDCOUNT
+            currentArgument = COMMAND$(i)
 
-            If Len(currentArgument) = 2 Then ' proceed only if we have 2 characters at index
+            IF LEN(currentArgument) = 2 THEN ' proceed only if we have 2 characters at index
 
-                If (KEY_SLASH = Asc(currentArgument, 1) Or KEY_MINUS = Asc(currentArgument, 1)) And Not _FileExists(currentArgument) And Not _DirExists(currentArgument) And Asc(currentArgument, 2) = argument Then
+                IF (KEY_SLASH = ASC(currentArgument, 1) OR KEY_MINUS = ASC(currentArgument, 1)) AND NOT _FILEEXISTS(currentArgument) AND NOT _DIREXISTS(currentArgument) AND ASC(currentArgument, 2) = argument THEN
                     GetProgramArgumentIndex = i
-                    Exit Function
-                End If
-            End If
-        Next
+                    EXIT FUNCTION
+                END IF
+            END IF
+        NEXT
 
         GetProgramArgumentIndex = -1 ' return invalid index
-    End Function
+    END FUNCTION
 
 
     ' Returns the running executable's path name
-    Function GetProgramExecutablePathName$
-        GetProgramExecutablePathName = Command$(NULL)
-    End Function
+    FUNCTION GetProgramExecutablePathName$
+        GetProgramExecutablePathName = COMMAND$(NULL)
+    END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------
-$End If
+$END IF
 '-----------------------------------------------------------------------------------------------------------------------
