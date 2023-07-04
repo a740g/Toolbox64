@@ -33,40 +33,66 @@ $IF GFXEX_BI = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Draws a filled circle using _DEFAULTCOLOR
+    ' Draws a filled circle
     ' cx, cy - circle center x, y
-    ' R - circle radius
-    SUB CircleFill (cx AS LONG, cy AS LONG, r AS LONG)
-        DIM AS LONG radius, radiusError, X, Y
+    ' r - circle radius
+    ' c - color
+    SUB CircleFill (cx AS LONG, cy AS LONG, r AS LONG, c AS _UNSIGNED LONG)
+        DIM AS LONG radius, radiusError, x, y
 
         radius = ABS(r)
         radiusError = -radius
-        X = radius ' Y = 0
+        x = radius ' Y = 0
 
         IF radius = 0 THEN
-            PSET (cx, cy)
+            PSET (cx, cy), c
             EXIT SUB
         END IF
 
-        LINE (cx - X, cy)-(cx + X, cy), , BF
+        LINE (cx - x, cy)-(cx + x, cy), c, BF
 
-        WHILE X > Y
-            radiusError = radiusError + Y * 2 + 1
+        WHILE x > y
+            radiusError = radiusError + y * 2 + 1
 
             IF radiusError >= 0 THEN
-                IF X <> Y + 1 THEN
-                    LINE (cx - Y, cy - X)-(cx + Y, cy - X), , BF
-                    LINE (cx - Y, cy + X)-(cx + Y, cy + X), , BF
+                IF x <> y + 1 THEN
+                    LINE (cx - y, cy - x)-(cx + y, cy - x), c, BF
+                    LINE (cx - y, cy + x)-(cx + y, cy + x), c, BF
                 END IF
-                X = X - 1
-                radiusError = radiusError - X * 2
+                x = x - 1
+                radiusError = radiusError - x * 2
             END IF
 
-            Y = Y + 1
+            y = y + 1
 
-            LINE (cx - X, cy - Y)-(cx + X, cy - Y), , BF
-            LINE (cx - X, cy + Y)-(cx + X, cy + Y), , BF
+            LINE (cx - x, cy - y)-(cx + x, cy - y), c, BF
+            LINE (cx - x, cy + y)-(cx + x, cy + y), c, BF
         WEND
+    END SUB
+
+
+    ' Draws a filled ellipse
+    ' cx = center x coordinate
+    ' cy = center y coordinate
+    ' a = semimajor axis
+    ' b = semiminor axis
+    ' c = fill color
+    SUB EllipseFill (cx AS INTEGER, cy AS INTEGER, a AS INTEGER, b AS INTEGER, c AS _UNSIGNED LONG)
+        IF a = 0 OR b = 0 THEN EXIT SUB
+
+        DIM AS _INTEGER64 h2, w2, h2w2
+        DIM AS LONG x, y
+
+        w2 = a * a
+        h2 = b * b
+        h2w2 = h2 * w2
+        LINE (cx - a, cy)-(cx + a, cy), c, BF
+        DO WHILE y < b
+            y = y + 1
+            x = SQR((h2w2 - y * y * w2) \ h2)
+            LINE (cx - x, cy + y)-(cx + x, cy + y), c, BF
+            LINE (cx - x, cy - y)-(cx + x, cy - y), c, BF
+        LOOP
     END SUB
 
 
@@ -74,14 +100,15 @@ $IF GFXEX_BI = UNDEFINED THEN
     ' xs, ys - start x, y
     ' xe, ye - end x, y
     ' lineWeight - thickness
-    SUB LineThick (xs AS SINGLE, ys AS SINGLE, xe AS SINGLE, ye AS SINGLE, lineWeight AS _UNSIGNED INTEGER)
+    ' c - color
+    SUB LineThick (xs AS SINGLE, ys AS SINGLE, xe AS SINGLE, ye AS SINGLE, lineWeight AS _UNSIGNED INTEGER, c AS _UNSIGNED LONG)
         STATIC colorSample AS LONG ' static, so that we do not allocate an image on every call
 
         IF colorSample = 0 THEN colorSample = _NEWIMAGE(1, 1, 32) ' done only once
 
         DIM prevDest AS LONG: prevDest = _DEST
         _DEST colorSample
-        PSET (0, 0) ' set it to _DEFAULTCOLOR
+        PSET (0, 0), c ' set the color
         _DEST prevDest
 
         DIM a AS SINGLE, x0 AS SINGLE, y0 AS SINGLE
@@ -141,6 +168,7 @@ $IF GFXEX_BI = UNDEFINED THEN
 
         LoadImageTransparent = handle
     END FUNCTION
+
 
     ' Converts a web color in hex format to a 32-bit RGB color
     FUNCTION HexToRGB32~& (hexColor AS STRING)
