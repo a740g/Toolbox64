@@ -111,6 +111,33 @@ $IF FILEOPS_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' Generates a filename without illegal filesystem characters
+    FUNCTION GetLegalFileName$ (fileName AS STRING)
+        DIM s AS STRING, c AS _UNSIGNED _BYTE
+
+        ' Clean any unwanted characters
+        DIM i AS LONG: FOR i = 1 TO LEN(fileName)
+            c = ASC(fileName, i)
+            SELECT CASE c
+                CASE KEY_SLASH, KEY_BACKSLASH, KEY_ASTERISK, KEY_QUESTION_MARK, KEY_VERTICAL_LINE
+                    s = s + "_"
+                CASE KEY_COLON
+                    s = s + "-"
+                CASE KEY_LESS_THAN
+                    s = s + "{"
+                CASE KEY_GREATER_THAN
+                    s = s + "}"
+                CASE KEY_QUOTATION_MARK
+                    s = s + "'"
+                CASE ELSE
+                    s = s + CHR$(c)
+            END SELECT
+        NEXT
+
+        GetLegalFileName = s
+    END FUNCTION
+
+
     ' Load a file from a file or URL
     FUNCTION LoadFile$ (PathOrURL AS STRING)
         SELECT CASE UCASE$(GetDriveOrSchemeFromPathOrURL(PathOrURL))
