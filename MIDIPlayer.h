@@ -18,7 +18,7 @@
 #include "external/tsf.h"
 #define TML_IMPLEMENTATION
 #include "external/tml.h"
-#include "soundfont.h"
+#include "MIDISoundFont.h"
 #undef STB_VORBIS_HEADER_ONLY
 #include "Common.h"
 #include "external/ymfm/ymfm_adpcm.cpp"
@@ -27,7 +27,7 @@
 #include "external/ymfmidi/patchnames.cpp"
 #include "external/ymfmidi/patches.cpp"
 #include "external/ymfmidi/ymf_player.cpp"
-#include "fmbank.h"
+#include "MIDIFMBank.h"
 
 static void *contextTSFymfm = nullptr;         // TSF / ymfm context
 static tml_message *tinyMIDILoader = nullptr;  // TML context
@@ -82,7 +82,7 @@ void MIDI_SetVolume(float volume)
     if (contextTSFymfm && tinyMIDILoader)
     {
         if (isOPL3Active)
-            globalVolume = volume; // simply save the volume for OPL3. We'll use it elsewhere
+            reinterpret_cast<OPLPlayer *>(contextTSFymfm)->setGain(globalVolume = volume); // save and apply the volume
         else
             tsf_set_volume((tsf *)contextTSFymfm, globalVolume = volume); // save and apply the volume
     }
@@ -125,7 +125,9 @@ void MIDI_Play()
         tinyMIDIMessage = tinyMIDILoader; // Set up the global MidiMessage pointer to the first MIDI message
         currentMsec = 0;                  // Reset playback time
 
-        if (!isOPL3Active) // set TSF volume here because OPL volume is updated with each render pass
+        if (isOPL3Active)
+            reinterpret_cast<OPLPlayer *>(contextTSFymfm)->setGain(globalVolume);
+        else
             tsf_set_volume((tsf *)contextTSFymfm, globalVolume);
     }
 }
