@@ -319,9 +319,9 @@ inline void ReverseBytes(void *ptr, size_t size)
 /// @param lo The lower limit
 /// @param hi The upper limit
 /// @return A number between lo and hi
-inline int32_t RandomBetween(int32_t lo, int32_t hi)
+inline int32_t GetRandomValue(int32_t lo, int32_t hi)
 {
-    return GET_RANDOM_BETWEEN(lo, hi);
+    return GET_RANDOM_VALUE(lo, hi);
 }
 
 /// @brief Clamps n between lo and hi

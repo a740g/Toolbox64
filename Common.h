@@ -36,7 +36,7 @@ enum qb_bool : int8_t
 #define ZERO_OBJECT(_p_) memset((_p_), 0, sizeof(*(_p_)))
 #define TO_FOURCC(_a_, _b_, _c_, _d_) (((uint32_t)(_d_) << 24) | ((uint32_t)(_c_) << 16) | ((uint32_t)(_b_) << 8) | (uint32_t)(_a_))
 #define GET_ARRAY_SIZE(_x_) (sizeof(_x_) / sizeof(_x_[0]))
-#define GET_RANDOM_BETWEEN(_l_, _h_) ((_l_) + (rand() % ((_h_) - (_l_) + 1)))
+#define GET_RANDOM_VALUE(_l_, _h_) ((_l_) + (rand() % ((_h_) - (_l_) + 1)))
 #define IS_EVEN(_x_) (((_x_)&1) == 0)
 #define GET_SIGN(_x_) (((_x_) == 0) ? 0 : (((_x_) > 0) ? 1 : -1))
 #define GET_ABSOLUTE(_x_) (((_x_) > 0) ? (_x_) : -(_x_))
