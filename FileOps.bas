@@ -182,9 +182,8 @@ $IF FILEOPS_BAS = UNDEFINED THEN
         IF _FILEEXISTS(fileName) AND NOT overwrite THEN EXIT FUNCTION
 
         DIM fh AS LONG: fh = FREEFILE
-        OPEN fileName FOR OUTPUT AS fh: CLOSE fh ' open file in text mode to wipe out the file and then close
-        OPEN fileName FOR BINARY ACCESS WRITE AS fh ' reopen file in binary mode
-        PUT fh, , buffer ' write the buffer to the file
+        OPEN fileName FOR OUTPUT AS fh ' open file in text mode to wipe out the file if it exists
+        PRINT #fh, buffer; ' write the buffer to the file (works regardless of the file being opened in text mode)
         CLOSE fh
 
         SaveFile = TRUE
@@ -196,9 +195,7 @@ $IF FILEOPS_BAS = UNDEFINED THEN
         ' Check if source file exists
         IF _FILEEXISTS(fileSrc) THEN
             ' Check if dest file exists
-            IF _FILEEXISTS(fileDst) AND NOT overwrite THEN
-                EXIT FUNCTION
-            END IF
+            IF _FILEEXISTS(fileDst) AND NOT overwrite THEN EXIT FUNCTION
 
             DIM sfh AS LONG: sfh = FREEFILE
             OPEN fileSrc FOR BINARY ACCESS READ AS sfh ' open source
@@ -207,9 +204,7 @@ $IF FILEOPS_BAS = UNDEFINED THEN
 
             DIM dfh AS LONG: dfh = FREEFILE
             OPEN fileDst FOR OUTPUT AS dfh ' open destination in text mode to wipe out the file
-            CLOSE dfh ' and then close
-            OPEN fileDst FOR BINARY ACCESS WRITE AS dfh ' reopen destination in binary mode
-            PUT dfh, , buffer ' write the buffer to the new file
+            PRINT #dfh, buffer; ' write the buffer to the file (works regardless of the file being opened in text mode)
             CLOSE dfh ' close destination
 
             CopyFile = TRUE ' success
