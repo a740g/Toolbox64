@@ -97,7 +97,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 ELSE
                     ' Extra checks for 15 sample MOD
                     FOR i = 1 TO LEN(__Song.songName)
-                        IF ASC(__Song.songName, i) < KEY_SPACE_BAR AND ASC(__Song.songName, i) <> NULL THEN
+                        IF ASC(__Song.songName, i) < KEY_SPACE AND ASC(__Song.songName, i) <> NULL THEN
                             ' This is probably not a 15 sample MOD file
                             MemFile_Destroy memFile
                             EXIT FUNCTION
