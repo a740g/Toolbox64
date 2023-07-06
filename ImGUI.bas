@@ -716,7 +716,7 @@ $IF IMGUI_BAS = UNDEFINED THEN
             END IF
         END IF
 
-        IF InputManager.keyCode = KEY_ENTER OR InputManager.keyCode = KEY_SPACE_BAR THEN
+        IF InputManager.keyCode = KEY_ENTER OR InputManager.keyCode = KEY_SPACE THEN
             clicked = TRUE
             InputManager.keyCode = NULL ' consume keystroke
         END IF
@@ -847,7 +847,7 @@ $IF IMGUI_BAS = UNDEFINED THEN
                     DIM K AS STRING ' yes, initialize key holder variable
 
                     SELECT CASE InputManager.keyCode ' which alphanumeric key was pressed?
-                        CASE KEY_SPACE_BAR
+                        CASE KEY_SPACE
                             K = CHR$(InputManager.keyCode) ' save the keystroke
 
                         CASE 40 TO 41 ' PARENTHESIS key was pressed
