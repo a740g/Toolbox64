@@ -14,15 +14,15 @@ $IF MEMFILE_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$Debug
-    '$Console
-    'Dim g As String: g = "Hello, world!"
-    'Dim f As _Unsigned _Offset: f = MemFile_Create(g)
-    'Dim buf As String: buf = Space$(MemFile_GetSize(f))
-    'Print MemFile_ReadString(f, buf); ": "; buf
-    'Print "EOF = "; MemFile_IsEOF(f)
+    '$DEBUG
+    '$CONSOLE
+    'DIM g AS STRING: g = "Hello, world!"
+    'DIM f AS _UNSIGNED _OFFSET: f = MemFile_Create(g)
+    'DIM buf AS STRING: buf = SPACE$(MemFile_GetSize(f))
+    'PRINT MemFile_ReadString(f, buf); ": "; buf
+    'PRINT "EOF = "; MemFile_IsEOF(f)
     'MemFile_Destroy f
-    'End
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------

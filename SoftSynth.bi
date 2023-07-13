@@ -8,26 +8,26 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' HEADER FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'CRTLib.bi'
+    '$INCLUDE:'PointerOps.bi'
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
     '-------------------------------------------------------------------------------------------------------------------
-    CONST SAMPLE_VOLUME_MAX = 64 ' This is the maximum volume of any sample
-    CONST SAMPLE_PAN_LEFT = 0 ' Leftmost pannning position
-    CONST SAMPLE_PAN_RIGHT = 255 ' Rightmost pannning position
-    CONST SAMPLE_PAN_CENTER = (SAMPLE_PAN_RIGHT - SAMPLE_PAN_LEFT) / 2 ' Center panning position
-    CONST SAMPLE_PLAY_SINGLE = 0 ' Single-shot playback
-    CONST SAMPLE_PLAY_LOOP = 1 ' Forward-looping playback
-    CONST GLOBAL_VOLUME_MAX = 255 ' Max global volume
-    CONST SOUND_TIME_MIN = 0.2 ' We will check that we have this amount of time left in the playback buffer
+    CONST SAMPLE_MIXER_VOLUME_MAX! = 64.0! ' this is the maximum volume of any sample
+    CONST SAMPLE_MIXER_PAN_LEFT! = 0.0! ' leftmost pannning position
+    CONST SAMPLE_MIXER_PAN_RIGHT! = 255.0! ' rightmost pannning position
+    CONST SAMPLE_MIXER_PAN_CENTER! = (SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_LEFT) / 2.0! ' center panning position
+    CONST SAMPLE_MIXER_PLAY_SINGLE = 0 ' single-shot playback
+    CONST SAMPLE_MIXER_PLAY_LOOP = 1 ' forward-looping playback
+    CONST SAMPLE_MIXER_GLOBAL_VOLUME_MAX! = 255.0! ' max global volume
+    CONST SAMPLE_MIXER_SOUND_TIME_MIN! = 0.2! ' we will check that we have this amount of time left in the playback buffer
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
     '-------------------------------------------------------------------------------------------------------------------
-    TYPE SoftSynthType
+    TYPE __SoftSynthType
         voices AS _UNSIGNED _BYTE ' Number of mixer voices requested
         samples AS _UNSIGNED _BYTE ' Number of samples slots requested
         mixerRate AS LONG ' This is always set by QB64 internal audio engine
@@ -37,7 +37,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         activeVoices AS _UNSIGNED _BYTE ' Just a count of voices we really mixed
     END TYPE
 
-    TYPE VoiceType
+    TYPE __VoiceType
         sample AS INTEGER ' Sample number to be mixed. This is set to -1 once the mixer is done with the sample
         volume AS SINGLE ' Voice volume (0 - 64) (fp32)
         panning AS SINGLE ' Position 0 is leftmost ... 255 is rightmost (fp32)
@@ -52,11 +52,11 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' GLOBAL VARIABLES
     '-------------------------------------------------------------------------------------------------------------------
-    DIM SoftSynth AS SoftSynthType
-    REDIM SampleData(0 TO 0) AS STRING ' Sample data array
-    REDIM Voice(0 TO 0) AS VoiceType ' Voice info array
-    REDIM MixerBufferLeft(0 TO 0) AS SINGLE ' Left channel mixer buffer
-    REDIM MixerBufferRight(0 TO 0) AS SINGLE ' Right channel mixer buffer
+    DIM __SoftSynth AS __SoftSynthType
+    REDIM __SampleData(0 TO 0) AS STRING ' Sample data array
+    REDIM __Voice(0 TO 0) AS __VoiceType ' Voice info array
+    REDIM __MixerBufferL(0 TO 0) AS SINGLE ' Left channel mixer buffer
+    REDIM __MixerBufferR(0 TO 0) AS SINGLE ' Right channel mixer buffer
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

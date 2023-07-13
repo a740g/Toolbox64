@@ -35,7 +35,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     END TYPE
 
     TYPE __SampleType
-        sampleName AS STRING * 22 ' Sample name or message
+        sampleName AS STRING ' Sample name or message
         length AS LONG ' Sample length in bytes
         c2Spd AS _UNSIGNED INTEGER ' Sample finetune is converted to c2spd
         volume AS _UNSIGNED _BYTE ' Volume: 0 - 64
@@ -70,7 +70,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     END TYPE
 
     TYPE __SongType
-        songName AS STRING * 20 ' Song name
+        songName AS STRING ' Song name
         subtype AS STRING * 4 ' 4 char MOD type - use this to find out what tracker was used
         channels AS _UNSIGNED _BYTE ' Number of channels in the song - can be any number depending on the MOD file
         samples AS _UNSIGNED _BYTE ' Number of samples in the song - can be 15 or 31 depending on the MOD file

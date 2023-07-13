@@ -17,7 +17,6 @@
 #include "Common.h"
 #include <cstdlib>
 #include <climits>
-#include <cstring>
 
 /// @brief Returns QB style bool
 /// @param x Any number
@@ -33,186 +32,6 @@ inline qb_bool ToQBBool(int32_t x)
 inline bool ToCBool(int32_t x)
 {
     return TO_C_BOOL(x);
-}
-
-/// @brief Casts a QB64 _OFFSET to an unsigned integer. Needed because QB64 does not allow converting or using _OFFSET in expressions (fully :()
-/// @param p A pointer (_OFFSET)
-/// @return Pointer value (uintptr_t)
-inline uintptr_t CLngPtr(uintptr_t p)
-{
-    return p;
-}
-
-/// @brief Casts a QB64 _OFFSET to a C string. QB64 does the right thing to convert this to a QB64 string
-/// @param p A pointer (_OFFSET)
-/// @return A C string (char ptr)
-inline const uint8_t *CStr(uintptr_t p)
-{
-    return (const uint8_t *)p;
-}
-
-/// @brief Peeks a BYTE (8-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return BYTE value
-inline uint8_t PeekByte(uintptr_t p, uintptr_t o)
-{
-    return *((uint8_t *)p + o);
-}
-
-/// @brief Poke a BYTE (8-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n BYTE value
-inline void PokeByte(uintptr_t p, uintptr_t o, uint8_t n)
-{
-    *((uint8_t *)p + o) = n;
-}
-
-/// @brief Peek an INTEGER (16-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return INTEGER value
-inline uint16_t PeekInteger(uintptr_t p, uintptr_t o)
-{
-    return *((uint16_t *)p + o);
-}
-
-/// @brief Poke an INTEGER (16-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n INTEGER value
-inline void PokeInteger(uintptr_t p, uintptr_t o, uint16_t n)
-{
-    *((uint16_t *)p + o) = n;
-}
-
-/// @brief Peek a LONG (32-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return LONG value
-inline uint32_t PeekLong(uintptr_t p, uintptr_t o)
-{
-    return *((uint32_t *)p + o);
-}
-
-/// @brief Poke a LONG (32-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n LONG value
-inline void PokeLong(uintptr_t p, uintptr_t o, uint32_t n)
-{
-    *((uint32_t *)p + o) = n;
-}
-
-/// @brief Peek a INTEGER64 (64-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return INTEGER64 value
-inline uint64_t PeekInteger64(uintptr_t p, uintptr_t o)
-{
-    return *((uint64_t *)p + o);
-}
-
-/// @brief Poke a INTEGER64 (64-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n INTEGER64 value
-inline void PokeInteger64(uintptr_t p, uintptr_t o, uint64_t n)
-{
-    *((uint64_t *)p + o) = n;
-}
-
-/// @brief Peek a SINGLE (32-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return SINGLE value
-inline float PeekSingle(uintptr_t p, uintptr_t o)
-{
-    return *((float *)p + o);
-}
-
-/// @brief Poke a SINGLE (32-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n SINGLE value
-inline void PokeSingle(uintptr_t p, uintptr_t o, float n)
-{
-    *((float *)p + o) = n;
-}
-
-/// @brief Peek a DOUBLE (64-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return DOUBLE value
-inline double PeekDouble(uintptr_t p, uintptr_t o)
-{
-    return *((double *)p + o);
-}
-
-/// @brief Poke a DOUBLE (64-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n DOUBLE value
-inline void PokeDouble(uintptr_t p, uintptr_t o, double n)
-{
-    *((double *)p + o) = n;
-}
-
-/// @brief Peek an OFFSET (32/64-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @return DOUBLE value
-inline uintptr_t PeekOffset(uintptr_t p, uintptr_t o)
-{
-    return *((uintptr_t *)p + o);
-}
-
-/// @brief Poke an OFFSET (32/64-bits) value at p + o
-/// @param p Pointer base
-/// @param o Offset from base
-/// @param n DOUBLE value
-inline void PokeOffset(uintptr_t p, uintptr_t o, uintptr_t n)
-{
-    *((uintptr_t *)p + o) = n;
-}
-
-/// @brief Gets a UDT value from a pointer positon offset by o. Same as t = p[o]
-/// @param p The base pointer
-/// @param o Offset from base (each offset is t_size bytes)
-/// @param t A pointer to the UDT variable
-/// @param t_size The size of the UTD variable in bytes
-inline void PeekType(uintptr_t p, uintptr_t o, uintptr_t t, size_t t_size)
-{
-    memcpy((void *)t, (const uint8_t *)p + (o * t_size), t_size);
-}
-
-/// @brief Sets a UDT value to a pointer position offset by o. Same as p[o] = t
-/// @param p The base pointer
-/// @param o Offset from base (each offset is t_size bytes)
-/// @param t A pointer to the UDT variable
-/// @param t_size The size of the UTD variable in bytes
-inline void PokeType(uintptr_t p, uintptr_t o, uintptr_t t, size_t t_size)
-{
-    memcpy((uint8_t *)p + (o * t_size), (void *)t, t_size);
-}
-
-/// @brief Peek a character value in a string. Zero based, faster and unsafe than ASC
-/// @param s A QB64 string
-/// @param o Offset from base (zero based)
-/// @return The ASCII character at position o
-inline uint8_t PeekString(const uint8_t *s, uintptr_t o)
-{
-    return s[o];
-}
-
-/// @brief Poke a character value in a string. Zero based, faster and unsafe than ASC
-/// @param s A QB64 string
-/// @param o Offset from base (zero based)
-/// @param n The ASCII character at position o
-inline void PokeString(uint8_t *s, uintptr_t o, uint8_t n)
-{
-    s[o] = n;
 }
 
 /// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
@@ -299,7 +118,7 @@ inline uint64_t ReverseBitsInteger64(uint64_t x)
 /// @brief Reverses the order of bytes in memory
 /// @param ptr A pointer to a memory buffer
 /// @param size The size of the memory buffer
-inline void ReverseBytes(void *ptr, size_t size)
+inline void ReverseBytes(uintptr_t ptr, size_t size)
 {
     auto start = (uint8_t *)ptr;
     auto end = start + size - 1;
@@ -658,24 +477,6 @@ inline int64_t MaxInteger64(int64_t a, int64_t b)
     return a > b ? a : b;
 }
 
-/// @brief Return the max of a or b
-/// @param a A number
-/// @param b A number
-/// @return Max value
-inline float MaxSingle(float a, float b)
-{
-    return a > b ? a : b;
-}
-
-/// @brief Return the max of a or b
-/// @param a A number
-/// @param b A number
-/// @return Max value
-inline double MaxDouble(double a, double b)
-{
-    return a > b ? a : b;
-}
-
 /// @brief Return the min of a or b
 /// @param a A number
 /// @param b A number
@@ -690,24 +491,6 @@ inline int32_t MinLong(int32_t a, int32_t b)
 /// @param b A number
 /// @return Min value
 inline int64_t MinInteger64(int64_t a, int64_t b)
-{
-    return a < b ? a : b;
-}
-
-/// @brief Return the min of a or b
-/// @param a A number
-/// @param b A number
-/// @return Min value
-inline float MinSingle(float a, float b)
-{
-    return a < b ? a : b;
-}
-
-/// @brief Return the min of a or b
-/// @param a A number
-/// @param b A number
-/// @return Min value
-inline double MinDouble(double a, double b)
 {
     return a < b ? a : b;
 }

@@ -49,7 +49,7 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Anything with a '__' prefix is not supposed to be called directly
     ' There are QB64 wrappers for these functions
-    DECLARE CUSTOMTYPE LIBRARY "MIDIPlayer"
+    DECLARE LIBRARY "MIDIPlayer"
         FUNCTION __MIDI_Initialize%% (BYVAL sampleRate AS _UNSIGNED LONG, BYVAL useOPL3 AS _BYTE)
         FUNCTION MIDI_IsInitialized%%
         SUB __MIDI_Finalize
@@ -67,7 +67,7 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION MIDI_GetCurrentTime#
         FUNCTION MIDI_GetActiveVoices~&
         FUNCTION MIDI_IsFMSynthesis%%
-        SUB __MIDI_Render (BYVAL buffer AS _OFFSET, BYVAL size AS _UNSIGNED LONG)
+        SUB __MIDI_Render (BYVAL buffer AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED LONG)
     END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
 

@@ -14,18 +14,18 @@ $IF FILEOPS_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$Debug
-    'Const SEARCH_URL = "https://api.modarchive.org/downloads.php?moduleid="
+    '$DEBUG
+    'CONST SEARCH_URL = "https://api.modarchive.org/downloads.php?moduleid="
 
     'SetDownloaderProperties 0, 0
 
-    'Dim buffer As String: buffer = LoadFileFromURL("https://modarchive.org/index.php?request=view_random")
-    'Dim bufPos As Long: bufPos = InStr(buffer, SEARCH_URL)
-    'If bufPos > 0 Then
-    '    Print Mid$(buffer, bufPos, InStr(bufPos, buffer, Chr$(34)) - bufPos)
-    'End If
+    'DIM buffer AS STRING: buffer = LoadFileFromURL("https://modarchive.org/index.php?request=view_random")
+    'DIM bufPos AS LONG: bufPos = INSTR(buffer, SEARCH_URL)
+    'IF bufPos > 0 THEN
+    '    PRINT MID$(buffer, bufPos, INSTR(bufPos, buffer, CHR$(34)) - bufPos)
+    'END IF
 
-    'End
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------

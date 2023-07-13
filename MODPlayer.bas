@@ -17,27 +17,27 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$Debug
-    '$Asserts
-    'If LoadMODFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/digital%20bass-line.mod") Then
-    '    EnableHQMixer TRUE
-    '    StartMODPlayer
-    '    Do
-    '        UpdateMODPlayer
-    '        Locate 1, 1
-    '        Print Using "__Order: ### / ###    Pattern: ### / ###    Row: ## / 64    BPM: ###    Speed: ###"; __Song.orderPosition + 1; __Song.orders; __Order(__Song.orderPosition) + 1; __Song.highestPattern + 1; __Song.patternRow + 1; __Song.bpm; __Song.speed;
-    '        _Limit 60
-    '    Loop While _KeyHit <> 27 And __Song.isPlaying
-    '    StopMODPlayer
-    'End If
-    'End
+    '$DEBUG
+    '$ASSERTS
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/digital%20bass-line.mod") THEN
+    '    SampleMixer_SetHighQuality TRUE
+    '    MODPlayer_Play
+    '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
+    '        MODPlayer_Update
+    '        LOCATE 1, 1
+    '        PRINT USING "__Order: ### / ###    Pattern: ### / ###    Row: ## / 64    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition) + 1; __Song.highestPattern + 1; __Song.patternRow + 1; __Song.bpm; __Song.speed;
+    '        _LIMIT 60
+    '    LOOP
+    '    MODPlayer_Stop
+    'END IF
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' Loads the MOD file into memory and prepares all required gobals
-    FUNCTION LoadMODFromMemory%% (buffer AS STRING)
+    FUNCTION MODPlayer_LoadFromMemory%% (buffer AS STRING)
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED _BYTE
         SHARED __Pattern() AS __NoteType
@@ -59,6 +59,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Also, seek to the beginning of the file and get the song title
         result = MemFile_Seek(memFile, 0)
         _ASSERT result
+        __Song.songName = SPACE$(20) ' MOD song title is 20 bytes long
         result = MemFile_ReadString(memFile, __Song.songName)
         _ASSERT (result = LEN(__Song.songName))
 
@@ -122,6 +123,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the sample headers
         FOR i = 0 TO __Song.samples - 1
             ' Read the sample name
+            __Sample(i).sampleName = SPACE$(22) ' MOD sample names are 22 bytes long
             result = MemFile_ReadString(memFile, __Sample(i).sampleName)
             _ASSERT (result = LEN(__Sample(i).sampleName))
 
@@ -142,7 +144,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             ' Read volume
             result = MemFile_ReadByte(memFile, __Sample(i).volume)
             _ASSERT result
-            IF __Sample(i).volume > SAMPLE_VOLUME_MAX THEN __Sample(i).volume = SAMPLE_VOLUME_MAX ' Sanity check
+            IF __Sample(i).volume > SAMPLE_MIXER_VOLUME_MAX THEN __Sample(i).volume = SAMPLE_MIXER_VOLUME_MAX ' Sanity check
 
             ' Read loop start
             result = MemFile_ReadByte(memFile, byte1)
@@ -244,7 +246,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT
 
         ' Initialize the softsynth sample manager
-        InitializeSampleManager __Song.samples
+        SampleManager_Initialize __Song.samples
 
         DIM sampBuf AS STRING
         ' Load the samples
@@ -252,12 +254,12 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             sampBuf = SPACE$(__Sample(i).length)
             result = MemFile_ReadString(memFile, sampBuf)
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            LoadSample i, sampBuf, __Sample(i).loopLength > 0, __Sample(i).loopStart, __Sample(i).loopEnd
+            SampleManager_Load i, sampBuf, __Sample(i).loopLength > 0, __Sample(i).loopStart, __Sample(i).loopEnd
         NEXT
 
         MemFile_Destroy memFile
 
-        LoadMODFromMemory = TRUE
+        MODPlayer_LoadFromMemory = TRUE
 
         ' Amiga period table data for 11 octaves
         PeriodTab:
@@ -279,18 +281,17 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Load the MOD file from disk or a URL
-    FUNCTION LoadMODFromDisk%% (fileName AS STRING)
-        LoadMODFromDisk = LoadMODFromMemory(LoadFile(fileName))
+    FUNCTION MODPlayer_LoadFromDisk%% (fileName AS STRING)
+        MODPlayer_LoadFromDisk = MODPlayer_LoadFromMemory(LoadFile(fileName))
     END FUNCTION
 
 
     ' Initializes the audio mixer, prepares eveything else for playback and kick starts the timer and hence song playback
-    SUB StartMODPlayer
+    SUB MODPlayer_Play
         SHARED __Song AS __SongType
         SHARED __Channel() AS __ChannelType
         SHARED __SineTable() AS _UNSIGNED _BYTE
         SHARED __InvertLoopSpeedTable() AS _UNSIGNED _BYTE
-        SHARED SoftSynth AS SoftSynthType
 
         DIM AS _UNSIGNED INTEGER i, s
 
@@ -311,10 +312,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT
 
         ' Initialize the softsynth sample mixer
-        InitializeMixer __Song.channels
+        SampleMixer_Initialize __Song.channels
 
         ' Initialize some important stuff
-        __Song.tempoTimerValue = (SoftSynth.mixerRate * __SONG_BPM_DEFAULT) \ 50
+        __Song.tempoTimerValue = (SampleMixer_GetSampleRate * __SONG_BPM_DEFAULT) \ 50
         __Song.orderPosition = 0
         __Song.patternRow = 0
         __Song.speed = __SONG_SPEED_DEFAULT
@@ -335,14 +336,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         IF __Song.channels > 1 AND __Song.channels < 4 THEN
             ' Just setup channels 0 and 1
             ' If we have a 3rd channel it will be handle by the SoftSynth
-            SetVoicePanning 0, SAMPLE_PAN_LEFT + SAMPLE_PAN_CENTER / 2
-            SetVoicePanning 1, SAMPLE_PAN_RIGHT - SAMPLE_PAN_CENTER / 2
+            SampleMixer_SetVoicePanning 0, SAMPLE_MIXER_PAN_LEFT + SAMPLE_MIXER_PAN_CENTER / 2
+            SampleMixer_SetVoicePanning 1, SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_CENTER / 2
         ELSE
             FOR i = 0 TO __Song.channels - 1 - (__Song.channels MOD 4) STEP 4
-                SetVoicePanning i + 0, SAMPLE_PAN_LEFT + SAMPLE_PAN_CENTER / 2
-                SetVoicePanning i + 1, SAMPLE_PAN_RIGHT - SAMPLE_PAN_CENTER / 2
-                SetVoicePanning i + 2, SAMPLE_PAN_RIGHT - SAMPLE_PAN_CENTER / 2
-                SetVoicePanning i + 3, SAMPLE_PAN_LEFT + SAMPLE_PAN_CENTER / 2
+                SampleMixer_SetVoicePanning i + 0, SAMPLE_MIXER_PAN_LEFT + SAMPLE_MIXER_PAN_CENTER / 2
+                SampleMixer_SetVoicePanning i + 1, SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_CENTER / 2
+                SampleMixer_SetVoicePanning i + 2, SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_CENTER / 2
+                SampleMixer_SetVoicePanning i + 3, SAMPLE_MIXER_PAN_LEFT + SAMPLE_MIXER_PAN_CENTER / 2
             NEXT
         END IF
 
@@ -363,11 +364,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Frees all allocated resources, stops the timer and hence song playback
-    SUB StopMODPlayer
+    SUB MODPlayer_Stop
         SHARED __Song AS __SongType
 
         ' Tell softsynth we are done
-        FinalizeMixer
+        SampleMixer_Finalize
 
         __Song.isPlaying = FALSE
     END SUB
@@ -375,7 +376,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
     ' This should be called at regular intervals to run the mod player and mixer code
     ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
-    SUB UpdateMODPlayer
+    SUB MODPlayer_Update
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED _BYTE
 
@@ -386,7 +387,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.isPlaying = TRUE
 
         ' If song is paused or we already have enough samples to play then exit
-        IF __Song.isPaused OR NOT NeedsSoundRefill THEN EXIT SUB
+        IF __Song.isPaused OR NOT SampleMixer_NeedsUpdate THEN EXIT SUB
 
         IF __Song.tick >= __Song.speed THEN
             ' Reset song tick
@@ -432,7 +433,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         END IF
 
         ' Mix the current tick
-        UpdateMixer __Song.samplesPerTick
+        SampleMixer_Update __Song.samplesPerTick
 
         ' Increment song tick on each update
         __Song.tick = __Song.tick + 1
@@ -494,7 +495,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 __Channel(nChannel).restart = FALSE
             END IF
 
-            IF nVolume <= SAMPLE_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
+            IF nVolume <= SAMPLE_MIXER_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
             IF nNote = __NOTE_KEY_OFF THEN __Channel(nChannel).volume = 0
 
             ' Process tick 0 effects
@@ -518,7 +519,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &H8 ' 8: Set Panning Position
                     ' Don't care about DMP panning BS. We are doing this Fasttracker style
-                    SetVoicePanning nChannel, nOperand
+                    SampleMixer_SetVoicePanning nChannel, nOperand
 
                 CASE &H9 ' 9: Set Sample Offset
                     IF nOperand > 0 THEN __Channel(nChannel).startPosition = _SHL(nOperand, 8)
@@ -531,7 +532,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &HC ' 12: Set Volume
                     __Channel(nChannel).volume = nOperand ' Operand can never be -ve cause it is unsigned. So we only clip for max below
-                    IF __Channel(nChannel).volume > SAMPLE_VOLUME_MAX THEN __Channel(nChannel).volume = SAMPLE_VOLUME_MAX
+                    IF __Channel(nChannel).volume > SAMPLE_MIXER_VOLUME_MAX THEN __Channel(nChannel).volume = SAMPLE_MIXER_VOLUME_MAX
 
                 CASE &HD ' 13: Pattern Break
                     __Song.patternRow = (nOpX * 10) + nOpY - 1
@@ -545,7 +546,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 CASE &HE ' 14: Extended Effects
                     SELECT CASE nOpX
                         CASE &H0 ' 0: Set Filter
-                            EnableHQMixer nOpY
+                            SampleMixer_SetHighQuality nOpY
 
                         CASE &H1 ' 1: Fine Portamento Up
                             __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOpY, 2)
@@ -582,11 +583,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                         CASE &H8 ' 8: 16 position panning
                             IF nOpY > 15 THEN nOpY = 15
                             ' Why does this kind of stuff bother me so much. We could have just written "/ 17" XD
-                            SetVoicePanning nChannel, nOpY * ((SAMPLE_PAN_RIGHT - SAMPLE_PAN_LEFT) / 15)
+                            SampleMixer_SetVoicePanning nChannel, nOpY * ((SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_LEFT) / 15!)
 
                         CASE &HA ' 10: Fine Volume Slide Up
                             __Channel(nChannel).volume = __Channel(nChannel).volume + nOpY
-                            IF __Channel(nChannel).volume > SAMPLE_VOLUME_MAX THEN __Channel(nChannel).volume = SAMPLE_VOLUME_MAX
+                            IF __Channel(nChannel).volume > SAMPLE_MIXER_VOLUME_MAX THEN __Channel(nChannel).volume = SAMPLE_MIXER_VOLUME_MAX
 
                         CASE &HB ' 11: Fine Volume Slide Down
                             __Channel(nChannel).volume = __Channel(nChannel).volume - nOpY
@@ -614,8 +615,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __DoInvertLoop nChannel ' called every tick
 
             IF NOT noFrequency THEN
-                IF nEffect <> 7 THEN SetVoiceVolume nChannel, __Channel(nChannel).volume
-                IF __Channel(nChannel).period > 0 THEN SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                IF nEffect <> 7 THEN SampleMixer_SetVoiceVolume nChannel, __Channel(nChannel).volume
+                IF __Channel(nChannel).period > 0 THEN SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
             END IF
         NEXT
 
@@ -623,9 +624,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         FOR nChannel = 0 TO __Song.activeChannels
             IF __Channel(nChannel).restart THEN
                 IF __Sample(__Channel(nChannel).sample).loopLength > 0 THEN
-                    PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
+                    SampleMixer_PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_MIXER_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
                 ELSE
-                    PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
+                    SampleMixer_PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_MIXER_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
                 END IF
             END IF
         NEXT
@@ -661,22 +662,22 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                         IF (nOperand > 0) THEN
                             SELECT CASE __Song.tick MOD 3 'TODO: Check why 0, 1, 2 sounds wierd
                                 CASE 0
-                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                                    SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
                                 CASE 1
-                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpX))
+                                    SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpX))
                                 CASE 2
-                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpY))
+                                    SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpY))
                             END SELECT
                         END IF
 
                     CASE &H1 ' 1: Porta Up
                         __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOperand, 2)
-                        SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                        SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
                         IF __Channel(nChannel).period < 56 THEN __Channel(nChannel).period = 56
 
                     CASE &H2 ' 2: Porta Down
                         __Channel(nChannel).period = __Channel(nChannel).period + _SHL(nOperand, 2)
-                        SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                        SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
 
                     CASE &H3 ' 3: Porta To Note
                         __DoPortamento nChannel
@@ -704,9 +705,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                                 IF nOpY <> 0 THEN
                                     IF __Song.tick MOD nOpY = 0 THEN
                                         IF __Sample(__Channel(nChannel).sample).loopLength > 0 THEN
-                                            PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
+                                            SampleMixer_PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_MIXER_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
                                         ELSE
-                                            PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
+                                            SampleMixer_PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_MIXER_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
                                         END IF
                                     END IF
                                 END IF
@@ -714,19 +715,19 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                             CASE &HC ' 12: Cut Note
                                 IF __Song.tick = nOpY THEN
                                     __Channel(nChannel).volume = 0
-                                    SetVoiceVolume nChannel, __Channel(nChannel).volume
+                                    SampleMixer_SetVoiceVolume nChannel, __Channel(nChannel).volume
                                 END IF
 
                             CASE &HD ' 13: Delay Note
                                 IF __Song.tick = nOpY THEN
                                     __Channel(nChannel).volume = __Sample(__Channel(nChannel).sample).volume
-                                    IF nVolume <= SAMPLE_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
-                                    SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
-                                    SetVoiceVolume nChannel, __Channel(nChannel).volume
+                                    IF nVolume <= SAMPLE_MIXER_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
+                                    SampleMixer_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                                    SampleMixer_SetVoiceVolume nChannel, __Channel(nChannel).volume
                                     IF __Sample(__Channel(nChannel).sample).loopLength > 0 THEN
-                                        PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
+                                        SampleMixer_PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_MIXER_PLAY_LOOP, __Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).loopEnd
                                     ELSE
-                                        PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
+                                        SampleMixer_PlayVoice nChannel, __Channel(nChannel).sample, __Channel(nChannel).startPosition, SAMPLE_MIXER_PLAY_SINGLE, 0, __Sample(__Channel(nChannel).sample).length
                                     END IF
                                 END IF
                         END SELECT
@@ -800,9 +801,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         END IF
 
         IF __Channel(chan).useGlissando THEN
-            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__GetClosestPeriod(__Channel(chan).period))
+            SampleMixer_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__GetClosestPeriod(__Channel(chan).period))
         ELSE
-            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period)
+            SampleMixer_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period)
         END IF
     END SUB
 
@@ -813,9 +814,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         __Channel(chan).volume = __Channel(chan).volume + x - y
         IF __Channel(chan).volume < 0 THEN __Channel(chan).volume = 0
-        IF __Channel(chan).volume > SAMPLE_VOLUME_MAX THEN __Channel(chan).volume = SAMPLE_VOLUME_MAX
+        IF __Channel(chan).volume > SAMPLE_MIXER_VOLUME_MAX THEN __Channel(chan).volume = SAMPLE_MIXER_VOLUME_MAX
 
-        SetVoiceVolume chan, __Channel(chan).volume
+        SampleMixer_SetVoiceVolume chan, __Channel(chan).volume
     END SUB
 
 
@@ -848,9 +849,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         delta = _SHL(_SHR(delta * __Channel(chan).vibratoDepth, 7), 2)
 
         IF __Channel(chan).vibratoPosition >= 0 THEN
-            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period + delta)
+            SampleMixer_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period + delta)
         ELSE
-            SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period - delta)
+            SampleMixer_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period - delta)
         END IF
 
         __Channel(chan).vibratoPosition = __Channel(chan).vibratoPosition + __Channel(chan).vibratoSpeed
@@ -887,11 +888,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         delta = _SHR(delta * __Channel(chan).tremoloDepth, 6)
 
         IF __Channel(chan).tremoloPosition >= 0 THEN
-            IF __Channel(chan).volume + delta > SAMPLE_VOLUME_MAX THEN delta = SAMPLE_VOLUME_MAX - __Channel(chan).volume
-            SetVoiceVolume chan, __Channel(chan).volume + delta
+            IF __Channel(chan).volume + delta > SAMPLE_MIXER_VOLUME_MAX THEN delta = SAMPLE_MIXER_VOLUME_MAX - __Channel(chan).volume
+            SampleMixer_SetVoiceVolume chan, __Channel(chan).volume + delta
         ELSE
             IF __Channel(chan).volume - delta < 0 THEN delta = __Channel(chan).volume
-            SetVoiceVolume chan, __Channel(chan).volume - delta
+            SampleMixer_SetVoiceVolume chan, __Channel(chan).volume - delta
         END IF
 
         __Channel(chan).tremoloPosition = __Channel(chan).tremoloPosition + __Channel(chan).tremoloSpeed
@@ -915,55 +916,172 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             IF __Channel(chan).invertLoopPosition > __Sample(__Channel(chan).sample).loopEnd THEN __Channel(chan).invertLoopPosition = __Sample(__Channel(chan).sample).loopStart
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
-            PokeSample __Channel(chan).sample, __Channel(chan).invertLoopPosition, NOT PeekSample(__Channel(chan).sample, __Channel(chan).invertLoopPosition)
+            SampleManager_Poke __Channel(chan).sample, __Channel(chan).invertLoopPosition, NOT SampleManager_Peek(__Channel(chan).sample, __Channel(chan).invertLoopPosition)
         END IF
     END SUB
 
 
     ' This gives us the frequency in khz based on the period
     FUNCTION __GetFrequencyFromPeriod! (period AS LONG)
-        __GetFrequencyFromPeriod = 14317056 / period
+        $CHECKING:OFF
+        __GetFrequencyFromPeriod = 14317056! / period
+        $CHECKING:ON
     END FUNCTION
 
 
     ' Return C2 speed for a finetune
     FUNCTION __GetC2Spd~% (ft AS _UNSIGNED _BYTE)
+        $CHECKING:OFF
         SELECT CASE ft
             CASE 0
-                __GetC2Spd = 8363
+                __GetC2Spd = 8363~%
             CASE 1
-                __GetC2Spd = 8413
+                __GetC2Spd = 8413~%
             CASE 2
-                __GetC2Spd = 8463
+                __GetC2Spd = 8463~%
             CASE 3
-                __GetC2Spd = 8529
+                __GetC2Spd = 8529~%
             CASE 4
-                __GetC2Spd = 8581
+                __GetC2Spd = 8581~%
             CASE 5
-                __GetC2Spd = 8651
+                __GetC2Spd = 8651~%
             CASE 6
-                __GetC2Spd = 8723
+                __GetC2Spd = 8723~%
             CASE 7
-                __GetC2Spd = 8757
+                __GetC2Spd = 8757~%
             CASE 8
-                __GetC2Spd = 7895
+                __GetC2Spd = 7895~%
             CASE 9
-                __GetC2Spd = 7941
+                __GetC2Spd = 7941~%
             CASE 10
-                __GetC2Spd = 7985
+                __GetC2Spd = 7985~%
             CASE 11
-                __GetC2Spd = 8046
+                __GetC2Spd = 8046~%
             CASE 12
-                __GetC2Spd = 8107
+                __GetC2Spd = 8107~%
             CASE 13
-                __GetC2Spd = 8169
+                __GetC2Spd = 8169~%
             CASE 14
-                __GetC2Spd = 8232
+                __GetC2Spd = 8232~%
             CASE 15
-                __GetC2Spd = 8280
+                __GetC2Spd = 8280~%
             CASE ELSE
-                __GetC2Spd = 8363
+                __GetC2Spd = 8363~%
         END SELECT
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Returns the tune title
+    FUNCTION MODPlayer_GetName$
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_GetName = __Song.songName
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Returns the tune type
+    FUNCTION MODPlayer_GetType$
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_GetType = __Song.subtype
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Returns true if a song is playing
+    FUNCTION MODPlayer_IsPlaying%%
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_IsPlaying = __Song.isPlaying
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Pauses or unpauses playback
+    SUB MODPlayer_Pause (state AS _BYTE)
+        SHARED __Song AS __SongType
+        __Song.isPaused = state
+    END SUB
+
+
+    FUNCTION MODPlayer_IsPaused%%
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_IsPaused = __Song.isPaused
+        $CHECKING:ON
+    END FUNCTION
+
+
+    SUB MODPlayer_Loop (state AS _BYTE)
+        SHARED __Song AS __SongType
+        __Song.isLooping = state
+    END SUB
+
+
+    ' Returns true if a song is looping
+    FUNCTION MODPlayer_IsLooping%%
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_IsLooping = __Song.isLooping
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Moves to the next order positions and wrap if it reaches the end
+    SUB MODPlayer_GoToNextPosition
+        SHARED __Song AS __SongType
+
+        __Song.orderPosition = __Song.orderPosition + 1
+        IF __Song.orderPosition >= __Song.orders THEN __Song.orderPosition = 0
+        __Song.patternRow = 0
+    END SUB
+
+
+    ' Moves to the previous order position and wraps if it reaches the beginning
+    SUB MODPlayer_GoToPreviousPosition
+        SHARED __Song AS __SongType
+
+        __Song.orderPosition = __Song.orderPosition - 1
+        IF __Song.orderPosition < 0 THEN __Song.orderPosition = __Song.orders - 1
+        __Song.patternRow = 0
+    END SUB
+
+
+    ' Moves to a specific order postion
+    SUB MODPlayer_SetPosition (position AS INTEGER)
+        SHARED __Song AS __SongType
+
+        IF position >= 0 AND position < __Song.orders THEN
+            __Song.orderPosition = position
+            __Song.patternRow = 0
+        END IF
+    END SUB
+
+
+    ' Moves to a specific order postion
+    FUNCTION MODPlayer_GetPosition%
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_GetPosition = __Song.orderPosition
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Moves to a specific order postion
+    FUNCTION MODPlayer_GetOrders%
+        $CHECKING:OFF
+        SHARED __Song AS __SongType
+
+        MODPlayer_GetOrders = __Song.orders
+        $CHECKING:ON
     END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------
 

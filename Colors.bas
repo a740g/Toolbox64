@@ -1,25 +1,24 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' FFT routines for spectrum analyzers
+' 32-bit color constants & routines
 ' Copyright (c) 2023 Samuel Gomes
-'
-' Adapted from OpenCP Module Player (https://github.com/mywave82/opencubicplayer)
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF ANALYZERFFT_BI = UNDEFINED THEN
-    $LET ANALYZERFFT_BI = TRUE
+$IF COLORS_BAS = UNDEFINED THEN
+    $LET COLORS_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' HEADER FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$Include:'Common.bi'
+    '$INCLUDE:'Colors.bi'
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
-    ' EXTERNAL LIBRARIES
+    ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
-    DECLARE LIBRARY "AnalyzerFFT"
-        SUB AnalyzerFFTInteger (BYVAL ana AS _OFFSET, BYVAL samp AS _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
-        SUB AnalyzerFFTSingle (BYVAL ana AS _OFFSET, BYVAL samp AS _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
-    END DECLARE
+    ' Converts a web color in hex format to a 32-bit RGB color
+    FUNCTION HexToRGB32~& (hexColor AS STRING)
+        IF LEN(hexColor) <> 6 THEN ERROR 17
+        HexToRGB32 = _RGB32(VAL("&H" + LEFT$(hexColor, 2)), VAL("&H" + MID$(hexColor, 3, 2)), VAL("&H" + RIGHT$(hexColor, 2)))
+    END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

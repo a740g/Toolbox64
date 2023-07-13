@@ -20,25 +20,25 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$Debug
-    'Screen NewImage(8 * 80, 16 * 25, 32)
-    'Font 16
+    '$DEBUG
+    'SCREEN _NEWIMAGE(8 * 80, 16 * 25, 32)
+    '_FONT 16
 
-    'Do
-    '    Dim ansFile As String: ansFile = OpenFileDialog$("Open", "", "*.ans|*.asc|*.diz|*.nfo|*.txt", "ANSI Art Files")
-    '    If Not FileExists(ansFile) Then Exit Do
+    'DO
+    '    DIM ansFile AS STRING: ansFile = _OPENFILEDIALOG$("Open", "", "*.ans|*.asc|*.diz|*.nfo|*.txt", "ANSI Art Files")
+    '    IF NOT _FILEEXISTS(ansFile) THEN EXIT DO
 
-    '    Dim fh As Long: fh = FreeFile
-    '    Open ansFile For Binary Access Read As fh
-    '    Color DarkGray, Black
-    '    Cls
+    '    DIM fh AS LONG: fh = FREEFILE
+    '    OPEN ansFile FOR BINARY ACCESS READ AS fh
+    '    COLOR BGRA_DARKGRAY, BGRA_BLACK
+    '    CLS
     '    ResetANSIEmulator
-    '    PrintANSI Input$(LOF(fh), fh)
-    '    Close fh
-    '    Title "Press any key to open another file...": Sleep 3600
-    'Loop
+    '    PrintANSI INPUT$(LOF(fh), fh)
+    '    CLOSE fh
+    '    _TITLE "Press any key to open another file...": SLEEP 3600
+    'LOOP
 
-    'End
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -688,7 +688,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
             x = POS(0)
             y = CSRLIN
 
-            COLOR &HFF000000, &HFF000000 ' lights out
+            COLOR BGRA_BLACK, BGRA_BLACK ' lights out
 
             FOR i = t TO b
                 LOCATE i, l: PRINT SPACE$(w); ' fill with SPACE
