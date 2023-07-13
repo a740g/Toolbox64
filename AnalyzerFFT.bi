@@ -10,13 +10,13 @@ $IF ANALYZERFFT_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' HEADER FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$Include:'Common.bi'
+    '$INCLUDE:'Common.bi'
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
-    DECLARE LIBRARY "AnalyzerFFT"
+    DECLARE STATIC LIBRARY "AnalyzerFFT"
         SUB AnalyzerFFTInteger (BYVAL ana AS _OFFSET, BYVAL samp AS _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
         SUB AnalyzerFFTSingle (BYVAL ana AS _OFFSET, BYVAL samp AS _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
     END DECLARE
