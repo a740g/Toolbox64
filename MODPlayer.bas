@@ -15,6 +15,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
+    '$CONSOLE
     '$ASSERTS
     'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/anarchymenu%2002.mod") THEN
     '    SampleMixer_SetHighQuality TRUE

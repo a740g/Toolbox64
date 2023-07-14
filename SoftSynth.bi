@@ -14,14 +14,14 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
     '-------------------------------------------------------------------------------------------------------------------
-    CONST SAMPLE_MIXER_VOLUME_MAX! = 64.0! ' this is the maximum volume of any sample
-    CONST SAMPLE_MIXER_PAN_LEFT! = 0.0! ' leftmost pannning position
-    CONST SAMPLE_MIXER_PAN_RIGHT! = 255.0! ' rightmost pannning position
-    CONST SAMPLE_MIXER_PAN_CENTER! = (SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_LEFT) / 2.0! ' center panning position
+    CONST SAMPLE_MIXER_VOLUME_MAX = 64 ' this is the maximum volume of any sample
+    CONST SAMPLE_MIXER_PAN_LEFT = 0 ' leftmost pannning position
+    CONST SAMPLE_MIXER_PAN_RIGHT = 255 ' rightmost pannning position
+    CONST SAMPLE_MIXER_PAN_CENTER = (SAMPLE_MIXER_PAN_RIGHT - SAMPLE_MIXER_PAN_LEFT) / 2 ' center panning position
     CONST SAMPLE_MIXER_PLAY_SINGLE = 0 ' single-shot playback
     CONST SAMPLE_MIXER_PLAY_LOOP = 1 ' forward-looping playback
-    CONST SAMPLE_MIXER_GLOBAL_VOLUME_MAX! = 255.0! ' max global volume
-    CONST SAMPLE_MIXER_SOUND_TIME_MIN! = 0.2! ' we will check that we have this amount of time left in the playback buffer
+    CONST SAMPLE_MIXER_GLOBAL_VOLUME_MAX = 255 ' max global volume
+    CONST SAMPLE_MIXER_SOUND_TIME_MIN = 0.2 ' we will check that we have this amount of time left in the playback buffer
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
