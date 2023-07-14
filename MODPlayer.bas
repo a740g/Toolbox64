@@ -8,9 +8,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' HEADER FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'MemFile.bi'
-    '$INCLUDE:'FileOps.bi'
-    '$INCLUDE:'SoftSynth.bi'
     '$INCLUDE:'MODPlayer.bi'
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -19,13 +16,13 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$ASSERTS
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/digital%20bass-line.mod") THEN
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/are%20you%20stupid.mod") THEN
     '    SampleMixer_SetHighQuality TRUE
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
     '        LOCATE 1, 1
-    '        PRINT USING "__Order: ### / ###    Pattern: ### / ###    Row: ## / 64    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition) + 1; __Song.highestPattern + 1; __Song.patternRow + 1; __Song.bpm; __Song.speed;
+    '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.highestPattern; __Song.patternRow; __Song.bpm; __Song.speed;
     '        _LIMIT 60
     '    LOOP
     '    MODPlayer_Stop
@@ -739,12 +736,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
     ' We always set the global BPM using this and never directly
     SUB __SetBPM (nBPM AS _UNSIGNED _BYTE)
+        $CHECKING:OFF
         SHARED __Song AS __SongType
 
         __Song.bpm = nBPM
 
         ' Calculate the number of samples we have to mix per tick
         __Song.samplesPerTick = __Song.tempoTimerValue \ nBPM
+        $CHECKING:ON
     END SUB
 
 
@@ -924,7 +923,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This gives us the frequency in khz based on the period
     FUNCTION __GetFrequencyFromPeriod! (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056! / period
+        __GetFrequencyFromPeriod = 14317056 / period
         $CHECKING:ON
     END FUNCTION
 
@@ -934,39 +933,39 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SELECT CASE ft
             CASE 0
-                __GetC2Spd = 8363~%
+                __GetC2Spd = 8363
             CASE 1
-                __GetC2Spd = 8413~%
+                __GetC2Spd = 8413
             CASE 2
-                __GetC2Spd = 8463~%
+                __GetC2Spd = 8463
             CASE 3
-                __GetC2Spd = 8529~%
+                __GetC2Spd = 8529
             CASE 4
-                __GetC2Spd = 8581~%
+                __GetC2Spd = 8581
             CASE 5
-                __GetC2Spd = 8651~%
+                __GetC2Spd = 8651
             CASE 6
-                __GetC2Spd = 8723~%
+                __GetC2Spd = 8723
             CASE 7
-                __GetC2Spd = 8757~%
+                __GetC2Spd = 8757
             CASE 8
-                __GetC2Spd = 7895~%
+                __GetC2Spd = 7895
             CASE 9
-                __GetC2Spd = 7941~%
+                __GetC2Spd = 7941
             CASE 10
-                __GetC2Spd = 7985~%
+                __GetC2Spd = 7985
             CASE 11
-                __GetC2Spd = 8046~%
+                __GetC2Spd = 8046
             CASE 12
-                __GetC2Spd = 8107~%
+                __GetC2Spd = 8107
             CASE 13
-                __GetC2Spd = 8169~%
+                __GetC2Spd = 8169
             CASE 14
-                __GetC2Spd = 8232~%
+                __GetC2Spd = 8232
             CASE 15
-                __GetC2Spd = 8280~%
+                __GetC2Spd = 8280
             CASE ELSE
-                __GetC2Spd = 8363~%
+                __GetC2Spd = 8363
         END SELECT
         $CHECKING:ON
     END FUNCTION

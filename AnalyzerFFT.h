@@ -4,15 +4,15 @@
 // Copyright (c) 2004-2022 Stian Skjelstad
 // Copyright (c) 2023 Samuel Gomes
 //
-// Adapted from OpenCP Module Player (https://github.com/mywave82/opencubicplayer)
+// Modified and adapted from https://github.com/mywave82/opencubicplayer
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 #include <cstdlib>
+#include "Common.h"
 
 #define FFT_POW 11
 #define FFT_SAMPLES (1 << FFT_POW)
@@ -72,7 +72,7 @@ static bool fft_init_done = false;
 static int32_t fft_x86[FFT_SAMPLES][2];
 static int16_t fft_s_temp[FFT_SAMPLES];
 
-static void fft_init()
+static inline void fft_init()
 {
     auto j = 0, k = 0;
 
@@ -99,51 +99,54 @@ static void fft_init()
     fft_init_done = true;
 }
 
-static int fft_imul29(int a, int b)
+static inline int fft_imul29(int a, int b)
 {
-    return (int)(((double)a * (double)b) / (double)(1 << 29));
+    return (int)(((int64_t)a * (int64_t)b) >> 29);
 }
 
-static void fft_calc(int32_t *xi, int32_t *curcossin, uint32_t d2)
+static inline void fft_calc(int32_t *xi, int32_t *curcossin, uint32_t d2)
 {
-    uint32_t xd[2];
-    xd[0] = xi[0] - xi[d2 + 0];
-    xi[0] = (xi[0] + xi[d2 + 0]) / 2;
+    auto xd0 = xi[0] - xi[d2 + 0];
+    xi[0] = (xi[0] + xi[d2 + 0]) >> 1;
 
-    xd[1] = xi[1] - xi[d2 + 1];
-    xi[1] = (xi[1] + xi[d2 + 1]) / 2;
+    auto xd1 = xi[1] - xi[d2 + 1];
+    xi[1] = (xi[1] + xi[d2 + 1]) >> 1;
 
-    xi[d2 + 0] = fft_imul29(xd[0], curcossin[0]) - fft_imul29(xd[1], curcossin[1]);
-    xi[d2 + 1] = fft_imul29(xd[0], curcossin[1]) + fft_imul29(xd[1], curcossin[0]);
+    xi[d2 + 0] = fft_imul29(xd0, curcossin[0]) - fft_imul29(xd1, curcossin[1]);
+    xi[d2 + 1] = fft_imul29(xd0, curcossin[1]) + fft_imul29(xd1, curcossin[0]);
 }
 
-static void fft_do86(int32_t (*x)[2], const int n)
+static inline void fft_do86(int32_t (*x)[2], int n)
 {
-    int32_t *xe = x[1 << n];
+    auto xe = x[1 << n];
     int32_t curcossin[2];
     int32_t *xi;
+
     for (auto i = FFT_POW - n; i < FFT_POW; ++i)
     {
         const uint32_t s2dk = FFT_SAMPLES2 >> i;
         const uint32_t d2 = 2 * s2dk;
+
         for (auto j = 0; j < s2dk; ++j)
         {
             curcossin[0] = fft_cossintab86[j << i][0];
             curcossin[1] = fft_cossintab86[j << i][1];
+
             for (xi = x[j]; xi < xe; xi += 2 * d2)
                 fft_calc(xi, curcossin, d2);
         }
     }
 }
 
-/// @brief The top level FFT function that gets the data for 16-bit samples. This will automatically initialize everything when called the first time
+/// @brief The top level FFT function for 16-bit samples. This will automatically initialize everything when called the first time.
+/// This computes the amplitude spectrum for the positive frequencies only. Hence, ana can have half the elements of samp
 /// @param ana The array where the resulting data is written. This cannot be NULL
 /// @param samp An array of 16-bit samples
 /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
 void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 {
-    const auto full = 1 << bits;
+    const auto full = std::min(1 << bits, FFT_SAMPLES);
     const auto half = full >> 1;
     int32_t xr[2];
 
@@ -156,6 +159,7 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
         samp += inc;
         fft_x86[i][1] = 0;
     }
+
     fft_do86(fft_x86, bits);
 
     for (auto i = 1; i <= half; ++i)

@@ -33,13 +33,13 @@ $IF MEMFILE_BAS = UNDEFINED THEN
     END FUNCTION
 
     $IF 32BIT THEN
-            Function MemFile_ReadString~& (memFile As _Unsigned _Offset, dst As String)
-            MemFile_ReadString = __MemFile_Read(memFile, _Offset(dst), Len(dst))
-            End Function
+            FUNCTION MemFile_ReadString~& (memFile AS _UNSIGNED _OFFSET, dst AS STRING)
+            MemFile_ReadString = __MemFile_Read(memFile, _OFFSET(dst), LEN(dst))
+            END FUNCTION
 
-            Function MemFile_WriteString~& (memFile As _Unsigned _Offset, src As String)
-            MemFile_WriteString = __MemFile_Write(memFile, _Offset(src), Len(src))
-            End Function
+            FUNCTION MemFile_WriteString~& (memFile AS _UNSIGNED _OFFSET, src AS STRING)
+            MemFile_WriteString = __MemFile_Write(memFile, _OFFSET(src), LEN(src))
+            END FUNCTION
     $ELSE
         ' Reads a string. The string size must be set in advance using SPACE$ or similar
         ' Returns the number of bytes read

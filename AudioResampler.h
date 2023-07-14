@@ -3,7 +3,7 @@
 // Copyright (c) 2019 Zhihan Gao
 // Copyright (c) 2023 Samuel Gomes
 //
-// Adapted from https://github.com/cpuimage/resampler
+// Modified and adapted from https://github.com/cpuimage/resampler
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once

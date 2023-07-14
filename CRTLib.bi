@@ -14,22 +14,6 @@ $IF CRTLIB_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
-    CONST SIZE_OF_BYTE = 1
-    CONST SIZE_OF_INTEGER = 2
-    CONST SIZE_OF_LONG = 4
-    CONST SIZE_OF_INTEGER64 = 8
-    CONST SIZE_OF_SINGLE = 4
-    CONST SIZE_OF_DOUBLE = 8
-    $IF 32BIT THEN
-            CONST SIZE_OF_OFFSET = 4
-    $ELSE
-        CONST SIZE_OF_OFFSET = 8
-    $END IF
-    '-------------------------------------------------------------------------------------------------------------------
-
-    '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
     ' This only includes CRT library functions that makes sense in QB64
@@ -49,7 +33,7 @@ $IF CRTLIB_BI = UNDEFINED THEN
         FUNCTION tolower& (BYVAL ch AS LONG)
         FUNCTION toupper& (BYVAL ch AS LONG)
         $IF 32BIT THEN
-            Function strlen~& (ByVal str As _Unsigned _Offset)
+            FUNCTION strlen~& (ByVal str As _UNSIGNED _OFFSET)
         $ELSE
             FUNCTION strlen~&& (BYVAL str AS _UNSIGNED _OFFSET)
         $END IF
