@@ -182,8 +182,8 @@ void AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
     for (auto i = 0; i < full; ++i)
     {
         fft_s_temp[i] = (int16_t)(fmaxf(fminf(*samp, 1.0f), -1.0f) * SHRT_MAX);
-        samp += inc;
+        samp += inc; // adjust samp pointer using inc
     }
 
-    AnalyzerFFTInteger(ana, fft_s_temp, inc, bits);
+    AnalyzerFFTInteger(ana, fft_s_temp, 1, bits); // pass adjusted inc value of 1 to AnalyzerFFTInteger
 }

@@ -16,7 +16,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$ASSERTS
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/are%20you%20stupid.mod") THEN
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/anarchymenu%2002.mod") THEN
     '    SampleMixer_SetHighQuality TRUE
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
