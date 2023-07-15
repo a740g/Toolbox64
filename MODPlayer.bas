@@ -252,7 +252,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             sampBuf = SPACE$(__Sample(i).length)
             result = MemFile_ReadString(memFile, sampBuf)
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            SampleManager_Load i, sampBuf, __Sample(i).loopLength > 0, __Sample(i).loopStart, __Sample(i).loopEnd
+            SampleManager_Load i, sampBuf, SIZE_OF_BYTE, __Sample(i).loopLength > 0, __Sample(i).loopStart, __Sample(i).loopEnd
         NEXT
 
         MemFile_Destroy memFile
@@ -915,7 +915,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             IF __Channel(chan).invertLoopPosition > __Sample(__Channel(chan).sample).loopEnd THEN __Channel(chan).invertLoopPosition = __Sample(__Channel(chan).sample).loopStart
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
-            SampleManager_Poke __Channel(chan).sample, __Channel(chan).invertLoopPosition, NOT SampleManager_Peek(__Channel(chan).sample, __Channel(chan).invertLoopPosition)
+            SampleManager_PokeByte __Channel(chan).sample, __Channel(chan).invertLoopPosition, NOT SampleManager_PeekByte(__Channel(chan).sample, __Channel(chan).invertLoopPosition)
         END IF
     END SUB
 

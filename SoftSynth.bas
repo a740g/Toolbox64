@@ -95,8 +95,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __MixerBufferR() AS SINGLE
 
         DIM AS LONG v, s, nSample, nPos, nPlayType, sLen, samplesMax
-        DIM AS SINGLE fVolume, fPan, fPitch, fPos, fStartPos, fEndPos, fSam
-        DIM AS _BYTE bSam1, bSam2
+        DIM AS SINGLE fVolume, fPan, fPitch, fPos, fStartPos, fEndPos, fSamp
 
         samplesMax = nSamples - 1 ' upperbound
 
@@ -127,7 +126,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                 nPlayType = __Voice(v).playType
                 fStartPos = __Voice(v).startPosition
                 fEndPos = __Voice(v).endPosition
-                sLen = LEN(__SampleData(nSample)) ' real sample length
+                sLen = LEN(__SampleData(nSample)) \ SIZE_OF_SINGLE ' real sample frames
 
                 ' Next we go through the channel sample data and mix it to our mixerBuffer
                 FOR s = 0 TO samplesMax
@@ -157,21 +156,19 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                     IF __SoftSynth.useHQMixer AND fPos + 2 <= sLen THEN
                         ' Apply interpolation
                         nPos = FIX(fPos)
-                        bSam1 = PeekStringByte(__SampleData(nSample), nPos)
-                        bSam2 = PeekStringByte(__SampleData(nSample), 1 + nPos)
-                        fSam = bSam1 + (bSam2 - bSam1) * (fPos - nPos)
+                        fSamp = PeekStringSingle(__SampleData(nSample), nPos)
+                        fSamp = fSamp + (PeekStringSingle(__SampleData(nSample), 1 + nPos) - fSamp) * (fPos - nPos)
                     ELSE
                         IF fPos + 1 <= sLen THEN
-                            bSam1 = PeekStringByte(__SampleData(nSample), fPos)
-                            fSam = bSam1
+                            fSamp = PeekStringSingle(__SampleData(nSample), fPos)
                         ELSE
-                            fSam = 0.0!
+                            fSamp = 0.0!
                         END IF
                     END IF
 
                     ' The following two lines mixes the sample and also does volume & stereo panning
-                    __MixerBufferL(s) = __MixerBufferL(s) + (fSam * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT - fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 - pan)
-                    __MixerBufferR(s) = __MixerBufferR(s) + (fSam * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT + fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 + pan)
+                    __MixerBufferL(s) = __MixerBufferL(s) + (fSamp * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT - fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 - pan)
+                    __MixerBufferR(s) = __MixerBufferR(s) + (fSamp * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT + fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 + pan)
 
                     ' Move to the next sample position based on the pitch
                     __Voice(v).position = fPos + fPitch
@@ -181,9 +178,9 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
         ' Feed the samples to the QB64 sound pipe
         FOR s = 0 TO samplesMax
-            ' Apply global volume and scale sample to FP32 sample spec.
-            __MixerBufferL(s) = __MixerBufferL(s) * __SoftSynth.volume / 128.0!
-            __MixerBufferR(s) = __MixerBufferR(s) * __SoftSynth.volume / 128.0!
+            ' Apply global volume
+            __MixerBufferL(s) = __MixerBufferL(s) * __SoftSynth.volume
+            __MixerBufferR(s) = __MixerBufferR(s) * __SoftSynth.volume
 
             ' Feed the samples to the QB64 sound pipe
             _SNDRAW __MixerBufferL(s), __MixerBufferR(s), __SoftSynth.soundHandle
@@ -194,39 +191,106 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
     ' Stores a sample in the sample data array. This will add some silence samples at the end
     ' If the sample is looping then it will anti-click by copying a couple of samples from the beginning to the end of the loop
-    SUB SampleManager_Load (nSample AS _UNSIGNED _BYTE, sData AS STRING, isLooping AS _BYTE, nLoopStart AS LONG, nLoopEnd AS LONG)
+    ' The sample is always converted to 32-bit floating point format
+    SUB SampleManager_Load (nSample AS _UNSIGNED _BYTE, sData AS STRING, nSampleFrameSize AS _UNSIGNED _BYTE, isLooping AS _BYTE, nLoopStart AS LONG, nLoopEnd AS LONG)
         SHARED __SampleData() AS STRING
 
+        DIM sampleFrames AS LONG: sampleFrames = LEN(sData) \ nSampleFrameSize
+
         DIM i AS LONG
-        IF nLoopEnd >= LEN(sData) THEN i = 32 + nLoopEnd - LEN(sData) ELSE i = 32 ' We allocate 32 samples extra (minimum)
-        __SampleData(nSample) = sData + STRING$(i, NULL)
+        IF nLoopEnd >= sampleFrames THEN i = 32 + nLoopEnd - sampleFrames ELSE i = 32 ' we'll allocate 32 samples extra (minimum)
+        __SampleData(nSample) = STRING$((sampleFrames + i) * SIZE_OF_SINGLE, NULL) ' allocate memory for the to-be converted sample
+
+        SELECT CASE nSampleFrameSize
+            CASE SIZE_OF_BYTE ' 8-bit
+                DIM bSamp AS _BYTE
+
+                FOR i = 0 TO sampleFrames - 1
+                    bSamp = PeekStringByte(sData, i) ' needed to convert to signed byte
+                    PokeStringSingle __SampleData(nSample), i, bSamp / 128.0!
+                NEXT
+
+            CASE SIZE_OF_INTEGER ' 16-bit
+                DIM iSamp AS INTEGER
+
+                FOR i = 0 TO sampleFrames - 1
+                    iSamp = PeekStringInteger(sData, i) ' needed to convert to signed integer
+                    PokeStringSingle __SampleData(nSample), i, iSamp / 32768.0!
+                NEXT
+
+            CASE SIZE_OF_SINGLE '32-bit
+                __SampleData(nSample) = sData + STRING$(i * SIZE_OF_SINGLE, NULL) ' no conversion needed
+
+            CASE ELSE ' nothing else is supported
+                ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        END SELECT
 
         ' If the sample is looping then make it anti-click by copying a few samples from loop start to loop end
         IF isLooping THEN
             ' We'll just copy 4 samples
             FOR i = 1 TO 4
-                ASC(__SampleData(nSample), nLoopEnd + i) = ASC(__SampleData(nSample), nLoopStart + i)
+                PokeStringSingle __SampleData(nSample), nLoopEnd + i, PeekStringSingle(__SampleData(nSample), nLoopStart + i)
             NEXT
         END IF
     END SUB
 
 
     ' Get a sample value for a sample from position
-    FUNCTION SampleManager_Peek%% (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
+    FUNCTION SampleManager_PeekByte%% (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        SampleManager_Peek = PeekStringByte(__SampleData(nSample), nPosition)
+        SampleManager_PeekByte = PeekStringSingle(__SampleData(nSample), nPosition) * 127.0!
         $CHECKING:ON
     END FUNCTION
 
 
     ' Writes a sample value to a sample at position
-    SUB SampleManager_Poke (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS _BYTE)
+    SUB SampleManager_PokeByte (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS _BYTE)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringByte __SampleData(nSample), nPosition, nValue
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 128.0!
+        $CHECKING:ON
+    END SUB
+
+
+    ' Get a sample value for a sample from position
+    FUNCTION SampleManager_PeekInteger% (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
+        $CHECKING:OFF
+        SHARED __SampleData() AS STRING
+
+        SampleManager_PeekInteger = PeekStringSingle(__SampleData(nSample), nPosition) * 32767.0!
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Writes a sample value to a sample at position
+    SUB SampleManager_PokeInteger (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS INTEGER)
+        $CHECKING:OFF
+        SHARED __SampleData() AS STRING
+
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32768.0!
+        $CHECKING:ON
+    END SUB
+
+
+    ' Get a sample value for a sample from position
+    FUNCTION SampleManager_PeekSingle! (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
+        $CHECKING:OFF
+        SHARED __SampleData() AS STRING
+
+        SampleManager_PeekSingle = PeekStringSingle(__SampleData(nSample), nPosition)
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Writes a sample value to a sample at position
+    SUB SampleManager_PokeSingle (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS SINGLE)
+        $CHECKING:OFF
+        SHARED __SampleData() AS STRING
+
+        PokeStringSingle __SampleData(nSample), nPosition, nValue
         $CHECKING:ON
     END SUB
 
