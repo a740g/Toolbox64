@@ -295,7 +295,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Set the volume for a voice (0 - 64)
+    ' Set the volume for a voice
     SUB SampleMixer_SetVoiceVolume (nVoice AS _UNSIGNED _BYTE, nVolume AS SINGLE)
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
@@ -305,7 +305,17 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Set panning for a voice (0 - 255)
+    ' Get the volume for a voice
+    FUNCTION SampleMixer_GetVoiceVolume! (nVoice AS _UNSIGNED _BYTE)
+        $CHECKING:OFF
+        SHARED __Voice() AS __VoiceType
+
+        SampleMixer_GetVoiceVolume = __Voice(nVoice).volume
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Set panning for a voice
     SUB SampleMixer_SetVoicePanning (nVoice AS _UNSIGNED _BYTE, nPanning AS SINGLE)
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
@@ -313,6 +323,16 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __Voice(nVoice).panning = ClampSingle(nPanning, SOFTSYNTH_VOICE_PAN_LEFT, SOFTSYNTH_VOICE_PAN_RIGHT)
         $CHECKING:ON
     END SUB
+
+
+    ' Get panning for a voice
+    FUNCTION SampleMixer_GetVoicePanning! (nVoice AS _UNSIGNED _BYTE)
+        $CHECKING:OFF
+        SHARED __Voice() AS __VoiceType
+
+        SampleMixer_GetVoicePanning = __Voice(nVoice).panning
+        $CHECKING:ON
+    END FUNCTION
 
 
     ' Set a frequency for a voice
