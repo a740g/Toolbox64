@@ -33,20 +33,20 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __SoftSynth.soundHandle = _SNDOPENRAW
 
         ' Reset the global volume
-        __SoftSynth.volume = SAMPLE_MIXER_GLOBAL_VOLUME_MAX
+        __SoftSynth.volume = SOFTSYNTH_GLOBAL_VOLUME_MAX
 
         DIM i AS _UNSIGNED _BYTE
 
         ' Set all voice defaults
         FOR i = 0 TO nVoices - 1
             __Voice(i).sample = -1
-            __Voice(i).volume = SAMPLE_MIXER_VOLUME_MAX
-            __Voice(i).panning = SAMPLE_MIXER_PAN_CENTER
-            __Voice(i).pitch = 0
-            __Voice(i).position = 0
-            __Voice(i).playType = SAMPLE_MIXER_PLAY_SINGLE
-            __Voice(i).startPosition = 0
-            __Voice(i).endPosition = 0
+            __Voice(i).volume = SOFTSYNTH_VOICE_VOLUME_MAX
+            __Voice(i).panning = 0.0! ' center
+            __Voice(i).pitch = 0.0!
+            __Voice(i).position = 0.0!
+            __Voice(i).playType = SOFTSYNTH_VOICE_PLAY_SINGLE
+            __Voice(i).startPosition = 0.0!
+            __Voice(i).endPosition = 0.0!
         NEXT
     END SUB
 
@@ -79,7 +79,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SoftSynth AS __SoftSynthType
 
-        SampleMixer_NeedsUpdate = (_SNDRAWLEN(__SoftSynth.soundHandle) < SAMPLE_MIXER_SOUND_TIME_MIN)
+        SampleMixer_NeedsUpdate = _SNDRAWLEN(__SoftSynth.soundHandle) < SOFTSYNTH_BUFFER_TIME
         $CHECKING:ON
     END FUNCTION
 
@@ -94,15 +94,17 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __MixerBufferL() AS SINGLE
         SHARED __MixerBufferR() AS SINGLE
 
-        DIM AS LONG v, s, nSample, nPos, nPlayType, sLen
+        DIM AS LONG v, s, nSample, nPos, nPlayType, sLen, samplesMax
         DIM AS SINGLE fVolume, fPan, fPitch, fPos, fStartPos, fEndPos, fSam
         DIM AS _BYTE bSam1, bSam2
+
+        samplesMax = nSamples - 1 ' upperbound
 
         ' Reallocate the mixer buffers that will hold sample data for both channels
         ' This is conveniently zeroed by QB64, so that is nice. We don't have to do it
         ' Here 0 is the left channnel and 1 is the right channel
-        REDIM __MixerBufferL(0 TO nSamples - 1) AS SINGLE
-        REDIM __MixerBufferR(0 TO nSamples - 1) AS SINGLE
+        REDIM __MixerBufferL(0 TO samplesMax) AS SINGLE
+        REDIM __MixerBufferR(0 TO samplesMax) AS SINGLE
 
         ' Set the active voice count to zero
         __SoftSynth.activeVoices = 0
@@ -128,13 +130,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                 sLen = LEN(__SampleData(nSample)) ' real sample length
 
                 ' Next we go through the channel sample data and mix it to our mixerBuffer
-                FOR s = 0 TO nSamples - 1
+                FOR s = 0 TO samplesMax
                     ' We need these too many times
                     ' And this is inside the loop because "position" changes
                     fPos = __Voice(v).position
 
                     ' Check if we are looping
-                    IF nPlayType = SAMPLE_MIXER_PLAY_SINGLE THEN
+                    IF nPlayType = SOFTSYNTH_VOICE_PLAY_SINGLE THEN
                         ' For non-looping sample simply set the isplayed flag as false if we reached the end
                         IF fPos >= fEndPos THEN
                             SampleMixer_StopVoice v
@@ -149,7 +151,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                     END IF
 
                     ' We don't want anything below 0
-                    IF fPos < 0 THEN fPos = 0
+                    IF fPos < 0.0! THEN fPos = 0.0!
 
                     ' Samples are stored in a string and strings are 1 based
                     IF __SoftSynth.useHQMixer AND fPos + 2 <= sLen THEN
@@ -163,14 +165,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                             bSam1 = PeekStringByte(__SampleData(nSample), fPos)
                             fSam = bSam1
                         ELSE
-                            fSam = 0
+                            fSam = 0.0!
                         END IF
                     END IF
 
                     ' The following two lines mixes the sample and also does volume & stereo panning
-                    ' The below expressions were simplified and rearranged to reduce the number of divisions. Divisions are slow
-                    __MixerBufferL(s) = __MixerBufferL(s) + (fSam * fVolume * (SAMPLE_MIXER_PAN_RIGHT - fPan)) / (SAMPLE_MIXER_PAN_RIGHT * SAMPLE_MIXER_VOLUME_MAX)
-                    __MixerBufferR(s) = __MixerBufferR(s) + (fSam * fVolume * fPan) / (SAMPLE_MIXER_PAN_RIGHT * SAMPLE_MIXER_VOLUME_MAX)
+                    __MixerBufferL(s) = __MixerBufferL(s) + (fSam * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT - fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 - pan)
+                    __MixerBufferR(s) = __MixerBufferR(s) + (fSam * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT + fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 + pan)
 
                     ' Move to the next sample position based on the pitch
                     __Voice(v).position = fPos + fPitch
@@ -179,14 +180,10 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         NEXT
 
         ' Feed the samples to the QB64 sound pipe
-        FOR s = 0 TO nSamples - 1
+        FOR s = 0 TO samplesMax
             ' Apply global volume and scale sample to FP32 sample spec.
-            fSam = __SoftSynth.volume / (128 * SAMPLE_MIXER_GLOBAL_VOLUME_MAX)
-            __MixerBufferL(s) = __MixerBufferL(s) * fSam
-            __MixerBufferR(s) = __MixerBufferR(s) * fSam
-
-            ' We do not clip samples anymore because miniaudio does that for us. It makes no sense to clip samples twice
-            ' Obviously, this means that the quality of OpenAL version will suffer. But that's ok, it is on it's way to sunset :)
+            __MixerBufferL(s) = __MixerBufferL(s) * __SoftSynth.volume / 128.0!
+            __MixerBufferR(s) = __MixerBufferR(s) * __SoftSynth.volume / 128.0!
 
             ' Feed the samples to the QB64 sound pipe
             _SNDRAW __MixerBufferL(s), __MixerBufferR(s), __SoftSynth.soundHandle
@@ -239,13 +236,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
 
-        IF nVolume < 0 THEN
-            __Voice(nVoice).volume = 0
-        ELSEIF nVolume > SAMPLE_MIXER_VOLUME_MAX THEN
-            __Voice(nVoice).volume = SAMPLE_MIXER_VOLUME_MAX
-        ELSE
-            __Voice(nVoice).volume = nVolume
-        END IF
+        __Voice(nVoice).volume = ClampSingle(nVolume, 0.0!, SOFTSYNTH_VOICE_VOLUME_MAX)
         $CHECKING:ON
     END SUB
 
@@ -255,13 +246,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
 
-        IF nPanning < SAMPLE_MIXER_PAN_LEFT THEN
-            __Voice(nVoice).panning = SAMPLE_MIXER_PAN_LEFT
-        ELSEIF nPanning > SAMPLE_MIXER_PAN_RIGHT THEN
-            __Voice(nVoice).panning = SAMPLE_MIXER_PAN_RIGHT
-        ELSE
-            __Voice(nVoice).panning = nPanning
-        END IF
+        __Voice(nVoice).panning = ClampSingle(nPanning, SOFTSYNTH_VOICE_PAN_LEFT, SOFTSYNTH_VOICE_PAN_RIGHT)
         $CHECKING:ON
     END SUB
 
@@ -284,13 +269,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __Voice() AS __VoiceType
 
         __Voice(nVoice).sample = -1
-        __Voice(nVoice).volume = SAMPLE_MIXER_VOLUME_MAX
-        ' __Voice(nVoice).panning is intentionally left out to respect the pan positions set by the loader
-        __Voice(nVoice).pitch = 0
-        __Voice(nVoice).position = 0
-        __Voice(nVoice).playType = SAMPLE_MIXER_PLAY_SINGLE
-        __Voice(nVoice).startPosition = 0
-        __Voice(nVoice).endPosition = 0
+        __Voice(nVoice).volume = SOFTSYNTH_VOICE_VOLUME_MAX
+        ' __Voice(nVoice).panning is intentionally left out to respect the pan positions set initially by the loader
+        __Voice(nVoice).pitch = 0.0!
+        __Voice(nVoice).position = 0.0!
+        __Voice(nVoice).playType = SOFTSYNTH_VOICE_PLAY_SINGLE
+        __Voice(nVoice).startPosition = 0.0!
+        __Voice(nVoice).endPosition = 0.0!
         $CHECKING:ON
     END SUB
 
@@ -314,13 +299,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     SUB SampleMixer_SetGlobalVolume (nVolume AS SINGLE)
         SHARED __SoftSynth AS __SoftSynthType
 
-        IF nVolume < 0 THEN
-            __SoftSynth.volume = 0
-        ELSEIF nVolume > SAMPLE_MIXER_GLOBAL_VOLUME_MAX THEN
-            __SoftSynth.volume = SAMPLE_MIXER_GLOBAL_VOLUME_MAX
-        ELSE
-            __SoftSynth.volume = nVolume
-        END IF
+        __SoftSynth.volume = ClampSingle(nVolume, 0.0!, SOFTSYNTH_GLOBAL_VOLUME_MAX)
     END SUB
 
 
@@ -338,7 +317,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     SUB SampleMixer_SetHighQuality (nFlag AS _BYTE)
         SHARED __SoftSynth AS __SoftSynthType
 
-        __SoftSynth.useHQMixer = (nFlag <> FALSE) ' This will accept all kinds of garbage :)
+        __SoftSynth.useHQMixer = nFlag <> FALSE ' this will accept all kinds of garbage :)
     END SUB
 
 
@@ -400,6 +379,12 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SampleMixer_GetSampleRate = __SoftSynth.mixerRate
         $CHECKING:ON
     END FUNCTION
+    '-------------------------------------------------------------------------------------------------------------------
+
+    '-------------------------------------------------------------------------------------------------------------------
+    ' MODULE FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'CRTLib.bas'
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

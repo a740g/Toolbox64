@@ -8,7 +8,7 @@
 #include "Common.h"
 #include <cstring>
 
-static char formatBuffer[256];
+static char formatBuffer[4096]; // 4k static buffer
 
 /// @brief Format a 32-bit integer
 /// @param n A 32-bit integer

@@ -23,6 +23,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __ORDER_TABLE_MAX = 127 ' Max position in the order table
     CONST __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
     CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM
+    CONST __MOD_SAMPLE_VOLUME_MAX = 64 ' this is the maximum volume of any MOD sample
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
