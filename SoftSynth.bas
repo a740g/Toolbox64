@@ -228,7 +228,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         ' If the sample is looping then make it anti-click by copying a few samples from loop start to loop end
         IF isLooping THEN
             ' We'll just copy 4 samples
-            FOR i = 1 TO 4
+            FOR i = 0 TO 3
                 PokeStringSingle __SampleData(nSample), nLoopEnd + i, PeekStringSingle(__SampleData(nSample), nLoopStart + i)
             NEXT
         END IF
