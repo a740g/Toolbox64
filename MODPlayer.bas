@@ -14,21 +14,21 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    $DEBUG
-    $CONSOLE
-    $ASSERTS
-    IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/blerp.mod") THEN
-        SampleMixer_SetHighQuality TRUE
-        MODPlayer_Play
-        DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
-            MODPlayer_Update
-            LOCATE 1, 1
-            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.highestPattern; __Song.patternRow; __Song.bpm; __Song.speed;
-            _LIMIT 60
-        LOOP
-        MODPlayer_Stop
-    END IF
-    END
+    '$DEBUG
+    '$CONSOLE
+    '$ASSERTS
+    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/blerp.mod") THEN
+    '    SampleMixer_SetHighQuality TRUE
+    '    MODPlayer_Play
+    '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
+    '        MODPlayer_Update
+    '        LOCATE 1, 1
+    '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.highestPattern; __Song.patternRow; __Song.bpm; __Song.speed;
+    '        _LIMIT 60
+    '    LOOP
+    '    MODPlayer_Stop
+    'END IF
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
