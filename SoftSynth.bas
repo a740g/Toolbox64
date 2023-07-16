@@ -202,17 +202,17 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SELECT CASE nSampleFrameSize
             CASE SIZE_OF_BYTE ' 8-bit
                 FOR i = 0 TO sampleFrames - 1
-                    PokeStringSingle __SampleData(nSample), i, PeekStringByte(sData, i) / 127.0!
+                    PokeStringSingle __SampleData(nSample), i, PeekStringByte(sData, i) / 128.0!
                 NEXT
 
             CASE SIZE_OF_INTEGER ' 16-bit
                 FOR i = 0 TO sampleFrames - 1
-                    PokeStringSingle __SampleData(nSample), i, PeekStringInteger(sData, i) / 32767.0!
+                    PokeStringSingle __SampleData(nSample), i, PeekStringInteger(sData, i) / 32768.0!
                 NEXT
 
             CASE SIZE_OF_SINGLE ' 32-bit
                 FOR i = 0 TO sampleFrames - 1
-                    PokeStringSingle __SampleData(nSample), i, PeekStringSingle(sData, i) ' no conversion needed
+                    PokeStringSingle __SampleData(nSample), i, ClampSingle(PeekStringSingle(sData, i), -1.0!, 1.0!)
                 NEXT
 
             CASE ELSE ' nothing else is supported
@@ -234,7 +234,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        SampleManager_PeekByte = PeekStringSingle(__SampleData(nSample), nPosition) * 127.0!
+        SampleManager_PeekByte = PeekStringSingle(__SampleData(nSample), nPosition) * 128.0!
         $CHECKING:ON
     END FUNCTION
 
@@ -244,7 +244,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(nSample), nPosition, nValue / 127.0!
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 128.0!
         $CHECKING:ON
     END SUB
 
@@ -254,7 +254,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        SampleManager_PeekInteger = PeekStringSingle(__SampleData(nSample), nPosition) * 32767.0!
+        SampleManager_PeekInteger = PeekStringSingle(__SampleData(nSample), nPosition) * 32768.0!
         $CHECKING:ON
     END FUNCTION
 
@@ -264,7 +264,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32767.0!
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32768.0!
         $CHECKING:ON
     END SUB
 
