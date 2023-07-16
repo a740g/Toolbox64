@@ -28,72 +28,72 @@ inline const char *CStr(uintptr_t p)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return BYTE value
-inline uint8_t PeekByte(uintptr_t p, uintptr_t o)
+inline int8_t PeekByte(uintptr_t p, uintptr_t o)
 {
-    return *(reinterpret_cast<const uint8_t *>(p) + o);
+    return *(reinterpret_cast<const int8_t *>(p) + o);
 }
 
 /// @brief Poke a BYTE (8-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n BYTE value
-inline void PokeByte(uintptr_t p, uintptr_t o, uint8_t n)
+inline void PokeByte(uintptr_t p, uintptr_t o, int8_t n)
 {
-    *(reinterpret_cast<uint8_t *>(p) + o) = n;
+    *(reinterpret_cast<int8_t *>(p) + o) = n;
 }
 
 /// @brief Peek an INTEGER (16-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return INTEGER value
-inline uint16_t PeekInteger(uintptr_t p, uintptr_t o)
+inline int16_t PeekInteger(uintptr_t p, uintptr_t o)
 {
-    return *(reinterpret_cast<const uint16_t *>(p) + o);
+    return *(reinterpret_cast<const int16_t *>(p) + o);
 }
 
 /// @brief Poke an INTEGER (16-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n INTEGER value
-inline void PokeInteger(uintptr_t p, uintptr_t o, uint16_t n)
+inline void PokeInteger(uintptr_t p, uintptr_t o, int16_t n)
 {
-    *(reinterpret_cast<uint16_t *>(p) + o) = n;
+    *(reinterpret_cast<int16_t *>(p) + o) = n;
 }
 
 /// @brief Peek a LONG (32-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return LONG value
-inline uint32_t PeekLong(uintptr_t p, uintptr_t o)
+inline int32_t PeekLong(uintptr_t p, uintptr_t o)
 {
-    return *(reinterpret_cast<const uint32_t *>(p) + o);
+    return *(reinterpret_cast<const int32_t *>(p) + o);
 }
 
 /// @brief Poke a LONG (32-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n LONG value
-inline void PokeLong(uintptr_t p, uintptr_t o, uint32_t n)
+inline void PokeLong(uintptr_t p, uintptr_t o, int32_t n)
 {
-    *(reinterpret_cast<uint32_t *>(p) + o) = n;
+    *(reinterpret_cast<int32_t *>(p) + o) = n;
 }
 
 /// @brief Peek a INTEGER64 (64-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return INTEGER64 value
-inline uint64_t PeekInteger64(uintptr_t p, uintptr_t o)
+inline int64_t PeekInteger64(uintptr_t p, uintptr_t o)
 {
-    return *(reinterpret_cast<const uint64_t *>(p) + o);
+    return *(reinterpret_cast<const int64_t *>(p) + o);
 }
 
 /// @brief Poke a INTEGER64 (64-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
 /// @param n INTEGER64 value
-inline void PokeInteger64(uintptr_t p, uintptr_t o, uint64_t n)
+inline void PokeInteger64(uintptr_t p, uintptr_t o, int64_t n)
 {
-    *(reinterpret_cast<uint64_t *>(p) + o) = n;
+    *(reinterpret_cast<int64_t *>(p) + o) = n;
 }
 
 /// @brief Peek a SINGLE (32-bits) value at p + o
@@ -174,7 +174,7 @@ inline void PokeType(uintptr_t p, uintptr_t o, uintptr_t t, size_t t_size)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The ASCII character at position o
-inline uint8_t PeekStringByte(const char *s, uintptr_t o)
+inline int8_t PeekStringByte(const char *s, uintptr_t o)
 {
     return s[o];
 }
@@ -183,7 +183,7 @@ inline uint8_t PeekStringByte(const char *s, uintptr_t o)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @param n The ASCII character at position o
-inline void PokeStringByte(char *s, uintptr_t o, uint8_t n)
+inline void PokeStringByte(char *s, uintptr_t o, int8_t n)
 {
     s[o] = n;
 }
@@ -192,54 +192,54 @@ inline void PokeStringByte(char *s, uintptr_t o, uint8_t n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The integer at position o
-inline uint16_t PeekStringInteger(const char *s, uintptr_t o)
+inline int16_t PeekStringInteger(const char *s, uintptr_t o)
 {
-    return *reinterpret_cast<const uint16_t *>(&s[o * sizeof(uint16_t)]);
+    return *reinterpret_cast<const int16_t *>(&s[o * sizeof(int16_t)]);
 }
 
 /// @brief Poke an integer value in a string
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @param n The integer at position o
-inline void PokeStringInteger(char *s, uintptr_t o, uint16_t n)
+inline void PokeStringInteger(char *s, uintptr_t o, int16_t n)
 {
-    *reinterpret_cast<uint16_t *>(&s[o * sizeof(uint16_t)]) = n;
+    *reinterpret_cast<int16_t *>(&s[o * sizeof(int16_t)]) = n;
 }
 
 /// @brief Peek a long value in a string
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The long at position o
-inline uint32_t PeekStringLong(const char *s, uintptr_t o)
+inline int32_t PeekStringLong(const char *s, uintptr_t o)
 {
-    return *reinterpret_cast<const uint32_t *>(&s[o * sizeof(uint32_t)]);
+    return *reinterpret_cast<const int32_t *>(&s[o * sizeof(int32_t)]);
 }
 
 /// @brief Poke an long value in a string
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @param n The long at position o
-inline void PokeStringLong(char *s, uintptr_t o, uint32_t n)
+inline void PokeStringLong(char *s, uintptr_t o, int32_t n)
 {
-    *reinterpret_cast<uint32_t *>(&s[o * sizeof(uint32_t)]) = n;
+    *reinterpret_cast<int32_t *>(&s[o * sizeof(int32_t)]) = n;
 }
 
 /// @brief Peek an integer64 value in a string
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The integer64 at position o
-inline uint64_t PeekStringInteger64(const char *s, uintptr_t o)
+inline int64_t PeekStringInteger64(const char *s, uintptr_t o)
 {
-    return *reinterpret_cast<const uint64_t *>(&s[o * sizeof(uint64_t)]);
+    return *reinterpret_cast<const int64_t *>(&s[o * sizeof(int64_t)]);
 }
 
 /// @brief Poke an integer64 value in a string
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @param n The integer64 at position o
-inline void PokeStringInteger64(char *s, uintptr_t o, uint64_t n)
+inline void PokeStringInteger64(char *s, uintptr_t o, int64_t n)
 {
-    *reinterpret_cast<uint64_t *>(&s[o * sizeof(uint64_t)]) = n;
+    *reinterpret_cast<int64_t *>(&s[o * sizeof(int64_t)]) = n;
 }
 
 /// @brief Peek a single value in a string

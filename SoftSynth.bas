@@ -101,7 +101,6 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
         ' Reallocate the mixer buffers that will hold sample data for both channels
         ' This is conveniently zeroed by QB64, so that is nice. We don't have to do it
-        ' Here 0 is the left channnel and 1 is the right channel
         REDIM __MixerBufferL(0 TO samplesMax) AS SINGLE
         REDIM __MixerBufferR(0 TO samplesMax) AS SINGLE
 
@@ -136,11 +135,10 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
                     ' Check if we are looping
                     IF nPlayType = SOFTSYNTH_VOICE_PLAY_SINGLE THEN
-                        ' For non-looping sample simply set the isplayed flag as false if we reached the end
+                        ' For non-looping sample simply stop playing if we reached the end
                         IF fPos >= fEndPos THEN
                             SampleMixer_StopVoice v
-                            ' Exit the for mixing loop as we have no more samples to mix for this channel
-                            EXIT FOR
+                            EXIT FOR ' exit the for mixing loop as we have no more samples to mix for this channel
                         END IF
                     ELSE
                         ' Reset loop position if we reached the end of the loop
@@ -152,7 +150,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                     ' We don't want anything below 0
                     IF fPos < 0.0! THEN fPos = 0.0!
 
-                    ' Samples are stored in a string and strings are 1 based
+                    ' Fetch the sample frame that we need (optionally applying interpolation)
                     IF __SoftSynth.useHQMixer AND fPos + 2 <= sLen THEN
                         ' Apply interpolation
                         nPos = FIX(fPos)
@@ -203,23 +201,19 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
         SELECT CASE nSampleFrameSize
             CASE SIZE_OF_BYTE ' 8-bit
-                DIM bSamp AS _BYTE
-
                 FOR i = 0 TO sampleFrames - 1
-                    bSamp = PeekStringByte(sData, i) ' needed to convert to signed byte
-                    PokeStringSingle __SampleData(nSample), i, bSamp / 128.0!
+                    PokeStringSingle __SampleData(nSample), i, PeekStringByte(sData, i) / 127.0!
                 NEXT
 
             CASE SIZE_OF_INTEGER ' 16-bit
-                DIM iSamp AS INTEGER
-
                 FOR i = 0 TO sampleFrames - 1
-                    iSamp = PeekStringInteger(sData, i) ' needed to convert to signed integer
-                    PokeStringSingle __SampleData(nSample), i, iSamp / 32768.0!
+                    PokeStringSingle __SampleData(nSample), i, PeekStringInteger(sData, i) / 32767.0!
                 NEXT
 
-            CASE SIZE_OF_SINGLE '32-bit
-                __SampleData(nSample) = sData + STRING$(i * SIZE_OF_SINGLE, NULL) ' no conversion needed
+            CASE SIZE_OF_SINGLE ' 32-bit
+                FOR i = 0 TO sampleFrames - 1
+                    PokeStringSingle __SampleData(nSample), i, PeekStringSingle(sData, i) ' no conversion needed
+                NEXT
 
             CASE ELSE ' nothing else is supported
                 ERROR ERROR_ILLEGAL_FUNCTION_CALL
@@ -250,7 +244,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(nSample), nPosition, nValue / 128.0!
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 127.0!
         $CHECKING:ON
     END SUB
 
@@ -270,7 +264,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32768.0!
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32767.0!
         $CHECKING:ON
     END SUB
 

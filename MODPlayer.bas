@@ -14,21 +14,21 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$DEBUG
-    '$CONSOLE
-    '$ASSERTS
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/anarchymenu%2002.mod") THEN
-    '    SampleMixer_SetHighQuality TRUE
-    '    MODPlayer_Play
-    '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
-    '        MODPlayer_Update
-    '        LOCATE 1, 1
-    '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.highestPattern; __Song.patternRow; __Song.bpm; __Song.speed;
-    '        _LIMIT 60
-    '    LOOP
-    '    MODPlayer_Stop
-    'END IF
-    'END
+    $DEBUG
+    $CONSOLE
+    $ASSERTS
+    IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/blerp.mod") THEN
+        SampleMixer_SetHighQuality TRUE
+        MODPlayer_Play
+        DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
+            MODPlayer_Update
+            LOCATE 1, 1
+            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.highestPattern; __Song.patternRow; __Song.bpm; __Song.speed;
+            _LIMIT 60
+        LOOP
+        MODPlayer_Stop
+    END IF
+    END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -135,9 +135,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             IF __Sample(i).length = 2 THEN __Sample(i).length = 0 ' Sanity check
 
             ' Read finetune
-            result = MemFile_ReadByte(memFile, __Sample(i).c2Spd)
+            result = MemFile_ReadByte(memFile, byte1)
             _ASSERT result
-            __Sample(i).c2Spd = __GetC2Spd(__Sample(i).c2Spd) ' Convert finetune to c2spd
+            __Sample(i).c2Spd = __GetC2Spd(byte1) ' Convert finetune to c2spd
 
             ' Read volume
             result = MemFile_ReadByte(memFile, __Sample(i).volume)
