@@ -1037,9 +1037,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     SUB MODPlayer_GoToNextPosition
         SHARED __Song AS __SongType
 
-        __Song.orderPosition = __Song.orderPosition + 1
-        IF __Song.orderPosition >= __Song.orders THEN __Song.orderPosition = 0
-        __Song.patternRow = 0
+        IF __Song.isLooping THEN ' if we are looping
+            __Song.orderPosition = __Song.orderPosition + 1 ' move to the next order
+            IF __Song.orderPosition >= __Song.orders THEN __Song.orderPosition = 0 ' wrap to first order if we have reached the end
+            __Song.patternRow = 0 ' reset row position
+        ELSEIF __Song.orderPosition < __Song.orders THEN ' else only if have more orders then
+            __Song.orderPosition = __Song.orderPosition + 1
+            __Song.patternRow = 0 ' reset row position
+        END IF
     END SUB
 
 
@@ -1047,9 +1052,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     SUB MODPlayer_GoToPreviousPosition
         SHARED __Song AS __SongType
 
-        __Song.orderPosition = __Song.orderPosition - 1
-        IF __Song.orderPosition < 0 THEN __Song.orderPosition = __Song.orders - 1
-        __Song.patternRow = 0
+        IF __Song.isLooping THEN ' if we are looping
+            __Song.orderPosition = __Song.orderPosition - 1 ' move to the previous order
+            IF __Song.orderPosition < 0 THEN __Song.orderPosition = __Song.orders - 1 ' wrap to the last order if we have crossed the beginning
+            __Song.patternRow = 0 ' reset row position
+        ELSEIF __Song.orderPosition > 0 THEN ' else only if have not reached the first order
+            __Song.orderPosition = __Song.orderPosition - 1 ' move to the previous order
+            __Song.patternRow = 0 ' reset row position
+        END IF
     END SUB
 
 
