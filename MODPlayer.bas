@@ -1041,7 +1041,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Song.orderPosition = __Song.orderPosition + 1 ' move to the next order
             IF __Song.orderPosition >= __Song.orders THEN __Song.orderPosition = 0 ' wrap to first order if we have reached the end
             __Song.patternRow = 0 ' reset row position
-        ELSEIF __Song.orderPosition < __Song.orders THEN ' else only if have more orders then
+        ELSEIF __Song.orderPosition < __Song.orders - 1 THEN ' else only if have not reached the last order
             __Song.orderPosition = __Song.orderPosition + 1
             __Song.patternRow = 0 ' reset row position
         END IF
