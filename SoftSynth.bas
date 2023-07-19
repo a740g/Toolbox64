@@ -14,11 +14,28 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
+    ' This initialized the sample manager
+    ' All previous samples will be lost!
+    SUB SampleManager_Initialize (nSamples AS _UNSIGNED _BYTE)
+        SHARED __SoftSynth AS __SoftSynthType
+        SHARED __SampleData() AS STRING
+
+        ' Save the number of samples
+        __SoftSynth.samples = nSamples
+
+        ' Resize the sample data array
+        REDIM __SampleData(0 TO nSamples - 1) AS STRING
+    END SUB
+
+
     ' Initialize the sample mixer
     ' This allocates all required resources
     SUB SampleMixer_Initialize (nVoices AS _UNSIGNED _BYTE)
         SHARED __SoftSynth AS __SoftSynthType
         SHARED __Voice() AS __VoiceType
+
+        ' Cleanup and re-initialize if have already initialized
+        IF SampleMixer_IsInitialized THEN SampleMixer_Finalize
 
         ' Save the number of voices
         __SoftSynth.voices = nVoices
@@ -51,27 +68,22 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' This initialized the sample manager
-    ' All previous samples will be lost!
-    SUB SampleManager_Initialize (nSamples AS _UNSIGNED _BYTE)
-        SHARED __SoftSynth AS __SoftSynthType
-        SHARED __SampleData() AS STRING
-
-        ' Save the number of samples
-        __SoftSynth.samples = nSamples
-
-        ' Resize the sample data array
-        REDIM __SampleData(0 TO nSamples - 1) AS STRING
-    END SUB
-
-
     ' Close the mixer - free all allocated resources
     SUB SampleMixer_Finalize
         SHARED __SoftSynth AS __SoftSynthType
 
         _SNDRAWDONE __SoftSynth.soundHandle ' Sumbit whatever is remaining in the raw buffer for playback
         _SNDCLOSE __SoftSynth.soundHandle ' Close QB64 sound pipe
+        __SoftSynth.soundHandle = 0 ' reset the value
     END SUB
+
+
+    ' Returns true if the mixer was correctly initialized
+    FUNCTION SampleMixer_IsInitialized%%
+        SHARED __SoftSynth AS __SoftSynthType
+
+        SampleMixer_IsInitialized = __SoftSynth.soundHandle > 0 ' return true only if the raw sound pipe was allocated
+    END FUNCTION
 
 
     ' Returns true if more samples needs to be mixed
@@ -190,6 +202,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Stores a sample in the sample data array. This will add some silence samples at the end
     ' If the sample is looping then it will anti-click by copying a couple of samples from the beginning to the end of the loop
     ' The sample is always converted to 32-bit floating point format
+    ' Loop start and loop end are in sample frames (not bytes)
     SUB SampleManager_Load (nSample AS _UNSIGNED _BYTE, sData AS STRING, nSampleFrameSize AS _UNSIGNED _BYTE, isLooping AS _BYTE, nLoopStart AS LONG, nLoopEnd AS LONG)
         SHARED __SampleData() AS STRING
 
@@ -229,7 +242,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Get a sample value for a sample from position
+    ' Get a sample value for a sample from position (in sample frames)
     FUNCTION SampleManager_PeekByte%% (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
@@ -239,7 +252,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Writes a sample value to a sample at position
+    ' Writes a sample value to a sample at position (in sample frames)
     SUB SampleManager_PokeByte (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS _BYTE)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
@@ -249,7 +262,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Get a sample value for a sample from position
+    ' Get a sample value for a sample from position (in sample frames)
     FUNCTION SampleManager_PeekInteger% (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
@@ -259,7 +272,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Writes a sample value to a sample at position
+    ' Writes a sample value to a sample at position (in sample frames)
     SUB SampleManager_PokeInteger (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS INTEGER)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
@@ -269,7 +282,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Get a sample value for a sample from position
+    ' Get a sample value for a sample from position (in sample frames)
     FUNCTION SampleManager_PeekSingle! (nSample AS _UNSIGNED _BYTE, nPosition AS LONG)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
@@ -279,7 +292,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Writes a sample value to a sample at position
+    ' Writes a sample value to a sample at position (in sample frames)
     SUB SampleManager_PokeSingle (nSample AS _UNSIGNED _BYTE, nPosition AS LONG, nValue AS SINGLE)
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
@@ -360,6 +373,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
     ' Starts playback of a sample
     ' This can be used to playback a sample from a particular offset or loop the sample
+    ' All sample position and length values are in sample frames (not bytes)
     SUB SampleMixer_PlayVoice (nVoice AS _UNSIGNED _BYTE, nSample AS _UNSIGNED _BYTE, nPosition AS SINGLE, nPlayType AS _UNSIGNED _BYTE, nStart AS SINGLE, nEnd AS SINGLE)
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType

@@ -16,25 +16,26 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' CONSTANTS
     '-------------------------------------------------------------------------------------------------------------------
-    CONST __PATTERN_ROW_MAX = 63 ' Max row number in a pattern
     CONST __NOTE_NONE = 132 ' Note will be set to this when there is nothing
     CONST __NOTE_KEY_OFF = 133 ' We'll use this in a future version
     CONST __NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
-    CONST __ORDER_TABLE_MAX = 127 ' Max position in the order table
     CONST __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
     CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM
     CONST __MOD_SAMPLE_VOLUME_MAX = 64 ' this is the maximum volume of any MOD sample
+    CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
+    CONST __MOD_ORDERS = 128 ' maximum positions in a MOD order table
+    CONST __MTM_CHANNELS = 32 ' maximum channels supported by MTM
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
     '-------------------------------------------------------------------------------------------------------------------
     TYPE __NoteType
-        note AS _UNSIGNED _BYTE ' Contains info on 1 note
-        sample AS _UNSIGNED _BYTE ' Sample number to play
-        volume AS _UNSIGNED _BYTE ' Volume value. Not used for MODs. 255 = no volume
-        effect AS _UNSIGNED _BYTE ' Effect number
-        operand AS _UNSIGNED _BYTE ' Effect parameters
+        note AS _UNSIGNED _BYTE ' contains info on 1 note
+        sample AS _UNSIGNED _BYTE ' sample number to play
+        volume AS _UNSIGNED _BYTE ' volume value. Not used for MODs. 255 = no volume
+        effect AS _UNSIGNED _BYTE ' effect number
+        operand AS _UNSIGNED _BYTE ' effect parameters
     END TYPE
 
     TYPE __SampleType
@@ -45,6 +46,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         loopStart AS LONG ' Loop start in bytes
         loopLength AS LONG ' Loop length in bytes
         loopEnd AS LONG ' Loop end in bytes
+        frameSize AS _UNSIGNED _BYTE ' sample frame size in bytes
     END TYPE
 
     TYPE __ChannelType
@@ -73,16 +75,18 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     END TYPE
 
     TYPE __SongType
-        songName AS STRING ' Song name
+        songName AS STRING ' song name
         subtype AS STRING * 4 ' 4 char MOD type - use this to find out what tracker was used
-        channels AS _UNSIGNED _BYTE ' Number of channels in the song - can be any number depending on the MOD file
-        samples AS _UNSIGNED _BYTE ' Number of samples in the song - can be 15 or 31 depending on the MOD file
-        orders AS _UNSIGNED _BYTE ' Song length in orders
+        comment AS STRING ' song comment / message (if any)
+        channels AS _UNSIGNED _BYTE ' number of channels in the song
+        samples AS _UNSIGNED _BYTE ' number of samples in the song
+        orders AS _UNSIGNED INTEGER ' song length in orders
+        rows AS _UNSIGNED _BYTE ' number of rows in each pattern
         endJumpOrder AS _UNSIGNED _BYTE ' This is used for jumping to an order if global looping is on
-        highestPattern AS _UNSIGNED _BYTE ' The highest pattern number read from the MOD file
-        orderPosition AS INTEGER ' The position in the order list. Signed so that we can properly wrap
+        patterns AS _UNSIGNED INTEGER ' number of patterns in the song
+        orderPosition AS LONG ' The position in the order list. Signed so that we can properly wrap
         patternRow AS INTEGER ' Points to the pattern row to be played. This is signed because sometimes we need to set it to -1
-        tickPattern AS _UNSIGNED _BYTE ' Pattern number for UpdateMODRow() & UpdateMODTick()
+        tickPattern AS _UNSIGNED INTEGER ' Pattern number for UpdateMODRow() & UpdateMODTick()
         tickPatternRow AS INTEGER ' Pattern row number for UpdateMODRow() & UpdateMODTick() (signed)
         isLooping AS _BYTE ' Set this to true to loop the song once we reach the max order specified in the song
         isPlaying AS _BYTE ' This is set to true as long as the song is playing
@@ -101,14 +105,14 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' GLOBAL VARIABLES
     '-------------------------------------------------------------------------------------------------------------------
-    DIM __Song AS __SongType
-    DIM __Order(0 TO __ORDER_TABLE_MAX) AS _UNSIGNED _BYTE ' Order list
-    REDIM __Pattern(0 TO 0, 0 TO 0, 0 TO 0) AS __NoteType ' Pattern data strored as (pattern, row, channel)
-    REDIM __Sample(0 TO 0) AS __SampleType ' Sample info array
-    REDIM __Channel(0 TO 0) AS __ChannelType ' Channel info array
+    DIM __Song AS __SongType ' tune specific data
+    REDIM __Order(0 TO 0) AS _UNSIGNED INTEGER ' order list
+    REDIM __Pattern(0 TO 0, 0 TO 0, 0 TO 0) AS __NoteType ' pattern data strored as (pattern, row, channel)
+    REDIM __Sample(0 TO 0) AS __SampleType ' sample info array
+    REDIM __Channel(0 TO 0) AS __ChannelType ' channel info array
     REDIM __PeriodTable(0 TO 0) AS _UNSIGNED INTEGER ' Amiga period table
-    REDIM __SineTable(0 TO 0) AS _UNSIGNED _BYTE ' Sine table used for effects
-    REDIM __InvertLoopSpeedTable(0 TO 0) AS _UNSIGNED _BYTE ' Invert loop speed table for EFx
+    REDIM __SineTable(0 TO 0) AS _UNSIGNED _BYTE ' sine table used for effects
+    REDIM __InvertLoopSpeedTable(0 TO 0) AS _UNSIGNED _BYTE ' invert loop speed table for EFx
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

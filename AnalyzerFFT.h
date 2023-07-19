@@ -70,7 +70,6 @@ static int32_t fft_cossintab86[FFT_SAMPLES2][2] =
 static uint16_t fft_permtab[FFT_SAMPLES];
 static bool fft_init_done = false;
 static int32_t fft_x86[FFT_SAMPLES][2];
-static int16_t fft_s_temp[FFT_SAMPLES];
 
 static inline void fft_init()
 {
@@ -148,7 +147,6 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 {
     const auto full = std::min(1 << bits, FFT_SAMPLES);
     const auto half = full >> 1;
-    int32_t xr[2];
 
     if (!fft_init_done)
         fft_init();
@@ -162,15 +160,19 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 
     fft_do86(fft_x86, bits);
 
+    int32_t xr0, xr1;
+
     for (auto i = 1; i <= half; ++i)
     {
-        xr[0] = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
-        xr[1] = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
-        ana[i - 1] = sqrt((xr[0] * xr[0] + xr[1] * xr[1]) * i);
+        xr0 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
+        xr1 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
+        ana[i - 1] = sqrt((xr0 * xr0 + xr1 * xr1) * i);
     }
 }
 
-/// @brief This is a variation of AnalyzerFFTInteger() for floating point samples. The samples are converted to 16-bit and then sent to AnalyzerFFTInteger()
+/// @brief This is a variation of AnalyzerFFTInteger() for floating point samples.
+/// The samples are converted to 16-bit on the fly. It automatically initialize everything when called the first time.
+/// This computes the amplitude spectrum for the positive frequencies only. Hence, ana can have half the elements of samp
 /// @param ana The array where the resulting data is written. This cannot be NULL
 /// @param samp An array of floating point (FP32) samples
 /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
@@ -178,12 +180,26 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 void AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
 {
     const auto full = std::min(1 << bits, FFT_SAMPLES);
+    const auto half = full >> 1;
+
+    if (!fft_init_done)
+        fft_init();
 
     for (auto i = 0; i < full; ++i)
     {
-        fft_s_temp[i] = fmaxf(fminf(*samp, 1.0f), -1.0f) * SHRT_MAX;
-        samp += inc; // adjust samp pointer using inc
+        fft_x86[i][0] = (int32_t)(fmaxf(fminf(*samp, 1.0f), -1.0f) * SHRT_MAX) << 12;
+        samp += inc;
+        fft_x86[i][1] = 0;
     }
 
-    AnalyzerFFTInteger(ana, fft_s_temp, 1, bits); // pass adjusted inc value of 1 to AnalyzerFFTInteger
+    fft_do86(fft_x86, bits);
+
+    int32_t xr0, xr1;
+
+    for (auto i = 1; i <= half; ++i)
+    {
+        xr0 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
+        xr1 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
+        ana[i - 1] = sqrt((xr0 * xr0 + xr1 * xr1) * i);
+    }
 }
