@@ -172,7 +172,7 @@ $IF COMMON_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' USER DEFINED TYPES
     '-------------------------------------------------------------------------------------------------------------------
-    ' Some of the type below do not have a "home" yet and should be move to appropriate files later
+    ' Some of the type below do not have a "home" yet and should be moved to appropriate files later
 
     ' A simple integer 2D vector
     TYPE Vector2LType
