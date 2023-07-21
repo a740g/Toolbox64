@@ -3660,8 +3660,8 @@ static void ZopfliDeflatePart(const ZopfliOptions *options, int btype, int final
     free(splitpoints_uncompressed);
 }
 
-void ZopfliDeflate(const ZopfliOptions *options, int btype, int final, const unsigned char *in, size_t insize,
-                   unsigned char *bp, unsigned char **out, size_t *outsize)
+static void ZopfliDeflate(const ZopfliOptions *options, int btype, int final, const unsigned char *in, size_t insize,
+                          unsigned char *bp, unsigned char **out, size_t *outsize)
 {
     size_t offset = *outsize;
 #if ZOPFLI_MASTER_BLOCK_SIZE == 0
