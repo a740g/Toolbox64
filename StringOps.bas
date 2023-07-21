@@ -119,14 +119,14 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     ' Reverses and returns the characters of a string
     FUNCTION ReverseString$ (s AS STRING)
         DIM tmp AS STRING: tmp = s
-        ReverseBytes _OFFSET(tmp), LEN(tmp)
+        ReverseMemory _OFFSET(tmp), LEN(tmp)
         ReverseString = tmp
     END FUNCTION
 
 
     ' Reverses the characters of a string in-place
     SUB ReverseString (s AS STRING)
-        ReverseBytes _OFFSET(s), LEN(s)
+        ReverseMemory _OFFSET(s), LEN(s)
     END SUB
 
 
@@ -207,7 +207,7 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' MODULE FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'CRTLib.bas'
+    '$INCLUDE:'PointerOps.bas'
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

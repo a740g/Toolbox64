@@ -315,3 +315,22 @@ inline void PokeStringType(char *s, uintptr_t o, uintptr_t t, size_t t_size)
 {
     memcpy(s + (o * t_size), (void *)t, t_size);
 }
+
+/// @brief Reverses the order of bytes in memory
+/// @param ptr A pointer to a memory buffer
+/// @param size The size of the memory buffer
+inline void ReverseMemory(uintptr_t ptr, size_t size)
+{
+    auto start = (uint8_t *)ptr;
+    auto end = start + size - 1;
+
+    while (start < end)
+    {
+        *start ^= *end;
+        *end ^= *start;
+        *start ^= *end;
+
+        start++;
+        end--;
+    }
+}

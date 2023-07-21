@@ -1,24 +1,14 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' C Runtime Library bindings + low level support functions
+' QB64-PE pointer helper routines
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF CRTLIB_BAS = UNDEFINED THEN
-    $LET CRTLIB_BAS = TRUE
+$IF POINTEROPS_BAS = UNDEFINED THEN
+    $LET POINTEROPS_BAS = TRUE
     '-------------------------------------------------------------------------------------------------------------------
     ' HEADER FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'CRTLib.bi'
-    '-------------------------------------------------------------------------------------------------------------------
-
-    '-------------------------------------------------------------------------------------------------------------------
-    ' Test code for debugging the library
-    '-------------------------------------------------------------------------------------------------------------------
-    'PRINT _BIN$(ReverseBitsByte(&B11010001))
-    'PRINT _BIN$(ReverseBitsInteger(&B1111111101010001))
-    'PRINT _BIN$(ReverseBitsLong(&B11111111010100011000000101010001))
-    'PRINT _BIN$(ReverseBitsInteger64(&B1111111101010001111111110101000111111111010100011000000101010001))
-    'END
+    '$INCLUDE:'PointerOps.bi'
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -29,6 +19,7 @@ $IF CRTLIB_BAS = UNDEFINED THEN
         DIM zeroPos AS LONG: zeroPos = INSTR(s, CHR$(NULL))
         IF zeroPos > NULL THEN ToBString = LEFT$(s, zeroPos - 1) ELSE ToBString = s
     END FUNCTION
+
 
     ' Just a convenience function for use when calling external libraries
     FUNCTION ToCString$ (s AS STRING)

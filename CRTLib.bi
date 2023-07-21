@@ -17,7 +17,7 @@ $IF CRTLIB_BI = UNDEFINED THEN
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
     ' This only includes CRT library functions that makes sense in QB64
-    DECLARE CUSTOMTYPE LIBRARY
+    DECLARE LIBRARY
         FUNCTION isalnum& (BYVAL ch AS LONG)
         FUNCTION isalpha& (BYVAL ch AS LONG)
         FUNCTION islower& (BYVAL ch AS LONG)
@@ -32,17 +32,6 @@ $IF CRTLIB_BI = UNDEFINED THEN
         FUNCTION ispunct& (BYVAL ch AS LONG)
         FUNCTION tolower& (BYVAL ch AS LONG)
         FUNCTION toupper& (BYVAL ch AS LONG)
-        $IF 32BIT THEN
-            FUNCTION strlen~& (ByVal str As _UNSIGNED _OFFSET)
-        $ELSE
-            FUNCTION strlen~&& (BYVAL str AS _UNSIGNED _OFFSET)
-        $END IF
-        SUB strncpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        FUNCTION memcmp& (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB memset (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB memcpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB memmove (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB memccpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL c AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
         FUNCTION rand&
         SUB srand (BYVAL seed AS _UNSIGNED LONG)
         FUNCTION getchar&
@@ -54,10 +43,6 @@ $IF CRTLIB_BI = UNDEFINED THEN
         FUNCTION MinSingle! ALIAS fminf (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
         FUNCTION MaxDouble# ALIAS fmax (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
         FUNCTION MinDouble# ALIAS fmin (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
-        FUNCTION MemAlloc~%& ALIAS malloc (BYVAL size AS _UNSIGNED _OFFSET)
-        FUNCTION MemCAlloc~%& ALIAS calloc (BYVAL num AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
-        FUNCTION MemRealloc~%& ALIAS realloc (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
-        SUB MemFree ALIAS free (BYVAL ptr AS _UNSIGNED _OFFSET)
     END DECLARE
 
     DECLARE LIBRARY "CRTLib"
@@ -72,7 +57,6 @@ $IF CRTLIB_BI = UNDEFINED THEN
         FUNCTION ReverseBitsInteger~% (BYVAL n AS _UNSIGNED INTEGER)
         FUNCTION ReverseBitsLong~& (BYVAL n AS _UNSIGNED LONG)
         FUNCTION ReverseBitsInteger64~&& (BYVAL n AS _UNSIGNED _INTEGER64)
-        SUB ReverseBytes (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
         FUNCTION ClampLong& (BYVAL n AS LONG, BYVAL lo AS LONG, BYVAL hi AS LONG)
         FUNCTION ClampInteger64&& (BYVAL n AS _INTEGER64, BYVAL lo AS _INTEGER64, BYVAL hi AS _INTEGER64)
         FUNCTION ClampSingle! (BYVAL n AS SINGLE, BYVAL lo AS SINGLE, BYVAL hi AS SINGLE)

@@ -47,14 +47,20 @@ $IF DEFLATE_BAS = UNDEFINED THEN
             DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
 
             ' Copy the compressed memory
-            IF outputSize > 0 THEN memcpy _OFFSET(outputBuffer), outputPtr, outputSize
+            IF outputSize > 0 THEN CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
 
             ' Free outputPtr
-            MemFree outputPtr
+            FreeMemory outputPtr
 
             DeflatePro$ = outputBuffer
         END IF
     END FUNCTION
+    '-------------------------------------------------------------------------------------------------------------------
+
+    '-------------------------------------------------------------------------------------------------------------------
+    ' MODULE FILES
+    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'PointerOps.bas'
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

@@ -115,25 +115,6 @@ inline uint64_t ReverseBitsInteger64(uint64_t x)
     return (x >> 32) | (x << 32);
 }
 
-/// @brief Reverses the order of bytes in memory
-/// @param ptr A pointer to a memory buffer
-/// @param size The size of the memory buffer
-inline void ReverseBytes(uintptr_t ptr, size_t size)
-{
-    auto start = (uint8_t *)ptr;
-    auto end = start + size - 1;
-
-    while (start < end)
-    {
-        *start ^= *end;
-        *end ^= *start;
-        *start ^= *end;
-
-        start++;
-        end--;
-    }
-}
-
 /// @brief Returns a random number between lo and hi (inclusive). Use srand() to seed RNG
 /// @param lo The lower limit
 /// @param hi The upper limit

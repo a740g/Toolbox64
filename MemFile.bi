@@ -19,10 +19,10 @@ $IF MEMFILE_BI = UNDEFINED THEN
         SUB MemFile_Destroy (BYVAL memFile AS _UNSIGNED _OFFSET)
         FUNCTION MemFile_IsEOF%% (BYVAL memFile AS _UNSIGNED _OFFSET)
         $IF 32BIT THEN
-            Function MemFile_GetSize~& (ByVal memFile As _Unsigned _Offset)
-            Function MemFile_GetPosition~& (ByVal memFile As _Unsigned _Offset)
-            Function __MemFile_Read~& (ByVal memFile As _Unsigned _Offset, Byval dst As _Unsigned _Offset, Byval size As _Unsigned _Offset)
-            Function __MemFile_Write~& (ByVal memFile As _Unsigned _Offset, Byval src As _Unsigned _Offset, Byval size As _Unsigned _Offset)
+            FUNCTION MemFile_GetSize~& (BYVAL memFile AS _UNSIGNED _OFFSET)
+            FUNCTION MemFile_GetPosition~& (BYVAL memFile AS _UNSIGNED _OFFSET)
+            FUNCTION __MemFile_Read~& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL dst AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+            FUNCTION __MemFile_Write~& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
         $ELSE
             FUNCTION MemFile_GetSize~&& (BYVAL memFile AS _UNSIGNED _OFFSET)
             FUNCTION MemFile_GetPosition~&& (BYVAL memFile AS _UNSIGNED _OFFSET)

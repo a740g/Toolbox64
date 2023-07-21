@@ -67,6 +67,23 @@ $IF POINTEROPS_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
+    DECLARE CUSTOMTYPE LIBRARY
+        $IF 32BIT THEN
+            FUNCTION  GetCStringLength~& ALIAS strlen (BYVAL str As _UNSIGNED _OFFSET)
+        $ELSE
+            FUNCTION GetCStringLength~&& ALIAS strlen (BYVAL str AS _UNSIGNED _OFFSET)
+        $END IF
+        FUNCTION FindMemory~%& ALIAS memchr (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
+        FUNCTION CompareMemory& ALIAS memcmp (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB SetMemory ALIAS memset (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB CopyMemory ALIAS memcpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB MoveMemory ALIAS memmove (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        FUNCTION AllocateMemory~%& ALIAS malloc (BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION AllocateAndClearMemory~%& ALIAS calloc (BYVAL num AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION ReallocateMemory~%& ALIAS realloc (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
+        SUB FreeMemory ALIAS free (BYVAL ptr AS _UNSIGNED _OFFSET)
+    END DECLARE
+
     DECLARE LIBRARY "PointerOps"
         $IF 32BIT THEN
             FUNCTION CLngPtr~& (BYVAL p As _UNSIGNED _OFFSET)
@@ -106,6 +123,7 @@ $IF POINTEROPS_BI = UNDEFINED THEN
         SUB PokeStringOffset (s AS STRING, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _UNSIGNED _OFFSET)
         SUB PeekStringType (s AS STRING, BYVAL o AS _UNSIGNED _OFFSET, BYVAL typeVar AS _UNSIGNED _OFFSET, BYVAL typeSize AS _UNSIGNED _OFFSET)
         SUB PokeStringType (s AS STRING, BYVAL o AS _UNSIGNED _OFFSET, BYVAL typeVar AS _UNSIGNED _OFFSET, BYVAL typeSize AS _UNSIGNED _OFFSET)
+        SUB ReverseMemory (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
     END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
