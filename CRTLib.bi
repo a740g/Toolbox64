@@ -18,20 +18,6 @@ $IF CRTLIB_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' This only includes CRT library functions that makes sense in QB64
     DECLARE LIBRARY
-        FUNCTION isalnum& (BYVAL ch AS LONG)
-        FUNCTION isalpha& (BYVAL ch AS LONG)
-        FUNCTION islower& (BYVAL ch AS LONG)
-        FUNCTION isupper& (BYVAL ch AS LONG)
-        FUNCTION isdigit& (BYVAL ch AS LONG)
-        FUNCTION isxdigit& (BYVAL ch AS LONG)
-        FUNCTION iscntrl& (BYVAL ch AS LONG)
-        FUNCTION isgraph& (BYVAL ch AS LONG)
-        FUNCTION isspace& (BYVAL ch AS LONG)
-        FUNCTION isblank& (BYVAL ch AS LONG)
-        FUNCTION isprint& (BYVAL ch AS LONG)
-        FUNCTION ispunct& (BYVAL ch AS LONG)
-        FUNCTION tolower& (BYVAL ch AS LONG)
-        FUNCTION toupper& (BYVAL ch AS LONG)
         FUNCTION rand&
         SUB srand (BYVAL seed AS _UNSIGNED LONG)
         FUNCTION getchar&
