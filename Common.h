@@ -6,17 +6,6 @@
 #pragma once
 
 #include <cstdint>
-#include <cstdio>
-
-#if defined(TOOLBOX64_DEBUG) && TOOLBOX64_DEBUG > 0
-#define TOOLBOX64_DEBUG_PRINT(_fmt_, _args_...) fprintf(stderr, "\e[1;37mDEBUG: %s:%d:%s(): \e[1;33m" _fmt_ "\e[1;37m\n", __FILE__, __LINE__, __func__, ##_args_)
-#define TOOLBOX64_DEBUG_CHECK(_exp_) \
-    if (!(_exp_))                    \
-    TOOLBOX64_DEBUG_PRINT("\e[0;31mCondition (%s) failed", #_exp_)
-#else
-#define TOOLBOX64_DEBUG_PRINT(_fmt_, _args_...) // Don't do anything in release builds
-#define TOOLBOX64_DEBUG_CHECK(_exp_)            // Don't do anything in release builds
-#endif
 
 // QB64 false is 0 and true is -1 (sad, but true XD)
 enum qb_bool : int8_t
@@ -43,3 +32,19 @@ enum qb_bool : int8_t
 #define TO_BE_SHORT(_x_) __builtin_bswap16(_x_)
 #define TO_BE_LONG(_x_) __builtin_bswap32(_x_)
 #define TO_BE_LONGLONG(_x_) __builtin_bswap64(_x_)
+
+/// @brief Returns QB style bool
+/// @param x Any number
+/// @return 0 when x is 0 and -1 when x is non-zero
+inline qb_bool ToQBBool(int32_t x)
+{
+    return TO_QB_BOOL(x);
+}
+
+/// @brief Returns C style bool
+/// @param x Any number
+/// @return 0 when x is 0 and 1 when x is non-zero
+inline bool ToCBool(int32_t x)
+{
+    return TO_C_BOOL(x);
+}

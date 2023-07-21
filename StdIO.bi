@@ -1,19 +1,16 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' [TITLE]
+' Standard I/O CRT functions
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF TEMPLATE_BI = UNDEFINED THEN
-    $LET TEMPLATE_BI = TRUE
+$IF STDIO_BI = UNDEFINED THEN
+    $LET STDIO_BI = TRUE
 
     '$INCLUDE:'Common.bi'
 
-    ' CONSTANTS
+    DECLARE LIBRARY
+        FUNCTION getchar&
+        SUB putchar (BYVAL ch AS LONG)
+    END DECLARE
 
-    ' UDTS
-
-    ' EXTERNAL LIBRARY
-
-    ' GLOBALS
-    
 $END IF

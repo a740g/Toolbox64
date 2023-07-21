@@ -1,19 +1,15 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' [TITLE]
+' Time related routines
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF TEMPLATE_BI = UNDEFINED THEN
-    $LET TEMPLATE_BI = TRUE
+$IF TIMEOPS_BI = UNDEFINED THEN
+    $LET TIMEOPS_BI = TRUE
 
     '$INCLUDE:'Common.bi'
 
-    ' CONSTANTS
+    DECLARE LIBRARY
+        FUNCTION GetTicks~&&
+    END DECLARE
 
-    ' UDTS
-
-    ' EXTERNAL LIBRARY
-
-    ' GLOBALS
-    
 $END IF

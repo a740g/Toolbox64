@@ -8,6 +8,7 @@
 #include "Common.h"
 #include <cstring>
 #include <cctype>
+#include <cstdio>
 
 static char formatBuffer[4096]; // 4k static buffer
 

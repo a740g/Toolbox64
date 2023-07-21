@@ -12,15 +12,10 @@
 
 $IF IMGUI_BI = UNDEFINED THEN
     $LET IMGUI_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'CRTLib.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'TimeOps.bi'
+
+
     ' These are flags that can be used by the text box widget
     CONST TEXT_BOX_ALPHA = 1 ' alphabetic input allowed
     CONST TEXT_BOX_NUMERIC = 2 ' numeric input allowed
@@ -39,11 +34,8 @@ $IF IMGUI_BI = UNDEFINED THEN
     CONST WIDGET_CLASS_COUNT = 2 ' this is the total number of widgets
 
     CONST WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' USER DEFINED TYPES
-    '-------------------------------------------------------------------------------------------------------------------
+
     TYPE RectangleType ' a 2D rectangle
         a AS Vector2LType
         b AS Vector2LType
@@ -95,14 +87,10 @@ $IF IMGUI_BI = UNDEFINED THEN
         cmd AS PushButtonType
         txt AS TextBoxType
     END TYPE
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' SHARED VARIABLES
-    '-------------------------------------------------------------------------------------------------------------------
+
     DIM InputManager AS InputManagerType 'input manager global variable. Use this to check for input
     DIM WidgetManager AS WidgetManagerType ' widget manager global variable. This contains top level widget state
     REDIM Widget(NULL TO NULL) AS WidgetType ' this is the widget array and contains info for all widgets used by the program
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

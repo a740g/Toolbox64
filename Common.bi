@@ -6,11 +6,9 @@
 $IF COMMON_BI = UNDEFINED THEN
     $LET COMMON_BI = TRUE
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' METACOMMANDS
-    '-------------------------------------------------------------------------------------------------------------------
+    ' Check QB64-PE compiler version and complain if it does not meet minimum version requirement
     $IF VERSION < 3.8 THEN
-            $Error This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest
+            $ERROR This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest
     $END IF
 
     ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64
@@ -27,11 +25,7 @@ $IF COMMON_BI = UNDEFINED THEN
 
     ' Start array lower bound from 1. If 0 is required, then it should be explicitly specified as (0 To X)
     OPTION BASE 1
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
     ' Some common and useful constants
     CONST FALSE = 0, TRUE = NOT FALSE
     CONST NULL = 0
@@ -167,11 +161,7 @@ $IF COMMON_BI = UNDEFINED THEN
     CONST ERROR_OUT_OF_MEMORY = 257
     CONST ERROR_INVALID_HANDLE = 258
     CONST ERROR_MEMORY_REGION_OUT_OF_RANGE = 300
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' USER DEFINED TYPES
-    '-------------------------------------------------------------------------------------------------------------------
     ' Some of the type below do not have a "home" yet and should be moved to appropriate files later
 
     ' A simple integer 2D vector
@@ -199,6 +189,11 @@ $IF COMMON_BI = UNDEFINED THEN
         y AS SINGLE
         z AS SINGLE
     END TYPE
-    '-------------------------------------------------------------------------------------------------------------------
+
+    ' QB <> C BOOL interop
+    DECLARE LIBRARY "Common"
+        FUNCTION ToQBBool%% (BYVAL x AS LONG)
+        FUNCTION ToCBool%% (BYVAL x AS LONG)
+    END DECLARE
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

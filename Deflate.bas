@@ -52,7 +52,7 @@ $IF DEFLATE_BAS = UNDEFINED THEN
             ' Free outputPtr
             FreeMemory outputPtr
 
-            DeflatePro$ = outputBuffer
+            DeflatePro = outputBuffer
         END IF
     END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------

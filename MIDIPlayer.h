@@ -21,6 +21,7 @@
 #include "MIDISoundFont.h"
 #undef STB_VORBIS_HEADER_ONLY
 #include "Common.h"
+#include "Debug.h"
 #include "external/ymfm/ymfm_adpcm.cpp"
 #include "external/ymfm/ymfm_pcm.cpp"
 #include "external/ymfm/ymfm_opl.cpp"

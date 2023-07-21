@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------------------------------------
-// QB64-PE low level support functions
+// Bitwise operation routines
 // Copyright (c) 2023 Samuel Gomes
 //
 // Some of these came from my old game library and some from:
@@ -15,51 +15,7 @@
 #pragma once
 
 #include "Common.h"
-#include <cstdlib>
 #include <climits>
-
-/// @brief Returns QB style bool
-/// @param x Any number
-/// @return 0 when x is 0 and -1 when x is non-zero
-inline qb_bool ToQBBool(int32_t x)
-{
-    return TO_QB_BOOL(x);
-}
-
-/// @brief Returns C style bool
-/// @param x Any number
-/// @return 0 when x is 0 and 1 when x is non-zero
-inline bool ToCBool(int32_t x)
-{
-    return TO_C_BOOL(x);
-}
-
-/// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
-/// @param n Any number
-/// @return Next (ceiling) power of 2 for x
-inline uint32_t RoundUpToPowerOf2(uint32_t n)
-{
-    --n;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    return ++n;
-}
-
-/// @brief Returns the previous (floor) power of 2 for x. E.g. n = 600 then returns 512
-/// @param n Any number
-/// @return Previous (floor) power of 2 for x
-inline uint32_t RoundDownToPowerOf2(uint32_t n)
-{
-    n |= (n >> 1);
-    n |= (n >> 2);
-    n |= (n >> 4);
-    n |= (n >> 8);
-    n |= (n >> 16);
-    return n - (n >> 1);
-}
 
 /// @brief Returns the number using which we need to shift 1 left to get n. E.g. n = 2 then returns 1
 /// @param n A power of 2 number
@@ -113,132 +69,6 @@ inline uint64_t ReverseBitsInteger64(uint64_t x)
     x = ((x & 0xff00ff00ff00ff00) >> 8) | ((x & 0x00ff00ff00ff00ff) << 8);
     x = ((x & 0xffff0000ffff0000) >> 16) | ((x & 0x0000ffff0000ffff) << 16);
     return (x >> 32) | (x << 32);
-}
-
-/// @brief Returns a random number between lo and hi (inclusive). Use srand() to seed RNG
-/// @param lo The lower limit
-/// @param hi The upper limit
-/// @return A number between lo and hi
-inline int32_t GetRandomValue(int32_t lo, int32_t hi)
-{
-    return GET_RANDOM_VALUE(lo, hi);
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline int32_t ClampLong(int32_t n, int32_t lo, int32_t hi)
-{
-    return CLAMP(n, lo, hi);
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline int64_t ClampInteger64(int64_t n, int64_t lo, int64_t hi)
-{
-    return CLAMP(n, lo, hi);
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline float ClampSingle(float n, float lo, float hi)
-{
-    return CLAMP(n, lo, hi);
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline double ClampDouble(double n, double lo, double hi)
-{
-    return CLAMP(n, lo, hi);
-}
-
-/// @brief Get the digit from position p in integer n
-/// @param n A number
-/// @param p The position (where 1 is unit, 2 is tens and so on)
-/// @return The digit at position p
-inline int32_t GetDigitFromLong(uint32_t n, uint32_t p)
-{
-    switch (p)
-    {
-    case 0:
-        break;
-    case 1:
-        n /= 10;
-        break;
-    case 2:
-        n /= 100;
-        break;
-    case 3:
-        n /= 1000;
-        break;
-    case 4:
-        n /= 10000;
-        break;
-    case 5:
-        n /= 100000;
-        break;
-    case 6:
-        n /= 1000000;
-        break;
-    case 7:
-        n /= 10000000;
-        break;
-    case 8:
-        n /= 100000000;
-        break;
-    case 9:
-        n /= 1000000000;
-        break;
-    }
-
-    return n % 10;
-}
-
-/// @brief Get the digit from position p in integer n
-/// @param n A number
-/// @param p The position (where 1 is unit, 2 is tens and so on)
-/// @return The digit at position p
-inline int32_t GetDigitFromInteger64(uint64_t n, uint32_t p)
-{
-    return (n / (uint64_t)__builtin_powi(10, p)) % 10;
-}
-
-/// @brief Calculates the average of x and y without overflowing
-/// @param x A number
-/// @param y A number
-/// @return Average of x & y
-inline int32_t AverageLong(int32_t x, int32_t y)
-{
-    return (x & y) + ((x ^ y) / 2);
-}
-
-/// @brief Calculates the average of x and y without overflowing
-/// @param x A number
-/// @param y A number
-/// @return Average of x & y
-inline int64_t AverageInteger64(int64_t x, int64_t y)
-{
-    return (x & y) + ((x ^ y) / 2);
-}
-
-/// @brief Check if n is a power of 2
-/// @param n A number
-/// @return True if n is a power of 2
-inline int32_t IsPowerOfTwo(uint32_t n)
-{
-    return n && !(n & (n - 1)) ? -1 : 0;
 }
 
 /// @brief Finds the position of LSb set in a number
@@ -438,40 +268,4 @@ inline uint32_t HiLong(uint64_t x)
 inline uint32_t LoLong(uint64_t x)
 {
     return (uint32_t)(x);
-}
-
-/// @brief Return the max of a or b
-/// @param a A number
-/// @param b A number
-/// @return Max value
-inline int32_t MaxLong(int32_t a, int32_t b)
-{
-    return a > b ? a : b;
-}
-
-/// @brief Return the max of a or b
-/// @param a A number
-/// @param b A number
-/// @return Max value
-inline int64_t MaxInteger64(int64_t a, int64_t b)
-{
-    return a > b ? a : b;
-}
-
-/// @brief Return the min of a or b
-/// @param a A number
-/// @param b A number
-/// @return Min value
-inline int32_t MinLong(int32_t a, int32_t b)
-{
-    return a < b ? a : b;
-}
-
-/// @brief Return the min of a or b
-/// @param a A number
-/// @param b A number
-/// @return Min value
-inline int64_t MinInteger64(int64_t a, int64_t b)
-{
-    return a < b ? a : b;
 }

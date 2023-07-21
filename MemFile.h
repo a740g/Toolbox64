@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include "Common.h"
+#include "Debug.h"
 
 #ifdef MEMFILE_HEADER_ONLY
 

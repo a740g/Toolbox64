@@ -2,7 +2,7 @@
 // MIDI Player library using Win32 WinMM MIDI streaming API
 // Copyright (c) 2023 Samuel Gomes
 //
-// This uses a heavily modiified version of the Win32 native MIDI codec from SDL_mixer
+// This is a heavily modiified version of the Win32 native MIDI codec from SDL_mixer
 // https://github.com/libsdl-org/SDL_mixer/tree/main/src/codecs/native_midi
 //
 // native_midi: Hardware Midi support for the SDL_mixer library

@@ -8,31 +8,12 @@ $IF GFXEX_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' HEADER FILES
     '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'CRTLib.bi'
+    '$INCLUDE:'Common.bi'
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
-    ' Calculates and returns the FPS when repeatedly called inside a loop
-    FUNCTION GetFPS~&
-        STATIC AS _UNSIGNED LONG counter, finalFPS
-        STATIC lastTime AS _UNSIGNED _INTEGER64
-
-        DIM currentTime AS _UNSIGNED _INTEGER64: currentTime = GetTicks
-
-        IF currentTime > lastTime + 1000 THEN
-            lastTime = currentTime
-            finalFPS = counter
-            counter = 0
-        END IF
-
-        counter = counter + 1
-
-        GetFPS = finalFPS
-    END FUNCTION
-
-
     ' Draws a filled circle
     ' cx, cy - circle center x, y
     ' r - circle radius

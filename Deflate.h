@@ -2,7 +2,7 @@
 // Compression library for QB64-PE based on Google Zopfli
 // Copyright (c) 2023 Samuel Gomes
 //
-// This used a heavily modified and amalgamated version of the Google Zopfli library
+// This is a heavily modified and amalgamated version of the Google Zopfli library
 // Only the zlib and deflate capabilities are kept (so that QB64-PE's _INFLATE can be used to decompress the data)
 // https://github.com/google/zopfli
 //
@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <cstdio>
 
 /* Minimum and maximum length that can be encoded in deflate. */
 #define ZOPFLI_MAX_MATCH 258
