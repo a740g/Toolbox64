@@ -17,7 +17,7 @@ $IF CRTLIB_BI = UNDEFINED THEN
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
     ' This only includes CRT library functions that makes sense in QB64
-    DECLARE LIBRARY
+    DECLARE CUSTOMTYPE LIBRARY
         FUNCTION isalnum& (BYVAL ch AS LONG)
         FUNCTION isalpha& (BYVAL ch AS LONG)
         FUNCTION islower& (BYVAL ch AS LONG)
@@ -54,6 +54,10 @@ $IF CRTLIB_BI = UNDEFINED THEN
         FUNCTION MinSingle! ALIAS fminf (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
         FUNCTION MaxDouble# ALIAS fmax (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
         FUNCTION MinDouble# ALIAS fmin (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+        FUNCTION MemAlloc~%& ALIAS malloc (BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION MemCAlloc~%& ALIAS calloc (BYVAL num AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION MemRealloc~%& ALIAS realloc (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
+        SUB MemFree ALIAS free (BYVAL ptr AS _UNSIGNED _OFFSET)
     END DECLARE
 
     DECLARE LIBRARY "CRTLib"

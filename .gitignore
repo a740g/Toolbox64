@@ -9,6 +9,8 @@
 *.dll
 *.so
 *.dylib
-# Ignore vscode stuff
+# Ignore Visual Studio Code stuff
 .vscode
 .fake
+# Ignore Visual Studio stuff
+.vs
