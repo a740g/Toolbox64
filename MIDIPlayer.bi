@@ -37,8 +37,8 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
     ' QB64 specific stuff
     TYPE __MIDI_PlayerType
         isPaused AS _BYTE ' set to true if tune is paused
-        soundBuffer AS _MEM ' this is the buffer that holds the rendered samples from the library
         soundBufferFrames AS _UNSIGNED LONG ' size of the render buffer in frames
+        soundBufferSamples AS _UNSIGNED LONG ' size of the rendered buffer in samples
         soundBufferBytes AS _UNSIGNED LONG ' size of the render buffer in bytes
         soundHandle AS LONG ' the sound pipe that we wll use to play the rendered samples
     END TYPE
@@ -67,14 +67,15 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION MIDI_GetCurrentTime#
         FUNCTION MIDI_GetActiveVoices~&
         FUNCTION MIDI_IsFMSynthesis%%
-        SUB __MIDI_Render (BYVAL buffer AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED LONG)
+        SUB __MIDI_Render (buffer AS SINGLE, BYVAL size AS _UNSIGNED LONG)
     END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' GLOBAL VARIABLES
     '-------------------------------------------------------------------------------------------------------------------
-    DIM __MIDI_Player AS __MIDI_PlayerType
+    DIM __MIDI_Player AS __MIDI_PlayerType ' this is used to track the library state as such
+    REDIM __MIDI_SoundBuffer(0 TO 0) AS SINGLE ' this is the buffer that holds the rendered samples from the library
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

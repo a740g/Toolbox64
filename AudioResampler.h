@@ -62,13 +62,13 @@ uint64_t AudioResampleAndConvertSingle(const int16_t *input, float *output, uint
 /// @return The number of samples frames written to the output
 uint64_t AudioResampleSingle(const float *input, float *output, int inSampleRate, int outSampleRate, uint64_t inputSize, uint32_t channels)
 {
-    if (input == NULL)
+    if (!input)
         return 0;
 
     auto outputSize = (uint64_t)(inputSize * (double)outSampleRate / (double)inSampleRate);
     outputSize -= outputSize % channels;
 
-    if (output == NULL)
+    if (!output)
         return outputSize;
 
     auto stepDist = ((double)inSampleRate / (double)outSampleRate);
@@ -101,13 +101,13 @@ uint64_t AudioResampleSingle(const float *input, float *output, int inSampleRate
 /// @return The number of samples frames written to the output
 uint64_t AudioResampleInteger(const int16_t *input, int16_t *output, int inSampleRate, int outSampleRate, uint64_t inputSize, uint32_t channels)
 {
-    if (input == NULL)
+    if (!input)
         return 0;
 
     auto outputSize = (uint64_t)(inputSize * (double)outSampleRate / (double)inSampleRate);
     outputSize -= outputSize % channels;
 
-    if (output == NULL)
+    if (!output)
         return outputSize;
 
     auto stepDist = ((double)inSampleRate / (double)outSampleRate);

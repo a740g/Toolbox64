@@ -16,9 +16,9 @@ $IF ANALYZERFFT_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
-    DECLARE CUSTOMTYPE LIBRARY "AnalyzerFFT"
-        SUB AnalyzerFFTInteger (BYVAL ana AS _UNSIGNED _OFFSET, BYVAL samp AS _UNSIGNED _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
-        SUB AnalyzerFFTSingle (BYVAL ana AS _UNSIGNED _OFFSET, BYVAL samp AS _UNSIGNED _OFFSET, BYVAL inc AS LONG, BYVAL bits AS LONG)
+    DECLARE LIBRARY "AnalyzerFFT"
+        SUB AnalyzerFFTInteger (ana AS _UNSIGNED INTEGER, samp AS INTEGER, BYVAL inc AS LONG, BYVAL bits AS LONG)
+        SUB AnalyzerFFTSingle (ana AS _UNSIGNED INTEGER, samp AS SINGLE, BYVAL inc AS LONG, BYVAL bits AS LONG)
     END DECLARE
     '-------------------------------------------------------------------------------------------------------------------
 $END IF

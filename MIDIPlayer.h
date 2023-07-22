@@ -385,7 +385,7 @@ static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
 /// @brief The calls the correct render function based on which renderer was chosen
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-void __MIDI_Render(uintptr_t buffer, uint32_t bufferSize)
+void __MIDI_Render(float *buffer, uint32_t bufferSize)
 {
     if (isOPL3Active)
         __MIDI_RenderOPL(reinterpret_cast<uint8_t *>(buffer), bufferSize);
