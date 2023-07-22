@@ -16,19 +16,19 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    '$ASSERTS
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
-    '    SampleMixer_SetHighQuality TRUE
-    '    MODPlayer_Play
-    '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
-    '        MODPlayer_Update
-    '        LOCATE 1, 1
-    '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
-    '        _LIMIT 60
-    '    LOOP
-    '    MODPlayer_Stop
-    'END IF
-    'END
+    $ASSERTS
+    IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
+        SampleMixer_SetHighQuality TRUE
+        MODPlayer_Play
+        DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
+            MODPlayer_Update
+            LOCATE 1, 1
+            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
+            _LIMIT 60
+        LOOP
+        MODPlayer_Stop
+    END IF
+    END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             _ASSERT result
 
             ' Adjust and save the values per out mixer requirements
-            IF byte1 < 16 AND i < __Song.channels THEN SampleMixer_SetVoicePanning i, (byte1 / 15.0!) * 2.0! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+            IF byte1 < 16 AND i < __Song.channels THEN SampleMixer_SetVoicePanning i, (byte1 / 15) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
         NEXT
 
         ' Resize the sample array
@@ -582,14 +582,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         IF __Song.channels > 1 AND __Song.channels < 4 THEN
             ' Just setup channels 0 and 1
             ' If we have a 3rd channel it will be handle by the SoftSynth
-            SampleMixer_SetVoicePanning 0, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4.0! ' -1.0 + 1.0 / 4.0
-            SampleMixer_SetVoicePanning 1, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4.0! ' 1.0 - 1.0 / 4.0
+            SampleMixer_SetVoicePanning 0, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4 ' -1.0 + 1.0 / 4.0
+            SampleMixer_SetVoicePanning 1, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4 ' 1.0 - 1.0 / 4.0
         ELSE
             FOR i = 0 TO __Song.channels - 1 - (__Song.channels MOD 4) STEP 4
-                SampleMixer_SetVoicePanning i + 0, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4.0!
-                SampleMixer_SetVoicePanning i + 1, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4.0!
-                SampleMixer_SetVoicePanning i + 2, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4.0!
-                SampleMixer_SetVoicePanning i + 3, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4.0!
+                SampleMixer_SetVoicePanning i + 0, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4
+                SampleMixer_SetVoicePanning i + 1, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4
+                SampleMixer_SetVoicePanning i + 2, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4
+                SampleMixer_SetVoicePanning i + 3, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4
             NEXT
         END IF
 
@@ -791,7 +791,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &H8 ' 8: Set Panning Position
                     ' Don't care about DMP panning BS. We are doing this Fasttracker style
-                    SampleMixer_SetVoicePanning nChannel, (nOperand / 255.0!) * 2.0! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = ((x / 255) * 2) - 1
+                    SampleMixer_SetVoicePanning nChannel, (nOperand / 255) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = ((x / 255) * 2) - 1
 
                 CASE &H9 ' 9: Set Sample Offset
                     IF nOperand > 0 THEN __Channel(nChannel).startPosition = _SHL(nOperand, 8)
@@ -854,7 +854,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                         CASE &H8 ' 8: 16 position panning
                             IF nOpY > 15 THEN nOpY = 15
-                            SampleMixer_SetVoicePanning nChannel, (nOpY / 15.0!) * 2.0! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+                            SampleMixer_SetVoicePanning nChannel, (nOpY / 15) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
 
                         CASE &HA ' 10: Fine Volume Slide Up
                             __Channel(nChannel).volume = __Channel(nChannel).volume + nOpY
@@ -1199,7 +1199,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This gives us the frequency in khz based on the period
     FUNCTION __GetFrequencyFromPeriod! (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056.0! / period
+        __GetFrequencyFromPeriod = 14317056 / period
         $CHECKING:ON
     END FUNCTION
 

@@ -58,12 +58,12 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         FOR i = 0 TO nVoices - 1
             __Voice(i).sample = -1
             __Voice(i).volume = SOFTSYNTH_VOICE_VOLUME_MAX
-            __Voice(i).panning = 0.0! ' center
-            __Voice(i).pitch = 0.0!
-            __Voice(i).position = 0.0!
+            __Voice(i).panning = 0 ' center
+            __Voice(i).pitch = 0
+            __Voice(i).position = 0
             __Voice(i).playType = SOFTSYNTH_VOICE_PLAY_SINGLE
-            __Voice(i).startPosition = 0.0!
-            __Voice(i).endPosition = 0.0!
+            __Voice(i).startPosition = 0
+            __Voice(i).endPosition = 0
         NEXT
     END SUB
 
@@ -160,20 +160,18 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                     END IF
 
                     ' We don't want anything below 0
-                    IF fPos < 0.0! THEN fPos = 0.0!
+                    IF fPos < 0 THEN fPos = 0
 
                     ' Fetch the sample frame that we need (optionally applying interpolation)
-                    IF __SoftSynth.useHQMixer AND fPos + 2 <= sLen THEN
+                    IF __SoftSynth.useHQMixer AND fPos + 1 < sLen THEN
                         ' Apply interpolation
                         nPos = FIX(fPos)
                         fSamp = PeekStringSingle(__SampleData(nSample), nPos)
                         fSamp = fSamp + (PeekStringSingle(__SampleData(nSample), 1 + nPos) - fSamp) * (fPos - nPos)
+                    ELSEIF fPos < sLen THEN
+                        fSamp = PeekStringSingle(__SampleData(nSample), fPos)
                     ELSE
-                        IF fPos + 1 <= sLen THEN
-                            fSamp = PeekStringSingle(__SampleData(nSample), fPos)
-                        ELSE
-                            fSamp = 0.0!
-                        END IF
+                        fSamp = 0
                     END IF
 
                     ' The following two lines mixes the sample and also does volume & stereo panning
@@ -215,17 +213,17 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SELECT CASE nSampleFrameSize
             CASE SIZE_OF_BYTE ' 8-bit
                 FOR i = 0 TO sampleFrames - 1
-                    PokeStringSingle __SampleData(nSample), i, PeekStringByte(sData, i) / 128.0!
+                    PokeStringSingle __SampleData(nSample), i, PeekStringByte(sData, i) / 128
                 NEXT
 
             CASE SIZE_OF_INTEGER ' 16-bit
                 FOR i = 0 TO sampleFrames - 1
-                    PokeStringSingle __SampleData(nSample), i, PeekStringInteger(sData, i) / 32768.0!
+                    PokeStringSingle __SampleData(nSample), i, PeekStringInteger(sData, i) / 32768
                 NEXT
 
             CASE SIZE_OF_SINGLE ' 32-bit
                 FOR i = 0 TO sampleFrames - 1
-                    PokeStringSingle __SampleData(nSample), i, ClampSingle(PeekStringSingle(sData, i), -1.0!, 1.0!)
+                    PokeStringSingle __SampleData(nSample), i, ClampSingle(PeekStringSingle(sData, i), -1, 1)
                 NEXT
 
             CASE ELSE ' nothing else is supported
@@ -247,7 +245,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        SampleManager_PeekByte = PeekStringSingle(__SampleData(nSample), nPosition) * 128.0!
+        SampleManager_PeekByte = PeekStringSingle(__SampleData(nSample), nPosition) * 128
         $CHECKING:ON
     END FUNCTION
 
@@ -257,7 +255,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(nSample), nPosition, nValue / 128.0!
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 128
         $CHECKING:ON
     END SUB
 
@@ -267,7 +265,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        SampleManager_PeekInteger = PeekStringSingle(__SampleData(nSample), nPosition) * 32768.0!
+        SampleManager_PeekInteger = PeekStringSingle(__SampleData(nSample), nPosition) * 32768
         $CHECKING:ON
     END FUNCTION
 
@@ -277,7 +275,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32768.0!
+        PokeStringSingle __SampleData(nSample), nPosition, nValue / 32768
         $CHECKING:ON
     END SUB
 
@@ -307,7 +305,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
 
-        __Voice(nVoice).volume = ClampSingle(nVolume, 0.0!, SOFTSYNTH_VOICE_VOLUME_MAX)
+        __Voice(nVoice).volume = ClampSingle(nVolume, 0, SOFTSYNTH_VOICE_VOLUME_MAX)
         $CHECKING:ON
     END SUB
 
@@ -362,11 +360,11 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __Voice(nVoice).sample = -1
         __Voice(nVoice).volume = SOFTSYNTH_VOICE_VOLUME_MAX
         ' __Voice(nVoice).panning is intentionally left out to respect the pan positions set initially by the loader
-        __Voice(nVoice).pitch = 0.0!
-        __Voice(nVoice).position = 0.0!
+        __Voice(nVoice).pitch = 0
+        __Voice(nVoice).position = 0
         __Voice(nVoice).playType = SOFTSYNTH_VOICE_PLAY_SINGLE
-        __Voice(nVoice).startPosition = 0.0!
-        __Voice(nVoice).endPosition = 0.0!
+        __Voice(nVoice).startPosition = 0
+        __Voice(nVoice).endPosition = 0
         $CHECKING:ON
     END SUB
 
@@ -391,7 +389,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     SUB SampleMixer_SetGlobalVolume (nVolume AS SINGLE)
         SHARED __SoftSynth AS __SoftSynthType
 
-        __SoftSynth.volume = ClampSingle(nVolume, 0.0!, SOFTSYNTH_GLOBAL_VOLUME_MAX)
+        __SoftSynth.volume = ClampSingle(nVolume, 0, SOFTSYNTH_GLOBAL_VOLUME_MAX)
     END SUB
 
 

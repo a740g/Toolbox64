@@ -17,11 +17,11 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     CONST SOFTSYNTH_VOICE_PLAY_SINGLE = 0 ' single-shot playback
     CONST SOFTSYNTH_VOICE_PLAY_LOOP = 1 ' forward-looping playback
-    CONST SOFTSYNTH_VOICE_VOLUME_MAX = 1.0! ' this is the maximum volume of any sample
-    CONST SOFTSYNTH_VOICE_PAN_LEFT = -1.0! ' leftmost pannning position
-    CONST SOFTSYNTH_VOICE_PAN_RIGHT = 1.0! ' rightmost pannning position
-    CONST SOFTSYNTH_GLOBAL_VOLUME_MAX = 1.0! ' max global volume
-    CONST SOFTSYNTH_BUFFER_TIME = 0.2# ' we will check that we have this amount of time left in the playback buffer
+    CONST SOFTSYNTH_VOICE_VOLUME_MAX = 1 ' this is the maximum volume of any sample
+    CONST SOFTSYNTH_VOICE_PAN_LEFT = -1 ' leftmost pannning position
+    CONST SOFTSYNTH_VOICE_PAN_RIGHT = 1 ' rightmost pannning position
+    CONST SOFTSYNTH_GLOBAL_VOLUME_MAX = 1 ' max global volume
+    CONST SOFTSYNTH_BUFFER_TIME = 0.2 ' we will check that we have this amount of time left in the playback buffer
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
