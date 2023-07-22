@@ -52,18 +52,24 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         ' Reset the global volume
         __SoftSynth.volume = SOFTSYNTH_GLOBAL_VOLUME_MAX
 
+        ' Set the default ramp frames
+        __SoftSynth.rampFrames = __SoftSynth.mixerRate * SOFTSYNTH_DEFAULT_VOLUME_RAMP_DURATION
+
         DIM i AS _UNSIGNED _BYTE
 
         ' Set all voice defaults
         FOR i = 0 TO nVoices - 1
             __Voice(i).sample = -1
             __Voice(i).volume = SOFTSYNTH_VOICE_VOLUME_MAX
+            __Voice(i).rampedVolume = 0
             __Voice(i).panning = 0 ' center
             __Voice(i).pitch = 0
             __Voice(i).position = 0
             __Voice(i).playType = SOFTSYNTH_VOICE_PLAY_SINGLE
             __Voice(i).startPosition = 0
             __Voice(i).endPosition = 0
+            __Voice(i).rampFrame = 0
+            __Voice(i).rampStep = __Voice(i).volume / __SoftSynth.rampFrames
         NEXT
     END SUB
 
@@ -172,6 +178,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                         fSamp = PeekStringSingle(__SampleData(nSample), fPos)
                     ELSE
                         fSamp = 0
+                    END IF
+
+                    ' Do volume ramping
+                    IF __Voice(v).rampFrame < __SoftSynth.rampFrames THEN
+                        __Voice(v).rampedVolume = __Voice(v).rampedVolume + __Voice(v).rampStep
+                        __Voice(v).rampFrame = __Voice(v).rampFrame + 1 ' increment the ramp frame count
+                        fVolume = __Voice(v).rampedVolume
                     END IF
 
                     ' The following two lines mixes the sample and also does volume & stereo panning
@@ -355,16 +368,20 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Stops playback for a voice
     SUB SampleMixer_StopVoice (nVoice AS _UNSIGNED _BYTE)
         $CHECKING:OFF
+        SHARED __SoftSynth AS __SoftSynthType
         SHARED __Voice() AS __VoiceType
 
         __Voice(nVoice).sample = -1
         __Voice(nVoice).volume = SOFTSYNTH_VOICE_VOLUME_MAX
+        __Voice(nVoice).rampedVolume = 0
         ' __Voice(nVoice).panning is intentionally left out to respect the pan positions set initially by the loader
         __Voice(nVoice).pitch = 0
         __Voice(nVoice).position = 0
         __Voice(nVoice).playType = SOFTSYNTH_VOICE_PLAY_SINGLE
         __Voice(nVoice).startPosition = 0
         __Voice(nVoice).endPosition = 0
+        __Voice(nVoice).rampFrame = 0
+        __Voice(nVoice).rampStep = __Voice(nVoice).volume / __SoftSynth.rampFrames
         $CHECKING:ON
     END SUB
 
@@ -374,6 +391,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' All sample position and length values are in sample frames (not bytes)
     SUB SampleMixer_PlayVoice (nVoice AS _UNSIGNED _BYTE, nSample AS _UNSIGNED _BYTE, nPosition AS SINGLE, nPlayType AS _UNSIGNED _BYTE, nStart AS SINGLE, nEnd AS SINGLE)
         $CHECKING:OFF
+        SHARED __SoftSynth AS __SoftSynthType
         SHARED __Voice() AS __VoiceType
 
         __Voice(nVoice).sample = nSample
@@ -381,6 +399,9 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __Voice(nVoice).playType = nPlayType
         __Voice(nVoice).startPosition = nStart
         __Voice(nVoice).endPosition = nEnd
+        __Voice(nVoice).rampedVolume = 0
+        __Voice(nVoice).rampFrame = 0
+        __Voice(nVoice).rampStep = __Voice(nVoice).volume / __SoftSynth.rampFrames
         $CHECKING:ON
     END SUB
 

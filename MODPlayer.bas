@@ -16,19 +16,19 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    $ASSERTS
-    IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
-        SampleMixer_SetHighQuality TRUE
-        MODPlayer_Play
-        DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
-            MODPlayer_Update
-            LOCATE 1, 1
-            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
-            _LIMIT 60
-        LOOP
-        MODPlayer_Stop
-    END IF
-    END
+    '$ASSERTS
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
+    '    SampleMixer_SetHighQuality TRUE
+    '    MODPlayer_Play
+    '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
+    '        MODPlayer_Update
+    '        LOCATE 1, 1
+    '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
+    '        _LIMIT 60
+    '    LOOP
+    '    MODPlayer_Stop
+    'END IF
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
