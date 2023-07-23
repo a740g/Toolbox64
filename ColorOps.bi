@@ -308,7 +308,7 @@ $IF COLOROPS_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' EXTERNAL LIBRARIES
     '-------------------------------------------------------------------------------------------------------------------
-    DECLARE LIBRARY "Colors"
+    DECLARE LIBRARY "ColorOps"
         FUNCTION ToBGRA~& (BYVAL r AS _UNSIGNED _BYTE, BYVAL g AS _UNSIGNED _BYTE, BYVAL b AS _UNSIGNED _BYTE, BYVAL a AS _UNSIGNED _BYTE)
         FUNCTION ToRGBA~& (BYVAL r AS _UNSIGNED _BYTE, BYVAL g AS _UNSIGNED _BYTE, BYVAL b AS _UNSIGNED _BYTE, BYVAL a AS _UNSIGNED _BYTE)
         FUNCTION GetRedFromRGBA~%% (BYVAL rgba AS _UNSIGNED LONG)
