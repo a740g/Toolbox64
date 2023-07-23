@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include "Common.h"
 
 /// @brief Resamples and converts 16-bit audio samples to 32-bit. Set output to NULL to get the output buffer size in samples frames
 /// @param input The input 16-bit integer sample frame buffer

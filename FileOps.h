@@ -13,40 +13,48 @@
 
 static DIR *pDir = nullptr;
 
+int64_t __GetFileSize(const char *file_path)
+{
+    struct stat64 st;
+
+    if (stat64(file_path, &st) == 0)
+        return st.st_size;
+
+    return -1; // -1 to indicate file not found
+}
+
 qb_bool __OpenDirectory(const char *path)
 {
-  pDir = opendir(path);
-  if (!pDir)
-    return QB_FALSE;
+    pDir = opendir(path);
+    if (!pDir)
+        return QB_FALSE;
 
-  return QB_TRUE;
+    return QB_TRUE;
 }
 
 const char *GetDirectoryEntry(qb_bool *isDir, size_t *fileSize)
 {
-  static char dirName[4096]; // 4k static buffer
+    commonTemporaryBuffer[0] = 0; // set to empty string
 
-  dirName[0] = 0; // set to empty string
+    auto next_entry = readdir(pDir);
 
-  auto next_entry = readdir(pDir);
+    if (!next_entry)
+        return commonTemporaryBuffer; // return an empty string to indicate we have nothing
 
-  if (!next_entry)
-    return dirName; // return an empty string to indicate we have nothing
+    struct stat entry_info;
+    stat(next_entry->d_name, &entry_info);
 
-  struct stat entry_info;
-  stat(next_entry->d_name, &entry_info);
+    *isDir = S_ISDIR(entry_info.st_mode) ? QB_TRUE : QB_FALSE;
+    *fileSize = entry_info.st_size;
 
-  *isDir = S_ISDIR(entry_info.st_mode) ? QB_TRUE : QB_FALSE;
-  *fileSize = entry_info.st_size;
+    strncpy(commonTemporaryBuffer, next_entry->d_name, sizeof(commonTemporaryBuffer));
+    commonTemporaryBuffer[sizeof(commonTemporaryBuffer)] = 0; // overflow protection
 
-  strncpy(dirName, next_entry->d_name, sizeof(dirName));
-  dirName[sizeof(dirName)] = 0; // overflow protection
-
-  return dirName; // QB64-PE does the right thing with this
+    return commonTemporaryBuffer; // QB64-PE does the right thing with this
 }
 
 void CloseDirectory()
 {
-  closedir(pDir);
-  pDir = nullptr;
+    closedir(pDir);
+    pDir = nullptr;
 }

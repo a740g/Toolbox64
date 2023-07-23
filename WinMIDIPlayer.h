@@ -24,9 +24,8 @@
 
 #pragma once
 
-#define MEMFILE_HEADER_ONLY
+#include "Common.h"
 #include "MemFile.h"
-#undef MEMFILE_HEADER_ONLY
 #include <windows.h>
 
 /* MIDI Status Bytes */
@@ -334,23 +333,23 @@ static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
 
     /* Make sure this is really a MIDI file */
     MemFile_ReadLong(src, &ID);
-    if (TO_BE_LONG(ID) != MIDI_MAGIC)
+    if (__builtin_bswap32(ID) != MIDI_MAGIC)
         return false;
 
     /* Header size must be 6 */
     MemFile_ReadLong(src, &size);
-    size = TO_BE_LONG(size);
+    size = __builtin_bswap32(size);
     if (size != 6)
         return false;
 
     /* We only support format 0 and 1, but not 2 */
     MemFile_ReadInteger(src, &format);
-    format = TO_BE_SHORT(format);
+    format = __builtin_bswap16(format);
     if (format != 0 && format != 1)
         return false;
 
     MemFile_ReadInteger(src, &tracks);
-    tracks = TO_BE_SHORT(tracks);
+    tracks = __builtin_bswap16(tracks);
     mididata->nTracks = tracks;
 
     /* Allocate tracks */
@@ -362,14 +361,14 @@ static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
 
     /* Retrieve the PPQN value, needed for playback */
     MemFile_ReadInteger(src, &division);
-    mididata->division = TO_BE_SHORT(division);
+    mididata->division = __builtin_bswap16(division);
 
     for (i = 0; i < tracks; i++)
     {
         MemFile_ReadLong(src, &ID); /* We might want to verify this is MTrk... */
-        TOOLBOX64_DEBUG_CHECK(TO_BE_LONG(ID) == 0x4d54726b);
+        TOOLBOX64_DEBUG_CHECK(__builtin_bswap32(ID) == 0x4d54726b);
         MemFile_ReadLong(src, &size);
-        size = TO_BE_LONG(size);
+        size = __builtin_bswap32(size);
         mididata->track[i].len = size;
         mididata->track[i].data = (uint8_t *)malloc(size);
         if (nullptr == mididata->track[i].data)

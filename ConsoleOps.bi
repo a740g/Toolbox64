@@ -3,14 +3,14 @@
 ' Copyright (c) 2023 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF STDIO_BI = UNDEFINED THEN
-    $LET STDIO_BI = TRUE
+$IF CONSOLEOPS_BI = UNDEFINED THEN
+    $LET CONSOLEOPS_BI = TRUE
 
     '$INCLUDE:'Common.bi'
 
     DECLARE LIBRARY
-        FUNCTION getchar&
-        SUB putchar (BYVAL ch AS LONG)
+        FUNCTION GetConsoleCharacter& ALIAS getchar
+        SUB PutConsoleCharacter ALIAS putchar (BYVAL ch AS LONG)
     END DECLARE
 
 $END IF

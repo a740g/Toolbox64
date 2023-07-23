@@ -66,7 +66,7 @@ $IF PROGRAMARGS_BAS = UNDEFINED THEN
     ' FUNCTIONS & SUBROUTINES
     '-------------------------------------------------------------------------------------------------------------------
     ' This works like a really simple version of getopt
-    ' arguments is a string containing a list of valid arguments (e.g. "gensda") where each character is a argument name
+    ' arguments is a string containing a list of valid arguments (e.g. "gensda") where each character is an argument name
     ' argumentIndex is the index where the function should check
     ' Returns the ASCII value of the argument name found at index. 0 if something else was found. -1 if end of list was reached
     FUNCTION GetProgramArgument% (arguments AS STRING, argumentIndex AS LONG)

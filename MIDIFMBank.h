@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "Common.h"
 
 // clang-format off
 static const uint8_t fmbank_wopl[] = {

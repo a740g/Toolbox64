@@ -29,9 +29,9 @@ enum qb_bool : int8_t
 #define IS_EVEN(_x_) (((_x_)&1) == 0)
 #define GET_SIGN(_x_) (((_x_) == 0) ? 0 : (((_x_) > 0) ? 1 : -1))
 #define GET_ABSOLUTE(_x_) (((_x_) > 0) ? (_x_) : -(_x_))
-#define TO_BE_SHORT(_x_) __builtin_bswap16(_x_)
-#define TO_BE_LONG(_x_) __builtin_bswap32(_x_)
-#define TO_BE_LONGLONG(_x_) __builtin_bswap64(_x_)
+
+// Temporary 4k static buffer shared by various modules
+static char commonTemporaryBuffer[4096];
 
 /// @brief Returns QB style bool
 /// @param x Any number

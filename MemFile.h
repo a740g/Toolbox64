@@ -5,36 +5,10 @@
 
 #pragma once
 
-#include <vector>
-#include <algorithm>
 #include "Common.h"
 #include "Debug.h"
-
-#ifdef MEMFILE_HEADER_ONLY
-
-uintptr_t __MemFile_Create(const char *data, size_t size);
-void MemFile_Destroy(uintptr_t p);
-qb_bool MemFile_IsEOF(uintptr_t p);
-size_t MemFile_GetSize(uintptr_t p);
-size_t MemFile_GetPosition(uintptr_t p);
-qb_bool MemFile_Seek(uintptr_t p, size_t position);
-void MemFile_Resize(uintptr_t p, size_t newSize);
-size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size);
-size_t __MemFile_Write(uintptr_t p, uintptr_t data, size_t size);
-qb_bool MemFile_ReadByte(uintptr_t p, uint8_t *byte);
-qb_bool MemFile_WriteByte(uintptr_t p, uint8_t byte);
-qb_bool MemFile_ReadInteger(uintptr_t p, uint16_t *word);
-qb_bool MemFile_WriteInteger(uintptr_t p, uint16_t word);
-qb_bool MemFile_ReadLong(uintptr_t p, uint32_t *dword);
-qb_bool MemFile_WriteLong(uintptr_t p, uint32_t dword);
-qb_bool MemFile_ReadSingle(uintptr_t p, float *fp32);
-qb_bool MemFile_WriteSingle(uintptr_t p, float fp32);
-qb_bool MemFile_ReadInteger64(uintptr_t p, uint64_t *qword);
-qb_bool MemFile_WriteInteger64(uintptr_t p, uint64_t qword);
-qb_bool MemFile_ReadDouble(uintptr_t p, double *fp64);
-qb_bool MemFile_WriteDouble(uintptr_t p, double fp64);
-
-#else
+#include <algorithm>
+#include <vector>
 
 /// @brief A pointer to an object of this struct is returned by MemFile_Create()
 struct MemFile
@@ -321,5 +295,3 @@ qb_bool MemFile_WriteDouble(uintptr_t p, double fp64)
 {
     return __MemFile_Write(p, reinterpret_cast<uintptr_t>(&fp64), sizeof(double)) == sizeof(double) ? QB_TRUE : QB_FALSE;
 }
-
-#endif

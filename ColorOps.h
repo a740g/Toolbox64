@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include "Common.h"
 
 #define TO_BGRA(_r_, _g_, _b_, _a_) (((uint32_t)(_a_) << 24) | ((uint32_t)(_r_) << 16) | ((uint32_t)(_g_) << 8) | (uint32_t)(_b_))
 #define GET_BGRA_A(_bgra_) ((uint8_t)((_bgra_) >> 24))

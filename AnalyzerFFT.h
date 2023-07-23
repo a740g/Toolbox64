@@ -9,10 +9,10 @@
 
 #pragma once
 
+#include "Common.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include "Common.h"
 
 #define FFT_POW 11
 #define FFT_SAMPLES (1 << FFT_POW)
