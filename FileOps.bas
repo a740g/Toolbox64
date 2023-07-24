@@ -22,6 +22,21 @@ $IF FILEOPS_BAS = UNDEFINED THEN
     '    PRINT MID$(buffer, bufPos, INSTR(bufPos, buffer, CHR$(34)) - bufPos)
     'END IF
 
+    'DIM fname AS STRING: fname = "C:\Users\Samuel_Gomes\Downloads\Firmwares\image-2023-05-19-13-17-13-392.png"
+    'PRINT GetFileAttributes(fname); "("; GetFileSize(fname); ")"
+    'PRINT GetFileAttributes(fname) AND FILE_ATTRIBUTE_DIRECTORY
+    'PRINT GetFileAttributes(fname) AND FILE_ATTRIBUTE_READOLY
+    'PRINT GetFileAttributes(fname) AND FILE_ATTRIBUTE_HIDDEN
+    'PRINT GetFileAttributes(fname) AND FILE_ATTRIBUTE_ARCHIVE
+    'PRINT GetFileAttributes(fname) AND FILE_ATTRIBUTE_SYSTEM
+
+    'DIM d AS STRING: d = Dir64$("C:\Users/")
+
+    'DO WHILE d <> EMPTY_STRING
+    '    PRINT d
+    '    d = Dir64$(EMPTY_STRING)
+    'LOOP
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -234,6 +249,24 @@ $IF FILEOPS_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' Returns the size of a file
+    FUNCTION GetFileSize&& (pathName AS STRING)
+        GetFileSize = __GetFileSize(ToCString(pathName))
+    END FUNCTION
+
+
+    ' Returns the attributes of a file / directory
+    FUNCTION GetFileAttributes~& (pathName AS STRING)
+        GetFileAttributes = __GetFileAttributes(ToCString(pathName))
+    END FUNCTION
+
+
+    FUNCTION Dir64$ (fileSpec AS STRING)
+        Dir64$ = __Dir64$(ToCString(fileSpec))
+    END FUNCTION
+
+
+    '$INCLUDE:'PointerOps.bas'
     '$INCLUDE:'TimeOps.bas'
 
 $END IF
