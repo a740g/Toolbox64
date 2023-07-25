@@ -204,8 +204,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         LOOP
 
         ' Feed the samples to the QB64 sound pipe
-        s = 0: i = 0
-        DO WHILE s < nSamples
+        i = 0: s = nSamples * 2
+        DO WHILE i < s
             ' Apply global volume
             __MixerBuffer(i) = __MixerBuffer(i) * __SoftSynth.volume ' left channel
             __MixerBuffer(i + 1) = __MixerBuffer(i + 1) * __SoftSynth.volume ' right channel
@@ -213,7 +213,6 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
             ' Feed the samples to the QB64 sound pipe
             _SNDRAW __MixerBuffer(i), __MixerBuffer(i + 1), __SoftSynth.soundHandle
 
-            s = s + 1
             i = i + 2
         LOOP
         $CHECKING:ON
