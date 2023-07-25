@@ -22,7 +22,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     CONST SOFTSYNTH_VOICE_PAN_RIGHT = 1 ' rightmost pannning position
     CONST SOFTSYNTH_GLOBAL_VOLUME_MAX = 1 ' max global volume
     CONST SOFTSYNTH_BUFFER_TIME = 0.2 ' we will check that we have this amount of time left in the playback buffer
-    CONST SOFTSYNTH_DEFAULT_VOLUME_RAMP_DURATION = 0.005! ' 5 ms
+    CONST SOFTSYNTH_DEFAULT_VOLUME_RAMP_DURATION = 0.005 ' 5 ms
     '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -60,8 +60,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     DIM __SoftSynth AS __SoftSynthType ' holds the softsynth state
     REDIM __SampleData(0 TO 0) AS STRING ' sample data array
     REDIM __Voice(0 TO 0) AS __VoiceType ' voice info array
-    REDIM __MixerBufferL(0 TO 0) AS SINGLE ' left channel mixer buffer
-    REDIM __MixerBufferR(0 TO 0) AS SINGLE ' right channel mixer buffer
+    REDIM __MixerBuffer(0 TO 0) AS SINGLE ' mixer buffer (stereo interleaved)
     '-------------------------------------------------------------------------------------------------------------------
 $END IF
 '-----------------------------------------------------------------------------------------------------------------------

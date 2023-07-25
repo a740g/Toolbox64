@@ -109,18 +109,14 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __SoftSynth AS __SoftSynthType
         SHARED __SampleData() AS STRING
         SHARED __Voice() AS __VoiceType
-        SHARED __MixerBufferL() AS SINGLE
-        SHARED __MixerBufferR() AS SINGLE
+        SHARED __MixerBuffer() AS SINGLE
 
-        DIM AS LONG v, s, nSample, nPos, nPlayType, sLen, samplesMax
+        DIM AS LONG v, s, i, nSample, nPos, nPlayType, sLen
         DIM AS SINGLE fVolume, fPan, fPitch, fPos, fStartPos, fEndPos, fSamp
 
-        samplesMax = nSamples - 1 ' upperbound
-
-        ' Reallocate the mixer buffers that will hold sample data for both channels
+        ' Reallocate the mixer buffer that will hold the mixed sample data for both channels
         ' This is conveniently zeroed by QB64, so that is nice. We don't have to do it
-        REDIM __MixerBufferL(0 TO samplesMax) AS SINGLE
-        REDIM __MixerBufferR(0 TO samplesMax) AS SINGLE
+        REDIM __MixerBuffer(0 TO nSamples * 2 - 1) AS SINGLE ' * 2 for stereo, - 1 since we are zero based
 
         ' Set the active voice count to zero
         __SoftSynth.activeVoices = 0
@@ -128,8 +124,10 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         ' We will iterate through each channel completely rather than jumping from channel to channel
         ' We are doing this because it is easier for the CPU to access adjacent memory rather than something far away
         ' Also because we do not have to fetch stuff from multiple arrays too many times
-        FOR v = 0 TO __SoftSynth.voices - 1
+        v = 0
+        DO WHILE v < __SoftSynth.voices
             nSample = __Voice(v).sample
+
             ' Only proceed if we have a valid sample number (>= 0)
             IF nSample >= 0 THEN
                 ' Increment the active voices
@@ -147,7 +145,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                 __Voice(v).rampStep = __Voice(v).volume / __SoftSynth.rampFrames ' recalculate the rampstep just in case volume has changed
 
                 ' Next we go through the channel sample data and mix it to our mixerBuffer
-                FOR s = 0 TO samplesMax
+                s = 0: i = 0
+                DO WHILE s < nSamples
                     ' We need these too many times
                     ' And this is inside the loop because "position" changes
                     fPos = __Voice(v).position
@@ -157,7 +156,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                         ' For non-looping sample simply stop playing if we reached the end
                         IF fPos >= fEndPos THEN
                             SampleMixer_StopVoice v
-                            EXIT FOR ' exit the for mixing loop as we have no more samples to mix for this channel
+                            EXIT DO ' exit the mixing loop as we have no more samples to mix for this channel
                         END IF
                     ELSE
                         ' Reset loop position if we reached the end of the loop
@@ -188,25 +187,35 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                         fVolume = __Voice(v).rampedVolume
                     END IF
 
-                    ' The following two lines mixes the sample and also does volume & stereo panning
-                    __MixerBufferL(s) = __MixerBufferL(s) + (fSamp * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT - fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 - pan)
-                    __MixerBufferR(s) = __MixerBufferR(s) + (fSamp * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT + fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 + pan)
-
                     ' Move to the next sample position based on the pitch
                     __Voice(v).position = fPos + fPitch
-                NEXT
+
+                    ' The following lines mixes the sample and also does volume & stereo panning
+                    __MixerBuffer(i) = __MixerBuffer(i) + (fSamp * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT - fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 - pan)
+                    i = i + 1
+                    __MixerBuffer(i) = __MixerBuffer(i) + (fSamp * fVolume * (SOFTSYNTH_VOICE_PAN_RIGHT + fPan)) ' prevsamp = prevsamp + newsamp * vol * (1.0 + pan)
+                    i = i + 1
+
+                    s = s + 1
+                LOOP
             END IF
-        NEXT
+
+            v = v + 1
+        LOOP
 
         ' Feed the samples to the QB64 sound pipe
-        FOR s = 0 TO samplesMax
+        s = 0: i = 0
+        DO WHILE s < nSamples
             ' Apply global volume
-            __MixerBufferL(s) = __MixerBufferL(s) * __SoftSynth.volume
-            __MixerBufferR(s) = __MixerBufferR(s) * __SoftSynth.volume
+            __MixerBuffer(i) = __MixerBuffer(i) * __SoftSynth.volume ' left channel
+            __MixerBuffer(i + 1) = __MixerBuffer(i + 1) * __SoftSynth.volume ' right channel
 
             ' Feed the samples to the QB64 sound pipe
-            _SNDRAW __MixerBufferL(s), __MixerBufferR(s), __SoftSynth.soundHandle
-        NEXT
+            _SNDRAW __MixerBuffer(i), __MixerBuffer(i + 1), __SoftSynth.soundHandle
+
+            s = s + 1
+            i = i + 2
+        LOOP
         $CHECKING:ON
     END SUB
 
