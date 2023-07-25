@@ -69,7 +69,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
             __Voice(i).startPosition = 0
             __Voice(i).endPosition = 0
             __Voice(i).rampFrame = 0
-            __Voice(i).rampStep = __Voice(i).volume / __SoftSynth.rampFrames
+            __Voice(i).rampStep = 0 ' this is calculated once per mix frame in Update()
         NEXT
     END SUB
 
@@ -144,6 +144,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                 fStartPos = __Voice(v).startPosition
                 fEndPos = __Voice(v).endPosition
                 sLen = LEN(__SampleData(nSample)) \ SIZE_OF_SINGLE ' real sample frames
+                __Voice(v).rampStep = __Voice(v).volume / __SoftSynth.rampFrames ' recalculate the rampstep just in case volume has changed
 
                 ' Next we go through the channel sample data and mix it to our mixerBuffer
                 FOR s = 0 TO samplesMax
@@ -381,7 +382,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __Voice(nVoice).startPosition = 0
         __Voice(nVoice).endPosition = 0
         __Voice(nVoice).rampFrame = 0
-        __Voice(nVoice).rampStep = __Voice(nVoice).volume / __SoftSynth.rampFrames
+        __Voice(nVoice).rampStep = 0 ' this is calculated once per mix frame in Update()
         $CHECKING:ON
     END SUB
 
@@ -401,7 +402,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __Voice(nVoice).endPosition = nEnd
         __Voice(nVoice).rampedVolume = 0
         __Voice(nVoice).rampFrame = 0
-        __Voice(nVoice).rampStep = __Voice(nVoice).volume / __SoftSynth.rampFrames
+        __Voice(nVoice).rampStep = 0 ' this is calculated once per mix frame in Update()
         $CHECKING:ON
     END SUB
 

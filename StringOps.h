@@ -16,7 +16,7 @@
 /// @return A formatted string
 inline const char *__FormatLong(int32_t n, const char *fmt)
 {
-    commonTemporaryBuffer[0] = 0;
+    commonTemporaryBuffer[0] = '\0';
     snprintf(commonTemporaryBuffer, sizeof(commonTemporaryBuffer), fmt, n);
     return commonTemporaryBuffer;
 }
@@ -27,7 +27,7 @@ inline const char *__FormatLong(int32_t n, const char *fmt)
 /// @return A formatted string
 inline const char *__FormatInteger64(int64_t n, const char *fmt)
 {
-    commonTemporaryBuffer[0] = 0;
+    commonTemporaryBuffer[0] = '\0';
     snprintf(commonTemporaryBuffer, sizeof(commonTemporaryBuffer), fmt, n);
     return commonTemporaryBuffer;
 }
@@ -38,7 +38,7 @@ inline const char *__FormatInteger64(int64_t n, const char *fmt)
 /// @return A formatted string
 inline const char *__FormatSingle(float n, const char *fmt)
 {
-    commonTemporaryBuffer[0] = 0;
+    commonTemporaryBuffer[0] = '\0';
     snprintf(commonTemporaryBuffer, sizeof(commonTemporaryBuffer), fmt, n);
     return commonTemporaryBuffer;
 }
@@ -49,7 +49,7 @@ inline const char *__FormatSingle(float n, const char *fmt)
 /// @return A formatted string
 inline const char *__FormatDouble(double n, const char *fmt)
 {
-    commonTemporaryBuffer[0] = 0;
+    commonTemporaryBuffer[0] = '\0';
     snprintf(commonTemporaryBuffer, sizeof(commonTemporaryBuffer), fmt, n);
     return commonTemporaryBuffer;
 }
@@ -60,7 +60,7 @@ inline const char *__FormatDouble(double n, const char *fmt)
 /// @return A formatted string
 inline const char *__FormatOffset(uintptr_t n, const char *fmt)
 {
-    commonTemporaryBuffer[0] = 0;
+    commonTemporaryBuffer[0] = '\0';
     snprintf(commonTemporaryBuffer, sizeof(commonTemporaryBuffer), fmt, n);
     return commonTemporaryBuffer;
 }
