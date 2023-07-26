@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Common.h"
+#include <cstdlib>
 #include <cstring>
 
 /// @brief Casts a QB64 _OFFSET to an unsigned integer. Needed because QB64 does not allow converting or using _OFFSET in expressions (fully :()
