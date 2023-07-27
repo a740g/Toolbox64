@@ -256,11 +256,14 @@ $IF FILEOPS_BAS = UNDEFINED THEN
 
 
     ' Returns the attributes of a file / directory
+    ' See FILE_ATTRIBUTE_* CONSTs
     FUNCTION GetFileAttributes~& (pathName AS STRING)
         GetFileAttributes = __GetFileAttributes(ToCString(pathName))
     END FUNCTION
 
-
+    ' This kinda emulates MS BASIC PDS DIR$ (well almost)
+    ' First call should include the filespec and subsequent calls should pass
+    ' an empty string until the function returns an empty string
     FUNCTION Dir64$ (fileSpec AS STRING)
         Dir64$ = __Dir64$(ToCString(fileSpec))
     END FUNCTION

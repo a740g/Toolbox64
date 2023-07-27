@@ -11,17 +11,14 @@
 
 $IF ANSIPRINT_BAS = UNDEFINED THEN
     $LET ANSIPRINT_BAS = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
     '$INCLUDE:'ANSIPrint.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
-    'SCREEN _NEWIMAGE(8 * 80, 16 * 25, 32)
+    'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 32)
     '_FONT 16
 
     'DO
@@ -41,12 +38,9 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' FUNCTIONS & SUBROUTINES
-    '-------------------------------------------------------------------------------------------------------------------
     ' Initializes library global variables and tables and then sets the init flag to true
     SUB InitializeANSIEmulator
-        SHARED __ANSIEmu AS ANSIEmulatorType
+        SHARED __ANSIEmu AS __ANSIEmulatorType
         SHARED __ANSIColorLUT() AS _UNSIGNED LONG
         SHARED __ANSIArg() AS LONG
 
@@ -96,13 +90,13 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
         REDIM __ANSIArg(1 TO UBOUND(__ANSIArg)) AS LONG ' reset the CSI arg list
 
-        __ANSIEmu.state = ANSI_STATE_TEXT ' we will start parsing regular text by default
+        __ANSIEmu.state = __ANSI_STATE_TEXT ' we will start parsing regular text by default
         __ANSIEmu.argIndex = 0 ' reset argument index
 
         ' Reset the foreground and background color
-        __ANSIEmu.fC = ANSI_DEFAULT_COLOR_FOREGROUND
+        __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
         SetANSICanvasColor __ANSIEmu.fC, FALSE, TRUE
-        __ANSIEmu.bC = ANSI_DEFAULT_COLOR_BACKGROUND
+        __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
         SetANSICanvasColor __ANSIEmu.bC, TRUE, TRUE
 
         ' Reset text attributes
@@ -115,6 +109,9 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         __ANSIEmu.posDEC.y = CSRLIN
         __ANSIEmu.posSCO = __ANSIEmu.posDEC
 
+        __ANSIEmu.lastChar = NULL
+        __ANSIEmu.lastCharX = NULL
+
         __ANSIEmu.CPS = 0 ' disable any speed control
 
         _CONTROLCHR ON ' get assist from QB64's control character handling (only for tabs; we are pretty much doing the rest ourselves)
@@ -122,28 +119,25 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         __ANSIEmu.isInitialized = TRUE ' set to true to indicate init is done
     END SUB
 
-
     ' This simply resets the emulator to a clean state
     SUB ResetANSIEmulator
-        SHARED __ANSIEmu AS ANSIEmulatorType
+        SHARED __ANSIEmu AS __ANSIEmulatorType
 
         __ANSIEmu.isInitialized = FALSE ' set the init flag to false
         InitializeANSIEmulator ' call the init routine
     END SUB
 
-
     ' Sets the emulation speed
     ' nCPS - characters / second (bigger numbers means faster; <= 0 to disable)
     SUB SetANSIEmulationSpeed (nCPS AS LONG)
-        SHARED __ANSIEmu AS ANSIEmulatorType
+        SHARED __ANSIEmu AS __ANSIEmulatorType
 
         __ANSIEmu.CPS = nCPS
     END SUB
 
-
     ' Processes a single byte and decides what to do with it based on the current emulation state
     FUNCTION PrintANSICharacter& (ch AS _UNSIGNED _BYTE)
-        SHARED __ANSIEmu AS ANSIEmulatorType
+        SHARED __ANSIEmu AS __ANSIEmulatorType
         SHARED __ANSIArg() AS LONG
 
         PrintANSICharacter& = TRUE ' by default we will return true to tell the caller to keep going
@@ -151,10 +145,10 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         DIM AS LONG x, y, z ' temp variables used in many places (usually as counter / index)
 
         SELECT CASE __ANSIEmu.state
-            CASE ANSI_STATE_TEXT ' handle normal characters (including some control characters)
+            CASE __ANSI_STATE_TEXT ' handle normal characters (including some control characters)
                 SELECT CASE ch
                     CASE ANSI_SUB ' stop processing and exit loop on EOF (usually put by SAUCE blocks)
-                        __ANSIEmu.state = ANSI_STATE_END
+                        __ANSIEmu.state = __ANSI_STATE_END
 
                     CASE ANSI_BEL ' handle Bell - because QB64 does not (even with ControlChr On)
                         BEEP
@@ -163,10 +157,8 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                         x = POS(0) - 1
                         IF x > 0 THEN LOCATE , x ' move to the left only if we are not on the edge
 
-                        'Case ANSI_LF ' handle Line Feed because QB64 screws this up and moves the cursor to the beginning of the next line
-                        '    x = Pos(0) ' save old x pos
-                        '    Print Chr$(ch); ' use QB64 to handle the LF and then correct the mistake
-                        '    Locate , x ' set the cursor to the old x pos
+                    CASE ANSI_LF ' handle Line Feed (including EOL CRLF special case)
+                        PRINT STRING$(1 - (ANSI_CR = __ANSIEmu.lastChar AND GetANSICanvasWidth = __ANSIEmu.lastCharX), ch);
 
                     CASE ANSI_FF ' handle Form Feed - because QB64 does not (even with ControlChr On)
                         LOCATE 1, 1
@@ -177,55 +169,58 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                         'Case ANSI_DEL ' TODO: Check what to do with this
 
                     CASE ANSI_ESC ' handle escape character
-                        __ANSIEmu.state = ANSI_STATE_BEGIN ' beginning a new escape sequence
+                        __ANSIEmu.state = __ANSI_STATE_BEGIN ' beginning a new escape sequence
 
                     CASE ANSI_RS, ANSI_US ' QB64 does non-ANSI stuff with these two when ControlChar is On
                         _CONTROLCHR OFF
+                        __ANSIEmu.lastCharX = POS(0)
                         PRINT CHR$(ch); ' print escaped ESC character
                         _CONTROLCHR ON
                         IF __ANSIEmu.CPS > 0 THEN _LIMIT __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
 
                     CASE ELSE ' print the character
+                        __ANSIEmu.lastCharX = POS(0)
                         PRINT CHR$(ch);
                         IF __ANSIEmu.CPS > 0 THEN _LIMIT __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
 
                 END SELECT
 
-            CASE ANSI_STATE_BEGIN ' handle escape sequence
+            CASE __ANSI_STATE_BEGIN ' handle escape sequence
                 SELECT CASE ch
                     CASE IS < ANSI_SP ' handle escaped character
                         _CONTROLCHR OFF
+                        __ANSIEmu.lastCharX = POS(0)
                         PRINT CHR$(ch); ' print escaped ESC character
                         _CONTROLCHR ON
                         IF __ANSIEmu.CPS > 0 THEN _LIMIT __ANSIEmu.CPS ' limit the loop speed if char/sec is a positive value
-                        __ANSIEmu.state = ANSI_STATE_TEXT
+                        __ANSIEmu.state = __ANSI_STATE_TEXT
 
                     CASE ANSI_ESC_DECSC ' Save Cursor Position in Memory
                         __ANSIEmu.posDEC.x = POS(0)
                         __ANSIEmu.posDEC.y = CSRLIN
-                        __ANSIEmu.state = ANSI_STATE_TEXT
+                        __ANSIEmu.state = __ANSI_STATE_TEXT
 
                     CASE ANSI_ESC_DECSR ' Restore Cursor Position from Memory
                         LOCATE __ANSIEmu.posDEC.y, __ANSIEmu.posDEC.x
-                        __ANSIEmu.state = ANSI_STATE_TEXT
+                        __ANSIEmu.state = __ANSI_STATE_TEXT
 
                     CASE ANSI_ESC_RI ' Reverse Index
                         y = CSRLIN - 1
                         IF y > 0 THEN LOCATE y
-                        __ANSIEmu.state = ANSI_STATE_TEXT
+                        __ANSIEmu.state = __ANSI_STATE_TEXT
 
                     CASE ANSI_ESC_CSI ' handle CSI
                         REDIM __ANSIArg(1 TO UBOUND(__ANSIArg)) AS LONG ' reset the control sequence arguments, but don't loose the allocated memory
                         __ANSIEmu.argIndex = 0 ' reset argument index
                         'leadInPrefix = 0 ' reset lead-in prefix
-                        __ANSIEmu.state = ANSI_STATE_SEQUENCE
+                        __ANSIEmu.state = __ANSI_STATE_SEQUENCE
 
                     CASE ELSE ' throw an error for stuff we are not handling
                         ERROR ERROR_FEATURE_UNAVAILABLE
 
                 END SELECT
 
-            CASE ANSI_STATE_SEQUENCE ' handle CSI sequence
+            CASE __ANSI_STATE_SEQUENCE ' handle CSI sequence
                 SELECT CASE ch
                     CASE ANSI_0 TO ANSI_QUESTION_MARK ' argument bytes
                         IF __ANSIEmu.argIndex < 1 THEN __ANSIEmu.argIndex = 1 ' set the argument index to one if this is the first time
@@ -333,8 +328,8 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                                 DO WHILE x <= __ANSIEmu.argIndex ' loop through the argument list and process each argument
                                     SELECT CASE __ANSIArg(x)
                                         CASE 0 ' reset all modes (styles and colors)
-                                            __ANSIEmu.fC = ANSI_DEFAULT_COLOR_FOREGROUND
-                                            __ANSIEmu.bC = ANSI_DEFAULT_COLOR_BACKGROUND
+                                            __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
+                                            __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
                                             __ANSIEmu.isBold = FALSE
                                             __ANSIEmu.isBlink = FALSE
                                             __ANSIEmu.isInvert = FALSE
@@ -404,7 +399,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                                             END IF
 
                                         CASE 39 ' set default foreground color
-                                            __ANSIEmu.fC = ANSI_DEFAULT_COLOR_FOREGROUND
+                                            __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
                                             SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                         CASE 40 TO 47 ' set background color
@@ -433,7 +428,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                                             END IF
 
                                         CASE 49 ' set default background color
-                                            __ANSIEmu.bC = ANSI_DEFAULT_COLOR_BACKGROUND
+                                            __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
                                             SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE 90 TO 97 ' set high intensity foreground color
@@ -492,7 +487,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                 IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                                 y = CSRLIN - __ANSIArg(1)
-                                IF y < 1 THEN __ANSIArg(1) = 1
+                                IF y < 1 THEN y = 1
                                 LOCATE y
 
                             CASE ANSI_ESC_CSI_CUD ' Cursor down
@@ -584,14 +579,14 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                         END SELECT
 
                         ' End of sequence
-                        __ANSIEmu.state = ANSI_STATE_TEXT
+                        __ANSIEmu.state = __ANSI_STATE_TEXT
 
                     CASE ELSE ' throw an error for stuff we are not handling
                         ERROR ERROR_FEATURE_UNAVAILABLE
 
                 END SELECT
 
-            CASE ANSI_STATE_END ' end of the stream has been reached
+            CASE __ANSI_STATE_END ' end of the stream has been reached
                 PrintANSICharacter& = FALSE ' tell the caller the we should stop processing the rest of the stream
                 EXIT FUNCTION ' and then leave
 
@@ -599,8 +594,9 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                 ERROR ERROR_CANNOT_CONTINUE
 
         END SELECT
-    END FUNCTION
 
+        __ANSIEmu.lastChar = ch ' save the character
+    END FUNCTION
 
     ' Processes the whole string instead of a character like PrintANSICharacter()
     ' This simply wraps PrintANSICharacter()
@@ -616,7 +612,6 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
             END IF
         NEXT
     END FUNCTION
-
 
     ' A simple routine that wraps pretty much the whole library
     ' It will reset the library, do the setup and then render the whole ANSI string in one go
@@ -639,7 +634,6 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         END IF
     END SUB
 
-
     ' Set the foreground or background color
     SUB SetANSICanvasColor (c AS _UNSIGNED LONG, isBackground AS LONG, isLegacy AS LONG)
         SHARED __ANSIColorLUT() AS _UNSIGNED LONG
@@ -661,18 +655,15 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         END IF
     END SUB
 
-
     ' Returns the number of characters per line
     FUNCTION GetANSICanvasWidth&
         GetANSICanvasWidth = _WIDTH \ _FONTWIDTH ' this will cause a divide by zero if a variable width font is used; use monospaced fonts to avoid this
     END FUNCTION
 
-
     ' Returns the number of lines
     FUNCTION GetANSICanvasHeight&
         GetANSICanvasHeight = _HEIGHT \ _FONTHEIGHT
     END FUNCTION
-
 
     ' Clears a given portion of screen without disturbing the cursor location and colors
     SUB ClearANSICanvasArea (l AS LONG, t AS LONG, r AS LONG, b AS LONG)
@@ -699,12 +690,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
             LOCATE y, x
         END IF
     END SUB
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' MODULE FILES
-    '-------------------------------------------------------------------------------------------------------------------
     '$INCLUDE:'ColorOps.bas'
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

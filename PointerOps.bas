@@ -5,16 +5,10 @@
 
 $IF POINTEROPS_BAS = UNDEFINED THEN
     $LET POINTEROPS_BAS = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'PointerOps.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' FUNCTIONS & SUBROUTINES
-    '-------------------------------------------------------------------------------------------------------------------
-    ' Returns a BASIC string (bstring) from NULL terminated C string (cstring)
+    '$INCLUDE:'PointerOps.bi'
+
+    ' Returns a BASIC string (bstring) from a NULL terminated C string (cstring)
     FUNCTION ToBString$ (s AS STRING)
         DIM zeroPos AS LONG: zeroPos = INSTR(s, CHR$(NULL))
         IF zeroPos > NULL THEN ToBString = LEFT$(s, zeroPos - 1) ELSE ToBString = s
@@ -25,6 +19,5 @@ $IF POINTEROPS_BAS = UNDEFINED THEN
     FUNCTION ToCString$ (s AS STRING)
         ToCString = s + CHR$(NULL)
     END FUNCTION
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

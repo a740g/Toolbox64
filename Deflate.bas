@@ -5,11 +5,8 @@
 
 $IF DEFLATE_BAS = UNDEFINED THEN
     $LET DEFLATE_BAS = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
     '$INCLUDE:'Deflate.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
@@ -33,9 +30,9 @@ $IF DEFLATE_BAS = UNDEFINED THEN
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' FUNCTIONS & SUBROUTINES
-    '-------------------------------------------------------------------------------------------------------------------
+    ' This uses Zopfli to compress the buffer using the Deflat method
+    ' The buffer can then be decompressed using QB64's INFLATE$ command
+    ' compressionLevel can be 0 - 255. 255 is the highest compression level and 0 used the library default setting
     FUNCTION DeflatePro$ (inputBuffer AS STRING, compressionLevel AS _UNSIGNED _BYTE)
         DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
 
@@ -43,11 +40,12 @@ $IF DEFLATE_BAS = UNDEFINED THEN
         __Zopfli_Compress compressionLevel, inputBuffer, LEN(inputBuffer), outputPtr, outputSize
 
         IF outputPtr <> NULL THEN ' only if the compression succeeded
-            ' Allocate memory to copy the compressed buffer
-            DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
-
             ' Copy the compressed memory
-            IF outputSize > 0 THEN CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
+            IF outputSize > 0 THEN
+                ' Allocate memory to copy the compressed buffer
+                DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
+                CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
+            END IF
 
             ' Free outputPtr
             FreeMemory outputPtr
@@ -55,12 +53,8 @@ $IF DEFLATE_BAS = UNDEFINED THEN
             DeflatePro = outputBuffer
         END IF
     END FUNCTION
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' MODULE FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
     '$INCLUDE:'PointerOps.bas'
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

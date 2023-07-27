@@ -5,15 +5,9 @@
 
 $IF ANSIPRINT_BI = UNDEFINED THEN
     $LET ANSIPRINT_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'ColorOps.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'ColorOps.bi'
+
     ' ANSI constants (not an exhaustive list)
     CONST ANSI_NUL = 0 ' Null
     CONST ANSI_SOH = 1 ' Start of Heading
@@ -97,20 +91,16 @@ $IF ANSIPRINT_BI = UNDEFINED THEN
     CONST ANSI_TILDE = 126 ' ~
     CONST ANSI_DEL = 127 ' Delete
     ' Parser state
-    CONST ANSI_STATE_TEXT = 0 ' when parsing regular text & control characters
-    CONST ANSI_STATE_BEGIN = 1 ' when beginning an escape sequence
-    CONST ANSI_STATE_SEQUENCE = 2 ' when parsing a control sequence introducer
-    CONST ANSI_STATE_END = 3 ' when the end of the character stream has been reached
+    CONST __ANSI_STATE_TEXT = 0 ' when parsing regular text & control characters
+    CONST __ANSI_STATE_BEGIN = 1 ' when beginning an escape sequence
+    CONST __ANSI_STATE_SEQUENCE = 2 ' when parsing a control sequence introducer
+    CONST __ANSI_STATE_END = 3 ' when the end of the character stream has been reached
     ' Some defaults
-    CONST ANSI_DEFAULT_COLOR_FOREGROUND = 7
-    CONST ANSI_DEFAULT_COLOR_BACKGROUND = 0
-    CONST ANSI_ARG_COUNT = 10 ' number of argument slots that we'll start with
-    '-------------------------------------------------------------------------------------------------------------------
+    CONST __ANSI_DEFAULT_COLOR_FOREGROUND = 7
+    CONST __ANSI_DEFAULT_COLOR_BACKGROUND = 0
+    CONST __ANSI_ARG_COUNT = 10 ' number of argument slots that we'll start with
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' USER DEFINED TYPES
-    '-------------------------------------------------------------------------------------------------------------------
-    TYPE ANSIEmulatorType
+    TYPE __ANSIEmulatorType
         isInitialized AS LONG ' was the library initialized?
         state AS LONG ' the current parser state
         argIndex AS LONG ' the current CSI argument index & count; 0 means no arguments
@@ -121,16 +111,13 @@ $IF ANSIPRINT_BI = UNDEFINED THEN
         isInvert AS LONG ' text attributes - inverted colors (fg <> bg)
         posDEC AS Vector2LType ' DEC saved cursor position
         posSCO AS Vector2LType ' SCO saved cursor position
+        lastChar AS _UNSIGNED _BYTE ' last character rendered
+        lastCharX AS LONG ' the x position of the last "printed" character
         CPS AS LONG ' characters / second
     END TYPE
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' GLOBAL VARIABLES
-    '-------------------------------------------------------------------------------------------------------------------
-    DIM __ANSIEmu AS ANSIEmulatorType ' emulator state
+    DIM __ANSIEmu AS __ANSIEmulatorType ' emulator state
     DIM __ANSIColorLUT(0 TO 255) AS _UNSIGNED LONG ' this table is used to get the RGB for legacy ANSI colors
-    REDIM __ANSIArg(1 TO ANSI_ARG_COUNT) AS LONG ' CSI dynamic argument list
-    '-------------------------------------------------------------------------------------------------------------------
+    REDIM __ANSIArg(1 TO __ANSI_ARG_COUNT) AS LONG ' CSI dynamic argument list
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------
