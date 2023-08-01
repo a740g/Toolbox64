@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <cstring>
 
+// This one is done this way to workaround a macOS compiler error
+#define FindMemory(_ptr_, _chr_, _cnt_) ((uintptr_t)memchr((const void *)(_ptr_), (int)(_chr_), (size_t)(_cnt_)))
+
 /// @brief Casts a QB64 _OFFSET to an unsigned integer. Needed because QB64 does not allow converting or using _OFFSET in expressions (fully :()
 /// @param p A pointer (_OFFSET)
 /// @return Pointer value (uintptr_t)

@@ -54,6 +54,8 @@ $IF POINTEROPS_BI = UNDEFINED THEN
 
     'PRINT HEX$(PeekStringInteger64(fs, 0))
 
+    'PRINT FindMemory(_OFFSET(s), ASC("g"), LEN(s))
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -63,8 +65,6 @@ $IF POINTEROPS_BI = UNDEFINED THEN
         $ELSE
             FUNCTION GetCStringLength~&& ALIAS strlen (BYVAL str AS _UNSIGNED _OFFSET)
         $END IF
-        ' TODO: Fix the below for macOS: error: address of overloaded function 'memchr' does not match required type 'unsigned long (long, int, long)'
-        'FUNCTION FindMemory~%& ALIAS memchr (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
         FUNCTION CompareMemory& ALIAS memcmp (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
         SUB SetMemory ALIAS memset (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
         SUB CopyMemory ALIAS memcpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
@@ -73,6 +73,10 @@ $IF POINTEROPS_BI = UNDEFINED THEN
         FUNCTION AllocateAndClearMemory~%& ALIAS calloc (BYVAL num AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
         FUNCTION ReallocateMemory~%& ALIAS realloc (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
         SUB FreeMemory ALIAS free (BYVAL ptr AS _UNSIGNED _OFFSET)
+    END DECLARE
+
+    DECLARE LIBRARY
+        FUNCTION FindMemory~%& (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
     END DECLARE
 
     DECLARE LIBRARY "PointerOps"
