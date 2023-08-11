@@ -5,15 +5,9 @@
 
 $IF STRINGOPS_BI = UNDEFINED THEN
     $LET STRINGOPS_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'PointerOps.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' EXTERNAL LIBRARIES
-    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+
     DECLARE LIBRARY
         FUNCTION ToLowerCase~& ALIAS tolower (BYVAL ch AS _UNSIGNED LONG)
         FUNCTION ToUpperCase~& ALIAS toupper (BYVAL ch AS _UNSIGNED LONG)
@@ -37,7 +31,10 @@ $IF STRINGOPS_BI = UNDEFINED THEN
         FUNCTION IsBlank%% (BYVAL ch AS _UNSIGNED LONG)
         FUNCTION IsPrintable%% (BYVAL ch AS _UNSIGNED LONG)
         FUNCTION IsPunctuation%% (BYVAL ch AS _UNSIGNED LONG)
+        SUB ReverseMemory (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION __RegExCompile~%& ALIAS re_compile (pattern AS STRING)
+        FUNCTION __RegExMatchCompiled& (BYVAL pattern AS _UNSIGNED _OFFSET, text AS STRING, BYVAL startPos AS LONG, matchLength AS LONG)
+        FUNCTION __RegExMatch& (pattern AS STRING, text AS STRING, BYVAL startPos AS LONG, matchLength AS LONG)
     END DECLARE
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

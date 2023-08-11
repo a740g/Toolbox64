@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Common.h"
+#include "external/re.h"
 #include <cstring>
 #include <cctype>
 #include <cstdio>
@@ -159,4 +160,23 @@ inline qb_bool IsPrintable(uint32_t ch)
 inline qb_bool IsPunctuation(uint32_t ch)
 {
     return TO_QB_BOOL(ispunct(ch));
+}
+
+/// @brief Reverses the order of bytes in memory
+/// @param ptr A pointer to a memory buffer
+/// @param size The size of the memory buffer
+inline void ReverseMemory(uintptr_t ptr, size_t size)
+{
+    auto start = (uint8_t *)ptr;
+    auto end = start + size - 1;
+
+    while (start < end)
+    {
+        *start ^= *end;
+        *end ^= *start;
+        *start ^= *end;
+
+        start++;
+        end--;
+    }
 }

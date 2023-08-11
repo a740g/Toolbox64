@@ -5,11 +5,8 @@
 
 $IF STRINGOPS_BAS = UNDEFINED THEN
     $LET STRINGOPS_BAS = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
     '$INCLUDE:'StringOps.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
@@ -32,12 +29,42 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     'PRINT FormatDouble(18.4455, "%f")
     'PRINT FormatOffset(&HDEADBEEFBEEFDEAD, "%p")
 
+    'DIM r AS _UNSIGNED _OFFSET: r = RegExCompile("[Hh]ello [Ww]orld\s*[!]?")
+    'DIM AS LONG l, n: n = RegExMatchCompiled(r, "ahem.. 'hello world !' ..", 1, l)
+
+    'IF n > 0 THEN
+    '    PRINT "Match at"; n; ","; l; "chars long"
+    'END IF
+
+    'n = 1
+    'DO
+    '    n = RegExMatch("b[aeiou]b", "bub bob bib bab", n, l)
+    '    IF n > 0 THEN
+    '        PRINT "Match at"; n; ","; l; "chars long"
+    '        n = n + l
+    '    END IF
+    'LOOP UNTIL n = 0
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' FUNCTIONS & SUBROUTINES
-    '-------------------------------------------------------------------------------------------------------------------
+    ' Returns a BASIC string (bstring) from a NULL terminated C string (cstring)
+    FUNCTION ToBString$ (s AS STRING)
+        $CHECKING:OFF
+        DIM zeroPos AS LONG: zeroPos = INSTR(s, CHR$(NULL))
+        IF zeroPos > NULL THEN ToBString = LEFT$(s, zeroPos - 1) ELSE ToBString = s
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Just a convenience function for use when calling external libraries
+    FUNCTION ToCString$ (s AS STRING)
+        $CHECKING:OFF
+        ToCString = s + CHR$(NULL)
+        $CHECKING:ON
+    END FUNCTION
+
+
     ' Tokenizes a string to a dynamic string array
     ' text - is the input string
     ' delims - is a list of delimiters (multiple delimiters can be specified)
@@ -118,20 +145,25 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
 
     ' Reverses and returns the characters of a string
     FUNCTION ReverseString$ (s AS STRING)
+        $CHECKING:OFF
         DIM tmp AS STRING: tmp = s
         ReverseMemory _OFFSET(tmp), LEN(tmp)
         ReverseString = tmp
+        $CHECKING:ON
     END FUNCTION
 
 
     ' Reverses the characters of a string in-place
     SUB ReverseString (s AS STRING)
+        $CHECKING:OFF
         ReverseMemory _OFFSET(s), LEN(s)
+        $CHECKING:ON
     END SUB
 
 
     ' Gets a string form of the boolean value passed
     FUNCTION FormatBoolean$ (n AS LONG, fmt AS LONG)
+        $CHECKING:OFF
         SELECT CASE fmt
             CASE 1
                 IF n THEN FormatBoolean = "1" ELSE FormatBoolean = "0"
@@ -176,38 +208,77 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
             CASE ELSE
                 IF n THEN FormatBoolean = "True" ELSE FormatBoolean = "False"
         END SELECT
+        $CHECKING:ON
     END FUNCTION
 
 
+    ' Formats a long using C's printf() format specifier
     FUNCTION FormatLong$ (n AS LONG, fmt AS STRING)
+        $CHECKING:OFF
         FormatLong = __FormatLong(n, ToCString(fmt))
+        $CHECKING:ON
     END FUNCTION
 
 
+    ' Formats an integer64 using C's printf() format specifier
     FUNCTION FormatInteger64$ (n AS _INTEGER64, fmt AS STRING)
+        $CHECKING:OFF
         FormatInteger64 = __FormatInteger64(n, ToCString(fmt))
+        $CHECKING:ON
     END FUNCTION
 
 
+    ' Formats a single using C's printf() format specifier
     FUNCTION FormatSingle$ (n AS SINGLE, fmt AS STRING)
+        $CHECKING:OFF
         FormatSingle = __FormatSingle(n, ToCString(fmt))
+        $CHECKING:ON
     END FUNCTION
 
 
+    ' Formats a double using C's printf() format specifier
     FUNCTION FormatDouble$ (n AS DOUBLE, fmt AS STRING)
+        $CHECKING:OFF
         FormatDouble = __FormatDouble(n, ToCString(fmt))
+        $CHECKING:ON
     END FUNCTION
 
 
+    ' Formats an offset using C's printf() format specifier
     FUNCTION FormatOffset$ (n AS _UNSIGNED _OFFSET, fmt AS STRING)
+        $CHECKING:OFF
         FormatOffset = __FormatOffset(n, ToCString(fmt))
+        $CHECKING:ON
     END FUNCTION
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' MODULE FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'PointerOps.bas'
-    '-------------------------------------------------------------------------------------------------------------------
+
+    ' Compiles a regex for quick usage with different stings via RegExMatchCompiled()
+    FUNCTION RegExCompile~%& (pattern AS STRING)
+        $CHECKING:OFF
+        RegExCompile = __RegExCompile(ToCString(pattern))
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Does a regex search for a string using a compiled pattern
+    FUNCTION RegExMatchCompiled& (pattern AS _UNSIGNED _OFFSET, text AS STRING, startPos AS LONG, matchLength AS LONG)
+        $CHECKING:OFF
+        IF startPos > 0 AND startPos <= LEN(text) THEN
+            DIM i AS LONG: i = __RegExMatchCompiled(pattern, ToCString(text), startPos, matchLength)
+            IF i > -1 THEN RegExMatchCompiled = i + startPos
+        END IF
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Does a regex search for a string using a pattern string
+    FUNCTION RegExMatch& (pattern AS STRING, text AS STRING, startPos AS LONG, matchLength AS LONG)
+        $CHECKING:OFF
+        IF startPos > 0 AND startPos <= LEN(text) THEN
+            DIM i AS LONG: i = __RegExMatch(ToCString(pattern), ToCString(text), startPos, matchLength)
+            IF i > -1 THEN RegExMatch = i + startPos
+        END IF
+        $CHECKING:ON
+    END FUNCTION
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------
