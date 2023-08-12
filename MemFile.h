@@ -143,7 +143,7 @@ void MemFile_Resize(uintptr_t p, size_t newSize)
 /// @param data Pointer to the buffer the data needs to be written to
 /// @param size The size of the chuck that needs to be read
 /// @return The actual number of bytes read. This can be less than `size`
-size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
+inline size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
 {
     auto memFile = reinterpret_cast<MemFile *>(p);
     if (memFile && data)
@@ -170,7 +170,7 @@ size_t __MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
 /// @param data Pointer to the buffer the data needs to be read from
 /// @param size The size of the chuck that needs to be written
 /// @return The number of bytes written
-size_t __MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
+inline size_t __MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
 {
     auto memFile = reinterpret_cast<MemFile *>(p);
     if (memFile && data)

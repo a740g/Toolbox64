@@ -14,6 +14,7 @@ $IF FILEOPS_BI = UNDEFINED THEN
     CONST __FILEOPS_UPDATES_PER_SECOND_DEFAULT = 120 ' refresh happens 120 times a second
     CONST __FILEOPS_TIMEOUT_DEFAULT = 60 * 5 ' timeout happens after 5 mins by default
 
+    ' These must be kept in sync with FileOps.h
     CONST FILE_ATTRIBUTE_DIRECTORY = 1
     CONST FILE_ATTRIBUTE_READOLY = 2
     CONST FILE_ATTRIBUTE_HIDDEN = 4

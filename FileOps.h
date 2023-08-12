@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+// These must be kept in sync with FileOps.bi
 #define __FILE_ATTRIBUTE_DIRECTORY 1
 #define __FILE_ATTRIBUTE_READOLY 2
 #define __FILE_ATTRIBUTE_HIDDEN 4
@@ -21,8 +22,8 @@
 
 /// @brief Returns some basic attributes of a file or directory
 /// @param pathName The path name to get the attribute for
-/// @return A 32-bit value where each bit represents an attribute (see __FILE_* above) 
-uint32_t __GetFileAttributes(const char *pathName)
+/// @return A 32-bit value where each bit represents an attribute (see __FILE_* above)
+inline uint32_t __GetFileAttributes(const char *pathName)
 {
     uint32_t attributes = 0;
 
@@ -53,7 +54,7 @@ uint32_t __GetFileAttributes(const char *pathName)
 /// @brief Returns the 64-bit file size without opening the file
 /// @param fileName The file name to get the size for
 /// @return A 64-bit integer value (size)
-int64_t __GetFileSize(const char *fileName)
+inline int64_t __GetFileSize(const char *fileName)
 {
     struct stat64 st;
 
@@ -113,7 +114,7 @@ static inline bool __Dir64MatchSpec(const char *fileSpec, const char *fileName)
 /// @brief A MS BASIC PDS DIR$ style function
 /// @param fileSpec This can be a directory with wildcard for the final level (i.e. C:/Windows/*.* or /usr/lib/* etc.)
 /// @return Returns a file or directory name  matching fileSpec or an empty string when there is nothing left
-const char *__Dir64(const char *fileSpec)
+inline const char *__Dir64(const char *fileSpec)
 {
     static DIR *pDir = nullptr;
     static char pattern[FILENAME_MAX];

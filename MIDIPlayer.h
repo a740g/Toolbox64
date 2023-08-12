@@ -56,14 +56,14 @@ qb_bool MIDI_IsTuneLoaded()
 
 /// @brief Check if a MIDI file is playing
 /// @return Returns QB64 TRUE if we are playing a MIDI file
-qb_bool MIDI_IsPlaying()
+inline qb_bool MIDI_IsPlaying()
 {
     return contextTSFymfm && tinyMIDIMessage ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Checks the MIDI file is set to loop
 /// @return Returns QB64 TRUE if a file is set to loop
-qb_bool MIDI_IsLooping()
+inline qb_bool MIDI_IsLooping()
 {
     return contextTSFymfm && tinyMIDIMessage ? isLooping : QB_FALSE;
 }
@@ -91,28 +91,28 @@ void MIDI_SetVolume(float volume)
 
 /// @brief Returns the current playback volume
 /// @return 0.0 = none, 1.0 = full
-float MIDI_GetVolume()
+inline float MIDI_GetVolume()
 {
     return globalVolume;
 }
 
 /// @brief Returns the total playback times in msecs
 /// @return time in msecs
-double MIDI_GetTotalTime()
+inline double MIDI_GetTotalTime()
 {
     return contextTSFymfm && tinyMIDILoader ? totalMsec : 0;
 }
 
 /// @brief Returns the current playback time in msec
 /// @return Times in msecs
-double MIDI_GetCurrentTime()
+inline double MIDI_GetCurrentTime()
 {
     return contextTSFymfm && tinyMIDILoader ? currentMsec : 0;
 }
 
 /// @brief Returns the total number of voice that are playing
 /// @return Count of active voices
-uint32_t MIDI_GetActiveVoices()
+inline uint32_t MIDI_GetActiveVoices()
 {
     // 18 if we are in OPL3 mode else whatever TSF returns
     return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? 18 : tsf_active_voice_count((tsf *)contextTSFymfm)) : 0;
@@ -152,7 +152,7 @@ void MIDI_Stop()
 /// @brief This frees resources (if a file was previously loaded) and then loads a MIDI file into memory for playback
 /// @param midi_filename A valid file name
 /// @return Returns QB64 TRUE if the operation was successful
-qb_bool __MIDI_LoadTuneFromFile(const char *midi_filename)
+inline qb_bool __MIDI_LoadTuneFromFile(const char *midi_filename)
 {
     if (MIDI_IsTuneLoaded())
         MIDI_Stop(); // stop if anything is playing
@@ -176,7 +176,7 @@ qb_bool __MIDI_LoadTuneFromFile(const char *midi_filename)
 /// @param buffer The memory buffer containing the full file
 /// @param bufferSize The size of the memory buffer
 /// @return Returns QB64 TRUE if the operation was successful
-qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
+inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
 {
     if (MIDI_IsTuneLoaded())
         MIDI_Stop(); // stop if anything is playing
@@ -197,7 +197,7 @@ qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize)
 }
 
 /// @brief This shuts down the library and stop any MIDI playback and frees resources (if a file was previously loaded)
-void __MIDI_Finalize()
+inline void __MIDI_Finalize()
 {
     if (MIDI_IsTuneLoaded())
         MIDI_Stop(); // stop if anything is playing
@@ -218,7 +218,7 @@ void __MIDI_Finalize()
 /// @param sampleRateQB64 QB64 device sample rate
 /// @param useOPL3 If this is true then the OPL3 emulation is used instead of TSF
 /// @return Returns QB64 TRUE if everything went well
-qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
+inline qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
 {
     // Return success if we are already initialized
     if (contextTSFymfm)
@@ -278,7 +278,7 @@ qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
 
 /// @brief Check what kind of MIDI renderer is being used
 /// @return Return QB64 TRUE if using FM synthesis. Sample synthesis otherwise
-qb_bool MIDI_IsFMSynthesis()
+inline qb_bool MIDI_IsFMSynthesis()
 {
     return contextTSFymfm ? isOPL3Active : QB_FALSE;
 }
@@ -286,7 +286,7 @@ qb_bool MIDI_IsFMSynthesis()
 /// @brief This is used to render the MIDI audio when sample synthesis is in use
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-static void __MIDI_RenderTSF(uint8_t *buffer, uint32_t bufferSize)
+inline static void __MIDI_RenderTSF(uint8_t *buffer, uint32_t bufferSize)
 {
     // Number of samples to process
     uint32_t sampleBlock, sampleCount = (bufferSize / (2 * sizeof(float))); // 2 channels, 32-bit FP (4 bytes) samples
@@ -336,7 +336,7 @@ static void __MIDI_RenderTSF(uint8_t *buffer, uint32_t bufferSize)
 /// @brief This is used to render the MIDI audio when FM synthesis is in use
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
+inline static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
 {
     // Number of samples to process
     uint32_t sampleBlock, sampleCount = (bufferSize / (2 * sizeof(float))); // 2 channels, 32-bit FP (4 bytes) samples
@@ -385,7 +385,7 @@ static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
 /// @brief The calls the correct render function based on which renderer was chosen
 /// @param buffer The buffer when the audio should be rendered
 /// @param bufferSize The size of the buffer in BYTES!
-void __MIDI_Render(float *buffer, uint32_t bufferSize)
+inline void __MIDI_Render(float *buffer, uint32_t bufferSize)
 {
     if (isOPL3Active)
         __MIDI_RenderOPL(reinterpret_cast<uint8_t *>(buffer), bufferSize);

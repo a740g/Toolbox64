@@ -588,7 +588,7 @@ static void CALLBACK MIDIProc(HMIDIIN hMIDI, UINT uMsg, DWORD_PTR dwInstance, DW
 /// @param buffer A buffer containing a Standard MIDI file
 /// @param bufferSize The size of the buffer
 /// @return QB_TRUE if the call succeeded. QB_FALSE otherwise
-qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
+inline qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
 {
     static auto isMIDIAvailable = false;
     static auto isMIDIAvailableChecked = false;
@@ -704,7 +704,7 @@ void MIDI_Stop()
 /// Checks if a MIDI song is playing
 /// </summary>
 /// <returns>True if playing. False otherwise</returns>
-qb_bool MIDI_IsPlaying()
+inline qb_bool MIDI_IsPlaying()
 {
     return pMIDISong && pMIDISong->MusicPlaying ? QB_TRUE : QB_FALSE;
 }
@@ -719,7 +719,7 @@ void MIDI_Loop(int32_t loops)
 
 /// @brief Returns true if the file is set to loop forever or is still looping
 /// @return QB_TRUE if looping, QB_FALSE otherwise
-qb_bool MIDI_IsLooping()
+inline qb_bool MIDI_IsLooping()
 {
     return pMIDISong && pMIDISong->Loops ? QB_TRUE : QB_FALSE;
 }
@@ -745,7 +745,7 @@ void MIDI_Pause(int8_t state)
 
 /// @brief Returns true if MIDI playback is paused
 /// @return QB_TRUE if paused, QB_FALSE otherwise
-qb_bool MIDI_IsPaused()
+inline qb_bool MIDI_IsPaused()
 {
     return pMIDISong && pMIDISong->MusicPlaying && !pMIDISong->MusicPaused ? QB_FALSE : QB_TRUE;
 }
@@ -764,7 +764,7 @@ void MIDI_SetVolume(float volume)
 
 /// @brief Returns the current MIDI volume
 /// @return A floating point value (0.0 to 1.0)
-float MIDI_GetVolume()
+inline float MIDI_GetVolume()
 {
     DWORD dwVolume = 0xFFFF;
 
@@ -784,7 +784,7 @@ float MIDI_GetVolume()
 /// @param fileName A .WAV file path name
 /// @param loop If this is true the sound loops forever until it is stopped
 /// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
-qb_bool __Sound_PlayFromFile(const char *fileName, int8_t loop)
+inline qb_bool __Sound_PlayFromFile(const char *fileName, int8_t loop)
 {
     return (IS_STRING_EMPTY(fileName) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA(fileName, NULL, SND_ASYNC | SND_FILENAME | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
 }
@@ -794,13 +794,13 @@ qb_bool __Sound_PlayFromFile(const char *fileName, int8_t loop)
 /// @param buffer A pointer to .WAV file in memory
 /// @param loop If this is true the sound loops forever until it is stopped
 /// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
-qb_bool Sound_PlayFromMemory(const char *buffer, int8_t loop)
+inline qb_bool Sound_PlayFromMemory(const char *buffer, int8_t loop)
 {
     return (IS_STRING_EMPTY(buffer) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA(buffer, NULL, SND_ASYNC | SND_MEMORY | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
 }
 
 /// @brief Stops any playing sound
-void Sound_Stop()
+inline void Sound_Stop()
 {
     PlaySoundA(NULL, NULL, 0);
 }
