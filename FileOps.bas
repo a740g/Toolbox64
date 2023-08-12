@@ -269,7 +269,7 @@ $IF FILEOPS_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    '$INCLUDE:'PointerOps.bas'
+    '$INCLUDE:'StringOps.bas'
     '$INCLUDE:'TimeOps.bas'
 
 $END IF

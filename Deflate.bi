@@ -9,7 +9,7 @@ $IF DEFLATE_BI = UNDEFINED THEN
     '$INCLUDE:'PointerOps.bi'
 
     DECLARE LIBRARY "Deflate"
-        SUB __Zopfli_Compress (BYVAL iterations AS _UNSIGNED _BYTE, inputBuffer AS STRING, BYVAL inputSize AS _UNSIGNED _OFFSET, outputBuffer AS _UNSIGNED _OFFSET, outputSize AS _UNSIGNED _OFFSET)
+        SUB __Zopfli_Compress (BYVAL iterations AS _UNSIGNED INTEGER, inputBuffer AS STRING, BYVAL inputSize AS _UNSIGNED _OFFSET, outputBuffer AS _UNSIGNED _OFFSET, outputSize AS _UNSIGNED _OFFSET)
     END DECLARE
 
 $END IF

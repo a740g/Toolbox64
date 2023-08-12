@@ -54,7 +54,4 @@ $IF DEFLATE_BAS = UNDEFINED THEN
         END IF
     END FUNCTION
 
-
-    '$INCLUDE:'PointerOps.bas'
-
 $END IF

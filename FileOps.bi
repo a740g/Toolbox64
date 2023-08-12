@@ -6,7 +6,7 @@
 $IF FILEOPS_BI = UNDEFINED THEN
     $LET FILEOPS_BI = TRUE
 
-    '$INCLUDE:'PointerOps.bi'
+    '$INCLUDE:'StringOps.bi'
     '$INCLUDE:'TimeOps.bi'
 
     $UNSTABLE:HTTP

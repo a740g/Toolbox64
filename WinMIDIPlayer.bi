@@ -5,16 +5,10 @@
 
 $IF WINMIDIPLAYER_BI = UNDEFINED THEN
     $LET WINMIDIPLAYER_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
     '$INCLUDE:'MemFile.bi'
     '$INCLUDE:'FileOps.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' EXTERNAL LIBRARIES
-    '-------------------------------------------------------------------------------------------------------------------
     DECLARE LIBRARY "WinMIDIPlayer"
         FUNCTION __MIDI_PlayFromMemory%% (buffer AS STRING, BYVAL bufferSize AS _OFFSET)
         SUB MIDI_Stop
@@ -28,7 +22,7 @@ $IF WINMIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION __Sound_PlayFromFile%% (fileName AS STRING, BYVAL looping AS _BYTE)
         FUNCTION Sound_PlayFromMemory%% (buffer AS STRING, BYVAL looping AS _BYTE)
         SUB Sound_Stop
+        SUB Sound_Beep ALIAS Beep (BYVAL dwFreq AS _UNSIGNED LONG, BYVAL dwDuration AS _UNSIGNED LONG)
     END DECLARE
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

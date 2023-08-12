@@ -3720,7 +3720,7 @@ static void ZopfliZlibCompress(const ZopfliOptions *options, const unsigned char
 /// @param input_size The size of the input buffer
 /// @param output_buffer A pointer to the compressed buffer. This should be freed once used
 /// @param output_size The size of the compressed buffer
-void __Zopfli_Compress(uint8_t iterations, const char *input_buffer, size_t input_size, uintptr_t *output_buffer, size_t *output_size)
+void __Zopfli_Compress(uint16_t iterations, const char *input_buffer, size_t input_size, uintptr_t *output_buffer, size_t *output_size)
 {
     ZopfliOptions options;
     ZopfliInitOptions(&options); // intialize options
