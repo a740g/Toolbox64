@@ -11,6 +11,8 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
+    '$DEBUG
+    '$CONSOLE:ONLY
     'DIM AS STRING myStr1, myStr2
 
     'myStr1 = "Toolbox64"
@@ -21,24 +23,39 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     'PRINT myStr2
     'PRINT myStr1
 
-    'PRINT FormatBoolean(TRUE, 8)
-    'PRINT FormatBoolean(FALSE, 8)
+    'PRINT FormatBoolean(TRUE, 20)
+    'PRINT FormatBoolean(FALSE, 20)
     'PRINT FormatLong(&HBE, "%.4X")
     'PRINT FormatInteger64(&HBE, "%.10llu")
     'PRINT FormatSingle(25.78, "%f")
     'PRINT FormatDouble(18.4455, "%f")
     'PRINT FormatOffset(&HDEADBEEFBEEFDEAD, "%p")
 
+    'PRINT IsAlphaNumeric(ASC("9"))
+    'PRINT IsAlphabetic(ASC("x"))
+    'PRINT IsLowerCase(ASC("x"))
+    'PRINT IsUpperCase(ASC("X"))
+    'PRINT IsDigit(ASC("1"))
+    'PRINT IsHexadecimalDigit(ASC("f"))
+    'PRINT IsControlCharacter(13)
+    'PRINT IsGraphicalCharacter(126)
+    'PRINT IsWhiteSpace(9)
+    'PRINT IsBlank(9)
+    'PRINT IsPrintable(32)
+    'PRINT IsPunctuation(ASC("!"))
+
     'DIM r AS _UNSIGNED _OFFSET: r = RegExCompile("[Hh]ello [Ww]orld\s*[!]?")
-    'DIM AS LONG l, n: n = RegExMatchCompiled(r, "ahem.. 'hello world !' ..", 1, l)
+    'DIM AS LONG l, n: n = RegExSearchCompiled(r, "ahem.. 'hello world !' ..", 1, l)
 
     'IF n > 0 THEN
     '    PRINT "Match at"; n; ","; l; "chars long"
     'END IF
 
+    'RegExFree r
+
     'n = 1
     'DO
-    '    n = RegExMatch("b[aeiou]b", "bub bob bib bab", n, l)
+    '    n = RegExSearch("b[aeiou]b", "bub bob bib bab", n, l)
     '    IF n > 0 THEN
     '        PRINT "Match at"; n; ","; l; "chars long"
     '        n = n + l
@@ -161,57 +178,6 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Gets a string form of the boolean value passed
-    FUNCTION FormatBoolean$ (n AS LONG, fmt AS LONG)
-        $CHECKING:OFF
-        SELECT CASE fmt
-            CASE 1
-                IF n THEN FormatBoolean = "1" ELSE FormatBoolean = "0"
-            CASE 2
-                IF n THEN FormatBoolean = "-1" ELSE FormatBoolean = "0"
-            CASE 3
-                IF n THEN FormatBoolean = "On" ELSE FormatBoolean = "Off"
-            CASE 4
-                IF n THEN FormatBoolean = "Enabled" ELSE FormatBoolean = "Disabled"
-            CASE 5
-                IF n THEN FormatBoolean = "Enable" ELSE FormatBoolean = "Disable"
-            CASE 6
-                IF n THEN FormatBoolean = "High" ELSE FormatBoolean = "Low"
-            CASE 7
-                IF n THEN FormatBoolean = "Opened" ELSE FormatBoolean = "Closed"
-            CASE 8
-                IF n THEN FormatBoolean = "Open" ELSE FormatBoolean = "Close"
-            CASE 9
-                IF n THEN FormatBoolean = "Active" ELSE FormatBoolean = "Inactive"
-            CASE 10
-                IF n THEN FormatBoolean = "Present" ELSE FormatBoolean = "Absent"
-            CASE 11
-                IF n THEN FormatBoolean = "Engaged" ELSE FormatBoolean = "Disengaged"
-            CASE 12
-                IF n THEN FormatBoolean = "Engage" ELSE FormatBoolean = "Disengage"
-            CASE 13
-                IF n THEN FormatBoolean = "Connected" ELSE FormatBoolean = "Disconnected"
-            CASE 14
-                IF n THEN FormatBoolean = "Connect" ELSE FormatBoolean = "Disconnect"
-            CASE 15
-                IF n THEN FormatBoolean = "Valid" ELSE FormatBoolean = "Invalid"
-            CASE 16
-                IF n THEN FormatBoolean = "Up" ELSE FormatBoolean = "Down"
-            CASE 17
-                IF n THEN FormatBoolean = "Started" ELSE FormatBoolean = "Stopped"
-            CASE 18
-                IF n THEN FormatBoolean = "Start" ELSE FormatBoolean = "Stop"
-            CASE 19
-                IF n THEN FormatBoolean = "Available" ELSE FormatBoolean = "Unavailable"
-            CASE 20
-                IF n THEN FormatBoolean = "In" ELSE FormatBoolean = "Out"
-            CASE ELSE
-                IF n THEN FormatBoolean = "True" ELSE FormatBoolean = "False"
-        END SELECT
-        $CHECKING:ON
-    END FUNCTION
-
-
     ' Formats a long using C's printf() format specifier
     FUNCTION FormatLong$ (n AS LONG, fmt AS STRING)
         $CHECKING:OFF
@@ -261,23 +227,39 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
 
 
     ' Does a regex search for a string using a compiled pattern
-    FUNCTION RegExMatchCompiled& (pattern AS _UNSIGNED _OFFSET, text AS STRING, startPos AS LONG, matchLength AS LONG)
+    FUNCTION RegExSearchCompiled& (pattern AS _UNSIGNED _OFFSET, text AS STRING, startPos AS LONG, matchLength AS LONG)
         $CHECKING:OFF
         IF startPos > 0 AND startPos <= LEN(text) THEN
-            DIM i AS LONG: i = __RegExMatchCompiled(pattern, ToCString(text), startPos, matchLength)
-            IF i > -1 THEN RegExMatchCompiled = i + startPos
+            DIM i AS LONG: i = __RegExSearchCompiled(pattern, ToCString(text), startPos, matchLength)
+            IF i > -1 THEN RegExSearchCompiled = i + startPos ELSE RegExSearchCompiled = i
         END IF
         $CHECKING:ON
     END FUNCTION
 
 
     ' Does a regex search for a string using a pattern string
-    FUNCTION RegExMatch& (pattern AS STRING, text AS STRING, startPos AS LONG, matchLength AS LONG)
+    FUNCTION RegExSearch& (pattern AS STRING, text AS STRING, startPos AS LONG, matchLength AS LONG)
         $CHECKING:OFF
         IF startPos > 0 AND startPos <= LEN(text) THEN
-            DIM i AS LONG: i = __RegExMatch(ToCString(pattern), ToCString(text), startPos, matchLength)
-            IF i > -1 THEN RegExMatch = i + startPos
+            DIM i AS LONG: i = __RegExSearch(ToCString(pattern), ToCString(text), startPos, matchLength)
+            IF i > -1 THEN RegExSearch = i + startPos ELSE RegExSearch = i
         END IF
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Checks if `text` is a RegEx match using a compiled pattern
+    FUNCTION RegExMatchCompiled%% (pattern AS _UNSIGNED _OFFSET, text AS STRING)
+        $CHECKING:OFF
+        RegExMatchCompiled = __RegExMatchCompiled(pattern, ToCString(text))
+        $CHECKING:ON
+    END FUNCTION
+
+
+    ' Checks if `text` is a RegEx match using a pattern string
+    FUNCTION RegExMatch%% (pattern AS STRING, text AS STRING)
+        $CHECKING:OFF
+        RegExMatch = __RegExMatch(ToCString(pattern), ToCString(text))
         $CHECKING:ON
     END FUNCTION
 
