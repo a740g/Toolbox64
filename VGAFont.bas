@@ -224,7 +224,7 @@ $IF VGAFONT_BAS = UNDEFINED THEN
         ' Copy the QB64 glyph
         DIM AS LONG x, y, w, h
         w = _FONTWIDTH
-        h = _FONTWIDTH
+        h = _FONTHEIGHT
 
         WHILE y < h
             x = 0
