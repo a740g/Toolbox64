@@ -180,7 +180,7 @@ $IF VGAFONT_BAS = UNDEFINED THEN
 
 
     ' Sets the entire font from a string
-    FUNCTION PSF1_SetFont (buffer AS STRING)
+    FUNCTION PSF1_SetFont%% (buffer AS STRING)
         SHARED __CurPSF AS PSF1Type
 
         DIM i AS LONG: i = LEN(buffer)
@@ -281,13 +281,13 @@ $IF VGAFONT_BAS = UNDEFINED THEN
     ' This does not check if the file exists or whatever and will happily overwrite it
     ' It is the caller's resposibility to check this stuff
     ' Note that this will set the mode value to 0
-    FUNCTION PSF1_SaveFont%% (sFile AS STRING)
+    FUNCTION PSF1_SaveFont%% (fileName AS STRING)
         SHARED __CurPSF AS PSF1Type
 
         IF __CurPSF.size.x > 0 AND __CurPSF.size.y > 0 AND LEN(__CurPSF.bitmap) = 256 * __CurPSF.size.y THEN ' check if the font is valid
             ' Open the file for writing
             DIM hFile AS LONG: hFile = FREEFILE
-            OPEN sFile FOR BINARY ACCESS WRITE AS hFile
+            OPEN fileName FOR BINARY ACCESS WRITE AS hFile
 
             ' Write font id
             DIM buffer AS STRING: buffer = CHR$(__PSF1_MAGIC0) + CHR$(__PSF1_MAGIC1)
