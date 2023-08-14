@@ -6,6 +6,7 @@
 $IF VGAFONT_BAS = UNDEFINED THEN
     $LET VGAFONT_BAS = TRUE
 
+    '$INCLUDE:'FileOps.bi'
     '$INCLUDE:'VGAFont.bi'
 
     ' Draws a single character at x, y using the active font
@@ -26,8 +27,15 @@ $IF VGAFONT_BAS = UNDEFINED THEN
             p = 256 * (p + (256 * (p > 127)))
             ' Draw the line
             t = y + uy - 1
-            IF pm = 3 THEN LINE (x, t)-(r, t), bc
-            LINE (x, t)-(r, t), , , p
+            SELECT CASE pm
+                CASE 1
+                    LINE (x, t)-(r, t), , , p
+                CASE 2
+                    LINE (x, t)-(r, t), , , NOT p
+                CASE ELSE
+                    LINE (x, t)-(r, t), bc
+                    LINE (x, t)-(r, t), , , p
+            END SELECT
         NEXT
         $CHECKING:ON
     END SUB
@@ -55,8 +63,15 @@ $IF VGAFONT_BAS = UNDEFINED THEN
                 p = 256 * (p + (256 * (p > 127)))
                 ' Draw the scan line
                 t = y + uy - 1
-                IF pm = 3 THEN LINE (l, t)-(r, t), bc
-                LINE (l, t)-(r, t), , , p
+                SELECT CASE pm
+                    CASE 1
+                        LINE (x, t)-(r, t), , , p
+                    CASE 2
+                        LINE (x, t)-(r, t), , , NOT p
+                    CASE ELSE
+                        LINE (x, t)-(r, t), bc
+                        LINE (x, t)-(r, t), , , p
+                END SELECT
             NEXT
         NEXT
         $CHECKING:ON
@@ -99,38 +114,32 @@ $IF VGAFONT_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Loads a PSF v1 font file from disk
+    ' Loads a PSF v1 font file from memory
     ' Note that this ignores the mode value
-    FUNCTION PSF1_ReadFont%% (sFile AS STRING, psf AS PSF1Type)
-        IF _FILEEXISTS(sFile) THEN
-            ' Open the file for reading
-            DIM AS LONG hFile: hFile = FREEFILE
-            OPEN sFile FOR BINARY ACCESS READ AS hFile
+    FUNCTION PSF1_LoadFontFromMemory%% (buffer AS STRING, psf AS PSF1Type)
+        ' Check if we at least have a header
+        IF LEN(buffer) < 5 THEN EXIT FUNCTION ' header is 4 bytes
 
-            ' Check font magic id
-            IF INPUT$(2, hFile) <> CHR$(__PSF1_MAGIC0) + CHR$(__PSF1_MAGIC1) THEN
-                CLOSE hFile
-                EXIT FUNCTION
-            END IF
+        ' Check font magic id
+        IF ASC(buffer, 1) <> __PSF1_MAGIC0 OR ASC(buffer, 2) <> __PSF1_MAGIC1 THEN EXIT FUNCTION
 
-            ' Read special mode value and ignore it
-            DIM i AS LONG: i = ASC(INPUT$(1, hFile))
+        ' Skip mode and read the height
+        DIM i AS LONG: i = ASC(buffer, 4)
 
-            ' Check font height
-            i = ASC(INPUT$(1, hFile))
-            IF i = 0 THEN
-                CLOSE hFile
-                EXIT FUNCTION
-            END IF
+        ' Check font height
+        IF i = 0 THEN EXIT FUNCTION
 
-            psf.size.x = 8 ' the width is always 8 for PSFv1
-            psf.size.y = i ' change the font height
-            psf.bitmap = INPUT$(256 * psf.size.y, hFile) ' the bitmap data in one go
+        psf.size.x = PSF1_FONT_WIDTH ' the width is always 8 for PSFv1
+        psf.size.y = i ' change the font height
+        psf.bitmap = MID$(buffer, 5) ' the bitmap data
 
-            CLOSE hFile
+        PSF1_LoadFontFromMemory = TRUE
+    END FUNCTION
 
-            PSF1_ReadFont = TRUE
-        END IF
+
+    ' Loads a PSF v1 font file from disk
+    FUNCTION PSF1_LoadFontFromPath%% (fileName AS STRING, psf AS PSF1Type)
+        PSF1_LoadFontFromPath = PSF1_LoadFontFromMemory(LoadFile(fileName), psf)
     END FUNCTION
 
 
@@ -138,7 +147,7 @@ $IF VGAFONT_BAS = UNDEFINED THEN
     ' This will wipe out whatever bitmap the font already has
     SUB PSF1_SetFontHeight (h AS _UNSIGNED _BYTE)
         SHARED __CurPSF AS PSF1Type
-        __CurPSF.size.x = 8 ' the width is always 8 for PSFv1
+        __CurPSF.size.x = PSF1_FONT_WIDTH ' the width is always 8 for PSFv1
         __CurPSF.size.y = h ' change the font height
         __CurPSF.bitmap = STRING$(256 * __CurPSF.size.y, NULL) ' just allocate enough space for the bitmap
 
@@ -171,21 +180,23 @@ $IF VGAFONT_BAS = UNDEFINED THEN
 
 
     ' Sets the entire font from a string
-    SUB PSF1_SetFont (buffer AS STRING)
+    FUNCTION PSF1_SetFont (buffer AS STRING)
         SHARED __CurPSF AS PSF1Type
 
         DIM i AS LONG: i = LEN(buffer)
 
         ' Check some absurd cases
-        IF i = 0 OR i MOD 256 <> 0 THEN EXIT SUB
+        IF i = 0 OR i MOD 256 <> 0 THEN EXIT FUNCTION
 
         ' Copy contents from the buffer
         __CurPSF.bitmap = buffer
 
         ' Adjust the font height
         __CurPSF.size.y = i \ 256
-        __CurPSF.size.x = 8 ' just in case this was not set
-    END SUB
+        __CurPSF.size.x = PSF1_FONT_WIDTH ' just in case this was not set
+
+        PSF1_SetFont = TRUE
+    END FUNCTION
 
 
     ' Set the glyph's bitmap to QB64's current font glyph
@@ -258,10 +269,10 @@ $IF VGAFONT_BAS = UNDEFINED THEN
 
         IF x < 0 OR x >= __CurPSF.size.x OR y < 0 OR y >= __CurPSF.size.y THEN EXIT SUB
 
-        IF NOT b THEN
-            ASC(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = _RESETBIT(ASC(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
-        ELSE
+        IF b THEN
             ASC(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = _SETBIT(ASC(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
+        ELSE
+            ASC(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1) = _RESETBIT(ASC(__CurPSF.bitmap, __CurPSF.size.y * cp + y + 1), __CurPSF.size.x - x - 1)
         END IF
     END SUB
 
@@ -270,12 +281,12 @@ $IF VGAFONT_BAS = UNDEFINED THEN
     ' This does not check if the file exists or whatever and will happily overwrite it
     ' It is the caller's resposibility to check this stuff
     ' Note that this will set the mode value to 0
-    FUNCTION PSF1_WriteFont%% (sFile AS STRING)
+    FUNCTION PSF1_SaveFont%% (sFile AS STRING)
         SHARED __CurPSF AS PSF1Type
 
         IF __CurPSF.size.x > 0 AND __CurPSF.size.y > 0 AND LEN(__CurPSF.bitmap) = 256 * __CurPSF.size.y THEN ' check if the font is valid
             ' Open the file for writing
-            DIM AS LONG hFile: hFile = FREEFILE
+            DIM hFile AS LONG: hFile = FREEFILE
             OPEN sFile FOR BINARY ACCESS WRITE AS hFile
 
             ' Write font id
@@ -294,8 +305,10 @@ $IF VGAFONT_BAS = UNDEFINED THEN
 
             CLOSE hFile
 
-            PSF1_WriteFont = TRUE
+            PSF1_SaveFont = TRUE
         END IF
     END FUNCTION
+
+    '$INCLUDE:'FileOps.bas'
 
 $END IF

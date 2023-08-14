@@ -11,6 +11,8 @@ $IF VGAFONT_BI = UNDEFINED THEN
     ' PSF1 file ID
     CONST __PSF1_MAGIC0 = &H36
     CONST __PSF1_MAGIC1 = &H04
+    ' Fixed font metrics
+    CONST PSF1_FONT_WIDTH = 8
 
     ' An in-memory PSF representation
     TYPE PSF1Type
