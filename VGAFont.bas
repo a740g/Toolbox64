@@ -9,6 +9,29 @@ $IF VGAFONT_BAS = UNDEFINED THEN
     '$INCLUDE:'FileOps.bi'
     '$INCLUDE:'VGAFont.bi'
 
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Small test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$RESIZE:SMOOTH
+    'SCREEN 12
+
+    'DIM myFont AS PSF1Type
+
+    'DIM i AS LONG: FOR i = 1 TO _WIDTH
+    '    CIRCLE (RND * _WIDTH, RND * _HEIGHT), RND * _HEIGHT, RND * 16
+    'NEXT
+
+    'IF PSF1_LoadFontFromPath("..\VGA-Font-Editor\fonts\8x16\DIG8X16.psf", myFont) THEN
+    '    PSF1_DrawString "Hello, world!", 16, 16
+    '    _PRINTMODE _KEEPBACKGROUND
+    '    PSF1_DrawString "Hello, world!", 32, 32
+    '    _PRINTMODE _ONLYBACKGROUND
+    '    PSF1_DrawString "Hello, world!", 48, 48
+    'END IF
+
+    'END
+    '-------------------------------------------------------------------------------------------------------------------
+
     ' Draws a single character at x, y using the active font
     SUB PSF1_DrawCharacter (cp AS _UNSIGNED _BYTE, x AS LONG, y AS LONG)
         $CHECKING:OFF
@@ -65,12 +88,12 @@ $IF VGAFONT_BAS = UNDEFINED THEN
                 t = y + uy - 1
                 SELECT CASE pm
                     CASE 1
-                        LINE (x, t)-(r, t), , , p
+                        LINE (l, t)-(r, t), , , p
                     CASE 2
-                        LINE (x, t)-(r, t), , , NOT p
+                        LINE (l, t)-(r, t), , , NOT p
                     CASE ELSE
-                        LINE (x, t)-(r, t), bc
-                        LINE (x, t)-(r, t), , , p
+                        LINE (l, t)-(r, t), bc
+                        LINE (l, t)-(r, t), , , p
                 END SELECT
             NEXT
         NEXT
@@ -117,6 +140,8 @@ $IF VGAFONT_BAS = UNDEFINED THEN
     ' Loads a PSF v1 font file from memory
     ' Note that this ignores the mode value
     FUNCTION PSF1_LoadFontFromMemory%% (buffer AS STRING, psf AS PSF1Type)
+        SHARED __CurPSF AS PSF1Type
+
         ' Check if we at least have a header
         IF LEN(buffer) < 5 THEN EXIT FUNCTION ' header is 4 bytes
 
@@ -131,7 +156,10 @@ $IF VGAFONT_BAS = UNDEFINED THEN
 
         psf.size.x = PSF1_FONT_WIDTH ' the width is always 8 for PSFv1
         psf.size.y = i ' change the font height
-        psf.bitmap = MID$(buffer, 5) ' the bitmap data
+        psf.bitmap = MID$(buffer, 5, 256 * i) ' the bitmap data
+
+        ' Set this as the default font if nothing is loaded
+        IF __CurPSF.size.x = 0 OR __CurPSF.size.y = 0 OR LEN(__CurPSF.bitmap) = NULL THEN __CurPSF = psf
 
         PSF1_LoadFontFromMemory = TRUE
     END FUNCTION
