@@ -378,7 +378,7 @@ static bool MIDIReadFile(MIDIFile *mididata, uintptr_t src)
         {
             goto bail;
         }
-        __MemFile_Read(src, reinterpret_cast<uintptr_t>(mididata->track[i].data), size);
+        MemFile_Read(src, reinterpret_cast<uintptr_t>(mididata->track[i].data), size);
     }
 
     return true;
@@ -642,7 +642,7 @@ inline qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
     }
     else
     {
-        auto f = __MemFile_Create(buffer, bufferSize);
+        auto f = MemFile_Create(reinterpret_cast<uintptr_t>(buffer), bufferSize);
         if (!f)
         {
             return QB_FALSE;

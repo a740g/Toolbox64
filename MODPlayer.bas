@@ -100,67 +100,52 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SHARED __Sample() AS __SampleType
         SHARED __Channel() AS __ChannelType
 
-        ' Open the buffer as memfile
-        DIM memFile AS _UNSIGNED _OFFSET: memFile = MemFile_Create(buffer)
-        IF memFile = NULL THEN EXIT FUNCTION
+        __Song.isPlaying = FALSE ' just in case something is playing
+
+        ' Open the buffer as a StringFile
+        DIM memFile AS StringFileType
+        StringFile_Create memFile, buffer
 
         ' Read the file signature
-        DIM result AS LONG: result = MemFile_ReadString(memFile, __Song.subtype)
-        _ASSERT result = LEN(__Song.subtype)
+        __Song.subtype = StringFile_ReadString(memFile, 4) ' read 4 bytes. Last byte is the version
 
         ' Check if this is really an MTM file
-        IF LEFT$(__Song.subtype, 3) <> "MTM" THEN
-            MemFile_Destroy memFile
-            EXIT FUNCTION
-        END IF
+        IF LEFT$(__Song.subtype, 3) <> "MTM" THEN EXIT FUNCTION
 
         ' Change the FourCC so that it is completely printable
         MID$(__Song.subtype, 4, 1) = HEX$(ASC(__Song.subtype, 4) - 15)
 
         ' Read the MTM song title (20 bytes)
-        __Song.songName = SPACE$(20): result = MemFile_ReadString(memFile, __Song.songName)
-        _ASSERT result = LEN(__Song.songName)
-        __Song.songName = ToBString(__Song.songName) ' remove null terminator (if any)
+        __Song.songName = StringFile_ReadString(memFile, 20) ' we'll leave the name untouched (these sometimes contain interesting stuff)
 
         ' Read the number of tracks saved
-        DIM numTracks AS _UNSIGNED INTEGER: result = MemFile_ReadInteger(memFile, numTracks)
-        _ASSERT result
+        DIM numTracks AS _UNSIGNED INTEGER: numTracks = StringFile_ReadInteger(memFile)
 
         ' Read the highest pattern number saved
-        DIM byte1 AS _UNSIGNED _BYTE: result = MemFile_ReadByte(memFile, byte1)
-        _ASSERT result
+        DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile)
         __Song.patterns = byte1 + 1 ' convert to count / length
 
         ' Read the last order to play
-        result = MemFile_ReadByte(memFile, byte1)
-        _ASSERT result
+        byte1 = StringFile_ReadByte(memFile)
         __Song.orders = byte1 + 1 ' convert to count / length
 
         ' Read length of the extra comment field
-        DIM commentLen AS _UNSIGNED INTEGER: result = MemFile_ReadInteger(memFile, commentLen)
-        _ASSERT result
+        DIM commentLen AS _UNSIGNED INTEGER: commentLen = StringFile_ReadInteger(memFile)
 
         ' Read the number of samples
-        result = MemFile_ReadByte(memFile, __Song.samples)
-        _ASSERT result
+        __Song.samples = StringFile_ReadByte(memFile)
 
         ' Read the attribute byte and discard it
-        result = MemFile_ReadByte(memFile, byte1)
-        _ASSERT result
+        byte1 = StringFile_ReadByte(memFile)
 
         ' Read the beats per track (row count)
-        result = MemFile_ReadByte(memFile, __Song.rows)
-        _ASSERT result
+        __Song.rows = StringFile_ReadByte(memFile)
 
         ' Read the number of channels
-        result = MemFile_ReadByte(memFile, __Song.channels)
-        _ASSERT result
+        __Song.channels = StringFile_ReadByte(memFile)
 
         ' Sanity check
-        IF numTracks = 0 OR __Song.samples = 0 OR __Song.rows = 0 OR __Song.channels = 0 THEN ' TODO
-            MemFile_Destroy memFile
-            EXIT FUNCTION
-        END IF
+        IF numTracks = 0 OR __Song.samples = 0 OR __Song.rows = 0 OR __Song.channels = 0 THEN EXIT FUNCTION
 
         ' Resize the channel array
         REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
@@ -170,8 +155,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Read the panning positions
         DIM i AS LONG: FOR i = 0 TO __MTM_CHANNELS - 1
-            result = MemFile_ReadByte(memFile, byte1) ' read the raw value
-            _ASSERT result
+            byte1 = StringFile_ReadByte(memFile) ' read the raw value
 
             ' Adjust and save the values per out mixer requirements
             IF byte1 < 16 AND i < __Song.channels THEN SampleMixer_SetVoicePanning i, (byte1 / 15) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
@@ -183,39 +167,29 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read the sample information
         FOR i = 0 TO __Song.samples - 1
             ' Read the sample name
-            __Sample(i).sampleName = SPACE$(22) ' MTM sample names are 22 bytes long
-            result = MemFile_ReadString(memFile, __Sample(i).sampleName)
-            _ASSERT result = LEN(__Sample(i).sampleName)
-            __Sample(i).sampleName = ToBString(__Sample(i).sampleName) ' remove null terminator (if any)
+            __Sample(i).sampleName = StringFile_ReadString(memFile, 22) ' MTM sample names are 22 bytes long. We'll leave the string untouched
 
             ' Read sample length
-            result = MemFile_ReadLong(memFile, __Sample(i).length)
-            _ASSERT result
+            __Sample(i).length = StringFile_ReadLong(memFile)
 
             ' Read loop start
-            result = MemFile_ReadLong(memFile, __Sample(i).loopStart)
-            _ASSERT result
+            __Sample(i).loopStart = StringFile_ReadLong(memFile)
             IF __Sample(i).loopStart >= __Sample(i).length THEN __Sample(i).loopStart = 0 ' sanity check
 
             ' Read loop end
-            result = MemFile_ReadLong(memFile, __Sample(i).loopEnd)
-            _ASSERT result
+            __Sample(i).loopEnd = StringFile_ReadLong(memFile)
             IF __Sample(i).loopEnd > __Sample(i).length THEN __Sample(i).loopEnd = __Sample(i).length ' sanity check
             __Sample(i).loopLength = __Sample(i).loopEnd - __Sample(i).loopStart ' calculate loop length
 
             ' Read finetune
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            __Sample(i).c2Spd = __GetC2Spd(byte1) ' convert finetune to c2spd
+            __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
             ' Read volume
-            result = MemFile_ReadByte(memFile, __Sample(i).volume)
-            _ASSERT result
+            __Sample(i).volume = StringFile_ReadByte(memFile)
             IF __Sample(i).volume > __MOD_SAMPLE_VOLUME_MAX THEN __Sample(i).volume = __MOD_SAMPLE_VOLUME_MAX ' MTM uses MOD volume specs.
 
             ' Read attribute
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
+            byte1 = StringFile_ReadByte(memFile)
             __Sample(i).frameSize = SIZE_OF_BYTE + SIZE_OF_BYTE * (byte1 AND &H1) ' 1 if 8-bit else 2 if 16-bit
         NEXT
 
@@ -224,9 +198,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Read order list
         FOR i = 0 TO __MOD_ORDERS - 1 ' MTMs like MODs always have a 128 byte long order table
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            __Order(i) = byte1
+            __Order(i) = StringFile_ReadByte(memFile)
         NEXT
 
         ' Read and convert track data
@@ -235,12 +207,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         FOR i = 0 TO numTracks - 1
             FOR j = 0 TO __Song.rows - 1
                 ' Read 3 bytes
-                result = MemFile_ReadByte(memFile, byte1)
-                _ASSERT result
-                result = MemFile_ReadByte(memFile, byte2)
-                _ASSERT result
-                result = MemFile_ReadByte(memFile, byte3)
-                _ASSERT result
+                byte1 = StringFile_ReadByte(memFile)
+                byte2 = StringFile_ReadByte(memFile)
+                byte3 = StringFile_ReadByte(memFile)
 
                 ' +----------+----------+----------+
                 ' |  BYTE 0  |  BYTE 1  |  BYTE 2  |
@@ -279,8 +248,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         FOR i = 0 TO __Song.patterns - 1
             FOR j = 0 TO __MTM_CHANNELS - 1 ' MTM files stores data for 32 channels irrespective of the actual channels used
                 ' Read the data
-                result = MemFile_ReadInteger(memFile, w)
-                _ASSERT result
+                w = StringFile_ReadInteger(memFile)
 
                 IF j >= __Song.channels THEN _CONTINUE ' ignore excess channel information
 
@@ -302,9 +270,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT
 
         ' Read the tune comment
-        __Song.comment = SPACE$(commentLen): result = MemFile_ReadString(memFile, __Song.comment)
-        _ASSERT result = LEN(__Song.comment)
-        __Song.comment = ToBString(__Song.comment) ' remove null terminator (if any)
+        __Song.comment = StringFile_ReadString(memFile, commentLen) ' read the comment and leave it untouched
 
         ' Initialize the softsynth sample manager
         SampleManager_Initialize __Song.samples
@@ -312,8 +278,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the samples
         DIM sampBuf AS STRING
         FOR i = 0 TO __Song.samples - 1
-            sampBuf = SPACE$(__Sample(i).length)
-            result = MemFile_ReadString(memFile, sampBuf)
+            sampBuf = StringFile_ReadString(memFile, __Sample(i).length)
 
             ' Convert 8-bit unsigned samples to 8-bit signed
             IF __Sample(i).frameSize = SIZE_OF_BYTE THEN
@@ -325,8 +290,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             ' Load sample size bytes of data and send it to our softsynth sample manager
             SampleManager_Load i, sampBuf, __Sample(i).frameSize, __Sample(i).loopLength > 0, __Sample(i).loopStart \ __Sample(i).frameSize, __Sample(i).loopEnd \ __Sample(i).frameSize
         NEXT
-
-        MemFile_Destroy memFile ' close the memfile
 
         ' Load all needed LUTs
         __LoadTables
@@ -344,26 +307,22 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SHARED __Channel() AS __ChannelType
         SHARED __PeriodTable() AS _UNSIGNED INTEGER
 
-        ' Attempt to open the file
-        DIM memFile AS _UNSIGNED _OFFSET: memFile = MemFile_Create(buffer)
-        IF memFile = NULL THEN EXIT FUNCTION
-
         __Song.isPlaying = FALSE ' just in case something is playing
 
-        ' Check what kind of MOD file this is
+        ' Attempt to open the file
+        DIM i AS LONG, memFile AS StringFileType
+        StringFile_Create memFile, buffer
+
         ' Seek to offset 1080 (438h) in the file & read in 4 bytes
-        DIM AS LONG i, result
-        result = MemFile_Seek(memFile, 1080)
-        _ASSERT result
-        result = MemFile_ReadString(memFile, __Song.subtype)
-        _ASSERT result = LEN(__Song.subtype)
+        IF NOT StringFile_Seek(memFile, 1081) THEN EXIT FUNCTION ' 1081 because StringFile is 1 based
+
+        ' Check what kind of MOD file this is
+        __Song.subtype = StringFile_ReadString(memFile, 4) ' read 4 bytes
 
         ' Also, seek to the beginning of the file and get the song title
-        result = MemFile_Seek(memFile, 0)
-        _ASSERT result
-        __Song.songName = SPACE$(20) ' MOD song title is 20 bytes long
-        result = MemFile_ReadString(memFile, __Song.songName)
-        _ASSERT result = LEN(__Song.songName)
+        IF NOT StringFile_Seek(memFile, 1) THEN EXIT FUNCTION ' 1 because StringFile is 1 based
+
+        __Song.songName = StringFile_ReadString(memFile, 20) ' MOD song title is 20 bytes long
 
         __Song.channels = 0
         __Song.samples = 0
@@ -400,11 +359,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 ELSE
                     ' Extra checks for 15 sample MOD
                     FOR i = 1 TO LEN(__Song.songName)
-                        IF ASC(__Song.songName, i) < KEY_SPACE AND ASC(__Song.songName, i) <> NULL THEN
-                            ' This is probably not a 15 sample MOD file
-                            MemFile_Destroy memFile
-                            EXIT FUNCTION
-                        END IF
+                        IF ASC(__Song.songName, i) < KEY_SPACE AND ASC(__Song.songName, i) <> NULL THEN EXIT FUNCTION ' this is probably not a 15 sample MOD file
                     NEXT
                     __Song.channels = 4
                     __Song.samples = 15
@@ -413,12 +368,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         END SELECT
 
         ' Sanity check
-        IF __Song.samples = 0 OR __Song.channels = 0 THEN
-            MemFile_Destroy memFile
-            EXIT FUNCTION
-        END IF
-
-        __Song.songName = ToBString(__Song.songName) ' remove null terminator (if any)
+        IF __Song.samples = 0 OR __Song.channels = 0 THEN EXIT FUNCTION
 
         ' Resize the sample array
         REDIM __Sample(0 TO __Song.samples - 1) AS __SampleType
@@ -427,42 +377,30 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the sample headers
         FOR i = 0 TO __Song.samples - 1
             ' Read the sample name
-            __Sample(i).sampleName = SPACE$(22) ' MOD sample names are 22 bytes long
-            result = MemFile_ReadString(memFile, __Sample(i).sampleName)
-            _ASSERT result = LEN(__Sample(i).sampleName)
-            __Sample(i).sampleName = ToBString(__Sample(i).sampleName) ' remove null terminator (if any)
+            __Sample(i).sampleName = StringFile_ReadString(memFile, 22) ' MOD sample names are 22 bytes long
 
             ' Read sample length
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            result = MemFile_ReadByte(memFile, byte2)
-            _ASSERT result
+            byte1 = StringFile_ReadByte(memFile)
+            byte2 = StringFile_ReadByte(memFile)
             __Sample(i).length = (byte1 * &H100 + byte2) * 2
             IF __Sample(i).length = 2 THEN __Sample(i).length = 0 ' Sanity check
 
             ' Read finetune
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            __Sample(i).c2Spd = __GetC2Spd(byte1) ' convert finetune to c2spd
+            __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
             ' Read volume
-            result = MemFile_ReadByte(memFile, __Sample(i).volume)
-            _ASSERT result
+            __Sample(i).volume = StringFile_ReadByte(memFile)
             IF __Sample(i).volume > __MOD_SAMPLE_VOLUME_MAX THEN __Sample(i).volume = __MOD_SAMPLE_VOLUME_MAX ' Sanity check
 
             ' Read loop start
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            result = MemFile_ReadByte(memFile, byte2)
-            _ASSERT result
+            byte1 = StringFile_ReadByte(memFile)
+            byte2 = StringFile_ReadByte(memFile)
             __Sample(i).loopStart = (byte1 * &H100 + byte2) * 2
             IF __Sample(i).loopStart >= __Sample(i).length THEN __Sample(i).loopStart = 0 ' Sanity check
 
             ' Read loop length
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            result = MemFile_ReadByte(memFile, byte2)
-            _ASSERT result
+            byte1 = StringFile_ReadByte(memFile)
+            byte2 = StringFile_ReadByte(memFile)
             __Sample(i).loopLength = (byte1 * &H100 + byte2) * 2
             IF __Sample(i).loopLength = 2 THEN __Sample(i).loopLength = 0 ' sanity check
             __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength ' calculate repeat end
@@ -472,12 +410,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Sample(i).frameSize = SIZE_OF_BYTE
         NEXT
 
-        result = MemFile_ReadByte(memFile, byte1)
-        _ASSERT result
-        __Song.orders = byte1: IF __Song.orders > __MOD_ORDERS THEN __Song.orders = __MOD_ORDERS ' clamp to MOD specific max
+        __Song.orders = StringFile_ReadByte(memFile)
+        IF __Song.orders > __MOD_ORDERS THEN __Song.orders = __MOD_ORDERS ' clamp to MOD specific max
 
-        result = MemFile_ReadByte(memFile, __Song.endJumpOrder)
-        _ASSERT result
+        __Song.endJumpOrder = StringFile_ReadByte(memFile)
         IF __Song.endJumpOrder >= __Song.orders THEN __Song.endJumpOrder = 0
 
         ' Resize the order array (MODs always have a 128 byte long order table)
@@ -486,9 +422,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the pattern table, and find the highest pattern to load
         __Song.patterns = 0
         FOR i = 0 TO __MOD_ORDERS - 1 ' MODs always have a 128 byte long order table
-            result = MemFile_ReadByte(memFile, byte1)
-            _ASSERT result
-            __Order(i) = byte1
+            __Order(i) = StringFile_ReadByte(memFile)
             IF __Order(i) > __Song.patterns THEN __Song.patterns = __Order(i)
         NEXT
         __Song.patterns = __Song.patterns + 1 ' change to count
@@ -500,7 +434,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Skip past the 4 byte marker if this is a 31 sample mod
         IF __Song.samples = 31 THEN
-            result = MemFile_Seek(memFile, MemFile_GetPosition(memFile) + 4)
+            IF NOT StringFile_Seek(memFile, StringFile_GetPosition(memFile) + 4) THEN EXIT FUNCTION
         END IF
 
         __LoadTables ' load all needed LUTs
@@ -517,14 +451,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         FOR i = 0 TO __Song.patterns - 1
             FOR a = 0 TO __Song.rows - 1
                 FOR b = 0 TO __Song.channels - 1
-                    result = MemFile_ReadByte(memFile, byte1)
-                    _ASSERT result
-                    result = MemFile_ReadByte(memFile, byte2)
-                    _ASSERT result
-                    result = MemFile_ReadByte(memFile, byte3)
-                    _ASSERT result
-                    result = MemFile_ReadByte(memFile, byte4)
-                    _ASSERT result
+                    byte1 = StringFile_ReadByte(memFile)
+                    byte2 = StringFile_ReadByte(memFile)
+                    byte3 = StringFile_ReadByte(memFile)
+                    byte4 = StringFile_ReadByte(memFile)
 
                     __Pattern(i, a, b).sample = (byte1 AND &HF0) OR _SHR(byte3, 4)
 
@@ -555,13 +485,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM sampBuf AS STRING
         ' Load the samples
         FOR i = 0 TO __Song.samples - 1
-            sampBuf = SPACE$(__Sample(i).length)
-            result = MemFile_ReadString(memFile, sampBuf)
+            sampBuf = StringFile_ReadString(memFile, __Sample(i).length)
             ' Load sample size bytes of data and send it to our softsynth sample manager
             SampleManager_Load i, sampBuf, __Sample(i).frameSize, __Sample(i).loopLength > 0, __Sample(i).loopStart \ __Sample(i).frameSize, __Sample(i).loopEnd \ __Sample(i).frameSize
         NEXT
-
-        MemFile_Destroy memFile ' close the memfile
 
         ' Setup the channel array
         REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType

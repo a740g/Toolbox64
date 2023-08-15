@@ -7,21 +7,28 @@ $IF MEMFILE_BI = UNDEFINED THEN
     $LET MEMFILE_BI = TRUE
 
     '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
+
+    ' Simplified QB64-only memory-file
+    TYPE StringFileType
+        buffer AS STRING
+        cursor AS LONG
+    END TYPE
 
     DECLARE LIBRARY "MemFile"
-        FUNCTION __MemFile_Create~%& (src AS STRING, BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION MemFile_Create~%& (BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
         SUB MemFile_Destroy (BYVAL memFile AS _UNSIGNED _OFFSET)
         FUNCTION MemFile_IsEOF%% (BYVAL memFile AS _UNSIGNED _OFFSET)
         $IF 32BIT THEN
             FUNCTION MemFile_GetSize~& (BYVAL memFile AS _UNSIGNED _OFFSET)
             FUNCTION MemFile_GetPosition~& (BYVAL memFile AS _UNSIGNED _OFFSET)
-            FUNCTION __MemFile_Read~& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL dst AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
-            FUNCTION __MemFile_Write~& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+            FUNCTION MemFile_Read~& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL dst AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+            FUNCTION MemFile_Write~& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
         $ELSE
             FUNCTION MemFile_GetSize~&& (BYVAL memFile AS _UNSIGNED _OFFSET)
             FUNCTION MemFile_GetPosition~&& (BYVAL memFile AS _UNSIGNED _OFFSET)
-            FUNCTION __MemFile_Read~&& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL dst AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
-            FUNCTION __MemFile_Write~&& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+            FUNCTION MemFile_Read~&& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL dst AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+            FUNCTION MemFile_Write~&& (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
         $END IF
         FUNCTION MemFile_Seek%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL position AS _UNSIGNED _OFFSET)
         SUB MemFile_Resize (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL newSize AS _UNSIGNED _OFFSET)
