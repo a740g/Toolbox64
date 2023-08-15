@@ -9,8 +9,17 @@
 #include <cstdlib>
 #include <cstring>
 
-// This one is done this way to workaround a macOS compiler error
+// These are done this way to workaround a macOS compiler error
+#define GetCStringLength(_str_) (strlen(_str_))
+#define CompareMemory(_lhs_, _rhs_, _sz_) (memcmp((const void *)(_lhs_), (const void *)(_rhs_), (size_t)(_sz_)))
+#define SetMemory(_dst_, _ch_, _cnt_) memset((void *)(_dst_), (int)(_ch_), (size_t)(_cnt_))
+#define CopyMemory(_dst_, _src_, _cnt_) memcpy((void *)(_dst_), (const void *)(_src_), (size_t)(_cnt_))
+#define MoveMemory(_dst_, _src_, _cnt_) memmove((void *)(_dst_), (const void *)(_src_), (size_t)(_cnt_))
 #define FindMemory(_ptr_, _chr_, _cnt_) ((uintptr_t)memchr((const void *)(_ptr_), (int)(_chr_), (size_t)(_cnt_)))
+#define AllocateMemory(_sz_) ((uintptr_t)malloc((size_t)(_sz_)))
+#define AllocateAndClearMemory(_cnt_, _sz_) ((uintptr_t)calloc((size_t)(_cnt_), (size_t)(_sz_)))
+#define ReallocateMemory(_ptr_, _nsz_) ((uintptr_t)realloc((void *)(_ptr_), (size_t)(_nsz_)))
+#define FreeMemory(_ptr_) free((void *)(_ptr_))
 
 /// @brief Casts a QB64 _OFFSET to an unsigned integer. Needed because QB64 does not allow converting or using _OFFSET in expressions (fully :()
 /// @param p A pointer (_OFFSET)

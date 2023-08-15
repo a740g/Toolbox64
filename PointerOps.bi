@@ -43,36 +43,43 @@ $IF POINTEROPS_BI = UNDEFINED THEN
     'PRINT HEX$(PeekStringInteger64(fs, 0))
 
     'PRINT FindMemory(_OFFSET(s), ASC("g"), LEN(s))
+    'PRINT CompareMemory(_OFFSET(fs), _OFFSET(s), 2)
+    'SetMemory _OFFSET(s), ASC("X"), 3
+    'PRINT s
+    'CopyMemory _OFFSET(s), _OFFSET(fs), 3
+    'PRINT s
+    'MoveMemory _OFFSET(s), _OFFSET(s) + 3, 4
+    'PRINT s
+
+    'DIM m AS _OFFSET: m = AllocateMemory(8192)
+    'PRINT m
+    'SetMemory m, ASC("T"), 4
+    'SetMemory m + 4, 0, 1
+    'PRINT CStr(m)
+    'm = ReallocateMemory(m, 4096)
+    'PRINT m
+    'FreeMemory m
 
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
-    DECLARE CUSTOMTYPE LIBRARY
-        $IF 32BIT THEN
-            FUNCTION  GetCStringLength~& ALIAS strlen (BYVAL str As _UNSIGNED _OFFSET)
-        $ELSE
-            FUNCTION GetCStringLength~&& ALIAS strlen (BYVAL str AS _UNSIGNED _OFFSET)
-        $END IF
-        FUNCTION CompareMemory& ALIAS memcmp (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB SetMemory ALIAS memset (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB CopyMemory ALIAS memcpy (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        SUB MoveMemory ALIAS memmove (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
-        FUNCTION AllocateMemory~%& ALIAS malloc (BYVAL size AS _UNSIGNED _OFFSET)
-        FUNCTION AllocateAndClearMemory~%& ALIAS calloc (BYVAL num AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
-        FUNCTION ReallocateMemory~%& ALIAS realloc (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
-        SUB FreeMemory ALIAS free (BYVAL ptr AS _UNSIGNED _OFFSET)
-    END DECLARE
-
-    DECLARE LIBRARY
-        FUNCTION FindMemory~%& (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
-    END DECLARE
-
     DECLARE LIBRARY "PointerOps"
         $IF 32BIT THEN
+            FUNCTION  GetCStringLength~& (BYVAL str As _UNSIGNED _OFFSET)
             FUNCTION CLngPtr~& (BYVAL p As _UNSIGNED _OFFSET)
         $ELSE
+            FUNCTION GetCStringLength~&& (BYVAL str AS _UNSIGNED _OFFSET)
             FUNCTION CLngPtr~&& (BYVAL p AS _UNSIGNED _OFFSET)
         $END IF
+        FUNCTION CompareMemory& (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB SetMemory (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB CopyMemory (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        SUB MoveMemory (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL src AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
+        FUNCTION FindMemory~%& (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)
+        FUNCTION AllocateMemory~%& (BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION AllocateAndClearMemory~%& (BYVAL num AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)
+        FUNCTION ReallocateMemory~%& (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
+        SUB FreeMemory (BYVAL ptr AS _UNSIGNED _OFFSET)
         FUNCTION CStr$ (BYVAL p AS _UNSIGNED _OFFSET)
         FUNCTION PeekByte%% (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
         SUB PokeByte (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _BYTE)

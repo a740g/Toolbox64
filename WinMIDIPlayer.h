@@ -759,7 +759,7 @@ void MIDI_SetVolume(float volume)
 {
     if (hMIDIStream)
     {
-        volume = CLAMP(volume, 0.0f, 1.0f);
+        volume = ClampSingle(volume, 0.0f, 1.0f);
         auto calcVolume = int(65535.0f * volume);
         midiOutSetVolume((HMIDIOUT)hMIDIStream, MAKELONG(calcVolume, calcVolume));
     }

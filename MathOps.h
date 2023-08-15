@@ -11,10 +11,6 @@
 #include <cstdlib>
 #include <cmath>
 
-#define CLAMP(_x_, _low_, _high_) (((_x_) > (_high_)) ? (_high_) : (((_x_) < (_low_)) ? (_low_) : (_x_)))
-#define IS_EVEN(_x_) (((_x_) & 1) == 0)
-#define GET_SIGN(_x_) (((_x_) == 0) ? 0 : (((_x_) > 0) ? 1 : -1))
-
 extern void sub_randomize(double seed, int32_t passed); // QB64's random seed function
 
 /// @brief Set the seed for the random number generator (CRT and QB64)
@@ -46,7 +42,7 @@ inline uint32_t GetRandomMaximum()
 /// @return True if n is even
 inline qb_bool IsLongEven(int32_t n)
 {
-    return TO_QB_BOOL(IS_EVEN(n));
+    return TO_QB_BOOL((n & 1) == 0);
 }
 
 /// @brief Returns true if n is even
@@ -54,7 +50,7 @@ inline qb_bool IsLongEven(int32_t n)
 /// @return True if n is even
 inline qb_bool IsInteger64Even(int64_t n)
 {
-    return TO_QB_BOOL(IS_EVEN(n));
+    return TO_QB_BOOL((n & 1) == 0);
 }
 
 /// @brief Check if n is a power of 2
@@ -205,7 +201,8 @@ inline int64_t AverageInteger64(int64_t x, int64_t y)
 /// @return Clamped value
 inline int32_t ClampLong(int32_t n, int32_t lo, int32_t hi)
 {
-    return CLAMP(n, lo, hi);
+    return (n < lo) ? lo : (n > hi) ? hi
+                                    : n;
 }
 
 /// @brief Clamps n between lo and hi
@@ -215,7 +212,8 @@ inline int32_t ClampLong(int32_t n, int32_t lo, int32_t hi)
 /// @return Clamped value
 inline int64_t ClampInteger64(int64_t n, int64_t lo, int64_t hi)
 {
-    return CLAMP(n, lo, hi);
+    return (n < lo) ? lo : (n > hi) ? hi
+                                    : n;
 }
 
 /// @brief Clamps n between lo and hi
@@ -225,7 +223,8 @@ inline int64_t ClampInteger64(int64_t n, int64_t lo, int64_t hi)
 /// @return Clamped value
 inline float ClampSingle(float n, float lo, float hi)
 {
-    return CLAMP(n, lo, hi);
+    return (n < lo) ? lo : (n > hi) ? hi
+                                    : n;
 }
 
 /// @brief Clamps n between lo and hi
@@ -235,7 +234,8 @@ inline float ClampSingle(float n, float lo, float hi)
 /// @return Clamped value
 inline double ClampDouble(double n, double lo, double hi)
 {
-    return CLAMP(n, lo, hi);
+    return (n < lo) ? lo : (n > hi) ? hi
+                                    : n;
 }
 
 /// @brief Remap input value within input range to output range

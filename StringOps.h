@@ -13,20 +13,6 @@
 #include <cstdio>
 #include <regex>
 
-// Wrappers for character manipulation functions
-#define IsAlphaNumeric(_ch_) TO_QB_BOOL(isalnum(_ch_))
-#define IsAlphabetic(_ch_) TO_QB_BOOL(isalpha(_ch_))
-#define IsLowerCase(_ch_) TO_QB_BOOL(islower(_ch_))
-#define IsUpperCase(_ch_) TO_QB_BOOL(isupper(_ch_))
-#define IsDigit(_ch_) TO_QB_BOOL(isdigit(_ch_))
-#define IsHexadecimalDigit(_ch_) TO_QB_BOOL(isxdigit(_ch_))
-#define IsControlCharacter(_ch_) TO_QB_BOOL(iscntrl(_ch_))
-#define IsGraphicalCharacter(_ch_) TO_QB_BOOL(isgraph(_ch_))
-#define IsWhiteSpace(_ch_) TO_QB_BOOL(isspace(_ch_))
-#define IsBlank(_ch_) TO_QB_BOOL(isblank(_ch_))
-#define IsPrintable(_ch_) TO_QB_BOOL(isprint(_ch_))
-#define IsPunctuation(_ch_) TO_QB_BOOL(ispunct(_ch_))
-
 /// @brief Format a 32-bit integer
 /// @param n A 32-bit integer
 /// @param fmt The format specifier
@@ -86,7 +72,7 @@ inline const char *__FormatOffset(uintptr_t n, const char *fmt)
 /// @param n A boolean value
 /// @param fmt The format type needed
 /// @return A string form of the boolean value
-const char *FormatBoolean(int32_t n, uint32_t fmt)
+inline const char *FormatBoolean(int32_t n, uint32_t fmt)
 {
     static const char *const BOOLEAN_STRINGS[][2] = {
         {"False", "True"},
@@ -116,6 +102,102 @@ const char *FormatBoolean(int32_t n, uint32_t fmt)
         fmt = 0;
 
     return BOOLEAN_STRINGS[fmt][n];
+}
+
+/// @brief Check if the character is an alphanumeric character
+/// @param ch The character to check
+/// @return True if the character is an alphanumeric character
+inline qb_bool IsAlphaNumeric(uint32_t ch)
+{
+    return TO_QB_BOOL(isalnum(ch));
+}
+
+/// @brief Check if the character is an alphabetic character
+/// @param ch The character to check
+/// @return True if the character is an alphabetic character
+inline qb_bool IsAlphabetic(uint32_t ch)
+{
+    return TO_QB_BOOL(isalpha(ch));
+}
+
+/// @brief Check if the character is a lowercase characte
+/// @param ch The character to check
+/// @return True if the character is a lowercase characte
+inline qb_bool IsLowerCase(uint32_t ch)
+{
+    return TO_QB_BOOL(islower(ch));
+}
+
+/// @brief Check if the character is an uppercase character
+/// @param ch The character to check
+/// @return True if the character is an uppercase character
+inline qb_bool IsUpperCase(uint32_t ch)
+{
+    return TO_QB_BOOL(isupper(ch));
+}
+
+/// @brief Check if the character is a numeric character
+/// @param ch The character to check
+/// @return True if the character is a numeric character
+inline qb_bool IsDigit(uint32_t ch)
+{
+    return TO_QB_BOOL(isdigit(ch));
+}
+
+/// @brief Check if the character is a hexadecimal numeric character
+/// @param ch The character to check
+/// @return True if the character is a hexadecimal numeric character
+inline qb_bool IsHexadecimalDigit(uint32_t ch)
+{
+    return TO_QB_BOOL(isxdigit(ch));
+}
+
+/// @brief Check if the character is a control character
+/// @param ch The character to check
+/// @return True if the character is a control character
+inline qb_bool IsControlCharacter(uint32_t ch)
+{
+    return TO_QB_BOOL(iscntrl(ch));
+}
+
+/// @brief Check if the character has a graphical representation
+/// @param ch The character to check
+/// @return True if the character has a graphical representation
+inline qb_bool IsGraphicalCharacter(uint32_t ch)
+{
+    return TO_QB_BOOL(isgraph(ch));
+}
+
+/// @brief Check if the character is a white-space character
+/// @param ch The character to check
+/// @return True if the character is white-space character
+inline qb_bool IsWhiteSpace(uint32_t ch)
+{
+    return TO_QB_BOOL(isspace(ch));
+}
+
+/// @brief Check if the character is a blank character
+/// @param ch The character to check
+/// @return True if the character is a blank character
+inline qb_bool IsBlank(uint32_t ch)
+{
+    return TO_QB_BOOL(isblank(ch));
+}
+
+/// @brief Check if the character can be printed
+/// @param ch The character to check
+/// @return True if the character can be printed
+inline qb_bool IsPrintable(uint32_t ch)
+{
+    return TO_QB_BOOL(isprint(ch));
+}
+
+/// @brief Check if the character is a punctuation character
+/// @param ch The character to check
+/// @return True if the character is a punctuation character
+inline qb_bool IsPunctuation(uint32_t ch)
+{
+    return TO_QB_BOOL(ispunct(ch));
 }
 
 /// @brief Reverses the order of bytes in memory
