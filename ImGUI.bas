@@ -15,7 +15,6 @@ $IF IMGUI_BAS = UNDEFINED THEN
 
     '$INCLUDE:'ImGUI.bi'
 
-
     ' Calculates the bounding rectangle for a object given its position & size
     SUB RectangleCreate (p AS Vector2LType, s AS Vector2LType, r AS RectangleType)
         r.a.x = p.x
@@ -1002,7 +1001,7 @@ $IF IMGUI_BAS = UNDEFINED THEN
         END IF
     END SUB
 
-
+    '$INCLUDE:'ColorOps.bas'
     '$INCLUDE:'TimeOps.bas'
 
 $END IF

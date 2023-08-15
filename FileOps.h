@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Common.h"
+#include <cstdint>
 #include <algorithm>
 #include <cstdio>
 #include <cstring>

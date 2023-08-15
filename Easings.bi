@@ -5,15 +5,9 @@
 
 $IF EASINGS_BI = UNDEFINED THEN
     $LET EASINGS_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'Common.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' EXTERNAL LIBRARIES
-    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+
     DECLARE LIBRARY "external/reasings"
         FUNCTION EaseBackIn! (BYVAL t AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE)
         FUNCTION EaseBackInOut! (BYVAL t AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE)
@@ -44,6 +38,5 @@ $IF EASINGS_BI = UNDEFINED THEN
         FUNCTION EaseSineInOut! (BYVAL t AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE)
         FUNCTION EaseSineOut! (BYVAL t AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE)
     END DECLARE
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

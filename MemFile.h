@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include "Common.h"
+#include "Types.h"
 #include "Debug.h"
+#include <cstdint>
 #include <algorithm>
 #include <vector>
 

@@ -13,8 +13,10 @@
 $IF IMGUI_BI = UNDEFINED THEN
     $LET IMGUI_BI = TRUE
 
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
+    '$INCLUDE:'ColorOps.bi'
     '$INCLUDE:'TimeOps.bi'
-
 
     ' These are flags that can be used by the text box widget
     CONST TEXT_BOX_ALPHA = 1 ' alphabetic input allowed
@@ -34,7 +36,6 @@ $IF IMGUI_BI = UNDEFINED THEN
     CONST WIDGET_CLASS_COUNT = 2 ' this is the total number of widgets
 
     CONST WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
-
 
     TYPE RectangleType ' a 2D rectangle
         a AS Vector2LType
@@ -87,7 +88,6 @@ $IF IMGUI_BI = UNDEFINED THEN
         cmd AS PushButtonType
         txt AS TextBoxType
     END TYPE
-
 
     DIM InputManager AS InputManagerType 'input manager global variable. Use this to check for input
     DIM WidgetManager AS WidgetManagerType ' widget manager global variable. This contains top level widget state

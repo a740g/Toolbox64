@@ -14,22 +14,20 @@ $IF COMMON_BI = UNDEFINED THEN
     ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64
     DEFLNG A-Z
 
-    ' Force all arrays to be defined (technically not required since we use _EXPLICIT below)
+    ' Force all arrays to be defined (technically not required, since we use _EXPLICIT below)
     OPTION _EXPLICITARRAY
 
     ' Force all variables to be defined
     OPTION _EXPLICIT
 
-    ' All arrays should be static. If dynamic arrays are required use "REDIM"
+    ' All arrays should be static. If dynamic arrays are required, then use "REDIM"
     '$STATIC
 
-    ' Start array lower bound from 1. If 0 is required, then it should be explicitly specified as (0 To X)
+    ' Start array lower bound from 1. If 0 is required, then use the syntax [RE]DIM (0 To {X}) AS {TYPE}
     OPTION BASE 1
 
-    ' Some common and useful constants
-    CONST FALSE = 0, TRUE = NOT FALSE
-    CONST NULL = 0
-    CONST EMPTY_STRING = ""
+    ' These constants should be move to their appropriate files later
+
     ' Common keyboard key codes (also ASCII codes)
     CONST KEY_BACKSPACE = 8
     CONST KEY_TAB = 9
@@ -189,11 +187,5 @@ $IF COMMON_BI = UNDEFINED THEN
         y AS SINGLE
         z AS SINGLE
     END TYPE
-
-    ' QB <> C BOOL interop
-    DECLARE LIBRARY "Common"
-        FUNCTION ToQBBool%% (BYVAL x AS LONG)
-        FUNCTION ToCBool%% (BYVAL x AS LONG)
-    END DECLARE
 
 $END IF

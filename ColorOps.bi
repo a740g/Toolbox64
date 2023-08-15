@@ -5,15 +5,9 @@
 
 $IF COLOROPS_BI = UNDEFINED THEN
     $LET COLOROPS_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'Common.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+
     ' 32-bit BGRA color constants based on HTML color names
     CONST BGRA_ALICEBLUE~& = &HFFF0F8FF
     CONST BGRA_ALMOND~& = &HFFEFDECD
@@ -285,11 +279,7 @@ $IF COLOROPS_BI = UNDEFINED THEN
     CONST BGRA_YELLOW~& = &HFFFFFF00
     CONST BGRA_YELLOWGREEN~& = &HFF9ACD32
     CONST BGRA_YELLOWORANGE~& = &HFFFFAE42
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' USER DEFINED TYPES
-    '-------------------------------------------------------------------------------------------------------------------
     ' This matches the QB64 BGRA 32-bit style color for little endian systems
     TYPE BGRAType
         b AS _UNSIGNED _BYTE
@@ -303,11 +293,7 @@ $IF COLOROPS_BI = UNDEFINED THEN
         g AS _UNSIGNED _BYTE
         r AS _UNSIGNED _BYTE
     END TYPE
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' EXTERNAL LIBRARIES
-    '-------------------------------------------------------------------------------------------------------------------
     DECLARE LIBRARY "ColorOps"
         FUNCTION ToBGRA~& (BYVAL r AS _UNSIGNED _BYTE, BYVAL g AS _UNSIGNED _BYTE, BYVAL b AS _UNSIGNED _BYTE, BYVAL a AS _UNSIGNED _BYTE)
         FUNCTION ToRGBA~& (BYVAL r AS _UNSIGNED _BYTE, BYVAL g AS _UNSIGNED _BYTE, BYVAL b AS _UNSIGNED _BYTE, BYVAL a AS _UNSIGNED _BYTE)
@@ -318,6 +304,5 @@ $IF COLOROPS_BI = UNDEFINED THEN
         FUNCTION GetRGB~& (BYVAL clr AS _UNSIGNED LONG)
         FUNCTION SwapRedBlue~& (BYVAL clr AS _UNSIGNED LONG)
     END DECLARE
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

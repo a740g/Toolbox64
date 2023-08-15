@@ -5,17 +5,13 @@
 
 $IF MODPLAYER_BI = UNDEFINED THEN
     $LET MODPLAYER_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
     '$INCLUDE:'MemFile.bi'
     '$INCLUDE:'FileOps.bi'
     '$INCLUDE:'SoftSynth.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
     CONST __NOTE_NONE = 132 ' Note will be set to this when there is nothing
     CONST __NOTE_KEY_OFF = 133 ' We'll use this in a future version
     CONST __NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
@@ -25,11 +21,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
     CONST __MOD_ORDERS = 128 ' maximum positions in a MOD order table
     CONST __MTM_CHANNELS = 32 ' maximum channels supported by MTM
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' USER DEFINED TYPES
-    '-------------------------------------------------------------------------------------------------------------------
     TYPE __NoteType
         note AS _UNSIGNED _BYTE ' contains info on 1 note
         sample AS _UNSIGNED _BYTE ' sample number to play
@@ -100,11 +92,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         samplesPerTick AS _UNSIGNED LONG ' This is the amount of samples we have to mix per tick based on mixerRate & bpm
         activeChannels AS _UNSIGNED _BYTE ' Just a count of channels that are "active"
     END TYPE
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' GLOBAL VARIABLES
-    '-------------------------------------------------------------------------------------------------------------------
     DIM __Song AS __SongType ' tune specific data
     REDIM __Order(0 TO 0) AS _UNSIGNED INTEGER ' order list
     REDIM __Pattern(0 TO 0, 0 TO 0, 0 TO 0) AS __NoteType ' pattern data strored as (pattern, row, channel)
@@ -113,6 +101,5 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     REDIM __PeriodTable(0 TO 0) AS _UNSIGNED INTEGER ' Amiga period table
     REDIM __SineTable(0 TO 0) AS _UNSIGNED _BYTE ' sine table used for effects
     REDIM __InvertLoopSpeedTable(0 TO 0) AS _UNSIGNED _BYTE ' invert loop speed table for EFx
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

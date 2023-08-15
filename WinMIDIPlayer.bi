@@ -6,6 +6,8 @@
 $IF WINMIDIPLAYER_BI = UNDEFINED THEN
     $LET WINMIDIPLAYER_BI = TRUE
 
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
     '$INCLUDE:'MemFile.bi'
     '$INCLUDE:'FileOps.bi'
 

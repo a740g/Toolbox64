@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "Common.h"
+#include <cstdint>
 #include <algorithm>
 #include <cassert>
 #include <cmath>

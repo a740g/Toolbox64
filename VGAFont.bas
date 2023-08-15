@@ -6,7 +6,6 @@
 $IF VGAFONT_BAS = UNDEFINED THEN
     $LET VGAFONT_BAS = TRUE
 
-    '$INCLUDE:'FileOps.bi'
     '$INCLUDE:'VGAFont.bi'
 
     '-------------------------------------------------------------------------------------------------------------------

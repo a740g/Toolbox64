@@ -6,6 +6,8 @@
 $IF DEFLATE_BI = UNDEFINED THEN
     $LET DEFLATE_BI = TRUE
 
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
     '$INCLUDE:'PointerOps.bi'
 
     DECLARE LIBRARY "Deflate"

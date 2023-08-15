@@ -7,6 +7,8 @@ $IF VGAFONT_BI = UNDEFINED THEN
     $LET VGAFONT_BI = TRUE
 
     '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
+    '$INCLUDE:'FileOps.bi'
 
     ' PSF1 file ID
     CONST __PSF1_MAGIC0 = &H36

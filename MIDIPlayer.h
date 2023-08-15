@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "Common.h"
+#include "Types.h"
 #include "Debug.h"
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb_vorbis.c"
@@ -29,6 +29,7 @@
 #include "external/ymfmidi/patches.cpp"
 #include "external/ymfmidi/ymf_player.cpp"
 #include "MIDIFMBank.h"
+#include <cstdint>
 
 static void *contextTSFymfm = nullptr;         // TSF / ymfm context
 static tml_message *tinyMIDILoader = nullptr;  // TML context

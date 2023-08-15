@@ -6,6 +6,8 @@
 $IF FILEOPS_BI = UNDEFINED THEN
     $LET FILEOPS_BI = TRUE
 
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
     '$INCLUDE:'StringOps.bi'
     '$INCLUDE:'TimeOps.bi'
 

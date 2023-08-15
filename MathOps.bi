@@ -22,9 +22,14 @@ $IF MATHOPS_BI = UNDEFINED THEN
         FUNCTION GetRandomValue& ALIAS rand
         FUNCTION GetRandomBetween& (BYVAL lo AS LONG, BYVAL hi AS LONG)
         FUNCTION GetRandomMaximum~&
-        FUNCTION IsPowerOf2%% (BYVAL n AS _UNSIGNED LONG)
-        FUNCTION RoundUpToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
-        FUNCTION RoundDownToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION IsLongEven%% (BYVAL n AS LONG)
+        FUNCTION IsInteger64Even%% (BYVAL n AS _INTEGER64)
+        FUNCTION IsLongPowerOf2%% (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION IsInteger64PowerOf2%% (BYVAL n AS _UNSIGNED _INTEGER64)
+        FUNCTION RoundLongUpToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION RoundInteger64UpToPowerOf2~&& (BYVAL n AS _UNSIGNED _INTEGER64)
+        FUNCTION RoundLongDownToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
+        FUNCTION RoundInteger64DownToPowerOf2~&& (BYVAL n AS _UNSIGNED _INTEGER64)
         FUNCTION GetDigitFromLong& (BYVAL n AS _UNSIGNED LONG, BYVAL p AS _UNSIGNED LONG)
         FUNCTION GetDigitFromInteger64& (BYVAL n AS _UNSIGNED _INTEGER64, BYVAL p AS _UNSIGNED LONG)
         FUNCTION AverageLong& (BYVAL x AS LONG, BYVAL y AS LONG)

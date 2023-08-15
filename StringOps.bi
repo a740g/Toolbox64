@@ -7,6 +7,7 @@ $IF STRINGOPS_BI = UNDEFINED THEN
     $LET STRINGOPS_BI = TRUE
 
     '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
 
     DECLARE LIBRARY
         FUNCTION ToLowerCase~& ALIAS tolower (BYVAL ch AS _UNSIGNED LONG)

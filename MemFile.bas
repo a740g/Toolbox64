@@ -5,11 +5,8 @@
 
 $IF MEMFILE_BAS = UNDEFINED THEN
     $LET MEMFILE_BAS = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
     '$INCLUDE:'MemFile.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
@@ -25,17 +22,17 @@ $IF MEMFILE_BAS = UNDEFINED THEN
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' FUNCTIONS & SUBROUTINES
-    '-------------------------------------------------------------------------------------------------------------------
+    ' Creates a MemFile from a string buffer
     FUNCTION MemFile_Create~%& (src AS STRING)
         MemFile_Create = __MemFile_Create(src, LEN(src))
     END FUNCTION
+
 
     $IF 32BIT THEN
             FUNCTION MemFile_ReadString~& (memFile AS _UNSIGNED _OFFSET, dst AS STRING)
             MemFile_ReadString = __MemFile_Read(memFile, _OFFSET(dst), LEN(dst))
             END FUNCTION
+
 
             FUNCTION MemFile_WriteString~& (memFile AS _UNSIGNED _OFFSET, src AS STRING)
             MemFile_WriteString = __MemFile_Write(memFile, _OFFSET(src), LEN(src))
@@ -47,6 +44,7 @@ $IF MEMFILE_BAS = UNDEFINED THEN
             MemFile_ReadString = __MemFile_Read(memFile, _OFFSET(dst), LEN(dst))
         END FUNCTION
 
+
         ' Writes a string
         ' Returns the number of bytes written
         FUNCTION MemFile_WriteString~&& (memFile AS _UNSIGNED _OFFSET, src AS STRING)
@@ -54,15 +52,16 @@ $IF MEMFILE_BAS = UNDEFINED THEN
         END FUNCTION
     $END IF
 
+
     ' Reads a TYPE
     FUNCTION MemFile_ReadType%% (memFile AS _UNSIGNED _OFFSET, typeOffset AS _UNSIGNED _OFFSET, typeSize AS _UNSIGNED _OFFSET)
         MemFile_ReadType = (__MemFile_Read(memFile, typeOffset, typeSize) = typeSize)
     END FUNCTION
 
+
     ' Writes a TYPE
     FUNCTION MemFile_WriteType%% (memFile AS _UNSIGNED _OFFSET, typeOffset AS _UNSIGNED _OFFSET, typeSize AS _UNSIGNED _OFFSET)
         MemFile_WriteType = (__MemFile_Write(memFile, typeOffset, typeSize) = typeSize)
     END FUNCTION
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

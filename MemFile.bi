@@ -5,15 +5,9 @@
 
 $IF MEMFILE_BI = UNDEFINED THEN
     $LET MEMFILE_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
-    '$INCLUDE:'Common.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' EXTERNAL LIBRARIES
-    '-------------------------------------------------------------------------------------------------------------------
+    '$INCLUDE:'Common.bi'
+
     DECLARE LIBRARY "MemFile"
         FUNCTION __MemFile_Create~%& (src AS STRING, BYVAL size AS _UNSIGNED _OFFSET)
         SUB MemFile_Destroy (BYVAL memFile AS _UNSIGNED _OFFSET)
@@ -44,6 +38,5 @@ $IF MEMFILE_BI = UNDEFINED THEN
         FUNCTION MemFile_ReadDouble%% (BYVAL memFile AS _UNSIGNED _OFFSET, dst AS DOUBLE)
         FUNCTION MemFile_WriteDouble%% (BYVAL memFile AS _UNSIGNED _OFFSET, BYVAL src AS DOUBLE)
     END DECLARE
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

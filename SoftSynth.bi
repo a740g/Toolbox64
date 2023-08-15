@@ -5,16 +5,12 @@
 
 $IF SOFTSYNTH_BI = UNDEFINED THEN
     $LET SOFTSYNTH_BI = TRUE
-    '-------------------------------------------------------------------------------------------------------------------
-    ' HEADER FILES
-    '-------------------------------------------------------------------------------------------------------------------
+
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
     '$INCLUDE:'MathOps.bi'
     '$INCLUDE:'PointerOps.bi'
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' CONSTANTS
-    '-------------------------------------------------------------------------------------------------------------------
     CONST SOFTSYNTH_VOICE_PLAY_SINGLE = 0 ' single-shot playback
     CONST SOFTSYNTH_VOICE_PLAY_LOOP = 1 ' forward-looping playback
     CONST SOFTSYNTH_VOICE_VOLUME_MAX = 1 ' this is the maximum volume of any sample
@@ -23,11 +19,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     CONST SOFTSYNTH_GLOBAL_VOLUME_MAX = 1 ' max global volume
     CONST SOFTSYNTH_BUFFER_TIME = 0.2 ' we will check that we have this amount of time left in the playback buffer
     CONST SOFTSYNTH_DEFAULT_VOLUME_RAMP_DURATION = 0.005 ' 5 ms
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' USER DEFINED TYPES
-    '-------------------------------------------------------------------------------------------------------------------
     TYPE __SoftSynthType
         voices AS _UNSIGNED _BYTE ' number of mixer voices requested
         samples AS _UNSIGNED _BYTE ' number of samples slots requested
@@ -52,15 +44,10 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         rampFrame AS SINGLE ' the current frame of __SoftSynthType.rampFrames
         rampStep AS SINGLE ' the amount we need to change the volume with every mix iteration
     END TYPE
-    '-------------------------------------------------------------------------------------------------------------------
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' GLOBAL VARIABLES
-    '-------------------------------------------------------------------------------------------------------------------
     DIM __SoftSynth AS __SoftSynthType ' holds the softsynth state
     REDIM __SampleData(0 TO 0) AS STRING ' sample data array
     REDIM __Voice(0 TO 0) AS __VoiceType ' voice info array
     REDIM __MixerBuffer(0 TO 0) AS SINGLE ' mixer buffer (stereo interleaved)
-    '-------------------------------------------------------------------------------------------------------------------
+
 $END IF
-'-----------------------------------------------------------------------------------------------------------------------

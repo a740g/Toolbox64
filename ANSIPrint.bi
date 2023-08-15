@@ -6,6 +6,8 @@
 $IF ANSIPRINT_BI = UNDEFINED THEN
     $LET ANSIPRINT_BI = TRUE
 
+    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
     '$INCLUDE:'ColorOps.bi'
 
     ' ANSI constants (not an exhaustive list)

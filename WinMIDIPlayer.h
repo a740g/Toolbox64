@@ -25,7 +25,10 @@
 #pragma once
 
 #include "Common.h"
+#include "Types.h"
+#include "MathOps.h"
 #include "MemFile.h"
+#include <cstdint>
 #include <windows.h>
 
 /* MIDI Status Bytes */

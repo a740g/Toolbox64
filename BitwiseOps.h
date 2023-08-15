@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "Common.h"
+#include <cstdint>
 #include <climits>
 
 /// @brief Returns the number using which we need to shift 1 left to get n. E.g. n = 2 then returns 1
@@ -79,7 +79,7 @@ inline uint64_t ReverseBitsInteger64(uint64_t x)
 /// @return The FOURCC
 inline uint32_t MakeFourCC(uint8_t ch0, uint8_t ch1, uint8_t ch2, uint8_t ch3)
 {
-    return TO_FOURCC(ch0, ch1, ch2, ch3);
+    return (ch3 << 24) | (ch2 << 16) | (ch1 << 8) | ch0;
 }
 
 /// @brief Makes a BYTE out of two nibbles

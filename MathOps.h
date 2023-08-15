@@ -5,14 +5,17 @@
 
 #pragma once
 
-#include "Common.h"
+#include "Types.h"
+#include <cstdint>
+#include <cfloat>
 #include <cstdlib>
 #include <cmath>
 
-#define FLOAT_EPSILON 1e-6f
-#define DOUBLE_EPSILON 1e-9
+#define CLAMP(_x_, _low_, _high_) (((_x_) > (_high_)) ? (_high_) : (((_x_) < (_low_)) ? (_low_) : (_x_)))
+#define IS_EVEN(_x_) (((_x_) & 1) == 0)
+#define GET_SIGN(_x_) (((_x_) == 0) ? 0 : (((_x_) > 0) ? 1 : -1))
 
-extern void sub_randomize(double seed, int32_t passed);
+extern void sub_randomize(double seed, int32_t passed); // QB64's random seed function
 
 /// @brief Set the seed for the random number generator (CRT and QB64)
 /// @param seed Any number
@@ -28,7 +31,7 @@ inline void SetRandomSeed(uint32_t seed)
 /// @return A number between lo and hi
 inline int32_t GetRandomBetween(int32_t lo, int32_t hi)
 {
-    return GET_RANDOM_VALUE(lo, hi);
+    return lo + rand() % (hi - lo + 1);
 }
 
 /// @brief Returns the maximum value rand() can generate
@@ -38,10 +41,34 @@ inline uint32_t GetRandomMaximum()
     return RAND_MAX;
 }
 
+/// @brief Returns true if n is even
+/// @param n Any integer
+/// @return True if n is even
+inline qb_bool IsLongEven(int32_t n)
+{
+    return TO_QB_BOOL(IS_EVEN(n));
+}
+
+/// @brief Returns true if n is even
+/// @param n Any integer
+/// @return True if n is even
+inline qb_bool IsInteger64Even(int64_t n)
+{
+    return TO_QB_BOOL(IS_EVEN(n));
+}
+
 /// @brief Check if n is a power of 2
 /// @param n A number
 /// @return True if n is a power of 2
-inline qb_bool IsPowerOf2(uint32_t n)
+inline qb_bool IsLongPowerOf2(uint32_t n)
+{
+    return TO_QB_BOOL(n && !(n & (n - 1)));
+}
+
+/// @brief Check if n is a power of 2
+/// @param n A number
+/// @return True if n is a power of 2
+inline qb_bool IsInteger64PowerOf2(uint64_t n)
 {
     return TO_QB_BOOL(n && !(n & (n - 1)));
 }
@@ -49,7 +76,7 @@ inline qb_bool IsPowerOf2(uint32_t n)
 /// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
 /// @param n Any number
 /// @return Next (ceiling) power of 2 for x
-inline uint32_t RoundUpToPowerOf2(uint32_t n)
+inline uint32_t RoundLongUpToPowerOf2(uint32_t n)
 {
     --n;
     n |= n >> 1;
@@ -60,16 +87,45 @@ inline uint32_t RoundUpToPowerOf2(uint32_t n)
     return ++n;
 }
 
+/// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
+/// @param n Any number
+/// @return Next (ceiling) power of 2 for x
+inline uint64_t RoundInteger64UpToPowerOf2(uint64_t n)
+{
+    --n;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32;
+    return ++n;
+}
+
 /// @brief Returns the previous (floor) power of 2 for x. E.g. n = 600 then returns 512
 /// @param n Any number
 /// @return Previous (floor) power of 2 for x
-inline uint32_t RoundDownToPowerOf2(uint32_t n)
+inline uint32_t RoundLongDownToPowerOf2(uint32_t n)
 {
     n |= (n >> 1);
     n |= (n >> 2);
     n |= (n >> 4);
     n |= (n >> 8);
     n |= (n >> 16);
+    return n - (n >> 1);
+}
+
+/// @brief Returns the previous (floor) power of 2 for x. E.g. n = 600 then returns 512
+/// @param n Any number
+/// @return Previous (floor) power of 2 for x
+inline uint64_t RoundInteger64DownToPowerOf2(uint64_t n)
+{
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32;
     return n - (n >> 1);
 }
 
@@ -332,7 +388,7 @@ inline double WrapDouble(double value, double min, double max)
 /// @return True if both are almost equal
 inline qb_bool SingleEquals(float x, float y)
 {
-    return TO_QB_BOOL(fabsf(x - y) <= FLOAT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))));
+    return TO_QB_BOOL(fabsf(x - y) <= FLT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))));
 }
 
 /// @brief Check whether two given floats are almost equal
@@ -341,5 +397,5 @@ inline qb_bool SingleEquals(float x, float y)
 /// @return True if both are almost equal
 inline qb_bool DoubleEquals(double x, double y)
 {
-    return TO_QB_BOOL(fabs(x - y) <= DOUBLE_EPSILON * fmax(1.0, fmax(fabs(x), fabs(y))));
+    return TO_QB_BOOL(fabs(x - y) <= DBL_EPSILON * fmax(1.0, fmax(fabs(x), fabs(y))));
 }
