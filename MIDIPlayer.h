@@ -74,19 +74,22 @@ inline qb_bool MIDI_IsLooping()
 void MIDI_Loop(int8_t looping)
 {
     if (contextTSFymfm && tinyMIDILoader)
-        isLooping = (qb_bool)looping; // Save the looping flag
+        isLooping = TO_QB_BOOL(looping); // Save the looping flag
 }
 
 /// @brief Sets the playback volume when a file is loaded
 /// @param volume 0.0 = none, 1.0 = full
 void MIDI_SetVolume(float volume)
 {
+    if (volume < 0.0f)
+        volume = 0.0f; // safety clamp. We do not want -ve values
+
     if (contextTSFymfm && tinyMIDILoader)
     {
         if (isOPL3Active)
             reinterpret_cast<OPLPlayer *>(contextTSFymfm)->setGain(globalVolume = volume); // save and apply the volume
         else
-            tsf_set_volume((tsf *)contextTSFymfm, globalVolume = volume); // save and apply the volume
+            tsf_set_volume(reinterpret_cast<tsf *>(contextTSFymfm), globalVolume = volume); // save and apply the volume
     }
 }
 
@@ -101,14 +104,14 @@ inline float MIDI_GetVolume()
 /// @return time in msecs
 inline double MIDI_GetTotalTime()
 {
-    return contextTSFymfm && tinyMIDILoader ? totalMsec : 0;
+    return contextTSFymfm && tinyMIDILoader ? totalMsec : 0.0;
 }
 
 /// @brief Returns the current playback time in msec
 /// @return Times in msecs
 inline double MIDI_GetCurrentTime()
 {
-    return contextTSFymfm && tinyMIDILoader ? currentMsec : 0;
+    return contextTSFymfm && tinyMIDILoader ? currentMsec : 0.0;
 }
 
 /// @brief Returns the total number of voice that are playing
@@ -116,7 +119,7 @@ inline double MIDI_GetCurrentTime()
 inline uint32_t MIDI_GetActiveVoices()
 {
     // 18 if we are in OPL3 mode else whatever TSF returns
-    return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? 18 : tsf_active_voice_count((tsf *)contextTSFymfm)) : 0;
+    return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? 18 : tsf_active_voice_count(reinterpret_cast<tsf *>(contextTSFymfm))) : 0;
 }
 
 /// @brief Kickstarts playback if library is initalized and MIDI file is loaded
@@ -125,12 +128,12 @@ void MIDI_Play()
     if (contextTSFymfm && tinyMIDILoader)
     {
         tinyMIDIMessage = tinyMIDILoader; // Set up the global MidiMessage pointer to the first MIDI message
-        currentMsec = 0;                  // Reset playback time
+        currentMsec = 0.0;                // Reset playback time
 
         if (isOPL3Active)
             reinterpret_cast<OPLPlayer *>(contextTSFymfm)->setGain(globalVolume);
         else
-            tsf_set_volume((tsf *)contextTSFymfm, globalVolume);
+            tsf_set_volume(reinterpret_cast<tsf *>(contextTSFymfm), globalVolume);
     }
 }
 
@@ -142,11 +145,11 @@ void MIDI_Stop()
         if (isOPL3Active)
             reinterpret_cast<OPLPlayer *>(contextTSFymfm)->reset(); // stop playing whatever is playing
         else
-            tsf_reset((tsf *)contextTSFymfm); // stop playing whatever is playing
+            tsf_reset(reinterpret_cast<tsf *>(contextTSFymfm)); // stop playing whatever is playing
 
         tml_free(tinyMIDILoader);                   // free TML resources
         tinyMIDILoader = tinyMIDIMessage = nullptr; // reset globals
-        currentMsec = totalMsec = 0;                // reset times
+        currentMsec = totalMsec = 0.0;              // reset times
     }
 }
 
@@ -209,7 +212,7 @@ inline void __MIDI_Finalize()
         if (isOPL3Active)
             delete reinterpret_cast<OPLPlayer *>(contextTSFymfm);
         else
-            tsf_close((tsf *)contextTSFymfm);
+            tsf_close(reinterpret_cast<tsf *>(contextTSFymfm));
 
         contextTSFymfm = nullptr;
     }
@@ -266,12 +269,12 @@ inline qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
         }
     }
 
-    isOPL3Active = (qb_bool)useOPL3; // save the type of renderer
+    isOPL3Active = TO_QB_BOOL(useOPL3); // save the type of renderer
 
     if (!isOPL3Active)
     {
-        tsf_channel_set_bank_preset((tsf *)contextTSFymfm, 9, 128, 0);             // initialize preset on special 10th MIDI channel to use percussion sound bank (128) if available
-        tsf_set_output((tsf *)contextTSFymfm, TSF_STEREO_INTERLEAVED, sampleRate); // set the SoundFont rendering output mode
+        tsf_channel_set_bank_preset(reinterpret_cast<tsf *>(contextTSFymfm), 9, 128, 0);             // initialize preset on special 10th MIDI channel to use percussion sound bank (128) if available
+        tsf_set_output(reinterpret_cast<tsf *>(contextTSFymfm), TSF_STEREO_INTERLEAVED, sampleRate); // set the SoundFont rendering output mode
     }
 
     return QB_TRUE;
@@ -304,32 +307,32 @@ inline static void __MIDI_RenderTSF(uint8_t *buffer, uint32_t bufferSize)
             switch (tinyMIDIMessage->type)
             {
             case TML_PROGRAM_CHANGE: // Channel program (preset) change (special handling for 10th MIDI channel with drums)
-                tsf_channel_set_presetnumber((tsf *)contextTSFymfm, tinyMIDIMessage->channel, tinyMIDIMessage->program, (tinyMIDIMessage->channel == 9));
-                tsf_channel_midi_control((tsf *)contextTSFymfm, tinyMIDIMessage->channel, TML_ALL_NOTES_OFF, 0); // https://github.com/schellingb/TinySoundFont/issues/59
+                tsf_channel_set_presetnumber(reinterpret_cast<tsf *>(contextTSFymfm), tinyMIDIMessage->channel, tinyMIDIMessage->program, (tinyMIDIMessage->channel == 9));
+                tsf_channel_midi_control(reinterpret_cast<tsf *>(contextTSFymfm), tinyMIDIMessage->channel, TML_ALL_NOTES_OFF, 0); // https://github.com/schellingb/TinySoundFont/issues/59
                 break;
             case TML_NOTE_ON: // Play a note
-                tsf_channel_note_on((tsf *)contextTSFymfm, tinyMIDIMessage->channel, tinyMIDIMessage->key, tinyMIDIMessage->velocity / 127.0f);
+                tsf_channel_note_on(reinterpret_cast<tsf *>(contextTSFymfm), tinyMIDIMessage->channel, tinyMIDIMessage->key, tinyMIDIMessage->velocity / 127.0f);
                 break;
             case TML_NOTE_OFF: // Stop a note
-                tsf_channel_note_off((tsf *)contextTSFymfm, tinyMIDIMessage->channel, tinyMIDIMessage->key);
+                tsf_channel_note_off(reinterpret_cast<tsf *>(contextTSFymfm), tinyMIDIMessage->channel, tinyMIDIMessage->key);
                 break;
             case TML_PITCH_BEND: // Pitch wheel modification
-                tsf_channel_set_pitchwheel((tsf *)contextTSFymfm, tinyMIDIMessage->channel, tinyMIDIMessage->pitch_bend);
+                tsf_channel_set_pitchwheel(reinterpret_cast<tsf *>(contextTSFymfm), tinyMIDIMessage->channel, tinyMIDIMessage->pitch_bend);
                 break;
             case TML_CONTROL_CHANGE: // MIDI controller messages
-                tsf_channel_midi_control((tsf *)contextTSFymfm, tinyMIDIMessage->channel, tinyMIDIMessage->control, tinyMIDIMessage->control_value);
+                tsf_channel_midi_control(reinterpret_cast<tsf *>(contextTSFymfm), tinyMIDIMessage->channel, tinyMIDIMessage->control, tinyMIDIMessage->control_value);
                 break;
             }
         }
 
         // Render the block of audio samples in float format
-        tsf_render_float((tsf *)contextTSFymfm, (float *)buffer, sampleBlock, 0);
+        tsf_render_float(reinterpret_cast<tsf *>(contextTSFymfm), reinterpret_cast<float *>(buffer), sampleBlock, 0);
 
         // Reset the MIDI message pointer if we are looping & have reached the end of the message list
         if (isLooping && !tinyMIDIMessage)
         {
             tinyMIDIMessage = tinyMIDILoader;
-            currentMsec = 0;
+            currentMsec = 0.0;
         }
     }
 }
@@ -372,7 +375,7 @@ inline static void __MIDI_RenderOPL(uint8_t *buffer, uint32_t bufferSize)
         }
 
         // Render the block of audio samples in float format
-        reinterpret_cast<OPLPlayer *>(contextTSFymfm)->generate((float *)buffer, sampleBlock);
+        reinterpret_cast<OPLPlayer *>(contextTSFymfm)->generate(reinterpret_cast<float *>(buffer), sampleBlock);
 
         // Reset the MIDI message pointer if we are looping & have reached the end of the message list
         if (isLooping && !tinyMIDIMessage)
