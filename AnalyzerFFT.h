@@ -143,7 +143,8 @@ static inline void fft_do86(int32_t (*x)[2], int n)
 /// @param samp An array of 16-bit samples
 /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
-void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
+/// @return Returns the power level of the audio
+float AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 {
     const auto full = std::min(1 << bits, FFT_SAMPLES);
     const auto half = full >> 1;
@@ -151,23 +152,27 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
     if (!fft_init_done)
         fft_init();
 
+    float power = 0.0f;
     for (auto i = 0; i < full; ++i)
     {
+        float sample = *samp / 32768.0f;
         fft_x86[i][0] = *samp << 12;
+        power = power + sample * sample;
         samp += inc;
         fft_x86[i][1] = 0;
     }
+    power = (float)inc * power / (float)full;
 
     fft_do86(fft_x86, bits);
 
-    int32_t xr0, xr1;
-
     for (auto i = 1; i <= half; ++i)
     {
-        xr0 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
-        xr1 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
+        int32_t xr0 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
+        int32_t xr1 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
         ana[i - 1] = sqrt((xr0 * xr0 + xr1 * xr1) * i);
     }
+
+    return power;
 }
 
 /// @brief This is a variation of AnalyzerFFTInteger() for floating point samples.
@@ -177,7 +182,8 @@ void AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
 /// @param samp An array of floating point (FP32) samples
 /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
 /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
-void AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
+/// @return Returns the power level of the audio
+float AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
 {
     const auto full = std::min(1 << bits, FFT_SAMPLES);
     const auto half = full >> 1;
@@ -185,21 +191,25 @@ void AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
     if (!fft_init_done)
         fft_init();
 
+    float power = 0.0f;
     for (auto i = 0; i < full; ++i)
     {
-        fft_x86[i][0] = (int32_t)(fmaxf(fminf(*samp, 1.0f), -1.0f) * (float)SHRT_MAX) << 12;
+        float sample = *samp;
+        fft_x86[i][0] = (int32_t)(fmaxf(fminf(sample, 1.0f), -1.0f) * 32767.0f) << 12;
+        power = power + sample * sample;
         samp += inc;
         fft_x86[i][1] = 0;
     }
+    power = (float)inc * power / (float)full;
 
     fft_do86(fft_x86, bits);
 
-    int32_t xr0, xr1;
-
     for (auto i = 1; i <= half; ++i)
     {
-        xr0 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
-        xr1 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
+        int32_t xr0 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][0] >> 12;
+        int32_t xr1 = fft_x86[fft_permtab[i] >> (FFT_POW - bits)][1] >> 12;
         ana[i - 1] = sqrt((xr0 * xr0 + xr1 * xr1) * i);
     }
+
+    return power;
 }

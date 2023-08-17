@@ -11,8 +11,8 @@ $IF ANALYZERFFT_BI = UNDEFINED THEN
     '$INCLUDE:'Common.bi'
 
     DECLARE LIBRARY "AnalyzerFFT"
-        SUB AnalyzerFFTInteger (ana AS _UNSIGNED INTEGER, samp AS INTEGER, BYVAL inc AS LONG, BYVAL bits AS LONG)
-        SUB AnalyzerFFTSingle (ana AS _UNSIGNED INTEGER, samp AS SINGLE, BYVAL inc AS LONG, BYVAL bits AS LONG)
+        FUNCTION AnalyzerFFTInteger! (ana AS _UNSIGNED INTEGER, samp AS INTEGER, BYVAL inc AS LONG, BYVAL bits AS LONG)
+        FUNCTION AnalyzerFFTSingle! (ana AS _UNSIGNED INTEGER, samp AS SINGLE, BYVAL inc AS LONG, BYVAL bits AS LONG)
     END DECLARE
 
 $END IF
