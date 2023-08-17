@@ -21,8 +21,8 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
     CONST __MIDI_SOUND_BUFFER_SAMPLE_SIZE = 4 ' 4 bytes (32-bits floating point)
     CONST __MIDI_SOUND_BUFFER_FRAME_SIZE = __MIDI_SOUND_BUFFER_SAMPLE_SIZE * __MIDI_SOUND_BUFFER_CHANNELS
     CONST MIDI_SOUND_BUFFER_TIME_DEFAULT = 0.2 ' we will check that we have this amount of time left in the QB64 sound pipe
-    CONST MIDI_VOLUME_MAX = 1 ' max volume
-    CONST MIDI_VOLUME_MIN = 0 ' min volume
+    CONST MIDI_VOLUME_MAX = 1! ' max volume
+    CONST MIDI_VOLUME_MIN = 0! ' min volume
 
     ' QB64 specific stuff
     TYPE __MIDI_PlayerType
