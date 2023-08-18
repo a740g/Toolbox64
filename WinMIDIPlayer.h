@@ -784,16 +784,6 @@ inline float MIDI_GetVolume()
 
 /// @brief This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
 /// This can playback WAV files that use compressed audio using Windows ACM codecs!
-/// @param fileName A .WAV file path name
-/// @param loop If this is true the sound loops forever until it is stopped
-/// @return QB_TRUE if the call succeeds. QB_FALSE otherwise
-inline qb_bool __Sound_PlayFromFile(const char *fileName, int8_t loop)
-{
-    return (IS_STRING_EMPTY(fileName) ? PlaySoundA(NULL, NULL, 0) : PlaySoundA(fileName, NULL, SND_ASYNC | SND_FILENAME | (loop ? SND_LOOP : 0) | SND_NODEFAULT)) ? QB_TRUE : QB_FALSE;
-}
-
-/// @brief This is a quick and dirty function to play simple single sounds asynchronously and can be great for playing looping music.
-/// This can playback WAV files that use compressed audio using Windows ACM codecs!
 /// @param buffer A pointer to .WAV file in memory
 /// @param loop If this is true the sound loops forever until it is stopped
 /// @return QB_TRUE if the call succeeds. QB_FALSE otherwise

@@ -21,10 +21,9 @@ $IF WINMIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION MIDI_IsPaused%%
         SUB MIDI_SetVolume (BYVAL volume AS SINGLE)
         FUNCTION MIDI_GetVolume!
-        FUNCTION __Sound_PlayFromFile%% (fileName AS STRING, BYVAL looping AS _BYTE)
         FUNCTION Sound_PlayFromMemory%% (buffer AS STRING, BYVAL looping AS _BYTE)
         SUB Sound_Stop
-        SUB Sound_Beep ALIAS Beep (BYVAL dwFreq AS _UNSIGNED LONG, BYVAL dwDuration AS _UNSIGNED LONG)
+        SUB Sound_Beep ALIAS Beep (BYVAL frequency AS _UNSIGNED LONG, BYVAL duration AS _UNSIGNED LONG)
     END DECLARE
 
 $END IF

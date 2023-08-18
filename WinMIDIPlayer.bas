@@ -39,12 +39,12 @@ $IF WINMIDIPLAYER_BAS = UNDEFINED THEN
 
 
     FUNCTION Sound_PlayFromFile%% (fileName AS STRING, looping AS _BYTE)
-        Sound_PlayFromFile = __Sound_PlayFromFile(fileName + CHR$(NULL), looping)
+        Sound_PlayFromFile = Sound_PlayFromMemory(LoadFile(fileName), looping)
     END FUNCTION
 
 
     SUB Sound_PlayFromFile (fileName AS STRING, looping AS _BYTE)
-        DIM sink AS _BYTE: sink = __Sound_PlayFromFile(fileName + CHR$(NULL), looping)
+        DIM sink AS _BYTE: sink = Sound_PlayFromMemory(LoadFile(fileName), looping)
     END SUB
 
 

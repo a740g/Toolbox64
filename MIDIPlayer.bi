@@ -16,6 +16,7 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
     '$INCLUDE:'Common.bi'
     '$INCLUDE:'Types.bi'
     '$INCLUDE:'MathOps.bi'
+    '$INCLUDE:'FileOps.bi'
 
     CONST __MIDI_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
     CONST __MIDI_SOUND_BUFFER_SAMPLE_SIZE = 4 ' 4 bytes (32-bits floating point)
@@ -27,6 +28,7 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
     ' QB64 specific stuff
     TYPE __MIDI_PlayerType
         isPaused AS _BYTE ' set to true if tune is paused
+        soundBufferMEM AS _MEM ' this is just a pointer to __MIDI_SoundBuffer() and used for quick memfills
         soundBufferFrames AS _UNSIGNED LONG ' size of the render buffer in frames
         soundBufferSamples AS _UNSIGNED LONG ' size of the rendered buffer in samples
         soundBufferBytes AS _UNSIGNED LONG ' size of the render buffer in bytes
@@ -39,7 +41,6 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION __MIDI_Initialize%% (BYVAL sampleRate AS _UNSIGNED LONG, BYVAL useOPL3 AS _BYTE)
         FUNCTION MIDI_IsInitialized%%
         SUB __MIDI_Finalize
-        FUNCTION __MIDI_LoadTuneFromFile%% (filename AS STRING)
         FUNCTION __MIDI_LoadTuneFromMemory%% (buffer AS STRING, BYVAL size AS _UNSIGNED LONG)
         FUNCTION MIDI_IsTuneLoaded%%
         SUB MIDI_Play

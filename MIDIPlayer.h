@@ -153,29 +153,6 @@ void MIDI_Stop()
     }
 }
 
-/// @brief This frees resources (if a file was previously loaded) and then loads a MIDI file into memory for playback
-/// @param midi_filename A valid file name
-/// @return Returns QB64 TRUE if the operation was successful
-inline qb_bool __MIDI_LoadTuneFromFile(const char *midi_filename)
-{
-    if (MIDI_IsTuneLoaded())
-        MIDI_Stop(); // stop if anything is playing
-
-    if (contextTSFymfm)
-    {
-        tinyMIDILoader = tml_load_filename(midi_filename);
-        if (!tinyMIDILoader)
-            return QB_FALSE;
-
-        // Get the total duration of the song ignoring the rest of the stuff
-        tml_get_info(tinyMIDILoader, nullptr, nullptr, nullptr, nullptr, &totalMsec);
-
-        return QB_TRUE;
-    }
-
-    return QB_FALSE;
-}
-
 /// @brief This frees resources (if a file was previously loaded) and then loads a MIDI file from memory for playback
 /// @param buffer The memory buffer containing the full file
 /// @param bufferSize The size of the memory buffer

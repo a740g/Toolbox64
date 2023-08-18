@@ -53,13 +53,6 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
             EXIT FUNCTION
         END IF
 
-        ' Allocate a 40 ms mixer buffer and ensure we round down to power of 2
-        ' Power of 2 above is required by most FFT functions
-        __MIDI_Player.soundBufferFrames = RoundLongDownToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
-        __MIDI_Player.soundBufferSamples = __MIDI_Player.soundBufferFrames * __MIDI_SOUND_BUFFER_CHANNELS ' buffer samples
-        __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferSamples * __MIDI_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
-        REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
-
         __MIDI_Player.soundHandle = _SNDOPENRAW ' allocate a sound pipe
         IF __MIDI_Player.soundHandle < 1 THEN EXIT FUNCTION
 
@@ -67,6 +60,14 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
             _SNDCLOSE __MIDI_Player.soundHandle
             EXIT FUNCTION
         END IF
+
+        ' Allocate a 40 ms mixer buffer and ensure we round down to power of 2
+        ' Power of 2 above is required by most FFT functions
+        __MIDI_Player.soundBufferFrames = RoundLongDownToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
+        __MIDI_Player.soundBufferSamples = __MIDI_Player.soundBufferFrames * __MIDI_SOUND_BUFFER_CHANNELS ' buffer samples
+        __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferSamples * __MIDI_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
+        REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
+        __MIDI_Player.soundBufferMEM = _MEM(__MIDI_SoundBuffer()) ' get the MEM block for the sound buffer
 
         MIDI_Initialize = TRUE
     END FUNCTION
@@ -80,13 +81,14 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
             _SNDRAWDONE __MIDI_Player.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
             _SNDCLOSE __MIDI_Player.soundHandle ' close and free the QB64 sound pipe
             __MIDI_Finalize ' call the C side finalizer
+            _MEMFREE __MIDI_Player.soundBufferMEM ' free the mixer buffer MEM block
         END IF
     END SUB
 
 
     ' Loads a MIDI file for playback from file
     FUNCTION MIDI_LoadTuneFromFile%% (fileName AS STRING)
-        MIDI_LoadTuneFromFile = __MIDI_LoadTuneFromFile(fileName + CHR$(NULL))
+        MIDI_LoadTuneFromFile = MIDI_LoadTuneFromMemory(LoadFile(fileName))
     END FUNCTION
 
 
@@ -128,19 +130,21 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
         ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
         IF MIDI_IsPlaying AND NOT __MIDI_Player.isPaused AND _SNDRAWLEN(__MIDI_Player.soundHandle) < bufferTimeSecs THEN
             ' Clear the render buffer
-            REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE
+            _MEMFILL __MIDI_Player.soundBufferMEM, __MIDI_Player.soundBufferMEM.OFFSET, __MIDI_Player.soundBufferMEM.SIZE, 0 AS _BYTE
 
             ' Render some samples to the buffer
             __MIDI_Render __MIDI_SoundBuffer(0), __MIDI_Player.soundBufferBytes
 
             ' Push the samples to the sound pipe
-            DIM AS _UNSIGNED LONG i, upperBound
-            upperBound = __MIDI_Player.soundBufferSamples - __MIDI_SOUND_BUFFER_CHANNELS
-            FOR i = 0 TO upperBound STEP __MIDI_SOUND_BUFFER_CHANNELS
+            DIM i AS _UNSIGNED LONG
+            DO WHILE i < __MIDI_Player.soundBufferSamples
                 _SNDRAW __MIDI_SoundBuffer(i), __MIDI_SoundBuffer(i + 1), __MIDI_Player.soundHandle
-            NEXT
+                i = i + __MIDI_SOUND_BUFFER_CHANNELS
+            LOOP
         END IF
         $CHECKING:ON
     END SUB
+
+    '$INCLUDE:'FileOps.bas'
 
 $END IF
