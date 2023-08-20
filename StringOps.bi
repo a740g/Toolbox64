@@ -10,8 +10,8 @@ $IF STRINGOPS_BI = UNDEFINED THEN
     '$INCLUDE:'Types.bi'
 
     DECLARE LIBRARY
-        FUNCTION ToLowerCase~& ALIAS tolower (BYVAL ch AS _UNSIGNED LONG)
-        FUNCTION ToUpperCase~& ALIAS toupper (BYVAL ch AS _UNSIGNED LONG)
+        FUNCTION ToLowerCase~& ALIAS "tolower" (BYVAL ch AS _UNSIGNED LONG)
+        FUNCTION ToUpperCase~& ALIAS "toupper" (BYVAL ch AS _UNSIGNED LONG)
     END DECLARE
 
     DECLARE LIBRARY "StringOps"

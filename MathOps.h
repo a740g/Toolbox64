@@ -11,6 +11,11 @@
 #include <cstdlib>
 #include <cmath>
 
+#define MaxLong(_a_, _b_) std::max(int32_t(_a_), int32_t(_b_))
+#define MaxInteger64(_a_, _b_) std::max(int64_t(_a_), int64_t(_b_))
+#define MinLong(_a_, _b_) std::min(int32_t(_a_), int32_t(_b_))
+#define MinInteger64(_a_, _b_) std::min(int64_t(_a_), int64_t(_b_))
+
 extern void sub_randomize(double seed, int32_t passed); // QB64's random seed function
 
 /// @brief Set the seed for the random number generator (CRT and QB64)
@@ -284,42 +289,6 @@ inline float RemapSingle(float value, float oldMin, float oldMax, float newMin, 
 inline double RemapDouble(double value, double oldMin, double oldMax, double newMin, double newMax)
 {
     return (value - oldMin) * (newMax - newMin) / (oldMax - oldMin) + newMin;
-}
-
-/// @brief Return the max of a or b
-/// @param a A number
-/// @param b A number
-/// @return Max value
-inline int32_t MaxLong(int32_t a, int32_t b)
-{
-    return a > b ? a : b;
-}
-
-/// @brief Return the max of a or b
-/// @param a A number
-/// @param b A number
-/// @return Max value
-inline int64_t MaxInteger64(int64_t a, int64_t b)
-{
-    return a > b ? a : b;
-}
-
-/// @brief Return the min of a or b
-/// @param a A number
-/// @param b A number
-/// @return Min value
-inline int32_t MinLong(int32_t a, int32_t b)
-{
-    return a < b ? a : b;
-}
-
-/// @brief Return the min of a or b
-/// @param a A number
-/// @param b A number
-/// @return Min value
-inline int64_t MinInteger64(int64_t a, int64_t b)
-{
-    return a < b ? a : b;
 }
 
 /// @brief Calculate linear interpolation between two floats

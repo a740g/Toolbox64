@@ -8,9 +8,19 @@ $IF CONSOLEOPS_BI = UNDEFINED THEN
 
     '$INCLUDE:'Common.bi'
 
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Small test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$CONSOLE:ONLY
+    'Console_PutCharacter 34
+    '_ECHO "Hello, world!"
+    'PRINT Console_GetCharacter
+    'END
+    '-------------------------------------------------------------------------------------------------------------------
+
     DECLARE LIBRARY
-        FUNCTION GetConsoleCharacter& ALIAS getchar
-        SUB PutConsoleCharacter ALIAS putchar (BYVAL ch AS LONG)
+        FUNCTION Console_GetCharacter& ALIAS "getchar"
+        SUB Console_PutCharacter ALIAS "putchar" (BYVAL ch AS LONG)
     END DECLARE
 
 $END IF

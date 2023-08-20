@@ -21,14 +21,6 @@
 #define ReallocateMemory(_ptr_, _nsz_) ((uintptr_t)realloc((void *)(_ptr_), (size_t)(_nsz_)))
 #define FreeMemory(_ptr_) free((void *)(_ptr_))
 
-/// @brief Casts a QB64 _OFFSET to an unsigned integer. Needed because QB64 does not allow converting or using _OFFSET in expressions (fully :()
-/// @param p A pointer (_OFFSET)
-/// @return Pointer value (uintptr_t)
-inline uintptr_t CLngPtr(uintptr_t p)
-{
-    return p;
-}
-
 /// @brief Casts a QB64 _OFFSET to a C string. QB64 does the right thing to convert this to a QB64 string
 /// @param p A pointer (_OFFSET)
 /// @return A C string (char ptr)

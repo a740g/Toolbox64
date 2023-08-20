@@ -66,10 +66,10 @@ $IF POINTEROPS_BI = UNDEFINED THEN
     DECLARE LIBRARY "PointerOps"
         $IF 32BIT THEN
             FUNCTION  GetCStringLength~& (BYVAL str As _UNSIGNED _OFFSET)
-            FUNCTION CLngPtr~& (BYVAL p As _UNSIGNED _OFFSET)
+            FUNCTION CLngPtr~& ALIAS "uintptr_t" (BYVAL p As _UNSIGNED _OFFSET)
         $ELSE
             FUNCTION GetCStringLength~&& (BYVAL str AS _UNSIGNED _OFFSET)
-            FUNCTION CLngPtr~&& (BYVAL p AS _UNSIGNED _OFFSET)
+            FUNCTION CLngPtr~&& ALIAS "uintptr_t" (BYVAL p AS _UNSIGNED _OFFSET)
         $END IF
         FUNCTION CompareMemory& (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
         SUB SetMemory (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS LONG, BYVAL count AS _UNSIGNED _OFFSET)

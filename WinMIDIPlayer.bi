@@ -23,7 +23,7 @@ $IF WINMIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION MIDI_GetVolume!
         FUNCTION Sound_PlayFromMemory%% (buffer AS STRING, BYVAL looping AS _BYTE)
         SUB Sound_Stop
-        SUB Sound_Beep ALIAS Beep (BYVAL frequency AS _UNSIGNED LONG, BYVAL duration AS _UNSIGNED LONG)
+        SUB Sound_Beep ALIAS "Beep" (BYVAL frequency AS _UNSIGNED LONG, BYVAL duration AS _UNSIGNED LONG)
     END DECLARE
 
 $END IF
