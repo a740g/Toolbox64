@@ -165,8 +165,8 @@ $IF VGAFONT_BAS = UNDEFINED THEN
 
 
     ' Loads a PSF v1 font file from disk
-    FUNCTION PSF1_LoadFontFromPath%% (fileName AS STRING, psf AS PSF1Type)
-        PSF1_LoadFontFromPath = PSF1_LoadFontFromMemory(LoadFile(fileName), psf)
+    FUNCTION PSF1_LoadFontFromFile%% (fileName AS STRING, psf AS PSF1Type)
+        PSF1_LoadFontFromFile = PSF1_LoadFontFromMemory(LoadFile(fileName), psf)
     END FUNCTION
 
 
