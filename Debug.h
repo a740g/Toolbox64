@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdio>
 
 #if defined(TOOLBOX64_DEBUG) && TOOLBOX64_DEBUG > 0
@@ -16,3 +17,7 @@
 #define TOOLBOX64_DEBUG_PRINT(_fmt_, _args_...) // Don't do anything in release builds
 #define TOOLBOX64_DEBUG_CHECK(_exp_)            // Don't do anything in release builds
 #endif
+
+#define ERROR_ILLEGAL_FUNCTION_CALL 5
+
+extern void error(int32_t error_number);
