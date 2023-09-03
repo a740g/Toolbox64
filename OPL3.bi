@@ -11,9 +11,9 @@ $IF OPL3_BI = UNDEFINED THEN
     '$INCLUDE:'MathOps.bi'
     '$INCLUDE:'PointerOps.bi'
 
-    CONST __OPL3_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
-    CONST __OPL3_SOUND_BUFFER_SAMPLE_SIZE = 4 ' 4 bytes (32-bits floating point)
-    CONST __OPL3_SOUND_BUFFER_FRAME_SIZE = __OPL3_SOUND_BUFFER_SAMPLE_SIZE * __OPL3_SOUND_BUFFER_CHANNELS
+    CONST OPL3_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
+    CONST OPL3_SOUND_BUFFER_SAMPLE_SIZE = 4 ' 4 bytes (32-bits floating point)
+    CONST OPL3_SOUND_BUFFER_FRAME_SIZE = OPL3_SOUND_BUFFER_SAMPLE_SIZE * OPL3_SOUND_BUFFER_CHANNELS
     CONST OPL3_SOUND_BUFFER_TIME_DEFAULT = 0.2 ' we will check that we have this amount of time left in the QB64 sound pipe
 
     ' QB64 specific stuff

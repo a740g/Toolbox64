@@ -62,8 +62,8 @@ $IF OPL3_BAS = UNDEFINED THEN
         ' Allocate a 40 ms mixer buffer and ensure we round down to power of 2
         ' Power of 2 above is required by most FFT functions
         __OPL3.soundBufferFrames = RoundLongDownToPowerOf2(_SNDRATE * OPL3_SOUND_BUFFER_TIME_DEFAULT * OPL3_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
-        __OPL3.soundBufferSamples = __OPL3.soundBufferFrames * __OPL3_SOUND_BUFFER_CHANNELS ' buffer samples
-        __OPL3.soundBufferBytes = __OPL3.soundBufferSamples * __OPL3_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
+        __OPL3.soundBufferSamples = __OPL3.soundBufferFrames * OPL3_SOUND_BUFFER_CHANNELS ' buffer samples
+        __OPL3.soundBufferBytes = __OPL3.soundBufferSamples * OPL3_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
         REDIM __OPL3_SoundBuffer(0 TO __OPL3.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
 
         OPL3_Initialize = TRUE
@@ -100,7 +100,7 @@ $IF OPL3_BAS = UNDEFINED THEN
             DIM i AS _UNSIGNED LONG
             DO WHILE i < __OPL3.soundBufferSamples
                 _SNDRAW __OPL3_SoundBuffer(i), __OPL3_SoundBuffer(i + 1), __OPL3.soundHandle
-                i = i + __OPL3_SOUND_BUFFER_CHANNELS
+                i = i + OPL3_SOUND_BUFFER_CHANNELS
             LOOP
         END IF
         $CHECKING:ON

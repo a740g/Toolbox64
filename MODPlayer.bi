@@ -38,7 +38,8 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         loopStart AS LONG ' Loop start in bytes
         loopLength AS LONG ' Loop length in bytes
         loopEnd AS LONG ' Loop end in bytes
-        frameSize AS _UNSIGNED _BYTE ' sample frame size in bytes
+        sampleSize AS _UNSIGNED _BYTE ' sample size in bytes (each frame can have one or more samples)
+        channels AS _UNSIGNED _BYTE ' number of channels per frame
     END TYPE
 
     TYPE __ChannelType

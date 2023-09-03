@@ -93,60 +93,63 @@ public:
     }
 };
 
-static OPL3 *opl3Chip = nullptr;
+static OPL3 *g_OPL3Chip = nullptr;
 
 inline qb_bool __OPL3_Initialize(uint32_t sampleRate)
 {
-    if (opl3Chip)
+    if (g_OPL3Chip)
         return QB_TRUE;
 
-    opl3Chip = new OPL3(sampleRate);
+    if (!sampleRate)
+        return QB_FALSE;
 
-    return TO_QB_BOOL(opl3Chip != nullptr);
+    g_OPL3Chip = new OPL3(sampleRate);
+
+    return TO_QB_BOOL(g_OPL3Chip != nullptr);
 }
 
 inline void __OPL3_Finalize()
 {
-    if (!opl3Chip)
+    if (!g_OPL3Chip)
         return;
 
-    delete opl3Chip;
-    opl3Chip = nullptr;
+    delete g_OPL3Chip;
+    g_OPL3Chip = nullptr;
 }
 
 inline qb_bool OPL3_IsInitialized()
 {
-    return TO_QB_BOOL(opl3Chip != nullptr);
+    return TO_QB_BOOL(g_OPL3Chip != nullptr);
 }
 
 inline void OPL3_Reset()
 {
-    if (!opl3Chip)
+    if (!g_OPL3Chip)
         return;
 
-    return opl3Chip->Reset();
+    g_OPL3Chip->Reset();
 }
 
 inline void OPL3_SetGain(float gain)
 {
-    if (!opl3Chip)
+    if (!g_OPL3Chip)
         return;
 
-    opl3Chip->SetGain(gain);
+    g_OPL3Chip->SetGain(gain);
 }
 
 inline void OPL3_WriteRegister(uint16_t address, uint8_t data)
 {
-    if (!opl3Chip)
+    if (!g_OPL3Chip)
         return;
 
-    opl3Chip->WriteRegister(address, data);
+    g_OPL3Chip->WriteRegister(address, data);
 }
 
 inline void __OPL3_GenerateSamples(float *buffer, uint32_t frames)
 {
-    if (!opl3Chip)
+    if (!g_OPL3Chip)
         return;
 
-    opl3Chip->GenerateSamples(buffer, frames);
+    g_OPL3Chip->GenerateSamples(buffer, frames);
 }

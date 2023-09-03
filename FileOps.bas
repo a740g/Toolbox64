@@ -150,13 +150,11 @@ $IF FILEOPS_BAS = UNDEFINED THEN
 
     ' Load a file from a file or URL
     FUNCTION LoadFile$ (PathOrURL AS STRING)
-        SELECT CASE UCASE$(GetDriveOrSchemeFromPathOrURL(PathOrURL))
-            CASE "HTTP:", "HTTPS:", "FTP:"
-                LoadFile = LoadFileFromURL(PathOrURL)
-
-            CASE ELSE
-                LoadFile = LoadFileFromDisk(PathOrURL)
-        END SELECT
+        IF LEN(GetDriveOrSchemeFromPathOrURL(PathOrURL)) > 2 THEN
+            LoadFile = LoadFileFromURL(PathOrURL)
+        ELSE
+            LoadFile = LoadFileFromDisk(PathOrURL)
+        END IF
     END FUNCTION
 
 
@@ -164,11 +162,8 @@ $IF FILEOPS_BAS = UNDEFINED THEN
     FUNCTION LoadFileFromDisk$ (path AS STRING)
         IF _FILEEXISTS(path) THEN
             DIM AS LONG fh: fh = FREEFILE
-
             OPEN path FOR BINARY ACCESS READ AS fh
-
             LoadFileFromDisk = INPUT$(LOF(fh), fh)
-
             CLOSE fh
         END IF
     END FUNCTION
@@ -229,23 +224,7 @@ $IF FILEOPS_BAS = UNDEFINED THEN
 
     ' Copies file src to dst. Src file must exist and dst file must not
     FUNCTION CopyFile%% (fileSrc AS STRING, fileDst AS STRING, overwrite AS _BYTE)
-        ' Check if source file exists
-        IF _FILEEXISTS(fileSrc) THEN
-            ' Check if dest file exists
-            IF _FILEEXISTS(fileDst) AND NOT overwrite THEN EXIT FUNCTION
-
-            DIM sfh AS LONG: sfh = FREEFILE
-            OPEN fileSrc FOR BINARY ACCESS READ AS sfh ' open source
-            DIM buffer AS STRING: buffer = INPUT$(LOF(sfh), sfh) ' allocate buffer memory and read the file in one go
-            CLOSE sfh ' close source
-
-            DIM dfh AS LONG: dfh = FREEFILE
-            OPEN fileDst FOR OUTPUT AS dfh ' open destination in text mode to wipe out the file
-            PRINT #dfh, buffer; ' write the buffer to the file (works regardless of the file being opened in text mode)
-            CLOSE dfh ' close destination
-
-            CopyFile = TRUE ' success
-        END IF
+        CopyFile = SaveFile(LoadFile(fileSrc), fileDst, overwrite)
     END FUNCTION
 
 
