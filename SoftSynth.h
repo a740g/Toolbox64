@@ -236,13 +236,6 @@ struct SoftSynth
 
             Sound::Frame temp, output; // output frame
 
-            // Return a slience frame if sound is empty
-            if (!softSynth.Sounds.size())
-            {
-                output = {};
-                return output;
-            }
-
             // Avoid division by zero if frequency is not set
             if (!frequency)
                 SetFrequency(softSynth, softSynth.sampleRate);
@@ -429,7 +422,7 @@ struct SoftSynth
     }
 
     /// @brief This mixes and writes the mixed samples to "buffer"
-    /// @param buffer A pointer that will receive the mixes samples (the buffer is not cleared before mixing)
+    /// @param buffer A pointer that will receive the mixed samples (the buffer is not cleared before mixing)
     /// @param frames The number of frames to mix
     void Update(float *buffer, uint32_t frames)
     {
@@ -440,7 +433,7 @@ struct SoftSynth
         {
             auto &voice = Voices[v];
 
-            if (voice.sound >= 0)
+            if (voice.sound >= 0 and Sounds[voice.sound].data.size() > 0)
             {
                 TOOLBOX64_DEBUG_PRINT("Painting voice %i", v);
 
