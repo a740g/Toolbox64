@@ -404,15 +404,21 @@ struct SoftSynth
 
         auto totalFrames = Sounds[sound].data.size();
 
-        if (position < 0)
-        {
-            Voices[voice].position = 0;
-        }
-        else if (position >= totalFrames)
+        if (position >= totalFrames and SoftSynth::Voice::PlayMode::Forward == playMode)
         {
             Voices[voice].sound = -1; // trying to play past sound; just invalidate the sound index
             TOOLBOX64_DEBUG_PRINT("Play position (%i) >= frame count (%llu)", position, totalFrames);
             return;
+        }
+        else if (position < 0 and SoftSynth::Voice::PlayMode::Reverse == playMode)
+        {
+            Voices[voice].sound = -1; // trying to play past sound; just invalidate the sound index
+            TOOLBOX64_DEBUG_PRINT("Play position (%i) < 0", position);
+            return;
+        }
+        else if (position < 0 or position >= totalFrames)
+        {
+            Voices[voice].position = 0;
         }
         else
         {
