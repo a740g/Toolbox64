@@ -134,8 +134,8 @@ struct SoftSynth
         int32_t sound;           // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
         float volume;            // voice volume (0.0 - 1.0)
         uint32_t frequency;      // the frequency of the sound
-        int32_t rateRatio;       // ratio between the desired output sample rate and the device sample rate
-        int32_t sampleCnt;       // the fractional part of the current sample position
+        uint32_t rateRatio;      // ratio between the desired output sample rate and the device sample rate
+        uint32_t sampleCnt;      // the fractional part of the current sample position
         float balance;           // position -1.0 is leftmost ... 1.0 is rightmost
         float leftGain;          // left channel gain
         float rightGain;         // rigth channel gain
@@ -150,9 +150,7 @@ struct SoftSynth
         Voice()
         {
             Reset();
-            balance = 0.0f;
-            leftGain = 0.0f;
-            rightGain = 0.0f;
+            SetBalance(0.0f);
         }
 
         void Reset()
@@ -233,12 +231,15 @@ struct SoftSynth
         Sound::Frame GetFrame(SoftSynth &softSynth)
         {
             TOOLBOX64_DEBUG_CHECK(sound >= 0 and sound < softSynth.Sounds.size());
+            TOOLBOX64_DEBUG_CHECK(frequency > 0);
 
             Sound::Frame temp, output; // output frame
 
-            // Avoid division by zero if frequency is not set
-            if (!frequency)
-                SetFrequency(softSynth, softSynth.sampleRate);
+            if (!rateRatio)
+            {
+                output = {};
+                return output;
+            }
 
             while (sampleCnt >= rateRatio)
             {
@@ -392,6 +393,8 @@ struct SoftSynth
     /// @param end The playback end frame or loop end frame (based on playMode)
     void PlayVoice(int32_t voice, int32_t sound, int32_t position, SoftSynth::Voice::PlayMode playMode, int32_t start, int32_t end)
     {
+        Voices[voice].sampleCnt = 0;
+
         if (playMode < Voice::PlayMode::Forward or playMode >= Voice::PlayMode::Count)
             Voices[voice].playMode = SoftSynth::Voice::PlayMode::Forward;
         else
@@ -401,10 +404,20 @@ struct SoftSynth
 
         auto totalFrames = Sounds[sound].data.size();
 
-        if (position < 0 or position >= totalFrames)
+        if (position < 0)
+        {
             Voices[voice].position = 0;
+        }
+        else if (position >= totalFrames)
+        {
+            Voices[voice].sound = -1; // trying to play past sound; just invalidate the sound index
+            TOOLBOX64_DEBUG_PRINT("Play position (%i) >= frame count (%llu)", position, totalFrames);
+            return;
+        }
         else
+        {
             Voices[voice].position = position;
+        }
 
         if (start < 0 or start >= totalFrames)
             Voices[voice].start = 0;
@@ -558,7 +571,7 @@ float SoftSynth_GetVoiceBalance(int32_t voice)
 
 void SoftSynth_SetVoiceFrequency(int32_t voice, uint32_t frequency)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size() or !frequency)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
