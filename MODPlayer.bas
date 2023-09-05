@@ -13,8 +13,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    '$ASSERTS
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Fasttracker/Jugi/dope%20-%20onward%20ride.mod") THEN
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
@@ -1320,8 +1319,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         $CHECKING:ON
     END FUNCTION
 
+    '$INCLUDE:'SoftSynth.bas'
     '$INCLUDE:'MemFile.bas'
     '$INCLUDE:'FileOps.bas'
-    '$INCLUDE:'SoftSynth.bas'
 
 $END IF

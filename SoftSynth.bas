@@ -11,9 +11,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    '$DEBUG
     '$CONSOLE
-    '$ASSERTS
 
     'IF SoftSynth_Initialize THEN
     '    PRINT __SoftSynth.soundHandle
@@ -23,7 +21,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
     '    SoftSynth_SetTotalVoices 4
 
-    '    DIM rawSound AS STRING: rawSound = LoadFile("C:\Users\samue\OneDrive\repos\QB64-PE-Dev\tests\TEST.raw")
+    '    DIM rawSound AS STRING: rawSound = LoadFile("../../../../Downloads/TEST.raw")
     '    SoftSynth_LoadSound 0, rawSound, SoftSynth_BytesToFrames(LEN(rawSound), SIZE_OF_BYTE, 1), SIZE_OF_BYTE, 1
 
     '    SoftSynth_SetVoiceFrequency 1, 11025
@@ -33,10 +31,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     '        k = _KEYHIT
 
     '        IF k = 32 THEN SoftSynth_PlayVoice 1, 0, 0, SOFTSYNTH_VOICE_PLAY_FORWARD, 0, SoftSynth_BytesToFrames(LEN(rawSound), SIZE_OF_BYTE, 1) - 1
+    '        IF k = 19200 THEN SoftSynth_SetVoiceBalance 1, SoftSynth_GetVoiceBalance(1) - 0.01!
+    '        IF k = 19712 THEN SoftSynth_SetVoiceBalance 1, SoftSynth_GetVoiceBalance(1) + 0.01!
 
     '        IF SoftSynth_GetBufferedSoundTime < SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT THEN SoftSynth_Update 1024
 
-    '        _PRINTSTRING (1, 13), STR$(TIMER)
+    '        LOCATE 10, 1
+    '        PRINT USING "Balance: ###.###"; SoftSynth_GetVoiceBalance(1)
 
     '        _LIMIT 60
     '    LOOP UNTIL k = 27

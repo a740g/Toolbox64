@@ -48,16 +48,23 @@ struct SoftSynth
                 auto src = (const int8_t *)source;
                 for (int32_t i = 0; i < frames; i++)
                 {
-                    data[i].left = *src / 128.0f;
-                    ++src;
-                    if (channels == 2)
+                    switch (channels)
                     {
+                    case 1:
+                        data[i].left = *src / 256.0f;
+                        data[i].right = data[i].left;
+                        ++src;
+                        break;
+
+                    case 2:
+                        data[i].left = *src / 128.0f;
+                        ++src;
                         data[i].right = *src / 128.0f;
                         ++src;
-                    }
-                    else
-                    {
-                        data[i].right = data[i].left;
+                        break;
+
+                    default:
+                        TOOLBOX64_DEBUG_PRINT("Unsupported channels (%i)", channels);
                     }
                 }
             }
@@ -68,16 +75,23 @@ struct SoftSynth
                 auto src = (const int16_t *)source;
                 for (int32_t i = 0; i < frames; i++)
                 {
-                    data[i].left = *src / 32768.0f;
-                    ++src;
-                    if (channels == 2)
+                    switch (channels)
                     {
+                    case 1:
+                        data[i].left = *src / 65536.0f;
+                        data[i].right = data[i].left;
+                        ++src;
+                        break;
+
+                    case 2:
+                        data[i].left = *src / 32768.0f;
+                        ++src;
                         data[i].right = *src / 32768.0f;
                         ++src;
-                    }
-                    else
-                    {
-                        data[i].right = data[i].left;
+                        break;
+
+                    default:
+                        TOOLBOX64_DEBUG_PRINT("Unsupported channels (%i)", channels);
                     }
                 }
             }
@@ -88,16 +102,23 @@ struct SoftSynth
                 auto src = (const float *)source;
                 for (int32_t i = 0; i < frames; i++)
                 {
-                    data[i].left = *src;
-                    ++src;
-                    if (channels == 2)
+                    switch (channels)
                     {
+                    case 1:
+                        data[i].left = *src / 2.0f;
+                        data[i].right = data[i].left;
+                        ++src;
+                        break;
+
+                    case 2:
+                        data[i].left = *src;
+                        ++src;
                         data[i].right = *src;
                         ++src;
-                    }
-                    else
-                    {
-                        data[i].right = data[i].left;
+                        break;
+
+                    default:
+                        TOOLBOX64_DEBUG_PRINT("Unsupported channels (%i)", channels);
                     }
                 }
             }
@@ -155,19 +176,13 @@ struct SoftSynth
 
         void Reset()
         {
-            // pan & channel gains are intentionally left out so that we do not reset pan positions set by the user
+            // Balance & channel gains are intentionally left out so that we do not reset pan positions set by the user
             sound = -1;
             volume = 1.0f;
-            frequency = 0;
-            rateRatio = 0;
-            sampleCnt = 0;
-            position = 0;
-            start = 0;
-            end = 0;
+            frequency = rateRatio = sampleCnt = position = start = end = 0;
             direction = PlayDirection::Forward;
             playMode = PlayMode::Forward;
-            frame = {};
-            oldFrame = {};
+            frame = oldFrame = {};
         }
 
         void SetFrequency(SoftSynth &softSynth, uint32_t frequency)
@@ -213,6 +228,10 @@ struct SoftSynth
         void SetSound(SoftSynth &softSynth, int32_t sound)
         {
             TOOLBOX64_DEBUG_CHECK(sound >= 0 and sound < softSynth.Sounds.size());
+
+            // Reset some stuff
+            sampleCnt = 0;
+            frame = oldFrame = {};
 
             this->sound = sound;
 
@@ -393,8 +412,6 @@ struct SoftSynth
     /// @param end The playback end frame or loop end frame (based on playMode)
     void PlayVoice(int32_t voice, int32_t sound, int32_t position, SoftSynth::Voice::PlayMode playMode, int32_t start, int32_t end)
     {
-        Voices[voice].sampleCnt = 0;
-
         if (playMode < Voice::PlayMode::Forward or playMode >= Voice::PlayMode::Count)
             Voices[voice].playMode = SoftSynth::Voice::PlayMode::Forward;
         else
@@ -454,7 +471,7 @@ struct SoftSynth
 
             if (voice.sound >= 0 and Sounds[voice.sound].data.size() > 0)
             {
-                TOOLBOX64_DEBUG_PRINT("Painting voice %i", v);
+                // TOOLBOX64_DEBUG_PRINT("Painting voice %i", v);
 
                 ++activeVoices;
 
