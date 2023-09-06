@@ -21,6 +21,14 @@ $IF MATHOPS_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
 
     DECLARE LIBRARY "MathOps"
+        FUNCTION LongToSingle! ALIAS "float" (BYVAL x AS LONG)
+        FUNCTION LongToDouble! ALIAS "double" (BYVAL x AS LONG)
+        FUNCTION SingleToLong& ALIAS "int32_t" (BYVAL x AS SINGLE)
+        FUNCTION DoubleToLong& ALIAS "int32_t" (BYVAL x AS DOUBLE)
+        FUNCTION Integer64ToSingle! ALIAS "float" (BYVAL x AS _INTEGER64)
+        FUNCTION Integer64ToDouble! ALIAS "double" (BYVAL x AS _INTEGER64)
+        FUNCTION SingleToInteger64&& ALIAS "int64_t" (BYVAL x AS SINGLE)
+        FUNCTION DoubleToInteger64&& ALIAS "int64_t" (BYVAL x AS DOUBLE)
         SUB SetRandomSeed (BYVAL seed AS _UNSIGNED LONG)
         FUNCTION GetRandomValue& ALIAS "rand"
         FUNCTION GetRandomBetween& (BYVAL lo AS LONG, BYVAL hi AS LONG)
