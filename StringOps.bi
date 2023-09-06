@@ -9,11 +9,6 @@ $IF STRINGOPS_BI = UNDEFINED THEN
     '$INCLUDE:'Common.bi'
     '$INCLUDE:'Types.bi'
 
-    DECLARE LIBRARY
-        FUNCTION ToLowerCase~& ALIAS "tolower" (BYVAL ch AS _UNSIGNED LONG)
-        FUNCTION ToUpperCase~& ALIAS "toupper" (BYVAL ch AS _UNSIGNED LONG)
-    END DECLARE
-
     DECLARE LIBRARY "StringOps"
         FUNCTION __FormatLong$ (BYVAL n AS LONG, fmt AS STRING)
         FUNCTION __FormatInteger64$ (BYVAL n AS _INTEGER64, fmt AS STRING)
@@ -21,6 +16,8 @@ $IF STRINGOPS_BI = UNDEFINED THEN
         FUNCTION __FormatDouble$ (BYVAL n AS DOUBLE, fmt AS STRING)
         FUNCTION __FormatOffset$ (BYVAL n AS _UNSIGNED _OFFSET, fmt AS STRING)
         FUNCTION FormatBoolean$ (BYVAL n AS LONG, BYVAL fmt AS _UNSIGNED LONG)
+        FUNCTION ToLowerCase~& ALIAS "tolower" (BYVAL ch AS _UNSIGNED LONG)
+        FUNCTION ToUpperCase~& ALIAS "toupper" (BYVAL ch AS _UNSIGNED LONG)
         FUNCTION IsAlphaNumeric%% (BYVAL ch AS _UNSIGNED LONG)
         FUNCTION IsAlphabetic%% (BYVAL ch AS _UNSIGNED LONG)
         FUNCTION IsLowerCase%% (BYVAL ch AS _UNSIGNED LONG)
