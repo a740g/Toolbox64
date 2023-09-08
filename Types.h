@@ -16,19 +16,4 @@ enum qb_bool : int8_t
 
 #define TO_C_BOOL(_exp_) ((_exp_) != false)
 #define TO_QB_BOOL(_exp_) ((qb_bool)(-TO_C_BOOL(_exp_)))
-
-/// @brief Returns QB style bool
-/// @param x Any number
-/// @return 0 when x is 0 and -1 when x is non-zero
-inline qb_bool ToQBBool(int32_t x)
-{
-    return TO_QB_BOOL(x);
-}
-
-/// @brief Returns C style bool
-/// @param x Any number
-/// @return 0 when x is 0 and 1 when x is non-zero
-inline bool ToCBool(int32_t x)
-{
-    return TO_C_BOOL(x);
-}
+#define TO_L_NOT(_exp_) (-(not(_exp_)))

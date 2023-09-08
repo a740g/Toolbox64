@@ -52,8 +52,28 @@ $IF TYPES_BI = UNDEFINED THEN
 
     ' QB <> C BOOL interop
     DECLARE LIBRARY "Types"
-        FUNCTION ToQBBool%% (BYVAL x AS LONG)
-        FUNCTION ToCBool%% (BYVAL x AS LONG)
+        FUNCTION ToQBBool%% ALIAS "TO_QB_BOOL" (BYVAL x AS LONG)
+        FUNCTION ToCBool%% ALIAS "TO_C_BOOL" (BYVAL x AS LONG)
+        FUNCTION LNot& ALIAS "TO_L_NOT" (BYVAL x AS LONG)
     END DECLARE
+
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$DEBUG
+    '$CONSOLE:ONLY
+
+    'PRINT ToQBBool(1)
+    'PRINT ToQBBool(0)
+    'PRINT ToQBBool(-1)
+    'PRINT ToCBool(1)
+    'PRINT ToCBool(0)
+    'PRINT ToCBool(-1)
+    'PRINT LNot(1)
+    'PRINT LNot(0)
+    'PRINT LNot(-1)
+
+    'END
+    '-------------------------------------------------------------------------------------------------------------------
 
 $END IF

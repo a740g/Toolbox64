@@ -730,6 +730,7 @@ void SoftSynth_PeekSoundFrameSingle(int32_t sound, int32_t position, float *L, f
 {
     if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
     {
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -744,6 +745,7 @@ void SoftSynth_PokeSoundFrameSingle(int32_t sound, int32_t position, float L, fl
 {
     if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
     {
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -755,6 +757,7 @@ void SoftSynth_PeekSoundFrameInteger(int32_t sound, int32_t position, int16_t *L
 {
     if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
     {
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -769,6 +772,7 @@ void SoftSynth_PokeSoundFrameInteger(int32_t sound, int32_t position, int16_t L,
 {
     if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
     {
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -780,6 +784,7 @@ void SoftSynth_PeekSoundFrameByte(int32_t sound, int32_t position, int8_t *L, in
 {
     if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
     {
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -794,6 +799,7 @@ void SoftSynth_PokeSoundFrameByte(int32_t sound, int32_t position, int8_t L, int
 {
     if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
     {
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
