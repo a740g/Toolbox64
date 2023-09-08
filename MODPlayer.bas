@@ -181,7 +181,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Sample(i).loopEnd = StringFile_ReadLong(memFile)
             IF __Sample(i).loopEnd < 0 OR __Sample(i).loopEnd >= __Sample(i).length THEN __Sample(i).loopEnd = __Sample(i).length - 1 ' sanity check
 
-            __Sample(i).loopLength = 1 + __Sample(i).loopEnd - __Sample(i).loopStart ' calculate loop length
+            __Sample(i).loopLength = __Sample(i).loopEnd - __Sample(i).loopStart ' this is mostly used to check if the sample is looping
 
             ' Read finetune
             __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
@@ -405,6 +405,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
             __Sample(i).loopLength = (byte1 * &H100 + byte2) * 2
+            IF __Sample(i).loopLength = 2 THEN __Sample(i).loopLength = 0 ' sanity check
             IF __Sample(i).loopStart + __Sample(i).loopLength > __Sample(i).length THEN __Sample(i).loopLength = __Sample(i).length - __Sample(i).loopStart
 
             __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength - 1 ' calculate repeat end
