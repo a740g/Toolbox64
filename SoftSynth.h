@@ -5,7 +5,7 @@
 
 #pragma once
 
-// #define TOOLBOX64_DEBUG 1
+#define TOOLBOX64_DEBUG 0
 #include "Debug.h"
 #include "MathOps.h"
 #include <cstdint>
@@ -190,7 +190,7 @@ struct SoftSynth
             this->frequency = frequency;
             rateRatio = (softSynth.sampleRate << RSM_FRAC) / frequency;
 
-            TOOLBOX64_DEBUG_PRINT("Sample rate ratio = %i", rateRatio);
+            // TOOLBOX64_DEBUG_PRINT("Sample rate ratio = %i", rateRatio);
         }
 
         uint32_t GetFrequency()
@@ -245,7 +245,7 @@ struct SoftSynth
             TOOLBOX64_DEBUG_PRINT("Sound %i set", sound);
         }
 
-        /// @brief This return a single frame from the associated Sound after resampling based on the set frequency
+        /// @brief This returns a single frame from the associated Sound after resampling based on the set frequency
         /// @return A single Frame object
         Sound::Frame GetFrame(SoftSynth &softSynth)
         {
@@ -255,15 +255,10 @@ struct SoftSynth
             Sound::Frame temp, output; // output frame
 
             if (!rateRatio)
-            {
-                output = {};
-                return output;
-            }
+                return {};
 
             while (sampleCnt >= rateRatio)
             {
-                // TOOLBOX64_DEBUG_PRINT("Position = %i", position);
-
                 oldFrame = frame;
                 frame = softSynth.Sounds[sound].data[position];
 
@@ -328,6 +323,9 @@ struct SoftSynth
                 }
 
                 sampleCnt -= rateRatio;
+
+                if (sound < 0)
+                    break;
             }
 
             // Interpolation & volume
@@ -403,7 +401,7 @@ struct SoftSynth
         Sounds[sound].data[position] = frame;
     }
 
-    /// @brief
+    /// @brief Plays a sound using a voice
     /// @param voice The voice to use to play the sound
     /// @param sound The sound to play
     /// @param position The position (in frames) in the sound where playback should start
@@ -791,8 +789,8 @@ void SoftSynth_PeekSoundFrameByte(int32_t sound, int32_t position, int8_t *L, in
 
     auto frame = g_softSynth->PeekSoundFrame(sound, position);
 
-    *L = (int16_t)(frame.left * 128.0f);
-    *R = (int16_t)(frame.right * 128.0f);
+    *L = (int8_t)(frame.left * 128.0f);
+    *R = (int8_t)(frame.right * 128.0f);
 }
 
 void SoftSynth_PokeSoundFrameByte(int32_t sound, int32_t position, int8_t L, int8_t R)
@@ -809,5 +807,7 @@ void SoftSynth_PokeSoundFrameByte(int32_t sound, int32_t position, int8_t L, int
 
 inline int32_t SoftSynth_BytesToFrames(int32_t bytes, int32_t bytesPerSample, int32_t channels)
 {
+    TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
+
     return bytes / (bytesPerSample * channels);
 }

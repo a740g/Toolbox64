@@ -13,7 +13,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/are%20you%20stupid.mod") THEN
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Fasttracker/Jugi/dope%20-%20onward%20ride.mod") THEN
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
@@ -158,7 +158,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM i AS LONG: FOR i = 0 TO __MTM_CHANNELS - 1
             byte1 = StringFile_ReadByte(memFile) ' read the raw value
 
-            ' Adjust and save the values per out mixer requirements
+            ' Adjust and save the values per our mixer requirements
             IF byte1 < 16 AND i < __Song.channels THEN SoftSynth_SetVoiceBalance i, (byte1 / 15) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
         NEXT
 
