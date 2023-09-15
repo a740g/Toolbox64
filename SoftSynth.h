@@ -506,234 +506,234 @@ struct SoftSynth
     }
 };
 
-static SoftSynth *g_softSynth = nullptr;
+static SoftSynth *g_SoftSynth = nullptr;
 
 inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
 {
-    if (g_softSynth)
+    if (g_SoftSynth)
         return QB_TRUE;
 
     if (!sampleRate)
         return QB_FALSE;
 
-    g_softSynth = new SoftSynth(sampleRate);
+    g_SoftSynth = new SoftSynth(sampleRate);
 
-    return TO_QB_BOOL(g_softSynth != nullptr);
+    return TO_QB_BOOL(g_SoftSynth != nullptr);
 }
 
 inline void __SoftSynth_Finalize()
 {
-    if (g_softSynth)
+    if (g_SoftSynth)
     {
-        delete g_softSynth;
-        g_softSynth = nullptr;
+        delete g_SoftSynth;
+        g_SoftSynth = nullptr;
     }
 }
 
 qb_bool SoftSynth_IsInitialized()
 {
-    return TO_QB_BOOL(g_softSynth != nullptr);
+    return TO_QB_BOOL(g_SoftSynth != nullptr);
 }
 
 inline void __SoftSynth_Update(float *buffer, uint32_t frames)
 {
-    if (!g_softSynth or !buffer or !frames)
+    if (!g_SoftSynth or !buffer or !frames)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->Update(buffer, frames);
+    g_SoftSynth->Update(buffer, frames);
 }
 
 void SoftSynth_SetVoiceVolume(int32_t voice, float volume)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->Voices[voice].volume = ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->Voices[voice].volume = ClampSingle(volume, 0.0f, 1.0f);
 }
 
 float SoftSynth_GetVoiceVolume(int32_t voice)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
-    return g_softSynth->Voices[voice].volume;
+    return g_SoftSynth->Voices[voice].volume;
 }
 
 void SoftSynth_SetVoiceBalance(int32_t voice, float balance)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->Voices[voice].SetBalance(ClampSingle(balance, -1.0f, 1.0f));
+    g_SoftSynth->Voices[voice].SetBalance(ClampSingle(balance, -1.0f, 1.0f));
 }
 
 float SoftSynth_GetVoiceBalance(int32_t voice)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
-    return g_softSynth->Voices[voice].GetBalance();
+    return g_SoftSynth->Voices[voice].GetBalance();
 }
 
 void SoftSynth_SetVoiceFrequency(int32_t voice, uint32_t frequency)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size() or !frequency)
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size() or !frequency)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->Voices[voice].SetFrequency(*g_softSynth, frequency);
+    g_SoftSynth->Voices[voice].SetFrequency(*g_SoftSynth, frequency);
 }
 
 uint32_t SoftSynth_GetVoiceFrequency(int32_t voice)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
-    return g_softSynth->Voices[voice].GetFrequency();
+    return g_SoftSynth->Voices[voice].GetFrequency();
 }
 
 void SoftSynth_StopVoice(int32_t voice)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->Voices[voice].Reset();
+    g_SoftSynth->Voices[voice].Reset();
 }
 
 void SoftSynth_PlayVoice(int32_t voice, int32_t sound, int32_t position, int32_t playMode, int32_t start, int32_t end)
 {
-    if (!g_softSynth or voice < 0 or voice >= g_softSynth->Voices.size() or sound < 0 or sound >= g_softSynth->Sounds.size())
+    if (!g_SoftSynth or voice < 0 or voice >= g_SoftSynth->Voices.size() or sound < 0 or sound >= g_SoftSynth->Sounds.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->PlayVoice(voice, sound, position, (SoftSynth::Voice::PlayMode)playMode, start, end);
+    g_SoftSynth->PlayVoice(voice, sound, position, (SoftSynth::Voice::PlayMode)playMode, start, end);
 }
 
 void SoftSynth_SetGlobalVolume(float volume)
 {
-    if (!g_softSynth)
+    if (!g_SoftSynth)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->volume = ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->volume = ClampSingle(volume, 0.0f, 1.0f);
 }
 
 float SoftSynth_GetGlobalVolume()
 {
-    if (!g_softSynth)
+    if (!g_SoftSynth)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
-    return g_softSynth->volume;
+    return g_SoftSynth->volume;
 }
 
 uint32_t SoftSynth_GetSampleRate()
 {
-    if (!g_softSynth)
+    if (!g_SoftSynth)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
-    return g_softSynth->sampleRate;
+    return g_SoftSynth->sampleRate;
 }
 
 int32_t SoftSynth_GetTotalSounds()
 {
-    if (!g_softSynth)
+    if (!g_SoftSynth)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
-    return (int32_t)g_softSynth->Sounds.size();
+    return (int32_t)g_SoftSynth->Sounds.size();
 }
 
 int32_t SoftSynth_GetTotalVoices()
 {
-    if (!g_softSynth)
+    if (!g_SoftSynth)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
-    return (int32_t)g_softSynth->Voices.size();
+    return (int32_t)g_SoftSynth->Voices.size();
 }
 
 void SoftSynth_SetTotalVoices(int32_t voices)
 {
-    if (!g_softSynth or voices < 1)
+    if (!g_SoftSynth or voices < 1)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->Voices.resize(voices);
+    g_SoftSynth->Voices.resize(voices);
 }
 
 int32_t SoftSynth_GetActiveVoices()
 {
-    if (!g_softSynth)
+    if (!g_SoftSynth)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
-    return g_softSynth->activeVoices;
+    return g_SoftSynth->activeVoices;
 }
 
 void SoftSynth_LoadSound(int32_t sound, const char *source, int32_t frames, int32_t bytesPerSample, int32_t channels)
 {
     TOOLBOX64_DEBUG_PRINT("Sound = %i, frames = %i, bytes / sample = %i, channels = %i", sound, frames, bytesPerSample, channels);
 
-    if (!g_softSynth or sound < 0 or !source or !SoftSynth::IsFramesValid(frames) or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
+    if (!g_SoftSynth or sound < 0 or !source or !SoftSynth::IsFramesValid(frames) or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->LoadSound(sound, source, frames, bytesPerSample, channels);
+    g_SoftSynth->LoadSound(sound, source, frames, bytesPerSample, channels);
 }
 
 void SoftSynth_PeekSoundFrameSingle(int32_t sound, int32_t position, float *L, float *R)
 {
-    if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->Sounds.size() or position < 0 or position >= g_SoftSynth->Sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    auto frame = g_softSynth->PeekSoundFrame(sound, position);
+    auto frame = g_SoftSynth->PeekSoundFrame(sound, position);
 
     *L = frame.left;
     *R = frame.right;
@@ -741,26 +741,26 @@ void SoftSynth_PeekSoundFrameSingle(int32_t sound, int32_t position, float *L, f
 
 void SoftSynth_PokeSoundFrameSingle(int32_t sound, int32_t position, float L, float R)
 {
-    if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->Sounds.size() or position < 0 or position >= g_SoftSynth->Sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->PokeSoundFrame(sound, position, {L, R});
+    g_SoftSynth->PokeSoundFrame(sound, position, {L, R});
 }
 
 void SoftSynth_PeekSoundFrameInteger(int32_t sound, int32_t position, int16_t *L, int16_t *R)
 {
-    if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->Sounds.size() or position < 0 or position >= g_SoftSynth->Sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    auto frame = g_softSynth->PeekSoundFrame(sound, position);
+    auto frame = g_SoftSynth->PeekSoundFrame(sound, position);
 
     *L = (int16_t)(frame.left * 32768.0f);
     *R = (int16_t)(frame.right * 32768.0f);
@@ -768,26 +768,26 @@ void SoftSynth_PeekSoundFrameInteger(int32_t sound, int32_t position, int16_t *L
 
 void SoftSynth_PokeSoundFrameInteger(int32_t sound, int32_t position, int16_t L, int16_t R)
 {
-    if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->Sounds.size() or position < 0 or position >= g_SoftSynth->Sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->PokeSoundFrame(sound, position, {(float)L / 32768.0f, (float)R / 32768.0f});
+    g_SoftSynth->PokeSoundFrame(sound, position, {(float)L / 32768.0f, (float)R / 32768.0f});
 }
 
 void SoftSynth_PeekSoundFrameByte(int32_t sound, int32_t position, int8_t *L, int8_t *R)
 {
-    if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->Sounds.size() or position < 0 or position >= g_SoftSynth->Sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    auto frame = g_softSynth->PeekSoundFrame(sound, position);
+    auto frame = g_SoftSynth->PeekSoundFrame(sound, position);
 
     *L = (int8_t)(frame.left * 128.0f);
     *R = (int8_t)(frame.right * 128.0f);
@@ -795,14 +795,14 @@ void SoftSynth_PeekSoundFrameByte(int32_t sound, int32_t position, int8_t *L, in
 
 void SoftSynth_PokeSoundFrameByte(int32_t sound, int32_t position, int8_t L, int8_t R)
 {
-    if (!g_softSynth or sound < 0 or sound >= g_softSynth->Sounds.size() or position < 0 or position >= g_softSynth->Sounds[sound].data.size())
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->Sounds.size() or position < 0 or position >= g_SoftSynth->Sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_softSynth->PokeSoundFrame(sound, position, {(float)L / 128.0f, (float)R / 128.0f});
+    g_SoftSynth->PokeSoundFrame(sound, position, {(float)L / 128.0f, (float)R / 128.0f});
 }
 
 inline int32_t SoftSynth_BytesToFrames(int32_t bytes, int32_t bytesPerSample, int32_t channels)

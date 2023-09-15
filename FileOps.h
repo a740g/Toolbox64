@@ -120,7 +120,7 @@ inline const char *__Dir64(const char *fileSpec)
     static DIR *pDir = nullptr;
     static char pattern[FILENAME_MAX];
 
-    commonTemporaryBuffer[0] = '\0'; // Set to an empty string
+    g_TmpBufF[0] = '\0'; // Set to an empty string
 
     if (!IS_STRING_EMPTY(fileSpec))
     {
@@ -185,13 +185,13 @@ inline const char *__Dir64(const char *fileSpec)
 
             if (__Dir64MatchSpec(pattern, pDirent->d_name))
             {
-                strncpy(commonTemporaryBuffer, pDirent->d_name, sizeof(commonTemporaryBuffer) - 1);
-                commonTemporaryBuffer[sizeof(commonTemporaryBuffer) - 1] = '\0';
+                strncpy(reinterpret_cast<char *>(g_TmpBufF), pDirent->d_name, sizeof(g_TmpBufF) - 1);
+                g_TmpBufF[sizeof(g_TmpBufF) - 1] = '\0';
 
                 break;
             }
         }
     }
 
-    return commonTemporaryBuffer;
+    return reinterpret_cast<char *>(g_TmpBufF);
 }
