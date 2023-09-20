@@ -20,10 +20,11 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MIDI_Initialize(TRUE) THEN
+    'IF MIDI_Initialize(FALSE) THEN
     '    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
     '        MIDI_Play
     '        MIDI_Loop TRUE
+    '        PRINT "Playing "; MIDI_GetSongName
     '        DO
     '            MIDI_Update MIDI_SOUND_BUFFER_TIME_DEFAULT
     '            SELECT CASE _KEYHIT

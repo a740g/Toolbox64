@@ -54,6 +54,7 @@ $IF MIDIPLAYER_BI = UNDEFINED THEN
         FUNCTION MIDI_GetCurrentTime#
         FUNCTION MIDI_GetActiveVoices~&
         FUNCTION MIDI_IsFMSynthesis%%
+        FUNCTION MIDI_GetSongName$
         SUB __MIDI_Render (buffer AS SINGLE, BYVAL size AS _UNSIGNED LONG)
     END DECLARE
 

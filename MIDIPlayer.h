@@ -30,6 +30,7 @@
 #include "external/ymfmidi/ymf_player.cpp"
 #include "MIDIFMBank.h"
 #include <cstdint>
+#include <string>
 
 static void *contextTSFymfm = nullptr;         // TSF / ymfm context
 static tml_message *tinyMIDILoader = nullptr;  // TML context
@@ -40,6 +41,13 @@ static uint32_t sampleRate = 0;                // the mixing sample rate (should
 static float globalVolume = 1.0f;              // this is the global volume (0.0 - 1.0)
 static qb_bool isLooping = QB_FALSE;           // flag to indicate if we should loop a song
 static qb_bool isOPL3Active = QB_FALSE;        // flag to indicate if we are using TSF or ymfm
+static std::string g_SongName;
+
+extern "C" void TML_AddTrackName(const char *str)
+{
+    if (!g_SongName.length())
+        g_SongName = str;
+}
 
 /// @brief Check if MIDI library is initialized
 /// @return Returns QB64 TRUE if it is initialized
@@ -151,6 +159,15 @@ void MIDI_Stop()
         tinyMIDILoader = tinyMIDIMessage = nullptr; // reset globals
         currentMsec = totalMsec = 0.0;              // reset times
     }
+
+    g_SongName.clear();
+}
+
+/// @brief Get the song name if any
+/// @return A string containing the name (and other information)
+const char *MIDI_GetSongName()
+{
+    return g_SongName.c_str();
 }
 
 /// @brief This frees resources (if a file was previously loaded) and then loads a MIDI file from memory for playback

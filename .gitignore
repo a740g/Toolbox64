@@ -14,3 +14,5 @@
 .fake
 # Ignore Visual Studio stuff
 .vs
+# Ignore macOS stuff
+.DS_Store
