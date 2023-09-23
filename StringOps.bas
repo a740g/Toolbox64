@@ -178,6 +178,14 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     END SUB
 
 
+    ' Formats a string using C's printf() format specifier
+    FUNCTION FormatString$ (s AS STRING, fmt AS STRING)
+        $CHECKING:OFF
+        FormatString = __FormatString(ToCString(s), ToCString(fmt))
+        $CHECKING:ON
+    END FUNCTION
+
+
     ' Formats a long using C's printf() format specifier
     FUNCTION FormatLong$ (n AS LONG, fmt AS STRING)
         $CHECKING:OFF

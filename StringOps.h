@@ -13,6 +13,17 @@
 #include <cstdio>
 #include <regex>
 
+/// @brief Formats a string
+/// @param s A string to format
+/// @param fmt The format specifier
+/// @return A formatted string
+inline const char *__FormatString(const char *s, const char *fmt)
+{
+    g_TmpBufF[0] = '\0';
+    snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, s);
+    return reinterpret_cast<char *>(g_TmpBufF);
+}
+
 /// @brief Format a 32-bit integer
 /// @param n A 32-bit integer
 /// @param fmt The format specifier

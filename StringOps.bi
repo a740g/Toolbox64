@@ -10,6 +10,7 @@ $IF STRINGOPS_BI = UNDEFINED THEN
     '$INCLUDE:'Types.bi'
 
     DECLARE LIBRARY "StringOps"
+        FUNCTION __FormatString$ (s AS STRING, fmt AS STRING)
         FUNCTION __FormatLong$ (BYVAL n AS LONG, fmt AS STRING)
         FUNCTION __FormatInteger64$ (BYVAL n AS _INTEGER64, fmt AS STRING)
         FUNCTION __FormatSingle$ (BYVAL n AS SINGLE, fmt AS STRING)
