@@ -13,7 +13,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Fasttracker/Jugi/dope%20-%20onward%20ride.mod") THEN
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
@@ -502,18 +502,19 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' If we have < 4 channels, then 0 & 1 are set as left & right
         ' If we have > 4 channels all prefect 4 groups are set as LRRL
         ' Any channels that are left out are simply centered by the SoftSynth
-        ' We will also not do hard left or hard right. ~25% of sound from each channel is blended with the other
+        ' We will also not do hard left or hard right
+        ' Some amount of sound from each channel is blended with the other
         IF __Song.channels > 1 AND __Song.channels < 4 THEN
             ' Just setup channels 0 and 1
             ' If we have a 3rd channel it will be handle by the SoftSynth
-            SoftSynth_SetVoiceBalance 0, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4 ' -1.0 + 1.0 / 4.0
-            SoftSynth_SetVoiceBalance 1, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4 ' 1.0 - 1.0 / 4.0
+            SoftSynth_SetVoiceBalance 0, -0.5!
+            SoftSynth_SetVoiceBalance 1, 0.5!
         ELSE
             FOR i = 0 TO __Song.channels - 1 - (__Song.channels MOD 4) STEP 4
-                SoftSynth_SetVoiceBalance i + 0, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4
-                SoftSynth_SetVoiceBalance i + 1, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4
-                SoftSynth_SetVoiceBalance i + 2, SOFTSYNTH_VOICE_PAN_RIGHT - SOFTSYNTH_VOICE_PAN_RIGHT / 4
-                SoftSynth_SetVoiceBalance i + 3, SOFTSYNTH_VOICE_PAN_LEFT + SOFTSYNTH_VOICE_PAN_RIGHT / 4
+                SoftSynth_SetVoiceBalance i + 0, -0.5!
+                SoftSynth_SetVoiceBalance i + 1, 0.5!
+                SoftSynth_SetVoiceBalance i + 2, 0.5!
+                SoftSynth_SetVoiceBalance i + 3, -0.5!
             NEXT
         END IF
 
