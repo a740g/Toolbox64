@@ -486,6 +486,7 @@ struct SoftSynth
                     // Leave the loop early if we are done with the sound
                     if (voice.sound < 0)
                     {
+                        voice.Reset();
                         TOOLBOX64_DEBUG_PRINT("Voice %llu: end of sound reached", v);
                         break;
                     }
