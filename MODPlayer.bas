@@ -386,8 +386,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
             __Sample(i).length = (byte1 * &H100 + byte2) * 2
-            IF __Sample(i).length = 2 THEN __Sample(i).length = 0 ' Sanity check
-
             ' Read finetune
             __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
@@ -399,16 +397,21 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
             __Sample(i).loopStart = (byte1 * &H100 + byte2) * 2
-            IF __Sample(i).loopStart >= __Sample(i).length THEN __Sample(i).loopStart = 0 ' Sanity check
 
             ' Read loop length
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
             __Sample(i).loopLength = (byte1 * &H100 + byte2) * 2
-            IF __Sample(i).loopLength = 2 THEN __Sample(i).loopLength = 0 ' sanity check
-            IF __Sample(i).loopStart + __Sample(i).loopLength > __Sample(i).length THEN __Sample(i).loopLength = __Sample(i).length - __Sample(i).loopStart
-
-            __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength - 1 ' calculate repeat end
+            
+            ' Sanity checks
+            IF __Sample(i).length < 4 THEN __Sample(i).length = 0
+            IF __Sample(i).loopLength < 4 THEN __Sample(i).loopLength = 0
+            IF __Sample(i).loopLength = 0 OR __Sample(i).loopStart >= __Sample(i).length THEN
+                __Sample(i).loopLength = 0
+            ELSEIF __Sample(i).loopStart + __Sample(i).loopLength > __Sample(i).length THEN
+                __Sample(i).loopLength = __Sample(i).length - __Sample(i).loopStart
+            END IF
+            __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength
 
             ' Set sample frame size as 1 since MODs always use 8-bit mono samples
             __Sample(i).sampleSize = SIZE_OF_BYTE
@@ -499,6 +502,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SoftSynth_SetTotalVoices __Song.channels
 
         ' Setup panning for all channels per AMIGA PAULA's panning setup - LRRLLRRL...
+        ' opencp uses this: for (int i = 0; i < 8; i++) int panpos = ((i * 3) & 2) ? 0xFF : 0x00;
+        ' But ours is better:
         ' If we have < 4 channels, then 0 & 1 are set as left & right
         ' If we have > 4 channels all prefect 4 groups are set as LRRL
         ' Any channels that are left out are simply centered by the SoftSynth
@@ -507,14 +512,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         IF __Song.channels > 1 AND __Song.channels < 4 THEN
             ' Just setup channels 0 and 1
             ' If we have a 3rd channel it will be handle by the SoftSynth
-            SoftSynth_SetVoiceBalance 0, -0.5!
-            SoftSynth_SetVoiceBalance 1, 0.5!
+            SoftSynth_SetVoiceBalance 0, -__MOD_STEREO_SEPARATION
+            SoftSynth_SetVoiceBalance 1, __MOD_STEREO_SEPARATION
         ELSE
             FOR i = 0 TO __Song.channels - 1 - (__Song.channels MOD 4) STEP 4
-                SoftSynth_SetVoiceBalance i + 0, -0.5!
-                SoftSynth_SetVoiceBalance i + 1, 0.5!
-                SoftSynth_SetVoiceBalance i + 2, 0.5!
-                SoftSynth_SetVoiceBalance i + 3, -0.5!
+                SoftSynth_SetVoiceBalance i + 0, -__MOD_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 1, __MOD_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 2, __MOD_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 3, -__MOD_STEREO_SEPARATION
             NEXT
         END IF
 

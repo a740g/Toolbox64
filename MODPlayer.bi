@@ -20,6 +20,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __MOD_SAMPLE_VOLUME_MAX = 64 ' this is the maximum volume of any MOD sample
     CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
     CONST __MOD_ORDERS = 128 ' maximum positions in a MOD order table
+    CONST __MOD_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
     CONST __MTM_CHANNELS = 32 ' maximum channels supported by MTM
 
     TYPE __NoteType
