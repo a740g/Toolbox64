@@ -171,7 +171,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile) ' read the raw value
 
             ' Adjust and save the values per our mixer requirements
-            IF byte1 < 16 AND i < __Song.channels THEN SoftSynth_SetVoiceBalance i, (byte1 / 15) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+            IF byte1 < 16 AND i < __Song.channels THEN SoftSynth_SetVoiceBalance i, (byte1 / 15!) * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
         NEXT
 
         ' Resize the sample array
@@ -445,6 +445,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 END IF
 
                 IF __Sample(i).loopStart >= __Sample(i).loopEnd OR __Sample(i).loopLength = 2 THEN __Sample(i).loopLength = 0
+            ELSE
+                __Sample(i).loopStart = 0
+                __Sample(i).loopEnd = 0
+                __Sample(i).loopLength = 0
             END IF
 
             ' Set sample frame size as 1 since MODs always use 8-bit mono samples
@@ -755,7 +759,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &H8 ' 8: Set Panning Position
                     ' Don't care about DMP panning BS. We are doing this Fasttracker style
-                    SoftSynth_SetVoiceBalance nChannel, (nOperand / 255) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = ((x / 255) * 2) - 1
+                    SoftSynth_SetVoiceBalance nChannel, (nOperand / 255!) * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = ((x / 255) * 2) - 1
 
                 CASE &H9 ' 9: Set Sample Offset
                     IF nOperand > 0 THEN __Channel(nChannel).startPosition = _SHL(nOperand, 8)
@@ -819,7 +823,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                         CASE &H8 ' 8: 16 position panning
                             IF nOpY > 15 THEN nOpY = 15
-                            SoftSynth_SetVoiceBalance nChannel, (nOpY / 15) * 2 - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+                            SoftSynth_SetVoiceBalance nChannel, (nOpY / 15!) * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
 
                         CASE &HA ' 10: Fine Volume Slide Up
                             __Channel(nChannel).volume = __Channel(nChannel).volume + nOpY
@@ -1191,7 +1195,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This gives us the frequency in khz based on the period
     FUNCTION __GetFrequencyFromPeriod~& (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056 / period
+        __GetFrequencyFromPeriod = 14317056 \ period
         $CHECKING:ON
     END FUNCTION
 
