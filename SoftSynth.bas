@@ -105,10 +105,14 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __SoftSynth AS __SoftSynthType
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
 
-        __SoftSynth.soundBufferFrames = frames ' buffer frames
-        __SoftSynth.soundBufferSamples = __SoftSynth.soundBufferFrames * SOFTSYNTH_SOUND_BUFFER_CHANNELS ' buffer samples
-        __SoftSynth.soundBufferBytes = __SoftSynth.soundBufferSamples * SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
-        REDIM __SoftSynth_SoundBuffer(0 TO __SoftSynth.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
+        IF __SoftSynth.soundBufferFrames <> frames THEN
+            __SoftSynth.soundBufferFrames = frames ' buffer frames
+            __SoftSynth.soundBufferSamples = __SoftSynth.soundBufferFrames * SOFTSYNTH_SOUND_BUFFER_CHANNELS ' buffer samples
+            __SoftSynth.soundBufferBytes = __SoftSynth.soundBufferSamples * SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
+            REDIM __SoftSynth_SoundBuffer(0 TO __SoftSynth.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
+        ELSE
+            SetMemory _OFFSET(__SoftSynth_SoundBuffer(0)), NULL, __SoftSynth.soundBufferBytes
+        END IF
 
         ' Render some samples to the buffer
         __SoftSynth_Update __SoftSynth_SoundBuffer(0), frames

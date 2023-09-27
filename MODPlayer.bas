@@ -90,6 +90,18 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     END SUB
 
 
+    ' Cleans any text retrieved from a music module file and makes it printable
+    FUNCTION __SanitizeMODSongText$ (text AS STRING)
+        DIM buffer AS STRING: buffer = SPACE$(LEN(text))
+
+        DIM i AS LONG: FOR i = 1 TO LEN(text)
+            IF ASC(text, i) > KEY_SPACE THEN ASC(buffer, i) = ASC(text, i)
+        NEXT i
+
+        __SanitizeMODSongText = buffer
+    END FUNCTION
+
+
     ' Loads an MTM file into memory and prepairs all required globals
     FUNCTION __LoadMTMFromMemory%% (buffer AS STRING)
         SHARED __Song AS __SongType
@@ -117,7 +129,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         MID$(__Song.subtype, 4, 1) = HEX$(ASC(__Song.subtype, 4) - 15)
 
         ' Read the MTM song title (20 bytes)
-        __Song.songName = StringFile_ReadString(memFile, 20) ' we'll leave the name untouched (these sometimes contain interesting stuff)
+        __Song.songName = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
 
         ' Read the number of tracks saved
         DIM numTracks AS _UNSIGNED INTEGER: numTracks = StringFile_ReadInteger(memFile)
@@ -168,7 +180,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read the sample information
         FOR i = 0 TO __Song.samples - 1
             ' Read the sample name
-            __Sample(i).sampleName = StringFile_ReadString(memFile, 22) ' MTM sample names are 22 bytes long. We'll leave the string untouched
+            __Sample(i).sampleName = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
 
             ' Read sample length
             __Sample(i).length = StringFile_ReadLong(memFile)
@@ -179,7 +191,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Read loop end
             __Sample(i).loopEnd = StringFile_ReadLong(memFile)
-            IF __Sample(i).loopEnd < 0 OR __Sample(i).loopEnd >= __Sample(i).length THEN __Sample(i).loopEnd = __Sample(i).length - 1 ' sanity check
+            IF __Sample(i).loopEnd < 0 OR __Sample(i).loopEnd >= __Sample(i).length THEN __Sample(i).loopEnd = __Sample(i).length ' sanity check
 
             __Sample(i).loopLength = __Sample(i).loopEnd - __Sample(i).loopStart ' this is mostly used to check if the sample is looping
 
@@ -325,7 +337,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Also, seek to the beginning of the file and get the song title
         IF NOT StringFile_Seek(memFile, 1) THEN EXIT FUNCTION ' 1 because StringFile is 1 based
 
-        __Song.songName = StringFile_ReadString(memFile, 20) ' MOD song title is 20 bytes long
+        __Song.songName = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
         __Song.channels = 0
         __Song.samples = 0
@@ -380,12 +392,13 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the sample headers
         FOR i = 0 TO __Song.samples - 1
             ' Read the sample name
-            __Sample(i).sampleName = StringFile_ReadString(memFile, 22) ' MOD sample names are 22 bytes long
+            __Sample(i).sampleName = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
 
             ' Read sample length
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
             __Sample(i).length = (byte1 * &H100 + byte2) * 2
+
             ' Read finetune
             __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
@@ -402,16 +415,37 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
             __Sample(i).loopLength = (byte1 * &H100 + byte2) * 2
-            
-            ' Sanity checks
-            IF __Sample(i).length < 4 THEN __Sample(i).length = 0
-            IF __Sample(i).loopLength < 4 THEN __Sample(i).loopLength = 0
-            IF __Sample(i).loopLength = 0 OR __Sample(i).loopStart >= __Sample(i).length THEN
-                __Sample(i).loopLength = 0
-            ELSEIF __Sample(i).loopStart + __Sample(i).loopLength > __Sample(i).length THEN
-                __Sample(i).loopLength = __Sample(i).length - __Sample(i).loopStart
+
+            ' Some MOD file loop points are truly fucked
+            ' These checks are taken directly from OpenMPT's MOD loader which seem to do a decent job dealing with messed up MODs
+            ' See if loop start is incorrect as words, but correct as bytes (like in Soundtracker modules)
+            IF __Sample(i).loopLength > 2 AND __Sample(i).loopStart + __Sample(i).loopLength > __Sample(i).length AND __Sample(i).loopStart \ 2 + __Sample(i).loopLength <= __Sample(i).length THEN
+                __Sample(i).loopStart = __Sample(i).loopStart \ 2
             END IF
-            __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength
+
+            IF __Sample(i).length = 2 THEN __Sample(i).length = 0
+
+            IF __Sample(i).length > 0 THEN
+                __Sample(i).loopEnd = __Sample(i).loopStart + __Sample(i).loopLength
+
+                IF __Sample(i).loopStart >= __Sample(i).length THEN __Sample(i).loopStart = __Sample(i).length - 1
+
+                IF __Sample(i).loopStart > __Sample(i).loopEnd OR __Sample(i).loopEnd < 4 OR __Sample(i).loopEnd - __Sample(i).loopStart < 4 THEN
+                    __Sample(i).loopStart = 0
+                    __Sample(i).loopEnd = 0
+                END IF
+
+                ' Fix for most likely broken sample loops. This fixes super_sufm_-_new_life.mod (M.K.) which has a long sample which is looped from 0 to 4.
+                ' This module also has notes outside of the Amiga frequency range, so we cannot say that it should be played using ProTracker one-shot loops.
+                ' On the other hand, "Crew Generation" by Necros (6CHN) has a sample with a similar loop, which is supposed to be played.
+                ' To be able to correctly play both modules, we will draw a somewhat arbitrary line here and trust the loop points in MODs with more than
+                ' 4 channels, even if they are tiny and at the very beginning of the sample.
+                IF __Sample(i).loopEnd <= 8 AND __Sample(i).loopStart = 0 AND __Sample(i).length > __Sample(i).loopEnd AND __Song.channels = 4 THEN
+                    __Sample(i).loopEnd = 0
+                END IF
+
+                IF __Sample(i).loopStart >= __Sample(i).loopEnd OR __Sample(i).loopLength = 2 THEN __Sample(i).loopLength = 0
+            END IF
 
             ' Set sample frame size as 1 since MODs always use 8-bit mono samples
             __Sample(i).sampleSize = SIZE_OF_BYTE
