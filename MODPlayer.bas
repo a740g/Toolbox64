@@ -13,7 +13,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/4-Mat/true%20faith.mod") THEN
+    'IF MODPlayer_LoadFromDisk("http://ftp.modland.com/pub/modules/Protracker/Emax/funk%20it!.mod") THEN
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
@@ -1181,7 +1181,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Channel(chan).invertLoopDelay = 0 ' reset delay
             IF __Channel(chan).invertLoopPosition < __Sample(sampleNumber).loopStart THEN __Channel(chan).invertLoopPosition = __Sample(sampleNumber).loopStart
             __Channel(chan).invertLoopPosition = __Channel(chan).invertLoopPosition + 1 ' increment position by 1
-            IF __Channel(chan).invertLoopPosition > __Sample(sampleNumber).loopEnd THEN __Channel(chan).invertLoopPosition = __Sample(sampleNumber).loopStart
+            IF __Channel(chan).invertLoopPosition >= __Sample(sampleNumber).loopEnd THEN __Channel(chan).invertLoopPosition = __Sample(sampleNumber).loopStart
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
             DIM p AS LONG: p = SoftSynth_BytesToFrames(__Channel(chan).invertLoopPosition, __Sample(sampleNumber).sampleSize, __Sample(sampleNumber).channels)
