@@ -11,10 +11,22 @@
 #include <cstdlib>
 #include <cmath>
 
-#define MaxLong(_a_, _b_) std::max(int32_t(_a_), int32_t(_b_))
-#define MaxInteger64(_a_, _b_) std::max(int64_t(_a_), int64_t(_b_))
-#define MinLong(_a_, _b_) std::min(int32_t(_a_), int32_t(_b_))
-#define MinInteger64(_a_, _b_) std::min(int64_t(_a_), int64_t(_b_))
+template <class T>
+T Math_Clamp(T x, T lo, T hi)
+{
+    if (lo > hi)
+        std::swap(lo, hi);
+    return std::max(std::min(x, hi), lo);
+}
+
+#define ClampLong(_x_, _lo_, _hi_) Math_Clamp<int32_t>((_x_), (_lo_), (_hi_))
+#define ClampInteger64(_x_, _lo_, _hi_) Math_Clamp<int64_t>((_x_), (_lo_), (_hi_))
+#define ClampSingle(_x_, _lo_, _hi_) Math_Clamp<float>((_x_), (_lo_), (_hi_))
+#define ClampDouble(_x_, _lo_, _hi_) Math_Clamp<double>((_x_), (_lo_), (_hi_))
+#define MaxLong(_a_, _b_) std::max<int32_t>((_a_), (_b_))
+#define MaxInteger64(_a_, _b_) std::max<int64_t>((_a_), (_b_))
+#define MinLong(_a_, _b_) std::min<int32_t>((_a_), (_b_))
+#define MinInteger64(_a_, _b_) std::min<int64_t>((_a_), (_b_))
 
 extern void sub_randomize(double seed, int32_t passed); // QB64's random seed function
 
@@ -197,50 +209,6 @@ inline int32_t AverageLong(int32_t x, int32_t y)
 inline int64_t AverageInteger64(int64_t x, int64_t y)
 {
     return (x & y) + ((x ^ y) / 2);
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline int32_t ClampLong(int32_t n, int32_t lo, int32_t hi)
-{
-    return (n < lo) ? lo : (n > hi) ? hi
-                                    : n;
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline int64_t ClampInteger64(int64_t n, int64_t lo, int64_t hi)
-{
-    return (n < lo) ? lo : (n > hi) ? hi
-                                    : n;
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline float ClampSingle(float n, float lo, float hi)
-{
-    return (n < lo) ? lo : (n > hi) ? hi
-                                    : n;
-}
-
-/// @brief Clamps n between lo and hi
-/// @param n A number
-/// @param lo Lower limit
-/// @param hi Upper limit
-/// @return Clamped value
-inline double ClampDouble(double n, double lo, double hi)
-{
-    return (n < lo) ? lo : (n > hi) ? hi
-                                    : n;
 }
 
 /// @brief Remap input value within input range to output range
