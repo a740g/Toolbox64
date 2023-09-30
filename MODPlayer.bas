@@ -1109,7 +1109,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 delta = 255
 
             CASE 3 ' Random
-                delta = RND * 255
+                delta = RND * 255!
         END SELECT
 
         delta = _SHL(_SHR(delta * __Channel(chan).vibratoDepth, 7), 2)
@@ -1148,7 +1148,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 delta = 255
 
             CASE 3 ' Random
-                delta = RND * 255
+                delta = RND * 255!
         END SELECT
 
         delta = _SHR(delta * __Channel(chan).tremoloDepth, 6)
@@ -1185,7 +1185,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
             DIM p AS _UNSIGNED LONG: p = SoftSynth_BytesToFrames(__Channel(chan).invertLoopPosition, __Sample(sampleNumber).sampleSize, __Sample(sampleNumber).channels)
-            SoftSynth_PokeSoundFrameByte sampleNumber, p, NOT SoftSynth_PeekSoundFrameByte(sampleNumber, p)
+            SoftSynth_PokeSoundFrameInteger sampleNumber, p, NOT SoftSynth_PeekSoundFrameInteger(sampleNumber, p)
         END IF
     END SUB
 
@@ -1274,10 +1274,12 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Pauses or unpauses playback
     SUB MODPlayer_Pause (state AS _BYTE)
         SHARED __Song AS __SongType
-        __Song.isPaused = state
+
+        __Song.isPaused = ToQBBool(state)
     END SUB
 
 
+    ' Rerturns true if the tune if paused
     FUNCTION MODPlayer_IsPaused%%
         $CHECKING:OFF
         SHARED __Song AS __SongType
@@ -1287,9 +1289,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' Sets the tune to loop if state is true
     SUB MODPlayer_Loop (state AS _BYTE)
         SHARED __Song AS __SongType
-        __Song.isLooping = state
+
+        __Song.isLooping = ToQBBool(state)
     END SUB
 
 
@@ -1334,18 +1338,18 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Moves to a specific order postion
-    SUB MODPlayer_SetPosition (position AS INTEGER)
+    SUB MODPlayer_SetPosition (position AS _UNSIGNED INTEGER)
         SHARED __Song AS __SongType
 
-        IF position >= 0 AND position < __Song.orders THEN
+        IF position < __Song.orders THEN
             __Song.orderPosition = position
             __Song.patternRow = 0
         END IF
     END SUB
 
 
-    ' Moves to a specific order postion
-    FUNCTION MODPlayer_GetPosition%
+    ' Get the current tune order position
+    FUNCTION MODPlayer_GetPosition&
         $CHECKING:OFF
         SHARED __Song AS __SongType
 
@@ -1354,8 +1358,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Moves to a specific order postion
-    FUNCTION MODPlayer_GetOrders%
+    ' Gets the number of orders in the tune
+    FUNCTION MODPlayer_GetOrders~%
         $CHECKING:OFF
         SHARED __Song AS __SongType
 

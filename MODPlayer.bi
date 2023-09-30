@@ -20,7 +20,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __MOD_SAMPLE_VOLUME_MAX = 64 ' this is the maximum volume of any MOD sample
     CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
     CONST __MOD_ORDERS = 128 ' maximum positions in a MOD order table
-    CONST __MOD_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
+    CONST __MOD_STEREO_SEPARATION = 0.75! ' 100% stereo separation sounds bad on headphones
     CONST __MTM_CHANNELS = 32 ' maximum channels supported by MTM
 
     TYPE __NoteType
@@ -32,14 +32,14 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     END TYPE
 
     TYPE __SampleType
-        sampleName AS STRING ' Sample name or message
-        length AS LONG ' Sample length in bytes
-        c2Spd AS _UNSIGNED INTEGER ' Sample finetune is converted to c2spd
-        volume AS _UNSIGNED _BYTE ' Volume: 0 - 64
-        loopStart AS LONG ' Loop start in bytes
-        loopLength AS LONG ' Loop length in bytes
-        loopEnd AS LONG ' Loop end in bytes
-        sampleSize AS _UNSIGNED _BYTE ' sample size in bytes (each frame can have one or more samples)
+        sampleName AS STRING ' sample name or message
+        length AS _UNSIGNED LONG ' sample length in bytes
+        c2Spd AS _UNSIGNED INTEGER ' sample finetune is converted to c2spd
+        volume AS _UNSIGNED _BYTE ' volume: 0 - 64
+        loopStart AS _UNSIGNED LONG ' loop start in bytes
+        loopLength AS _UNSIGNED LONG ' loop length in bytes
+        loopEnd AS _UNSIGNED LONG ' loop end in bytes
+        sampleSize AS _UNSIGNED _BYTE ' bytes / sample (each frame can have one or more samples)
         channels AS _UNSIGNED _BYTE ' number of channels per frame
     END TYPE
 
@@ -65,15 +65,15 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         useGlissando AS _BYTE ' Flag to enable glissando (E3x) for subsequent porta-to-note effect
         invertLoopSpeed AS _UNSIGNED _BYTE ' Invert loop speed for EFx
         invertLoopDelay AS _UNSIGNED INTEGER ' Invert loop delay for EFx
-        invertLoopPosition AS LONG ' Position in the sample where we are for the invert loop effect
+        invertLoopPosition AS _UNSIGNED LONG ' Position in the sample where we are for the invert loop effect
     END TYPE
 
     TYPE __SongType
         songName AS STRING ' song name
         subtype AS STRING * 4 ' 4 char MOD type - use this to find out what tracker was used
         comment AS STRING ' song comment / message (if any)
-        channels AS _UNSIGNED _BYTE ' number of channels in the song
-        samples AS _UNSIGNED _BYTE ' number of samples in the song
+        channels AS _UNSIGNED LONG ' number of channels in the song
+        samples AS _UNSIGNED LONG ' number of samples in the song
         orders AS _UNSIGNED INTEGER ' song length in orders
         rows AS _UNSIGNED _BYTE ' number of rows in each pattern
         endJumpOrder AS _UNSIGNED _BYTE ' This is used for jumping to an order if global looping is on
@@ -92,7 +92,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         tick AS _UNSIGNED _BYTE ' Current song tick
         tempoTimerValue AS _UNSIGNED LONG ' (mixer_sample_rate * default_bpm) / 50
         samplesPerTick AS _UNSIGNED LONG ' This is the amount of samples we have to mix per tick based on mixerRate & bpm
-        activeChannels AS _UNSIGNED _BYTE ' Just a count of channels that are "active"
+        activeChannels AS _UNSIGNED LONG ' Just a count of channels that are "active"
     END TYPE
 
     DIM __Song AS __SongType ' tune specific data
