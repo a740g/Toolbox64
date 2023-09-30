@@ -28,11 +28,14 @@ struct SoftSynth
         void Load(const void *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
         {
             TOOLBOX64_DEBUG_CHECK(source != nullptr);
-            TOOLBOX64_DEBUG_CHECK(IsFramesValid(frames));
             TOOLBOX64_DEBUG_CHECK(IsBytesPerSampleValid(bytesPerSample));
             TOOLBOX64_DEBUG_CHECK(IsChannelsValid(channels));
 
-            data.clear();              // resize to zero frames
+            data.clear(); // resize to zero frames
+
+            if (!frames)
+                return; // no need to proceed if we have no frames to load
+
             data.resize(frames, 0.0f); // initialize all frames to silence
 
             TOOLBOX64_DEBUG_PRINT("Loading %i frames (%i bytes, bytes / sample = %i, channels = %i)", frames, frames * bytesPerSample * channels, (int)bytesPerSample, (int)channels);
@@ -167,11 +170,6 @@ struct SoftSynth
     uint32_t activeVoices;     // active voices
     float volume;              // global volume
 
-    static bool IsFramesValid(uint32_t frames)
-    {
-        return frames >= 0; // we'll allow zero frame sounds
-    }
-
     static bool IsChannelsValid(uint8_t channels)
     {
         return channels >= 1;
@@ -287,13 +285,12 @@ struct SoftSynth
         {
             auto &voice = voices[v];
 
-            if (voice.sound >= 0)
+            if (voice.sound >= 0 && sounds[voice.sound].data.size() > 0)
             {
                 ++activeVoices;
 
                 auto output = buffer;
                 auto &soundData = sounds[voice.sound].data;
-                auto totalFrames = soundData.size();
                 float tempFrame, outputFrame;
 
                 for (uint32_t s = 0; s < frames; s++)
@@ -342,7 +339,7 @@ struct SoftSynth
                         break; // exit the for loop
                     }
 
-                    TOOLBOX64_DEBUG_CHECK(pos >= 0 and pos < totalFrames);
+                    TOOLBOX64_DEBUG_CHECK(pos >= 0);
                     tempFrame = soundData[pos];
 
                     outputFrame = tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos);
@@ -604,7 +601,7 @@ uint32_t SoftSynth_GetActiveVoices()
 
 void SoftSynth_LoadSound(int32_t sound, const char *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
 {
-    if (!g_SoftSynth or sound < 0 or !source or !SoftSynth::IsFramesValid(frames) or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
+    if (!g_SoftSynth or sound < 0 or !source or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
