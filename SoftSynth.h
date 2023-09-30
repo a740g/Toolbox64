@@ -257,11 +257,7 @@ struct SoftSynth
         TOOLBOX64_DEBUG_CHECK(sound >= 0 and sound < sounds.size());
         TOOLBOX64_DEBUG_CHECK(voice >= 0 and voice < voices.size());
 
-        if (mode < Voice::PlayMode::Forward or mode >= Voice::PlayMode::Count)
-            voices[voice].mode = SoftSynth::Voice::PlayMode::Forward;
-        else
-            voices[voice].mode = mode;
-
+        voices[voice].mode = mode < Voice::PlayMode::Forward or mode >= Voice::PlayMode::Count ? SoftSynth::Voice::PlayMode::Forward : mode;
         voices[voice].direction = Voice::PlayDirection::Forward;
 
         auto maxFrame = sounds[sound].data.size() - 1;
@@ -269,8 +265,8 @@ struct SoftSynth
         TOOLBOX64_DEBUG_PRINT("Original position = %u, start = %u, end = %u", position, start, end);
 
         voices[voice].position = position; // if this value is junk then the mixer should deal with it correctly
-        voices[voice].start = Math_Clamp<uint32_t>(start, 0, maxFrame);
-        voices[voice].end = Math_Clamp<uint32_t>(end, 0, maxFrame);
+        voices[voice].start = start > maxFrame ? maxFrame : start;
+        voices[voice].end = end > maxFrame ? maxFrame : end;
 
         TOOLBOX64_DEBUG_CHECK(start < sounds[sound].data.size() and end < sounds[sound].data.size());
         TOOLBOX64_DEBUG_PRINT("Sound %i, position = %f, start = %i, end = %i", sound, voices[voice].position, voices[voice].start, voices[voice].end);
@@ -303,7 +299,7 @@ struct SoftSynth
                 for (uint32_t s = 0; s < frames; s++)
                 {
                     // Update frame position based on the playback mode
-                    int64_t pos = voice.position;
+                    auto pos = (int64_t)voice.position;
 
                     if (Voice::PlayMode::Reverse == voice.mode and pos < voice.start)
                     {
@@ -346,10 +342,8 @@ struct SoftSynth
                         break; // exit the for loop
                     }
 
-                    if (pos < 0 or pos >= totalFrames)
-                        tempFrame = 0.0f;
-                    else
-                        tempFrame = soundData[pos];
+                    TOOLBOX64_DEBUG_CHECK(pos >= 0 and pos < totalFrames);
+                    tempFrame = soundData[pos];
 
                     outputFrame = tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos);
                     voice.oldFrame = tempFrame;
@@ -483,12 +477,12 @@ float SoftSynth_GetVoiceBalance(uint32_t voice)
         return 0.0f;
     }
 
-    return g_SoftSynth->voices[voice].balance * 0.5f;
+    return g_SoftSynth->voices[voice].balance * 2.0f;
 }
 
 void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
 {
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or !frequency)
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
@@ -519,7 +513,7 @@ void SoftSynth_StopVoice(uint32_t voice)
     g_SoftSynth->voices[voice].Reset();
 }
 
-void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32_t playMode, uint32_t start, uint32_t end)
+void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32_t mode, uint32_t start, uint32_t end)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or sound < 0 or sound >= g_SoftSynth->sounds.size())
     {
@@ -527,7 +521,7 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
         return;
     }
 
-    g_SoftSynth->PlayVoice(voice, sound, position, (SoftSynth::Voice::PlayMode)playMode, start, end);
+    g_SoftSynth->PlayVoice(voice, sound, position, (SoftSynth::Voice::PlayMode)mode, start, end);
 }
 
 void SoftSynth_SetGlobalVolume(float volume)
@@ -593,6 +587,7 @@ void SoftSynth_SetTotalVoices(uint32_t voices)
         return;
     }
 
+    g_SoftSynth->voices.clear();
     g_SoftSynth->voices.resize(voices);
 }
 
@@ -694,5 +689,5 @@ inline uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, 
 {
     TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
 
-    return bytes / (bytesPerSample * channels);
+    return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
 }

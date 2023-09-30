@@ -44,7 +44,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         SUB SoftSynth_SetVoiceFrequency (BYVAL voice AS _UNSIGNED LONG, BYVAL frequency AS _UNSIGNED LONG)
         FUNCTION SoftSynth_GetVoiceFrequency~& (BYVAL voice AS _UNSIGNED LONG)
         SUB SoftSynth_StopVoice (BYVAL voice AS _UNSIGNED LONG)
-        SUB SoftSynth_PlayVoice (BYVAL voice AS _UNSIGNED LONG, BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG, BYVAL playMode AS LONG, BYVAL startFrame AS _UNSIGNED LONG, BYVAL endFrame AS _UNSIGNED LONG)
+        SUB SoftSynth_PlayVoice (BYVAL voice AS _UNSIGNED LONG, BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG, BYVAL mode AS LONG, BYVAL startFrame AS _UNSIGNED LONG, BYVAL endFrame AS _UNSIGNED LONG)
         SUB SoftSynth_SetGlobalVolume (BYVAL volume AS SINGLE)
         FUNCTION SoftSynth_GetGlobalVolume!
         FUNCTION SoftSynth_GetSampleRate~&
