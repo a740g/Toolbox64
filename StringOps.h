@@ -92,6 +92,7 @@ inline const char *FormatBoolean(int32_t n, uint32_t fmt)
         {"Off", "On"},
         {"Disabled", "Enabled"},
         {"Disable", "Enable"},
+        {"Yes", "No"},
         {"Low", "High"},
         {"Closed", "Opened"},
         {"Close", "Open"},
