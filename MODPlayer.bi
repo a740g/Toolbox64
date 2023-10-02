@@ -36,9 +36,9 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         length AS _UNSIGNED LONG ' sample length in bytes
         c2Spd AS _UNSIGNED INTEGER ' sample finetune is converted to c2spd
         volume AS _UNSIGNED _BYTE ' volume: 0 - 64
-        loopStart AS _UNSIGNED LONG ' loop start in bytes
-        loopLength AS _UNSIGNED LONG ' loop length in bytes
-        loopEnd AS _UNSIGNED LONG ' loop end in bytes
+        loopStart AS _UNSIGNED LONG ' loop start (or just start = 0) in bytes
+        loopEnd AS _UNSIGNED LONG ' loop end (or just end = length) in bytes
+        playMode AS LONG ' the playack mode (supported by SoftSynth)
         sampleSize AS _UNSIGNED _BYTE ' bytes / sample (each frame can have one or more samples)
         channels AS _UNSIGNED _BYTE ' number of channels per frame
     END TYPE

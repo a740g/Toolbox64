@@ -21,12 +21,15 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
     '    SoftSynth_SetTotalVoices 4
 
-    '    DIM rawSound AS STRING: rawSound = LoadFile("../../../../Downloads/TEST.raw")
+    '    DIM rawSound AS STRING: rawSound = LoadFile("../../../../Downloads/laser.8")
+    '    DIM k AS LONG: FOR k = 1 TO LEN(rawSound)
+    '        ASC(rawSound, k) = ASC(rawSound, k) XOR &H80
+    '    NEXT k
+
     '    SoftSynth_LoadSound 0, rawSound, SoftSynth_BytesToFrames(LEN(rawSound), SIZE_OF_BYTE, 1), SIZE_OF_BYTE, 1
 
     '    SoftSynth_SetVoiceFrequency 1, 11025
 
-    '    DIM k AS LONG
     '    DO
     '        k = _KEYHIT
 

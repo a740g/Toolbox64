@@ -17,6 +17,8 @@ struct SoftSynth
     /// @brief This manages just a single raw sound in memory
     struct Sound
     {
+        static const auto NO_SOUND = -1;
+
         std::vector<float> data; // raw sound data + size (always 32-bit floating point mono)
 
         /// @brief Copies and prepares the sound data in memory.Multi-channel sounds are flattened to mono.
@@ -25,7 +27,7 @@ struct SoftSynth
         /// @param frames The number of frames the sound has
         /// @param bytesPerSample The bytes / samples (this can be 1 for 8-bit, 2 for 16-bit or 3 for 32-bit)
         /// @param channels The number of channels (this must be 1 or more)
-        void Load(const void *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+        void Load(const void const *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
         {
             TOOLBOX64_DEBUG_CHECK(source != nullptr);
             TOOLBOX64_DEBUG_CHECK(IsBytesPerSampleValid(bytesPerSample));
@@ -138,7 +140,7 @@ struct SoftSynth
         /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
         void Reset()
         {
-            sound = -1;
+            sound = Sound::NO_SOUND;
             volume = 1.0f;
             frequency = start = end = 0;
             pitch = position = oldFrame = 0.0f;
@@ -203,7 +205,7 @@ struct SoftSynth
     /// @param frames The number of frames the sound has
     /// @param bytesPerSample The bytes / samples (this can be 1 for 8-bit, 2 for 16-bit or 3 for 32-bit)
     /// @param channels The number of channels (this must be 1 or more)
-    void LoadSound(int32_t sound, const void *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+    void LoadSound(int32_t sound, const void const *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
     {
         TOOLBOX64_DEBUG_CHECK(sound >= 0);
 
@@ -211,7 +213,7 @@ struct SoftSynth
         if (sound >= sounds.size())
         {
             sounds.resize(sound + 1);
-            TOOLBOX64_DEBUG_PRINT("SoftSynth::sounds resized to %llu", sounds.size());
+            TOOLBOX64_DEBUG_PRINT("SoftSynth::sounds resized to %zu", sounds.size());
         }
 
         TOOLBOX64_DEBUG_PRINT("Loading sound %i", sound);
@@ -300,8 +302,8 @@ struct SoftSynth
 
                     if (Voice::PlayMode::Reverse == voice.mode and pos < voice.start)
                     {
-                        voice.Reset();
-                        break; // exit the for loop
+                        voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
+                        break;                         // exit the for loop
                     }
                     else if (Voice::PlayMode::ForwardLoop == voice.mode and pos > voice.end)
                     {
@@ -335,8 +337,8 @@ struct SoftSynth
                     }
                     else if (pos > voice.end)
                     {
-                        voice.Reset();
-                        break; // exit the for loop
+                        voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
+                        break;                         // exit the for loop
                     }
 
                     TOOLBOX64_DEBUG_CHECK(pos >= 0);
@@ -599,7 +601,7 @@ uint32_t SoftSynth_GetActiveVoices()
     return g_SoftSynth->activeVoices;
 }
 
-void SoftSynth_LoadSound(int32_t sound, const char *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+void SoftSynth_LoadSound(int32_t sound, const char const *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
 {
     if (!g_SoftSynth or sound < 0 or !source or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
     {
