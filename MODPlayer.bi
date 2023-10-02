@@ -50,7 +50,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         note AS _UNSIGNED _BYTE ' Last note set in channel
         period AS LONG ' This is the period of the playing sample used by various effects
         lastPeriod AS LONG ' Last period set in channel
-        startPosition AS LONG ' This is starting position of the sample. Usually zero else value from sample offset effect
+        startPosition AS _UNSIGNED LONG ' This is starting position of the sample. Usually zero else value from sample offset effect
         patternLoopRow AS INTEGER ' This (signed) is the beginning of the loop in the pattern for effect E6x
         patternLoopRowCounter AS _UNSIGNED _BYTE ' This is a loop counter for effect E6x
         portamentoTo AS LONG ' Frequency to porta to value for E3x

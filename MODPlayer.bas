@@ -736,7 +736,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             IF nNote < __NOTE_NONE THEN
-                __Channel(nChannel).lastPeriod = 8363 * __PeriodTable(nNote) \ __Sample(__Channel(nChannel).sample).c2Spd
+                __Channel(nChannel).lastPeriod = (8363& * __PeriodTable(nNote)) \ __Sample(__Channel(nChannel).sample).c2Spd
                 __Channel(nChannel).note = nNote
                 __Channel(nChannel).restart = TRUE
                 __Song.activeChannels = nChannel
