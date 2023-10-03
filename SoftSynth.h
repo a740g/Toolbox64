@@ -122,8 +122,8 @@ struct SoftSynth
         int32_t sound;           // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
         float volume;            // voice volume (0.0 - 1.0)
         float balance;           // position -0.5 is leftmost ... 0.5 is rightmost
-        double pitch;            // the mixer uses this to step through the sample correctly
-        double position;         // sample frame position in the sample buffer
+        float pitch;             // the mixer uses this to step through the sample correctly
+        float position;          // sample frame position in the sample buffer
         uint32_t start;          // this can be loop start or just start depending on play mode
         uint32_t end;            // this can be loop end or just end depending on play mode
         PlayMode mode;           // how should the sound be played?
@@ -154,7 +154,7 @@ struct SoftSynth
         void SetFrequency(SoftSynth &softSynth, uint32_t frequency)
         {
             this->frequency = frequency;
-            pitch = (double)frequency / (double)softSynth.sampleRate;
+            pitch = (float)frequency / (float)softSynth.sampleRate;
         }
 
         /// @brief Gets the voice frequency
@@ -297,7 +297,7 @@ struct SoftSynth
                 for (uint32_t s = 0; s < frames; s++)
                 {
                     // Update frame position based on the playback mode
-                    auto pos = (int64_t)voice.position;
+                    auto pos = (uint32_t)voice.position;
 
                     if (Voice::PlayMode::Reverse == voice.mode and pos < voice.start)
                     {
@@ -343,7 +343,7 @@ struct SoftSynth
                     TOOLBOX64_DEBUG_CHECK(pos >= 0);
                     tempFrame = soundData[pos];
 
-                    outputFrame = std::fma<float, float, float>(voice.oldFrame - tempFrame, voice.position - pos, tempFrame); // tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos)
+                    outputFrame = std::fma(voice.oldFrame - tempFrame, voice.position - pos, tempFrame); // tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos)
                     voice.oldFrame = tempFrame;
 
                     // Move to the next frame position
