@@ -117,18 +117,17 @@ struct SoftSynth
         };
 
     private:
-        uint32_t frequency; // the frequency of the sound
+        float frequency; // the frequency of the sound
     public:
         int32_t sound;           // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
         float volume;            // voice volume (0.0 - 1.0)
         float balance;           // position -0.5 is leftmost ... 0.5 is rightmost
         float pitch;             // the mixer uses this to step through the sample correctly
         float position;          // sample frame position in the sample buffer
-        uint32_t start;          // this can be loop start or just start depending on play mode
-        uint32_t end;            // this can be loop end or just end depending on play mode
+        float start;             // this can be loop start or just start depending on play mode
+        float end;               // this can be loop end or just end depending on play mode
         PlayMode mode;           // how should the sound be played?
         PlayDirection direction; // direction for BIDI sounds
-        float oldFrame;          // previous frame
 
         /// @brief Initialized the voice (including pan position)
         Voice()
@@ -142,8 +141,8 @@ struct SoftSynth
         {
             sound = Sound::NO_SOUND;
             volume = 1.0f;
-            frequency = start = end = 0;
-            pitch = position = oldFrame = 0.0f;
+            frequency = 0;
+            pitch = position = start = end = 0.0f;
             direction = PlayDirection::Forward;
             mode = PlayMode::Forward;
         }
@@ -151,17 +150,45 @@ struct SoftSynth
         /// @brief Sets the voice frequency
         /// @param softSynth The parent SoftSynth object needed to get the sample rate
         /// @param frequency The frequency to be set (must be > 0)
-        void SetFrequency(SoftSynth &softSynth, uint32_t frequency)
+        void SetFrequency(SoftSynth &softSynth, float frequency)
         {
             this->frequency = frequency;
-            pitch = (float)frequency / (float)softSynth.sampleRate;
+            pitch = frequency / (float)softSynth.sampleRate;
         }
 
         /// @brief Gets the voice frequency
         /// @return The frequency value
-        uint32_t GetFrequency()
+        float GetFrequency()
         {
             return frequency;
+        }
+
+        /// @brief Advances the cursor to the next playback position based on the pitch
+        void MoveToNextPosition()
+        {
+            switch (mode)
+            {
+            case PlayMode::BidirectionalLoop:
+                if (PlayDirection::Reverse == direction)
+                {
+                    position -= pitch;
+                }
+                else
+                {
+                    position += pitch;
+                }
+                break;
+
+            case PlayMode::Reverse:
+            case PlayMode::ReverseLoop:
+                position -= pitch;
+                break;
+
+            case PlayMode::ForwardLoop:
+            case PlayMode::Forward:
+            default:
+                position += pitch;
+            }
         }
     };
 
@@ -268,10 +295,9 @@ struct SoftSynth
         voices[voice].end = end > maxFrame ? maxFrame : end;
 
         TOOLBOX64_DEBUG_CHECK(start < sounds[sound].data.size() and end < sounds[sound].data.size());
-        TOOLBOX64_DEBUG_PRINT("Voice %u, sound %i, position = %f, start = %u, end = %u, mode = %i", voice, sound + 1, voices[voice].position, voices[voice].start, voices[voice].end, (int)voices[voice].mode);
+        TOOLBOX64_DEBUG_PRINT("Voice %u, sound %i, position = %f, start = %f, end = %f, mode = %i", voice, sound + 1, voices[voice].position, voices[voice].start, voices[voice].end, (int)voices[voice].mode);
 
         voices[voice].sound = sound;
-        voices[voice].oldFrame = 0.0f;
     }
 
     /// @brief This mixes and writes the mixed samples to "buffer"
@@ -292,90 +318,90 @@ struct SoftSynth
 
                 auto output = buffer;
                 auto &soundData = sounds[voice.sound].data;
-                float tempFrame, outputFrame;
+                float currentFrame, nextFrame;
+                int32_t currentPosition, nextPosition;
 
                 for (uint32_t s = 0; s < frames; s++)
                 {
                     // Update frame position based on the playback mode
-                    auto pos = (uint32_t)voice.position;
+                    if (Voice::PlayMode::Reverse == voice.mode)
+                    {
+                        if (voice.position < voice.start)
+                        {
+                            voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
+                            break;                         // exit the for loop
+                        }
 
-                    if (Voice::PlayMode::Reverse == voice.mode and pos < voice.start)
-                    {
-                        voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
-                        break;                         // exit the for loop
+                        currentPosition = (int32_t)voice.position;
+                        currentFrame = soundData[currentPosition];
+                        nextPosition = currentPosition - 1;
+                        nextFrame = nextPosition < voice.start ? 0.0f : soundData[nextPosition];
                     }
-                    else if (Voice::PlayMode::ForwardLoop == voice.mode and pos > voice.end)
+                    else if (Voice::PlayMode::ForwardLoop == voice.mode)
                     {
-                        voice.position = voice.start;
-                        pos = voice.position;
+                        if (voice.position > voice.end)
+                            voice.position = voice.start;
+
+                        currentPosition = (int32_t)voice.position;
+                        currentFrame = soundData[currentPosition];
+                        nextPosition = currentPosition + 1;
+                        nextFrame = nextPosition > voice.end ? soundData[voice.start] : soundData[nextPosition];
                     }
-                    else if (Voice::PlayMode::ReverseLoop == voice.mode and pos < voice.start)
+                    else if (Voice::PlayMode::ReverseLoop == voice.mode)
                     {
-                        voice.position = voice.end;
-                        pos = voice.position;
+                        if (voice.position < voice.start)
+                            voice.position = voice.end;
+
+                        currentPosition = (int32_t)voice.position;
+                        currentFrame = soundData[currentPosition];
+                        nextPosition = currentPosition - 1;
+                        nextFrame = nextPosition < voice.start ? soundData[voice.end] : soundData[nextPosition];
                     }
                     else if (Voice::PlayMode::BidirectionalLoop == voice.mode)
                     {
-                        if (pos < voice.start and voice.start < voice.end) // reverse playback if we have 2 or more frames
+                        if (voice.position < voice.start and voice.start < voice.end) // reverse playback if we have 2 or more frames
                         {
                             voice.position = voice.start + 1;
-                            pos = voice.position;
                             voice.direction = Voice::PlayDirection::Forward;
                         }
-                        else if (pos > voice.end and voice.start < voice.end) // reverse playback if we have 2 or more frames
+                        else if (voice.position > voice.end and voice.start < voice.end) // reverse playback if we have 2 or more frames
                         {
                             voice.position = voice.end - 1;
-                            pos = voice.position;
                             voice.direction = Voice::PlayDirection::Reverse;
                         }
-                        else if (pos < voice.start or pos > voice.end) // we just have a single frame so just sit on that single frame
+                        else if (voice.position < voice.start or voice.position > voice.end) // we just have a single frame so just sit on that single frame
                         {
                             voice.position = voice.start;
-                            pos = voice.position;
                         }
+
+                        currentPosition = (int32_t)voice.position;
+                        currentFrame = soundData[currentPosition];
+                        nextPosition = currentPosition + (int32_t)voice.direction;
+                        nextFrame = nextPosition < voice.start ? soundData[currentPosition] : (nextPosition > voice.start ? soundData[currentPosition] : soundData[nextPosition]);
                     }
-                    else if (pos > voice.end)
+                    else
                     {
-                        voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
-                        break;                         // exit the for loop
+                        if (voice.position > voice.end)
+                        {
+                            voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
+                            break;                         // exit the for loop
+                        }
+
+                        currentPosition = (int32_t)voice.position;
+                        currentFrame = soundData[currentPosition];
+                        nextPosition = currentPosition + 1;
+                        nextFrame = nextPosition > voice.end ? 0.0f : soundData[nextPosition];
                     }
 
-                    TOOLBOX64_DEBUG_CHECK(pos >= 0);
-                    tempFrame = soundData[pos];
+                    // The following lines mixes the frames, does volume & balance
+                    currentFrame = std::fma(nextFrame - currentFrame, voice.position - currentPosition, currentFrame) * voice.volume;
+                    *output = std::fma(currentFrame, 0.5f - voice.balance, *output);
+                    ++output; // go to the current frame right channel
+                    *output = std::fma(currentFrame, 0.5f + voice.balance, *output);
+                    ++output; // go to the next frame left channel
 
-                    outputFrame = std::fma(voice.oldFrame - tempFrame, voice.position - pos, tempFrame); // tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos)
-                    voice.oldFrame = tempFrame;
-
-                    // Move to the next frame position
-                    switch (voice.mode)
-                    {
-                    case Voice::PlayMode::BidirectionalLoop:
-                        if (Voice::PlayDirection::Reverse == voice.direction)
-                        {
-                            voice.position -= voice.pitch;
-                        }
-                        else
-                        {
-                            voice.position += voice.pitch;
-                        }
-                        break;
-
-                    case Voice::PlayMode::Reverse:
-                    case Voice::PlayMode::ReverseLoop:
-                        voice.position -= voice.pitch;
-                        break;
-
-                    case Voice::PlayMode::ForwardLoop:
-                    case Voice::PlayMode::Forward:
-                    default:
-                        voice.position += voice.pitch;
-                    }
-
-                    tempFrame = outputFrame * voice.volume;                       // just calculate this once
-                    *output = std::fma(tempFrame, 0.5f - voice.balance, *output); // prevFrame = prevFrame + newFrame * volume * leftGain
-                    ++output;                                                     // go to the current frame right channel
-                    *output = std::fma(tempFrame, 0.5f + voice.balance, *output); // prevFrame = prevFrame + newFrame * volume * rightGain
-                    ++output;                                                     // go to the next frame left channel
+                    // Move to the next position
+                    voice.MoveToNextPosition();
                 }
             }
         }
@@ -472,9 +498,9 @@ float SoftSynth_GetVoiceBalance(uint32_t voice)
     return g_SoftSynth->voices[voice].balance * 2.0f;
 }
 
-void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
+void SoftSynth_SetVoiceFrequency(uint32_t voice, float frequency)
 {
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or frequency < 0.0f)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
@@ -482,10 +508,10 @@ void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
 
     g_SoftSynth->voices[voice].SetFrequency(*g_SoftSynth, frequency);
 
-    TOOLBOX64_DEBUG_PRINT("Voice, %u, frequency = %u, pitch = %f", voice, frequency, g_SoftSynth->voices[voice].pitch);
+    TOOLBOX64_DEBUG_PRINT("Voice, %u, frequency = %f, pitch = %f", voice, frequency, g_SoftSynth->voices[voice].pitch);
 }
 
-uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice)
+float SoftSynth_GetVoiceFrequency(uint32_t voice)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
@@ -645,6 +671,8 @@ int16_t SoftSynth_PeekSoundFrameInteger(int32_t sound, uint32_t position)
 
 void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t frame)
 {
+    static constexpr auto SoftSynth_PokeSoundFrameInteger_Multiplier = 1.0f / 32768.0f;
+
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
@@ -652,7 +680,7 @@ void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t f
         return;
     }
 
-    g_SoftSynth->PokeSoundFrame(sound, position, frame / 32768.0f);
+    g_SoftSynth->PokeSoundFrame(sound, position, frame * SoftSynth_PokeSoundFrameInteger_Multiplier);
 }
 
 int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position)
@@ -669,6 +697,8 @@ int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position)
 
 void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame)
 {
+    static constexpr auto SoftSynth_PokeSoundFrameByte_Multiplier = 1.0f / 128.0f;
+
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
         TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
@@ -676,7 +706,7 @@ void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame
         return;
     }
 
-    g_SoftSynth->PokeSoundFrame(sound, position, frame / 128.0f);
+    g_SoftSynth->PokeSoundFrame(sound, position, frame * SoftSynth_PokeSoundFrameByte_Multiplier);
 }
 
 inline uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)

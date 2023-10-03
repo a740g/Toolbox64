@@ -12,8 +12,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
-    '$CONSOLE:ONLY
-    'IF MODPlayer_LoadFromDisk("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\emax-doz.mod") THEN
+    '$CONSOLE
+    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-doz.mod") THEN
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
@@ -1196,9 +1196,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' This gives us the frequency in khz based on the period
-    FUNCTION __GetFrequencyFromPeriod~& (period AS LONG)
+    FUNCTION __GetFrequencyFromPeriod! (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056 \ period
+        __GetFrequencyFromPeriod = 14317056! / period
         $CHECKING:ON
     END FUNCTION
 
