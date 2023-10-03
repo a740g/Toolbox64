@@ -13,6 +13,7 @@ $IF MEMFILE_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
+    'WIDTH , 80
     'DIM g AS STRING: g = "Hello, world!"
     'DIM f AS _UNSIGNED _OFFSET: f = MemFile_CreateFromString(g)
     'DIM buf AS STRING: buf = SPACE$(MemFile_GetSize(f))
@@ -57,6 +58,10 @@ $IF MEMFILE_BAS = UNDEFINED THEN
     'PRINT StringFile_Seek(sf, 1)
     'PRINT StringFile_ReadInteger(sf)
     'PRINT LEN(sf.buffer), sf.cursor
+    'PRINT StringFile_Seek(sf, 1)
+    'StringFile_WriteByte sf, 255
+    'PRINT StringFile_Seek(sf, 1)
+    'PRINT StringFile_ReadByte(sf)
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -67,14 +72,18 @@ $IF MEMFILE_BAS = UNDEFINED THEN
 
 
     $IF 32BIT THEN
-            FUNCTION MemFile_ReadString~& (memFile AS _UNSIGNED _OFFSET, dst AS STRING)
+        ' Reads a string. The string size must be set in advance using SPACE$ or similar
+        ' Returns the number of bytes read
+        FUNCTION MemFile_ReadString~& (memFile AS _UNSIGNED _OFFSET, dst AS STRING)
             MemFile_ReadString = MemFile_Read(memFile, _OFFSET(dst), LEN(dst))
-            END FUNCTION
+        END FUNCTION
 
 
-            FUNCTION MemFile_WriteString~& (memFile AS _UNSIGNED _OFFSET, src AS STRING)
+        ' Writes a string
+        ' Returns the number of bytes written
+        FUNCTION MemFile_WriteString~& (memFile AS _UNSIGNED _OFFSET, src AS STRING)
             MemFile_WriteString = MemFile_Write(memFile, _OFFSET(src), LEN(src))
-            END FUNCTION
+        END FUNCTION
     $ELSE
         ' Reads a string. The string size must be set in advance using SPACE$ or similar
         ' Returns the number of bytes read

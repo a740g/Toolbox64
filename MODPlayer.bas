@@ -12,7 +12,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
-    '$CONSOLE
+    '$CONSOLE:ONLY
     'IF MODPlayer_LoadFromDisk("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\emax-doz.mod") THEN
     '    MODPlayer_Play
     '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
@@ -746,7 +746,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 IF _SHR(__Channel(nChannel).waveControl, 4) < 4 THEN __Channel(nChannel).tremoloPosition = 0
 
                 ' ONLY RESET FREQUENCY IF THERE IS A NOTE VALUE AND PORTA NOT SET
-                IF nEffect <> &H3 AND nEffect <> &H5 THEN
+                IF nEffect <> &H3 AND nEffect <> &H5 AND nEffect <> &H16 THEN
                     __Channel(nChannel).period = __Channel(nChannel).lastPeriod
                 END IF
             ELSE

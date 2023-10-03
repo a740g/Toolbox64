@@ -155,7 +155,6 @@ struct SoftSynth
         {
             this->frequency = frequency;
             pitch = (double)frequency / (double)softSynth.sampleRate;
-            TOOLBOX64_DEBUG_PRINT("Frequency = %u, pitch = %f", frequency, pitch);
         }
 
         /// @brief Gets the voice frequency
@@ -269,7 +268,7 @@ struct SoftSynth
         voices[voice].end = end > maxFrame ? maxFrame : end;
 
         TOOLBOX64_DEBUG_CHECK(start < sounds[sound].data.size() and end < sounds[sound].data.size());
-        TOOLBOX64_DEBUG_PRINT("Sound %i, position = %f, start = %i, end = %i", sound, voices[voice].position, voices[voice].start, voices[voice].end);
+        TOOLBOX64_DEBUG_PRINT("Voice %u, sound %i, position = %f, start = %u, end = %u, mode = %i", voice, sound + 1, voices[voice].position, voices[voice].start, voices[voice].end, (int)voices[voice].mode);
 
         voices[voice].sound = sound;
         voices[voice].oldFrame = 0.0f;
@@ -344,24 +343,12 @@ struct SoftSynth
                     TOOLBOX64_DEBUG_CHECK(pos >= 0);
                     tempFrame = soundData[pos];
 
-                    outputFrame = tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos);
+                    outputFrame = std::fma<float, float, float>(voice.oldFrame - tempFrame, voice.position - pos, tempFrame); // tempFrame + (voice.oldFrame - tempFrame) * (voice.position - pos)
                     voice.oldFrame = tempFrame;
 
                     // Move to the next frame position
                     switch (voice.mode)
                     {
-                    case Voice::PlayMode::Reverse:
-                        voice.position -= voice.pitch;
-                        break;
-
-                    case Voice::PlayMode::ForwardLoop:
-                        voice.position += voice.pitch;
-                        break;
-
-                    case Voice::PlayMode::ReverseLoop:
-                        voice.position -= voice.pitch;
-                        break;
-
                     case Voice::PlayMode::BidirectionalLoop:
                         if (Voice::PlayDirection::Reverse == voice.direction)
                         {
@@ -373,16 +360,22 @@ struct SoftSynth
                         }
                         break;
 
+                    case Voice::PlayMode::Reverse:
+                    case Voice::PlayMode::ReverseLoop:
+                        voice.position -= voice.pitch;
+                        break;
+
+                    case Voice::PlayMode::ForwardLoop:
                     case Voice::PlayMode::Forward:
                     default:
                         voice.position += voice.pitch;
                     }
 
-                    tempFrame = outputFrame * voice.volume;        // just calculate this once
-                    *output += tempFrame * (0.5f - voice.balance); // prevFrame = prevFrame + newFrame * volume * leftGain
-                    ++output;                                      // go to the current frame right channel
-                    *output += tempFrame * (0.5f + voice.balance); // prevFrame = prevFrame + newFrame * volume * rightGain
-                    ++output;                                      // go to the next frame left channel
+                    tempFrame = outputFrame * voice.volume;                       // just calculate this once
+                    *output = std::fma(tempFrame, 0.5f - voice.balance, *output); // prevFrame = prevFrame + newFrame * volume * leftGain
+                    ++output;                                                     // go to the current frame right channel
+                    *output = std::fma(tempFrame, 0.5f + voice.balance, *output); // prevFrame = prevFrame + newFrame * volume * rightGain
+                    ++output;                                                     // go to the next frame left channel
                 }
             }
         }
@@ -488,6 +481,8 @@ void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
     }
 
     g_SoftSynth->voices[voice].SetFrequency(*g_SoftSynth, frequency);
+
+    TOOLBOX64_DEBUG_PRINT("Voice, %u, frequency = %u, pitch = %f", voice, frequency, g_SoftSynth->voices[voice].pitch);
 }
 
 uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice)
