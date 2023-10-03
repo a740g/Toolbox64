@@ -15,11 +15,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '$CONSOLE
     'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-doz.mod") THEN
     '    MODPlayer_Play
-    '    DO WHILE _KEYHIT <> 27 AND MODPlayer_IsPlaying
+    '    DIM k AS LONG
+    '    DO WHILE k <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
     '        LOCATE 1, 1
     '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
     '        _LIMIT 60
+    '        k = _KEYHIT
+    '        IF k = 32 THEN SLEEP: _KEYCLEAR
     '    LOOP
     '    MODPlayer_Stop
     'END IF
@@ -1190,7 +1193,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
             DIM p AS _UNSIGNED LONG: p = SoftSynth_BytesToFrames(__Channel(chan).invertLoopPosition, __Sample(sampleNumber).sampleSize, __Sample(sampleNumber).channels)
-            SoftSynth_PokeSoundFrameInteger sampleNumber, p, NOT SoftSynth_PeekSoundFrameInteger(sampleNumber, p)
+            SoftSynth_PokeSoundFrameByte sampleNumber, p, NOT SoftSynth_PeekSoundFrameByte(sampleNumber, p)
         END IF
     END SUB
 

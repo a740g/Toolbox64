@@ -118,14 +118,14 @@ struct SoftSynth
 
     private:
         float frequency; // the frequency of the sound
+        double pitch;    // the mixer uses this to step through the sample correctly
     public:
         int32_t sound;           // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
         float volume;            // voice volume (0.0 - 1.0)
         float balance;           // position -0.5 is leftmost ... 0.5 is rightmost
-        float pitch;             // the mixer uses this to step through the sample correctly
-        float position;          // sample frame position in the sample buffer
-        float start;             // this can be loop start or just start depending on play mode
-        float end;               // this can be loop end or just end depending on play mode
+        double position;         // sample frame position in the sample buffer
+        double start;            // this can be loop start or just start depending on play mode
+        double end;              // this can be loop end or just end depending on play mode
         PlayMode mode;           // how should the sound be played?
         PlayDirection direction; // direction for BIDI sounds
 
@@ -153,7 +153,7 @@ struct SoftSynth
         void SetFrequency(SoftSynth &softSynth, float frequency)
         {
             this->frequency = frequency;
-            pitch = frequency / (float)softSynth.sampleRate;
+            pitch = (double)frequency / (double)softSynth.sampleRate;
         }
 
         /// @brief Gets the voice frequency
@@ -319,7 +319,7 @@ struct SoftSynth
                 auto output = buffer;
                 auto &soundData = sounds[voice.sound].data;
                 float currentFrame, nextFrame;
-                int32_t currentPosition, nextPosition;
+                int64_t currentPosition, nextPosition;
 
                 for (uint32_t s = 0; s < frames; s++)
                 {
@@ -332,7 +332,7 @@ struct SoftSynth
                             break;                         // exit the for loop
                         }
 
-                        currentPosition = (int32_t)voice.position;
+                        currentPosition = (int64_t)voice.position;
                         currentFrame = soundData[currentPosition];
                         nextPosition = currentPosition - 1;
                         nextFrame = nextPosition < voice.start ? 0.0f : soundData[nextPosition];
@@ -342,7 +342,7 @@ struct SoftSynth
                         if (voice.position > voice.end)
                             voice.position = voice.start;
 
-                        currentPosition = (int32_t)voice.position;
+                        currentPosition = (int64_t)voice.position;
                         currentFrame = soundData[currentPosition];
                         nextPosition = currentPosition + 1;
                         nextFrame = nextPosition > voice.end ? soundData[voice.start] : soundData[nextPosition];
@@ -352,7 +352,7 @@ struct SoftSynth
                         if (voice.position < voice.start)
                             voice.position = voice.end;
 
-                        currentPosition = (int32_t)voice.position;
+                        currentPosition = (int64_t)voice.position;
                         currentFrame = soundData[currentPosition];
                         nextPosition = currentPosition - 1;
                         nextFrame = nextPosition < voice.start ? soundData[voice.end] : soundData[nextPosition];
@@ -374,9 +374,9 @@ struct SoftSynth
                             voice.position = voice.start;
                         }
 
-                        currentPosition = (int32_t)voice.position;
+                        currentPosition = (int64_t)voice.position;
                         currentFrame = soundData[currentPosition];
-                        nextPosition = currentPosition + (int32_t)voice.direction;
+                        nextPosition = currentPosition + (int)voice.direction;
                         nextFrame = nextPosition < voice.start ? soundData[currentPosition] : (nextPosition > voice.start ? soundData[currentPosition] : soundData[nextPosition]);
                     }
                     else
@@ -387,17 +387,17 @@ struct SoftSynth
                             break;                         // exit the for loop
                         }
 
-                        currentPosition = (int32_t)voice.position;
+                        currentPosition = (int64_t)voice.position;
                         currentFrame = soundData[currentPosition];
                         nextPosition = currentPosition + 1;
                         nextFrame = nextPosition > voice.end ? 0.0f : soundData[nextPosition];
                     }
 
                     // The following lines mixes the frames, does volume & balance
-                    currentFrame = std::fma(nextFrame - currentFrame, voice.position - currentPosition, currentFrame) * voice.volume;
-                    *output = std::fma(currentFrame, 0.5f - voice.balance, *output);
+                    currentFrame = (currentFrame + (nextFrame - currentFrame) * (voice.position - currentPosition)) * voice.volume;
+                    *output += currentFrame * (0.5f - voice.balance);
                     ++output; // go to the current frame right channel
-                    *output = std::fma(currentFrame, 0.5f + voice.balance, *output);
+                    *output += currentFrame * (0.5f + voice.balance);
                     ++output; // go to the next frame left channel
 
                     // Move to the next position
@@ -516,7 +516,7 @@ float SoftSynth_GetVoiceFrequency(uint32_t voice)
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
-        return 0;
+        return 0.0f;
     }
 
     return g_SoftSynth->voices[voice].GetFrequency();
@@ -637,7 +637,7 @@ float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position)
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -649,7 +649,7 @@ void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float fram
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -661,7 +661,7 @@ int16_t SoftSynth_PeekSoundFrameInteger(int32_t sound, uint32_t position)
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
@@ -675,7 +675,7 @@ void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t f
 
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -687,7 +687,7 @@ int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position)
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
@@ -701,7 +701,7 @@ void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame
 
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].data.size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %i", sound, position);
+        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
