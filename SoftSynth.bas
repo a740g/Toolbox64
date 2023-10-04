@@ -131,6 +131,12 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END SUB
 
 
+    ' Loads and prepares a raw sound from a string buffer
+    SUB SoftSynth_LoadSound (snd AS LONG, buffer AS STRING, bytesPerSample AS _UNSIGNED _BYTE, channels AS _UNSIGNED _BYTE)
+        __SoftSynth_LoadSound snd, buffer, LEN(buffer), bytesPerSample, channels
+    END SUB
+
+
     ' Returns the amount of buffered sample time remaining to be played
     FUNCTION SoftSynth_GetBufferedSoundTime#
         $CHECKING:OFF

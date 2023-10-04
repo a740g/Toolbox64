@@ -315,7 +315,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            SoftSynth_LoadSound i, sampBuf, SoftSynth_BytesToFrames(__Sample(i).length, __Sample(i).sampleSize, __Sample(i).channels), __Sample(i).sampleSize, __Sample(i).channels
+            SoftSynth_LoadSound i, sampBuf, __Sample(i).sampleSize, __Sample(i).channels
         NEXT
 
         ' Load all needed LUTs
@@ -551,7 +551,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         FOR i = 0 TO __Song.samples - 1
             sampBuf = StringFile_ReadString(memFile, __Sample(i).length)
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            SoftSynth_LoadSound i, sampBuf, SoftSynth_BytesToFrames(__Sample(i).length, __Sample(i).sampleSize, __Sample(i).channels), __Sample(i).sampleSize, __Sample(i).channels
+            SoftSynth_LoadSound i, sampBuf, __Sample(i).sampleSize, __Sample(i).channels
         NEXT
 
         ' Setup the channel array

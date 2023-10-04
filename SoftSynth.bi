@@ -52,7 +52,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         FUNCTION SoftSynth_GetTotalVoices~&
         SUB SoftSynth_SetTotalVoices (BYVAL voices AS _UNSIGNED LONG)
         FUNCTION SoftSynth_GetActiveVoices~&
-        SUB SoftSynth_LoadSound (BYVAL snd AS LONG, source AS STRING, BYVAL frames AS _UNSIGNED LONG, BYVAL bytesPerSample AS _UNSIGNED _BYTE, BYVAL channels AS _UNSIGNED _BYTE)
+        SUB __SoftSynth_LoadSound (BYVAL snd AS LONG, buffer AS STRING, BYVAL bytes AS _UNSIGNED LONG, BYVAL bytesPerSample AS _UNSIGNED _BYTE, BYVAL channels AS _UNSIGNED _BYTE)
         FUNCTION SoftSynth_PeekSoundFrameSingle! (BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG)
         SUB SoftSynth_PokeSoundFrameSingle (BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG, BYVAL frame AS SINGLE)
         FUNCTION SoftSynth_PeekSoundFrameInteger% (BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG)

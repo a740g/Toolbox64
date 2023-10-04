@@ -420,6 +420,13 @@ struct SoftSynth
 
 static std::unique_ptr<SoftSynth> g_SoftSynth;
 
+inline uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
+{
+    TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
+
+    return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
+}
+
 inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
 {
     if (g_SoftSynth)
@@ -622,7 +629,7 @@ uint32_t SoftSynth_GetActiveVoices()
     return g_SoftSynth->activeVoices;
 }
 
-void SoftSynth_LoadSound(int32_t sound, const char *const source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
 {
     if (!g_SoftSynth or sound < 0 or !source or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
     {
@@ -630,7 +637,7 @@ void SoftSynth_LoadSound(int32_t sound, const char *const source, uint32_t frame
         return;
     }
 
-    g_SoftSynth->LoadSound(sound, source, frames, bytesPerSample, channels);
+    g_SoftSynth->LoadSound(sound, source, SoftSynth_BytesToFrames(bytes, bytesPerSample, channels), bytesPerSample, channels);
 }
 
 float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position)
@@ -707,11 +714,4 @@ void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame
     }
 
     g_SoftSynth->PokeSoundFrame(sound, position, frame * SoftSynth_PokeSoundFrameByte_Multiplier);
-}
-
-inline uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
-{
-    TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
-
-    return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
 }
