@@ -27,7 +27,7 @@ struct SoftSynth
         /// @param frames The number of frames the sound has
         /// @param bytesPerSample The bytes / samples (this can be 1 for 8-bit, 2 for 16-bit or 3 for 32-bit)
         /// @param channels The number of channels (this must be 1 or more)
-        void Load(const void const *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+        void Load(const void *const source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
         {
             TOOLBOX64_DEBUG_CHECK(source != nullptr);
             TOOLBOX64_DEBUG_CHECK(IsBytesPerSampleValid(bytesPerSample));
@@ -150,7 +150,7 @@ struct SoftSynth
         /// @brief Sets the voice frequency
         /// @param softSynth The parent SoftSynth object needed to get the sample rate
         /// @param frequency The frequency to be set (must be > 0)
-        void SetFrequency(SoftSynth &softSynth, float frequency)
+        void SetFrequency(const SoftSynth &softSynth, float frequency)
         {
             this->frequency = frequency;
             pitch = (double)frequency / (double)softSynth.sampleRate;
@@ -231,7 +231,7 @@ struct SoftSynth
     /// @param frames The number of frames the sound has
     /// @param bytesPerSample The bytes / samples (this can be 1 for 8-bit, 2 for 16-bit or 3 for 32-bit)
     /// @param channels The number of channels (this must be 1 or more)
-    void LoadSound(int32_t sound, const void const *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+    void LoadSound(int32_t sound, const void *const source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
     {
         TOOLBOX64_DEBUG_CHECK(sound >= 0);
 
@@ -622,7 +622,7 @@ uint32_t SoftSynth_GetActiveVoices()
     return g_SoftSynth->activeVoices;
 }
 
-void SoftSynth_LoadSound(int32_t sound, const char const *source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
+void SoftSynth_LoadSound(int32_t sound, const char *const source, uint32_t frames, uint8_t bytesPerSample, uint8_t channels)
 {
     if (!g_SoftSynth or sound < 0 or !source or !SoftSynth::IsBytesPerSampleValid(bytesPerSample) or !SoftSynth::IsChannelsValid(channels))
     {
