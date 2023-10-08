@@ -62,6 +62,8 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     '    END IF
     'LOOP UNTIL n = 0
 
+    'PRINT RemoveStringEnclosingPair(" (hello world) ", "()")
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -79,6 +81,25 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
         $CHECKING:OFF
         ToCString = s + CHR$(NULL)
         $CHECKING:ON
+    END FUNCTION
+
+
+    ' Returns true if text has a certain enclosing pair like 'hello'
+    FUNCTION HasStringEnclosingPair%% (text AS STRING, pair AS STRING)
+        IF LEN(text) > 1 AND LEN(pair) > 1 THEN
+            HasStringEnclosingPair = ASC(pair, 1) = ASC(text, 1) AND ASC(pair, 2) = ASC(text, LEN(text))
+        END IF
+    END FUNCTION
+
+
+    ' Removes a string's enclosing pair if it is found. So, 'hello world' can be returned as just hello world
+    ' pair - is the enclosing pair. E.g. "''", "()", "[]" etc.
+    FUNCTION RemoveStringEnclosingPair$ (text AS STRING, pair AS STRING)
+        IF HasStringEnclosingPair(text, pair) THEN
+            RemoveStringEnclosingPair = MID$(text, 2, LEN(text) - 2)
+        ELSE
+            RemoveStringEnclosingPair = text
+        END IF
     END FUNCTION
 
 
