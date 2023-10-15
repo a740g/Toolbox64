@@ -7,8 +7,8 @@ $IF COMMON_BI = UNDEFINED THEN
     $LET COMMON_BI = TRUE
 
     ' Check QB64-PE compiler version and complain if it does not meet minimum version requirement
-    $IF VERSION < 3.8 THEN
-            $ERROR This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest
+    $IF VERSION < 3.9.1 THEN
+            $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
     $END IF
 
     ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64

@@ -13,7 +13,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-doz.mod") THEN
+    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-believe_in_yourself.mod") THEN
     '    MODPlayer_Play
     '    DIM k AS LONG
     '    DO WHILE k <> 27 AND MODPlayer_IsPlaying

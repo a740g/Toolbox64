@@ -420,7 +420,7 @@ struct SoftSynth
 
 static std::unique_ptr<SoftSynth> g_SoftSynth;
 
-inline uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
+inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
 {
     TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
 
