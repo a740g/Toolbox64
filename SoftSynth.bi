@@ -33,6 +33,8 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     END TYPE
 
     DECLARE LIBRARY "SoftSynth"
+        FUNCTION SoftSynth_BytesToFrames~& (BYVAL bytes AS _UNSIGNED LONG, BYVAL bytesPerSample AS _UNSIGNED _BYTE, BYVAL channels AS _UNSIGNED _BYTE)
+        SUB __SoftSynth_ConvertU8ToS8 (buffer AS STRING, BYVAL frames AS _UNSIGNED LONG)
         FUNCTION __SoftSynth_Initialize%% (BYVAL sampleRate AS _UNSIGNED LONG)
         SUB __SoftSynth_Finalize
         FUNCTION SoftSynth_IsInitialized%%
@@ -41,8 +43,8 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         FUNCTION SoftSynth_GetVoiceVolume! (BYVAL voice AS _UNSIGNED LONG)
         SUB SoftSynth_SetVoiceBalance (BYVAL voice AS _UNSIGNED LONG, BYVAL balance AS SINGLE)
         FUNCTION SoftSynth_GetVoiceBalance! (BYVAL voice AS _UNSIGNED LONG)
-        SUB SoftSynth_SetVoiceFrequency (BYVAL voice AS _UNSIGNED LONG, BYVAL frequency AS SINGLE)
-        FUNCTION SoftSynth_GetVoiceFrequency! (BYVAL voice AS _UNSIGNED LONG)
+        SUB SoftSynth_SetVoiceFrequency (BYVAL voice AS _UNSIGNED LONG, BYVAL frequency AS _UNSIGNED LONG)
+        FUNCTION SoftSynth_GetVoiceFrequency~& (BYVAL voice AS _UNSIGNED LONG)
         SUB SoftSynth_StopVoice (BYVAL voice AS _UNSIGNED LONG)
         SUB SoftSynth_PlayVoice (BYVAL voice AS _UNSIGNED LONG, BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG, BYVAL mode AS LONG, BYVAL startFrame AS _UNSIGNED LONG, BYVAL endFrame AS _UNSIGNED LONG)
         SUB SoftSynth_SetGlobalVolume (BYVAL volume AS SINGLE)
@@ -59,7 +61,6 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         SUB SoftSynth_PokeSoundFrameInteger (BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG, BYVAL frame AS INTEGER)
         FUNCTION SoftSynth_PeekSoundFrameByte%% (BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG)
         SUB SoftSynth_PokeSoundFrameByte (BYVAL snd AS LONG, BYVAL position AS _UNSIGNED LONG, BYVAL frame AS _BYTE)
-        FUNCTION SoftSynth_BytesToFrames~& (BYVAL bytes AS _UNSIGNED LONG, BYVAL bytesPerSample AS _UNSIGNED _BYTE, BYVAL channels AS _UNSIGNED _BYTE)
     END DECLARE
 
     DIM __SoftSynth AS __SoftSynthType ' holds the softsynth state

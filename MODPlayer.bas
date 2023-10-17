@@ -13,14 +13,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-believe_in_yourself.mod") THEN
+    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-doz.mod") THEN
     '    MODPlayer_Play
     '    DIM k AS LONG
     '    DO WHILE k <> 27 AND MODPlayer_IsPlaying
     '        MODPlayer_Update
     '        LOCATE 1, 1
     '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
-    '        _LIMIT 60
+    '        _LIMIT 120
     '        k = _KEYHIT
     '        IF k = 32 THEN SLEEP: _KEYCLEAR
     '    LOOP
@@ -308,11 +308,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             sampBuf = StringFile_ReadString(memFile, __Sample(i).length)
 
             ' Convert 8-bit unsigned samples to 8-bit signed
-            IF __Sample(i).sampleSize = SIZE_OF_BYTE THEN
-                FOR j = 1 TO __Sample(i).length
-                    ASC(sampBuf, j) = ASC(sampBuf, j) XOR &H80
-                NEXT
-            END IF
+            IF __Sample(i).sampleSize = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
 
             ' Load sample size bytes of data and send it to our softsynth sample manager
             SoftSynth_LoadSound i, sampBuf, __Sample(i).sampleSize, __Sample(i).channels
@@ -1199,9 +1195,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' This gives us the frequency in khz based on the period
-    FUNCTION __GetFrequencyFromPeriod! (period AS LONG)
+    FUNCTION __GetFrequencyFromPeriod~& (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056! / period
+        __GetFrequencyFromPeriod = 14317056 \ period
         $CHECKING:ON
     END FUNCTION
 

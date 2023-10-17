@@ -21,7 +21,7 @@ struct SoftSynth
 
         std::vector<float> data; // raw sound data + size (always 32-bit floating point mono)
 
-        /// @brief Copies and prepares the sound data in memory.Multi-channel sounds are flattened to mono.
+        /// @brief Copies and prepares the sound data in memory. Multi-channel sounds are flattened to mono.
         /// All sample types are converted to 32-bit floating point. All interger based samples passed must be signed.
         /// @param source A pointer to the raw sound data
         /// @param frames The number of frames the sound has
@@ -98,6 +98,8 @@ struct SoftSynth
     /// @brief This is single voice that can be associated to a single sound
     struct Voice
     {
+        static const auto RSM_FRAC = 10;
+
         /// @brief Various playing modes
         enum struct PlayMode
         {
@@ -116,18 +118,19 @@ struct SoftSynth
             Forward = 1
         };
 
-    private:
-        float frequency; // the frequency of the sound
-        double pitch;    // the mixer uses this to step through the sample correctly
-    public:
         int32_t sound;           // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
+        uint32_t frequency;      // the frequency of the sound
+        uint32_t rateRatio;      // ratio between the desired output sample rate and the device sample rate
+        uint32_t frameCount;     // the fractional part of the current frame position
         float volume;            // voice volume (0.0 - 1.0)
         float balance;           // position -0.5 is leftmost ... 0.5 is rightmost
-        double position;         // sample frame position in the sample buffer
-        double start;            // this can be loop start or just start depending on play mode
-        double end;              // this can be loop end or just end depending on play mode
+        int64_t position;        // sample frame position in the sample buffer
+        int64_t start;           // this can be loop start or just start depending on play mode
+        int64_t end;             // this can be loop end or just end depending on play mode
         PlayMode mode;           // how should the sound be played?
         PlayDirection direction; // direction for BIDI sounds
+        float frame;             // current frame
+        float oldFrame;          // previous frame
 
         /// @brief Initialized the voice (including pan position)
         Voice()
@@ -141,8 +144,9 @@ struct SoftSynth
         {
             sound = Sound::NO_SOUND;
             volume = 1.0f;
-            frequency = 0;
-            pitch = position = start = end = 0.0f;
+            frequency = rateRatio = frameCount = 0;
+            position = start = end = 0;
+            frame = oldFrame = 0.0f;
             direction = PlayDirection::Forward;
             mode = PlayMode::Forward;
         }
@@ -150,45 +154,104 @@ struct SoftSynth
         /// @brief Sets the voice frequency
         /// @param softSynth The parent SoftSynth object needed to get the sample rate
         /// @param frequency The frequency to be set (must be > 0)
-        void SetFrequency(const SoftSynth &softSynth, float frequency)
+        void SetFrequency(const SoftSynth &softSynth, uint32_t frequency)
         {
-            this->frequency = frequency;
-            pitch = (double)frequency / (double)softSynth.sampleRate;
+            this->frequency = frequency; // save this to avoid a division in GetFrequency()
+            rateRatio = (softSynth.sampleRate << RSM_FRAC) / frequency;
         }
 
         /// @brief Gets the voice frequency
         /// @return The frequency value
-        float GetFrequency()
+        uint32_t GetFrequency()
         {
             return frequency;
         }
 
-        /// @brief Advances the cursor to the next playback position based on the pitch
-        void MoveToNextPosition()
+        /// @brief This returns a single frame from the associated Sound after resampling based on the set frequency.
+        /// This will set sound to NO_SOUND if the sound is completely rendered
+        /// @return A single floating-point mono sound frame
+        float GetFrame(SoftSynth &softSynth)
         {
-            switch (mode)
+            TOOLBOX64_DEBUG_CHECK(sound >= 0 and sound < softSynth.Sounds.size() and softSynth.sounds[sound].data.size() > 0);
+            TOOLBOX64_DEBUG_CHECK(frequency > 0);
+
+            if (!rateRatio)
+                return 0.0f; // return silent frame if no frequency is set
+
+            while (frameCount >= rateRatio and sound >= 0)
             {
-            case PlayMode::BidirectionalLoop:
-                if (PlayDirection::Reverse == direction)
-                {
-                    position -= pitch;
-                }
-                else
-                {
-                    position += pitch;
-                }
-                break;
+                oldFrame = frame;
+                frame = position < 0 or position >= softSynth.sounds[sound].data.size() ? 0.0f : softSynth.sounds[sound].data[position];
 
-            case PlayMode::Reverse:
-            case PlayMode::ReverseLoop:
-                position -= pitch;
-                break;
+                switch (mode)
+                {
+                case PlayMode::Reverse:
+                    --position;
 
-            case PlayMode::ForwardLoop:
-            case PlayMode::Forward:
-            default:
-                position += pitch;
+                    if (position < start)
+                    {
+                        sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
+                        position = 0;            // safety
+                    }
+
+                    break;
+
+                case PlayMode::ForwardLoop:
+                    ++position;
+
+                    if (position > end)
+                        position = start;
+
+                    break;
+
+                case PlayMode::ReverseLoop:
+                    --position;
+
+                    if (position < start)
+                        position = end;
+
+                    break;
+
+                case PlayMode::BidirectionalLoop:
+                    position += (int)direction;
+
+                    if (position < start and start < end and PlayDirection::Reverse == direction) // toggle playback direction if we have 2 or more frames
+                    {
+                        position = start + 1;
+                        direction = PlayDirection::Forward;
+                    }
+                    else if (position > end and start < end and PlayDirection::Forward == direction) // toggle playback direction if we have 2 or more frames
+                    {
+                        position = end - 1;
+                        direction = PlayDirection::Reverse;
+                    }
+                    else if (position < start or position > end) // we just have a single frame so just sit on that single frame
+                    {
+                        position = start; // and we will not bother changing direction
+                    }
+
+                    break;
+
+                case PlayMode::Forward:
+                default:
+                    ++position;
+
+                    if (position > end)
+                    {
+                        sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
+                        position = 0;            // safety
+                    }
+                }
+
+                frameCount -= rateRatio;
             }
+
+            // Interpolation & volume
+            float output = ((oldFrame * (rateRatio - frameCount) + frame * frameCount) / rateRatio) * volume;
+
+            frameCount += 1 << RSM_FRAC;
+
+            return output;
         }
     };
 
@@ -198,12 +261,12 @@ struct SoftSynth
     uint32_t activeVoices;     // active voices
     float volume;              // global volume
 
-    static bool IsChannelsValid(uint8_t channels)
+    static constexpr bool IsChannelsValid(uint8_t channels)
     {
         return channels >= 1;
     }
 
-    static bool IsBytesPerSampleValid(uint8_t bytesPerSample)
+    static constexpr bool IsBytesPerSampleValid(uint8_t bytesPerSample)
     {
         return bytesPerSample == sizeof(int8_t) or bytesPerSample == sizeof(int16_t) or bytesPerSample == sizeof(float);
     }
@@ -286,7 +349,7 @@ struct SoftSynth
         voices[voice].mode = mode < Voice::PlayMode::Forward or mode >= Voice::PlayMode::Count ? SoftSynth::Voice::PlayMode::Forward : mode;
         voices[voice].direction = Voice::PlayDirection::Forward;
 
-        auto maxFrame = sounds[sound].data.size() - 1;
+        int64_t maxFrame = (int64_t)(sounds[sound].data.size()) - 1;
 
         TOOLBOX64_DEBUG_PRINT("Original position = %u, start = %u, end = %u", position, start, end);
 
@@ -295,9 +358,13 @@ struct SoftSynth
         voices[voice].end = end > maxFrame ? maxFrame : end;
 
         TOOLBOX64_DEBUG_CHECK(start < sounds[sound].data.size() and end < sounds[sound].data.size());
-        TOOLBOX64_DEBUG_PRINT("Voice %u, sound %i, position = %f, start = %f, end = %f, mode = %i", voice, sound + 1, voices[voice].position, voices[voice].start, voices[voice].end, (int)voices[voice].mode);
+        TOOLBOX64_DEBUG_PRINT("Voice %u, sound %i, position = %lld, start = %lld, end = %lld, mode = %i", voice, sound + 1, voices[voice].position, voices[voice].start, voices[voice].end, (int)voices[voice].mode);
 
         voices[voice].sound = sound;
+
+        // Reset some stuff
+        voices[voice].frameCount = 0;
+        voices[voice].frame = voices[voice].oldFrame = 0.0f;
     }
 
     /// @brief This mixes and writes the mixed samples to "buffer"
@@ -317,91 +384,23 @@ struct SoftSynth
                 ++activeVoices;
 
                 auto output = buffer;
-                auto &soundData = sounds[voice.sound].data;
-                float currentFrame, nextFrame;
-                int64_t currentPosition, nextPosition;
 
                 for (uint32_t s = 0; s < frames; s++)
                 {
-                    // Update frame position based on the playback mode
-                    if (Voice::PlayMode::Reverse == voice.mode)
+                    auto frame = voice.GetFrame(*this);
+
+                    // Mixing and panning
+                    *output += frame * (0.5f - voice.balance); // left channel
+                    ++output;
+                    *output += frame * (0.5f + voice.balance); // right channel
+                    ++output;
+
+                    // Leave the loop early if we are done with the sound (i.e. GetFrame() set sound to NO_SOUND)
+                    if (voice.sound < 0)
                     {
-                        if (voice.position < voice.start)
-                        {
-                            voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
-                            break;                         // exit the for loop
-                        }
-
-                        currentPosition = (int64_t)voice.position;
-                        currentFrame = soundData[currentPosition];
-                        nextPosition = currentPosition - 1;
-                        nextFrame = nextPosition < voice.start ? 0.0f : soundData[nextPosition];
+                        TOOLBOX64_DEBUG_PRINT("Voice %llu: end of sound reached", v);
+                        break; // exit the for loop and move to the next voice
                     }
-                    else if (Voice::PlayMode::ForwardLoop == voice.mode)
-                    {
-                        if (voice.position > voice.end)
-                            voice.position = voice.start;
-
-                        currentPosition = (int64_t)voice.position;
-                        currentFrame = soundData[currentPosition];
-                        nextPosition = currentPosition + 1;
-                        nextFrame = nextPosition > voice.end ? soundData[voice.start] : soundData[nextPosition];
-                    }
-                    else if (Voice::PlayMode::ReverseLoop == voice.mode)
-                    {
-                        if (voice.position < voice.start)
-                            voice.position = voice.end;
-
-                        currentPosition = (int64_t)voice.position;
-                        currentFrame = soundData[currentPosition];
-                        nextPosition = currentPosition - 1;
-                        nextFrame = nextPosition < voice.start ? soundData[voice.end] : soundData[nextPosition];
-                    }
-                    else if (Voice::PlayMode::BidirectionalLoop == voice.mode)
-                    {
-                        if (voice.position < voice.start and voice.start < voice.end) // reverse playback if we have 2 or more frames
-                        {
-                            voice.position = voice.start + 1;
-                            voice.direction = Voice::PlayDirection::Forward;
-                        }
-                        else if (voice.position > voice.end and voice.start < voice.end) // reverse playback if we have 2 or more frames
-                        {
-                            voice.position = voice.end - 1;
-                            voice.direction = Voice::PlayDirection::Reverse;
-                        }
-                        else if (voice.position < voice.start or voice.position > voice.end) // we just have a single frame so just sit on that single frame
-                        {
-                            voice.position = voice.start;
-                        }
-
-                        currentPosition = (int64_t)voice.position;
-                        currentFrame = soundData[currentPosition];
-                        nextPosition = currentPosition + (int)voice.direction;
-                        nextFrame = nextPosition < voice.start ? soundData[currentPosition] : (nextPosition > voice.start ? soundData[currentPosition] : soundData[nextPosition]);
-                    }
-                    else
-                    {
-                        if (voice.position > voice.end)
-                        {
-                            voice.sound = Sound::NO_SOUND; // just invalidate the sound leaving other properties intact
-                            break;                         // exit the for loop
-                        }
-
-                        currentPosition = (int64_t)voice.position;
-                        currentFrame = soundData[currentPosition];
-                        nextPosition = currentPosition + 1;
-                        nextFrame = nextPosition > voice.end ? 0.0f : soundData[nextPosition];
-                    }
-
-                    // The following lines mixes the frames, does volume & balance
-                    currentFrame = (currentFrame + (nextFrame - currentFrame) * (voice.position - currentPosition)) * voice.volume;
-                    *output += currentFrame * (0.5f - voice.balance);
-                    ++output; // go to the current frame right channel
-                    *output += currentFrame * (0.5f + voice.balance);
-                    ++output; // go to the next frame left channel
-
-                    // Move to the next position
-                    voice.MoveToNextPosition();
                 }
             }
         }
@@ -425,6 +424,14 @@ inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesP
     TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
 
     return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
+}
+
+inline void __SoftSynth_ConvertU8ToS8(char *source, uint32_t frames)
+{
+    auto buffer = reinterpret_cast<uint8_t *>(source);
+
+    for (size_t i = 0; i < frames; i++)
+        buffer[i] ^= 0x80; // xor_eq
 }
 
 inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
@@ -491,7 +498,7 @@ void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
         return;
     }
 
-    g_SoftSynth->voices[voice].balance = ClampSingle(balance * 0.5f, -0.5f, 0.5f);
+    g_SoftSynth->voices[voice].balance = ClampSingle(balance * 0.5f, -0.5f, 0.5f); // scale and clamp (-1.0 to 1.0 > -0.5 to 0.5)
 }
 
 float SoftSynth_GetVoiceBalance(uint32_t voice)
@@ -502,12 +509,12 @@ float SoftSynth_GetVoiceBalance(uint32_t voice)
         return 0.0f;
     }
 
-    return g_SoftSynth->voices[voice].balance * 2.0f;
+    return g_SoftSynth->voices[voice].balance * 2.0f; // scale to -1.0 to 1.0 range
 }
 
-void SoftSynth_SetVoiceFrequency(uint32_t voice, float frequency)
+void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
 {
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or frequency < 0.0f)
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or !frequency)
     {
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
@@ -515,10 +522,10 @@ void SoftSynth_SetVoiceFrequency(uint32_t voice, float frequency)
 
     g_SoftSynth->voices[voice].SetFrequency(*g_SoftSynth, frequency);
 
-    TOOLBOX64_DEBUG_PRINT("Voice, %u, frequency = %f, pitch = %f", voice, frequency, g_SoftSynth->voices[voice].pitch);
+    TOOLBOX64_DEBUG_PRINT("Voice, %u, frequency = %u, rate ratio = %u", voice, frequency, g_SoftSynth->voices[voice].rateRatio);
 }
 
-float SoftSynth_GetVoiceFrequency(uint32_t voice)
+uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
