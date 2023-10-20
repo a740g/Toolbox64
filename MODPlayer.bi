@@ -8,7 +8,11 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     '$INCLUDE:'Common.bi'
     '$INCLUDE:'Types.bi'
-    '$INCLUDE:'SoftSynth.bi'
+    $IF USE_BASIC_MIXER = 1 THEN
+        '$INCLUDE:'SoftSynth_v1.bi'
+    $ELSE
+        '$INCLUDE:'SoftSynth.bi'
+    $END IF
     '$INCLUDE:'MemFile.bi'
     '$INCLUDE:'FileOps.bi'
 

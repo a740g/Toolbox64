@@ -65,6 +65,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __SoftSynth AS __SoftSynthType
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
 
+        ' Return true if we have already been initialized
         IF SoftSynth_IsInitialized THEN
             SoftSynth_Initialize = TRUE
             EXIT FUNCTION
@@ -109,12 +110,14 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
 
         IF __SoftSynth.soundBufferFrames <> frames THEN
+            ' Only resize the buffer is frames is different from what was last set
             __SoftSynth.soundBufferFrames = frames ' buffer frames
             __SoftSynth.soundBufferSamples = __SoftSynth.soundBufferFrames * SOFTSYNTH_SOUND_BUFFER_CHANNELS ' buffer samples
             __SoftSynth.soundBufferBytes = __SoftSynth.soundBufferSamples * SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
             REDIM __SoftSynth_SoundBuffer(0 TO __SoftSynth.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
         ELSE
-            SetMemory _OFFSET(__SoftSynth_SoundBuffer(0)), NULL, __SoftSynth.soundBufferBytes
+            ' Else we'll just fill the buffer with zeros
+            SetMemoryByte _OFFSET(__SoftSynth_SoundBuffer(0)), NULL, __SoftSynth.soundBufferBytes
         END IF
 
         ' Render some samples to the buffer

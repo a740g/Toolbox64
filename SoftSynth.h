@@ -172,7 +172,7 @@ struct SoftSynth
         /// @return A single floating-point mono sound frame
         float GetFrame(SoftSynth &softSynth)
         {
-            TOOLBOX64_DEBUG_CHECK(sound >= 0 and sound < softSynth.Sounds.size() and softSynth.sounds[sound].data.size() > 0);
+            TOOLBOX64_DEBUG_CHECK(sound >= 0 and sound < softSynth.sounds.size() and softSynth.sounds[sound].data.size() > 0);
             TOOLBOX64_DEBUG_CHECK(frequency > 0);
 
             if (!rateRatio)
@@ -181,7 +181,7 @@ struct SoftSynth
             while (frameCount >= rateRatio and sound >= 0)
             {
                 oldFrame = frame;
-                frame = position < 0 or position >= softSynth.sounds[sound].data.size() ? 0.0f : softSynth.sounds[sound].data[position];
+                frame = position >= 0 and position < softSynth.sounds[sound].data.size() ? softSynth.sounds[sound].data[position] : 0.0f;
 
                 switch (mode)
                 {
@@ -395,9 +395,10 @@ struct SoftSynth
                     *output += frame * (0.5f + voice.balance); // right channel
                     ++output;
 
-                    // Leave the loop early if we are done with the sound (i.e. GetFrame() set sound to NO_SOUND)
+                    // Leave the loop early if we are done with the sound (i.e. if GetFrame() sets sound to NO_SOUND)
                     if (voice.sound < 0)
                     {
+                        // We'll not reset other voice properties to ensure sample-offset and note-retrigger works correctly
                         TOOLBOX64_DEBUG_PRINT("Voice %llu: end of sound reached", v);
                         break; // exit the for loop and move to the next voice
                     }
@@ -694,7 +695,7 @@ void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t f
         return;
     }
 
-    g_SoftSynth->PokeSoundFrame(sound, position, frame * SoftSynth_PokeSoundFrameInteger_Multiplier);
+    g_SoftSynth->PokeSoundFrame(sound, position, SoftSynth_PokeSoundFrameInteger_Multiplier * frame);
 }
 
 int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position)
@@ -720,5 +721,5 @@ void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame
         return;
     }
 
-    g_SoftSynth->PokeSoundFrame(sound, position, frame * SoftSynth_PokeSoundFrameByte_Multiplier);
+    g_SoftSynth->PokeSoundFrame(sound, position, SoftSynth_PokeSoundFrameByte_Multiplier * frame);
 }

@@ -6,6 +6,7 @@
 $IF MODPLAYER_BAS = UNDEFINED THEN
     $LET MODPLAYER_BAS = TRUE
 
+    $LET USE_BASIC_MIXER = 1
     '$INCLUDE:'MODPlayer.bi'
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -13,19 +14,24 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    'IF MODPlayer_LoadFromDisk("../QB64-MOD-Player/mods/emax-doz.mod") THEN
-    '    MODPlayer_Play
-    '    DIM k AS LONG
-    '    DO WHILE k <> 27 AND MODPlayer_IsPlaying
-    '        MODPlayer_Update
-    '        LOCATE 1, 1
-    '        PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
-    '        _LIMIT 120
-    '        k = _KEYHIT
-    '        IF k = 32 THEN SLEEP: _KEYCLEAR
-    '    LOOP
-    '    MODPlayer_Stop
-    'END IF
+    'DO
+    '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
+    '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
+
+    '    IF MODPlayer_LoadFromDisk(fileName) THEN
+    '        MODPlayer_Play
+    '        DIM k AS LONG: k = 0
+    '        DO WHILE k <> 27 AND MODPlayer_IsPlaying
+    '            MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
+    '            LOCATE 1, 1
+    '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
+    '            _LIMIT 60
+    '            k = _KEYHIT
+    '            IF k = 32 THEN SLEEP: _KEYCLEAR
+    '        LOOP
+    '        MODPlayer_Stop
+    '    END IF
+    'LOOP
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -633,67 +639,70 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
     ' This should be called at regular intervals to run the mod player and mixer code
     ' You can call this as frequently as you want. The routine will simply exit if nothing is to be done
-    SUB MODPlayer_Update
+    SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED INTEGER
 
-        ' Check conditions for which we should just exit and not process anything
-        IF __Song.orderPosition >= __Song.orders THEN EXIT SUB
+        ' Keep feeding the buffer until it is filled to our specified upper limit
+        DO WHILE SoftSynth_GetBufferedSoundTime < bufferTimeSecs
+            ' Check conditions for which we should just exit and not process anything
+            IF __Song.orderPosition >= __Song.orders THEN EXIT SUB
 
-        ' Set the playing flag to true
-        __Song.isPlaying = TRUE
+            ' Set the playing flag to true
+            __Song.isPlaying = TRUE
 
-        ' If song is paused or we already have enough samples to play then exit
-        IF __Song.isPaused OR SoftSynth_GetBufferedSoundTime >= SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT THEN EXIT SUB
+            ' If song is paused then exit
+            IF __Song.isPaused THEN EXIT SUB
 
-        IF __Song.tick >= __Song.speed THEN
-            ' Reset song tick
-            __Song.tick = 0
+            IF __Song.tick >= __Song.speed THEN
+                ' Reset song tick
+                __Song.tick = 0
 
-            ' Process pattern row if pattern delay is over
-            IF __Song.patternDelay = 0 THEN
+                ' Process pattern row if pattern delay is over
+                IF __Song.patternDelay = 0 THEN
 
-                ' Save the pattern and row for UpdateMODTick()
-                ' The pattern that we are playing is always __Song.tickPattern
-                __Song.tickPattern = __Order(__Song.orderPosition)
-                __Song.tickPatternRow = __Song.patternRow
+                    ' Save the pattern and row for UpdateMODTick()
+                    ' The pattern that we are playing is always __Song.tickPattern
+                    __Song.tickPattern = __Order(__Song.orderPosition)
+                    __Song.tickPatternRow = __Song.patternRow
 
-                ' Process the row
-                __UpdateMODRow
+                    ' Process the row
+                    __UpdateMODRow
 
-                ' Increment the row counter
-                ' Note UpdateMODTick() should pickup stuff using tickPattern & tickPatternRow
-                ' This is because we are already at a new row not processed by UpdateMODRow()
-                __Song.patternRow = __Song.patternRow + 1
+                    ' Increment the row counter
+                    ' Note UpdateMODTick() should pickup stuff using tickPattern & tickPatternRow
+                    ' This is because we are already at a new row not processed by UpdateMODRow()
+                    __Song.patternRow = __Song.patternRow + 1
 
-                ' Check if we have finished the pattern and then move to the next one
-                IF __Song.patternRow >= __Song.rows THEN
-                    __Song.orderPosition = __Song.orderPosition + 1
-                    __Song.patternRow = 0
+                    ' Check if we have finished the pattern and then move to the next one
+                    IF __Song.patternRow >= __Song.rows THEN
+                        __Song.orderPosition = __Song.orderPosition + 1
+                        __Song.patternRow = 0
 
-                    ' Check if we need to loop or stop
-                    IF __Song.orderPosition >= __Song.orders THEN
-                        IF __Song.isLooping THEN
-                            __Song.orderPosition = __Song.endJumpOrder
-                            __Song.speed = __SONG_SPEED_DEFAULT
-                            __Song.tick = __Song.speed
-                        ELSE
-                            __Song.isPlaying = FALSE
+                        ' Check if we need to loop or stop
+                        IF __Song.orderPosition >= __Song.orders THEN
+                            IF __Song.isLooping THEN
+                                __Song.orderPosition = __Song.endJumpOrder
+                                __Song.speed = __SONG_SPEED_DEFAULT
+                                __Song.tick = __Song.speed
+                            ELSE
+                                __Song.isPlaying = FALSE
+                            END IF
                         END IF
                     END IF
+                ELSE
+                    __Song.patternDelay = __Song.patternDelay - 1
                 END IF
             ELSE
-                __Song.patternDelay = __Song.patternDelay - 1
+                __UpdateMODTick
             END IF
-        ELSE
-            __UpdateMODTick
-        END IF
 
-        ' Mix the current tick
-        SoftSynth_Update __Song.samplesPerTick
+            ' Mix the current tick
+            SoftSynth_Update __Song.samplesPerTick
 
-        ' Increment song tick on each update
-        __Song.tick = __Song.tick + 1
+            ' Increment song tick on each update
+            __Song.tick = __Song.tick + 1
+        LOOP
     END SUB
 
 
@@ -735,7 +744,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             IF nNote < __NOTE_NONE THEN
-                __Channel(nChannel).lastPeriod = (8363& * __PeriodTable(nNote)) \ __Sample(__Channel(nChannel).sample).c2Spd
+                __Channel(nChannel).lastPeriod = (8363 * __PeriodTable(nNote)) / __Sample(__Channel(nChannel).sample).c2Spd
                 __Channel(nChannel).note = nNote
                 __Channel(nChannel).restart = TRUE
                 __Song.activeChannels = nChannel
@@ -1197,7 +1206,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This gives us the frequency in khz based on the period
     FUNCTION __GetFrequencyFromPeriod~& (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056 \ period
+        __GetFrequencyFromPeriod = 14317056 / period
         $CHECKING:ON
     END FUNCTION
 
@@ -1371,7 +1380,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         $CHECKING:ON
     END FUNCTION
 
-    '$INCLUDE:'SoftSynth.bas'
+    $IF USE_BASIC_MIXER = 1 THEN
+        '$INCLUDE:'SoftSynth_v1.bas'
+    $ELSE
+        '$INCLUDE:'SoftSynth.bas'
+    $END IF
     '$INCLUDE:'MemFile.bas'
     '$INCLUDE:'FileOps.bas'
 
