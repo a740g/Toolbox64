@@ -136,7 +136,7 @@ struct SoftSynth
         Voice()
         {
             Reset();
-            balance = 0.0f;
+            balance = 0.0f; // center the voice only when creating it the first time
         }
 
         /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
@@ -147,8 +147,8 @@ struct SoftSynth
             frequency = rateRatio = frameCount = 0;
             position = start = end = 0;
             frame = oldFrame = 0.0f;
-            direction = PlayDirection::Forward;
             mode = PlayMode::Forward;
+            direction = PlayDirection::Forward;
         }
 
         /// @brief Sets the voice frequency
@@ -158,6 +158,7 @@ struct SoftSynth
         {
             this->frequency = frequency; // save this to avoid a division in GetFrequency()
             rateRatio = (softSynth.sampleRate << RSM_FRAC) / frequency;
+            frameCount = 0;
         }
 
         /// @brief Gets the voice frequency
@@ -399,7 +400,7 @@ struct SoftSynth
                     if (voice.sound < 0)
                     {
                         // We'll not reset other voice properties to ensure sample-offset and note-retrigger works correctly
-                        TOOLBOX64_DEBUG_PRINT("Voice %llu: end of sound reached", v);
+                        TOOLBOX64_DEBUG_PRINT("Voice %zu: end of sound reached", v);
                         break; // exit the for loop and move to the next voice
                     }
                 }

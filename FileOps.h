@@ -69,52 +69,56 @@ inline int64_t __GetFileSize(const char *fileName)
 /// @param fileSpec The pattern to match
 /// @param fileName The filename to match
 /// @return True if it is a match, false otherwise
-static inline bool __Dir64MatchSpec(const char *fileSpec, const char *fileName)
+static inline bool __Dir64MatchSpec(const char *const fileSpec, const char *const fileName)
 {
     auto spec = fileSpec;
     auto name = fileName;
-    const char *any = nullptr;
+    const char *wildcard = nullptr;
 
-    while (*spec || *name)
+    while (*spec && *name)
     {
         switch (*spec)
         {
-        case '*':
-            any = spec;
+        case '*': // handle wildcard '*' character
+            wildcard = spec;
             spec++;
             while (*name && *name != *spec)
                 name++;
             break;
 
-        case '?':
+        case '?': // handle wildcard '?' character
             spec++;
-            if (*name)
-                name++;
+            name++;
             break;
 
-        default:
+        default: // compare non-wildcard characters
             if (*spec != *name)
             {
-                if (any && *name)
-                    spec = any;
+                if (wildcard && *name)
+                {
+                    spec = wildcard;
+                    name = fileName + (name - wildcard) + 1; // reset name to the position after '*'
+                }
                 else
+                {
                     return false;
+                }
             }
             else
             {
                 spec++;
                 name++;
             }
-            break;
         }
     }
 
-    return true;
+    // If we reached the end of both strings, it's a match
+    return (*spec == '\0' && *name == '\0');
 }
 
 /// @brief A MS BASIC PDS DIR$ style function
 /// @param fileSpec This can be a directory with wildcard for the final level (i.e. C:/Windows/*.* or /usr/lib/* etc.)
-/// @return Returns a file or directory name  matching fileSpec or an empty string when there is nothing left
+/// @return Returns a file or directory name matching fileSpec or an empty string when there is nothing left
 inline const char *__Dir64(const char *fileSpec)
 {
     static DIR *pDir = nullptr;

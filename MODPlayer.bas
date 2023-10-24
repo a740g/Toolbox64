@@ -25,7 +25,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '            MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
     '            LOCATE 1, 1
     '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
-    '            _LIMIT 60
+    '            _LIMIT 240
     '            k = _KEYHIT
     '            IF k = 32 THEN SLEEP: _KEYCLEAR
     '        LOOP
@@ -45,7 +45,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the period table
         RESTORE PeriodTab
         READ __Song.periodTableMax ' read the size
-        __Song.periodTableMax = __Song.periodTableMax - 1 ' Change to ubound
+        __Song.periodTableMax = __Song.periodTableMax - 1 ' change to ubound
         REDIM __PeriodTable(0 TO __Song.periodTableMax) AS _UNSIGNED INTEGER ' allocate size elements
         ' Now read size values
         DIM i AS LONG: FOR i = 0 TO __Song.periodTableMax
@@ -208,7 +208,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             ' Set sound to looping and fix loop points if needed
-            IF __Sample(i).loopEnd - __Sample(i).loopStart > 0 THEN
+            IF __Sample(i).loopEnd - __Sample(i).loopStart > 1 THEN ' we need 2 frames minimum to mark the sound as looping (TODO: check if this is normal)
                 __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
             ELSE
                 __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
@@ -543,7 +543,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     __Pattern(i, a, b).operand = byte4
 
                     ' Some sanity check
-                    IF __Pattern(i, a, b).sample > __Song.samples THEN __Pattern(i, a, b).sample = 0 ' Sample 0 means no sample. So valid sample are 1-15/31
+                    IF __Pattern(i, a, b).sample > __Song.samples THEN __Pattern(i, a, b).sample = 0 ' sample 0 means no sample. So valid sample are 1-15/31
                 NEXT
             NEXT
         NEXT
@@ -566,13 +566,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' opencp uses this: for (int i = 0; i < 8; i++) int panpos = ((i * 3) & 2) ? 0xFF : 0x00;
         ' But ours is better:
         ' If we have < 4 channels, then 0 & 1 are set as left & right
-        ' If we have > 4 channels all prefect 4 groups are set as LRRL
+        ' If we have > 4 channels, then all prefect 4 groups are set as LRRL
         ' Any channels that are left out are simply centered by the SoftSynth
-        ' We will also not do hard left or hard right
-        ' Some amount of sound from each channel is blended with the other
+        ' We will also not do hard left or hard right. Some amount of sound from each channel is allowed to blend with the other
         IF __Song.channels > 1 AND __Song.channels < 4 THEN
-            ' Just setup channels 0 and 1
-            ' If we have a 3rd channel it will be handle by the SoftSynth
+            ' Just setup channels 0 and 1. If we have a 3rd channel it will be handle by the SoftSynth
             SoftSynth_SetVoiceBalance 0, -__MOD_STEREO_SEPARATION
             SoftSynth_SetVoiceBalance 1, __MOD_STEREO_SEPARATION
         ELSE
@@ -744,7 +742,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             IF nNote < __NOTE_NONE THEN
-                __Channel(nChannel).lastPeriod = (8363 * __PeriodTable(nNote)) / __Sample(__Channel(nChannel).sample).c2Spd
+                __Channel(nChannel).lastPeriod = (8363 * __PeriodTable(nNote)) \ __Sample(__Channel(nChannel).sample).c2Spd
                 __Channel(nChannel).note = nNote
                 __Channel(nChannel).restart = TRUE
                 __Song.activeChannels = nChannel
@@ -1206,7 +1204,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This gives us the frequency in khz based on the period
     FUNCTION __GetFrequencyFromPeriod~& (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056 / period
+        __GetFrequencyFromPeriod = 14317056 \ period
         $CHECKING:ON
     END FUNCTION
 
