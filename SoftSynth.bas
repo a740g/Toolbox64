@@ -270,13 +270,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                             __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), iPos)
                         END IF
 
-                        ' Apply linear interpolation
-                        outFrame = (__Voice(v).frame + (__Voice(v).oldframe - __Voice(v).frame) * (__Voice(v).position - iPos)) * __Voice(v).volume ' just calculate this once
+                        ' Lerp & volume
+                        outFrame = LerpSingle(__Voice(v).frame, __Voice(v).oldframe, __Voice(v).position - iPos) * __Voice(v).volume
 
                         ' Move to the next sample position based on the pitch
                         __Voice(v).position = __Voice(v).position + __Voice(v).pitch
 
-                        ' The following lines mixes the sample and also does stereo panning
+                        ' Mixing & panning
                         __SoftSynth_SoundBuffer(i) = __SoftSynth_SoundBuffer(i) + outFrame * (0.5! - __Voice(v).balance)
                         i = i + 1
                         __SoftSynth_SoundBuffer(i) = __SoftSynth_SoundBuffer(i) + outFrame * (0.5! + __Voice(v).balance)
