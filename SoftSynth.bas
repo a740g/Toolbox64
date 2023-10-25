@@ -53,6 +53,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     'END FUNCTION
     '-------------------------------------------------------------------------------------------------------------------
 
+    ' Calculate an sound frame value based on bytes, bytes / sample & channels
     FUNCTION SoftSynth_BytesToFrames~& (bytes AS _UNSIGNED LONG, bytesPerSample AS _UNSIGNED _BYTE, channels AS _UNSIGNED _BYTE)
         $CHECKING:OFF
         SoftSynth_BytesToFrames = bytes \ (bytesPerSample * channels)
@@ -60,13 +61,15 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' Converts an unsigned 8-bit sound to signed 8-bit sound
     SUB SoftSynth_ConvertU8ToS8 (buffer AS STRING)
         $CHECKING:OFF
         DIM frames AS _UNSIGNED LONG: frames = LEN(buffer)
 
-        DIM i AS _UNSIGNED LONG: FOR i = 1 TO frames
-            ASC(buffer, i) = ASC(buffer, i) XOR &H80
-        NEXT i
+        DIM i AS _UNSIGNED LONG: WHILE i < frames
+            PokeStringByte buffer, i, PeekStringByte(buffer, i) XOR &H80
+            i = i + 1
+        WEND
         $CHECKING:ON
     END SUB
 
@@ -92,6 +95,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
             __Voice(i).startPosition = 0
             __Voice(i).endPosition = 0
             __Voice(i).mode = SOFTSYNTH_VOICE_PLAY_FORWARD
+            __Voice(i).frame = 0!
+            __Voice(i).oldframe = 0!
         NEXT i
     END SUB
 
@@ -207,14 +212,14 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' This should be called by code using the mixer at regular intervals
     ' All mixing calculations are done using floating-point math (it's 2023 :)
     SUB SoftSynth_Update (frames AS _UNSIGNED LONG)
-        'CHECKING:OFF <- [DISABLED] THIS CHOKES THE MINIAUDIO THREAD
+        $CHECKING:OFF
         SHARED __SoftSynth AS __SoftSynthType
         SHARED __SampleData() AS STRING
         SHARED __Voice() AS __VoiceType
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
 
-        DIM AS _UNSIGNED LONG v, s, i, iPos
-        DIM AS SINGLE frame1, frame2
+        DIM AS _UNSIGNED LONG v, s, i, iPos, soundFrames
+        DIM outFrame AS SINGLE
 
         IF __SoftSynth.soundBufferFrames <> frames THEN
             ' Only resize the buffer is frames is different from what was last set
@@ -239,7 +244,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
             ' Only proceed if we have a valid sample number (>= 0)
             IF __Voice(v).snd >= 0 THEN
                 ' Only proceed if we have something play in the sound
-                IF LEN(__SampleData(__Voice(v).snd)) >= SIZE_OF_SINGLE THEN
+                soundFrames = LEN(__SampleData(__Voice(v).snd)) \ SIZE_OF_SINGLE
+                IF soundFrames > 0 THEN
 
                     ' Increment the active voices
                     __SoftSynth.activeVoices = __SoftSynth.activeVoices + 1
@@ -257,33 +263,23 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                             END IF
                         END IF
 
-                        ' TODO: check if some of this can be optimized
-
-                        ' Get the first frame
-                        iPos = FIX(__Voice(v).position)
-                        frame1 = PeekStringSingle(__SampleData(__Voice(v).snd), iPos)
-
-                        ' Get the next frame for LERP
-                        IF iPos < __Voice(v).endPosition THEN
-                            frame2 = PeekStringSingle(__SampleData(__Voice(v).snd), iPos + 1)
-                        ELSE
-                            IF SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP = __Voice(v).mode THEN
-                                frame2 = PeekStringSingle(__SampleData(__Voice(v).snd), __Voice(v).startPosition)
-                            ELSE
-                                frame2 = frame1
-                            END IF
+                        ' Get the frame to mix
+                        __Voice(v).oldframe = __Voice(v).frame
+                        iPos = __Voice(v).position
+                        IF iPos < soundFrames THEN
+                            __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), __Voice(v).position)
                         END IF
 
                         ' Apply linear interpolation
-                        frame2 = (frame1 + (frame2 - frame1) * (__Voice(v).position - iPos)) * __Voice(v).volume ' just calculate this once
+                        outFrame = (__Voice(v).frame + (__Voice(v).oldframe - __Voice(v).frame) * (__Voice(v).position - iPos)) * __Voice(v).volume ' just calculate this once
 
                         ' Move to the next sample position based on the pitch
                         __Voice(v).position = __Voice(v).position + __Voice(v).pitch
 
                         ' The following lines mixes the sample and also does stereo panning
-                        __SoftSynth_SoundBuffer(i) = __SoftSynth_SoundBuffer(i) + frame2 * (0.5! - __Voice(v).balance)
+                        __SoftSynth_SoundBuffer(i) = __SoftSynth_SoundBuffer(i) + outFrame * (0.5! - __Voice(v).balance)
                         i = i + 1
-                        __SoftSynth_SoundBuffer(i) = __SoftSynth_SoundBuffer(i) + frame2 * (0.5! + __Voice(v).balance)
+                        __SoftSynth_SoundBuffer(i) = __SoftSynth_SoundBuffer(i) + outFrame * (0.5! + __Voice(v).balance)
                         i = i + 1
 
                         s = s + 1
@@ -306,7 +302,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
             i = i + SOFTSYNTH_SOUND_BUFFER_CHANNELS
         LOOP
-        'CHECKING:ON
+        $CHECKING:ON
     END SUB
 
 
@@ -323,10 +319,9 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Writes a sample value to a sample at position (in sample frames)
     SUB SoftSynth_PokeSoundFrameByte (snd AS LONG, position AS _UNSIGNED LONG, frame AS _BYTE)
         $CHECKING:OFF
-        CONST POKESOUNDFRAMEBYTE_MULTIPLIER = 1! / 128!
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(snd), position, POKESOUNDFRAMEBYTE_MULTIPLIER * frame
+        PokeStringSingle __SampleData(snd), position, frame / 128!
         $CHECKING:ON
     END SUB
 
@@ -344,10 +339,9 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Writes a sample value to a sample at position (in sample frames)
     SUB SoftSynth_PokeSoundFrameInteger (snd AS LONG, position AS _UNSIGNED LONG, frame AS INTEGER)
         $CHECKING:OFF
-        CONST POKESOUNDFRAMEINTEGER_MULTIPLIER = 1! / 32768!
         SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(snd), position, POKESOUNDFRAMEINTEGER_MULTIPLIER * frame
+        PokeStringSingle __SampleData(snd), position, frame / 32768!
         $CHECKING:ON
     END SUB
 
@@ -450,6 +444,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __Voice(voice).startPosition = 0
         __Voice(voice).endPosition = 0
         __Voice(voice).mode = SOFTSYNTH_VOICE_PLAY_FORWARD
+        __Voice(voice).frame = 0!
+        __Voice(voice).oldframe = 0!
         $CHECKING:ON
     END SUB
 
@@ -468,7 +464,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
         __Voice(voice).position = position
 
-        DIM maxFrame AS _INTEGER64: maxFrame = LEN(__SampleData(snd)) - 1
+        DIM maxFrame AS LONG: maxFrame = LEN(__SampleData(snd)) - 1
 
         __Voice(voice).startPosition = startFrame
         IF __Voice(voice).startPosition > maxFrame THEN __Voice(voice).startPosition = maxFrame
@@ -477,6 +473,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         IF __Voice(voice).endPosition > maxFrame THEN __Voice(voice).endPosition = maxFrame
 
         __Voice(voice).snd = snd
+        __Voice(voice).frame = 0!
+        __Voice(voice).oldframe = 0!
 
         $CHECKING:ON
     END SUB

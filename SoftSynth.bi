@@ -20,7 +20,7 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
     CONST SOFTSYNTH_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
     CONST SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE = SIZE_OF_SINGLE ' 4 bytes (32-bits floating point)
     CONST SOFTSYNTH_SOUND_BUFFER_FRAME_SIZE = SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE * SOFTSYNTH_SOUND_BUFFER_CHANNELS
-    CONST SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT = 0.2! ' we will check that we have this amount of time left in the playback buffer
+    CONST SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT = 0.1! ' we will check that we have this amount of time left in the playback buffer
 
     TYPE __SoftSynthType
         voices AS _UNSIGNED LONG ' number of mixer voices requested
@@ -41,9 +41,11 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         pitch AS SINGLE ' the mixer uses this to step through the sample correctly
         frequency AS _UNSIGNED LONG ' the voice frequency (this is used to calculate the pitch)
         position AS SINGLE ' sample frame position in the sample buffer (updated by pitch)
-        startPosition AS _UNSIGNED LONG ' this can be loop start or just start depending on play type (in frames!)
-        endPosition AS _UNSIGNED LONG ' this can be loop end or just end depending on play type (in frames!)
-        mode AS _UNSIGNED _BYTE ' how should the sample be played
+        startPosition AS LONG ' this can be loop start or just start depending on play type (in frames!)
+        endPosition AS LONG ' this can be loop end or just end depending on play type (in frames!)
+        frame AS SINGLE ' current frame
+        oldframe AS SINGLE ' previous frame
+        mode AS LONG ' how should the sample be played
     END TYPE
 
     DIM __SoftSynth AS __SoftSynthType ' holds the softsynth state
