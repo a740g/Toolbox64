@@ -6,7 +6,6 @@
 $IF MODPLAYER_BAS = UNDEFINED THEN
     $LET MODPLAYER_BAS = TRUE
 
-    $LET USE_BASIC_MIXER = 0
     '$INCLUDE:'MODPlayer.bi'
 
     '-------------------------------------------------------------------------------------------------------------------
@@ -14,25 +13,27 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    DO
-        DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
-        IF NOT _FILEEXISTS(fileName) THEN EXIT DO
+    'DO
+    '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
+    '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
 
-        IF MODPlayer_LoadFromDisk(fileName) THEN
-            MODPlayer_Play
-            DIM k AS LONG: k = 0
-            DO WHILE k <> 27 AND MODPlayer_IsPlaying
-                MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
-                LOCATE 1, 1
-                PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
-                _LIMIT 60
-                k = _KEYHIT
-                IF k = 32 THEN SLEEP: _KEYCLEAR
-            LOOP
-            MODPlayer_Stop
-        END IF
-    LOOP
-    END
+    '    IF MODPlayer_LoadFromDisk(fileName) THEN
+    '        MODPlayer_Play
+    '        DIM k AS LONG: k = 0
+    '        DO WHILE k <> 27 AND MODPlayer_IsPlaying
+    '            MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
+    '            LOCATE 1, 1
+    '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
+    '            LOCATE 2, 1:
+    '            PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
+    '            _LIMIT 60
+    '            k = _KEYHIT
+    '            IF k = 32 THEN SLEEP: _KEYCLEAR
+    '        LOOP
+    '        MODPlayer_Stop
+    '    END IF
+    'LOOP
+    'END
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Loads all required LUTs from DATA
@@ -1378,11 +1379,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         $CHECKING:ON
     END FUNCTION
 
-    $IF USE_BASIC_MIXER = 1 THEN
-        '$INCLUDE:'SoftSynth_v1.bas'
-    $ELSE
-        '$INCLUDE:'SoftSynth.bas'
-    $END IF
+    '$INCLUDE:'SoftSynth.bas'
     '$INCLUDE:'MemFile.bas'
     '$INCLUDE:'FileOps.bas'
 
