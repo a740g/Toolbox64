@@ -136,7 +136,9 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
     ' Loads and prepares a raw sound from a string buffer
     SUB SoftSynth_LoadSound (snd AS LONG, buffer AS STRING, bytesPerSample AS _UNSIGNED _BYTE, channels AS _UNSIGNED _BYTE)
+        $CHECKING:OFF
         __SoftSynth_LoadSound snd, buffer, LEN(buffer), bytesPerSample, channels
+        $CHECKING:ON
     END SUB
 
 
