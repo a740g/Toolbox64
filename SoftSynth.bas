@@ -267,7 +267,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                         __Voice(v).oldframe = __Voice(v).frame
                         iPos = SingleToLong(__Voice(v).position)
                         IF iPos < soundFrames THEN
-                            __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), __Voice(v).position)
+                            __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), iPos)
                         END IF
 
                         ' Apply linear interpolation
