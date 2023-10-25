@@ -17,6 +17,13 @@ $IF MATHOPS_BI = UNDEFINED THEN
     'PRINT MaxLong(-20, 0)
     'PRINT MinLong(0, 20)
     'PRINT MinInteger64(-244334, 0)
+    'PRINT FIX(2.5!), FIX(1.5!), FIX(2.1!), FIX(1.1!)
+    'PRINT SingleToLong(2.5!), SingleToLong(1.5!), SingleToLong(2.1!), SingleToLong(1.1!)
+    'DIM n AS SINGLE, i AS LONG
+    'n = 1.5!
+    'i = SingleToLong(n)
+    'PRINT n, i
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 

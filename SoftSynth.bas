@@ -265,7 +265,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
                         ' Get the frame to mix
                         __Voice(v).oldframe = __Voice(v).frame
-                        iPos = __Voice(v).position
+                        iPos = SingleToLong(__Voice(v).position)
                         IF iPos < soundFrames THEN
                             __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), __Voice(v).position)
                         END IF
