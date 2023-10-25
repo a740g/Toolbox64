@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define TOOLBOX64_DEBUG 1
+#define TOOLBOX64_DEBUG 0
 #include "Debug.h"
 #include "MathOps.h"
 #include <cstdint>
@@ -23,15 +23,15 @@ enum
 
 struct Voice
 {
-    int32_t sound;         // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
-    uint32_t frequency;    // the frequency of the sound
-    float pitch;           // the mixer uses this to step through the sound frames correctly
-    float volume;          // voice volume (0.0 - 1.0)
-    float balance;         // position -0.5 is leftmost ... 0.5 is rightmost
-    double position;       // sample frame position in the sound buffer
-    int64_t startPosition; // this can be loop start or just start depending on play mode (in frames!)
-    int64_t endPosition;   // this can be loop end or just end depending on play mode (in frames!)
-    int32_t mode;          // how should the sound be played?
+    int32_t sound;          // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
+    uint32_t frequency;     // the frequency of the sound
+    float pitch;            // the mixer uses this to step through the sound frames correctly
+    float volume;           // voice volume (0.0 - 1.0)
+    float balance;          // position -0.5 is leftmost ... 0.5 is rightmost
+    float position;         // sample frame position in the sound buffer
+    uint32_t startPosition; // this can be loop start or just start depending on play mode (in frames!)
+    uint32_t endPosition;   // this can be loop end or just end depending on play mode (in frames!)
+    int32_t mode;           // how should the sound be played?
 
     /// @brief Initialized the voice (including pan position)
     Voice()
@@ -45,10 +45,8 @@ struct Voice
     {
         sound = SOFTSYNTH_NO_SOUND;
         volume = 1.0f;
-        frequency = 0;
-        position = 0.0;
-        startPosition = endPosition = 0;
-        pitch = 0.0f;
+        frequency = startPosition = endPosition = 0;
+        position = pitch = 0.0f;
         mode = SOFTSYNTH_VOICE_PLAY_FORWARD;
     }
 };
@@ -443,7 +441,7 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
 
     g_SoftSynth->voices[voice].mode = mode < SOFTSYNTH_VOICE_PLAY_FORWARD or mode >= SOFTSYNTH_VOICE_PLAY_MODE_COUNT ? SOFTSYNTH_VOICE_PLAY_FORWARD : mode;
 
-    int64_t maxFrame = (int64_t)(g_SoftSynth->sounds[sound].size()) - 1;
+    auto maxFrame = (int64_t)(g_SoftSynth->sounds[sound].size()) - 1;
 
     TOOLBOX64_DEBUG_PRINT("Playing sound %i using voice %u (mode = %i)", sound, voice, g_SoftSynth->voices[voice].mode);
     TOOLBOX64_DEBUG_PRINT("Original position = %u, start = %u, end = %u", position, startPosition, endPosition);
@@ -453,7 +451,7 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
     g_SoftSynth->voices[voice].endPosition = endPosition > maxFrame ? maxFrame : endPosition;
 
     TOOLBOX64_DEBUG_CHECK(startPosition < g_SoftSynth->sounds[sound].size() and endPosition < g_SoftSynth->sounds[sound].size());
-    TOOLBOX64_DEBUG_PRINT("New position = %f, start = %lld, end = %lld", g_SoftSynth->voices[voice].position, g_SoftSynth->voices[voice].startPosition, g_SoftSynth->voices[voice].endPosition);
+    TOOLBOX64_DEBUG_PRINT("New position = %f, start = %u, end = %u", g_SoftSynth->voices[voice].position, g_SoftSynth->voices[voice].startPosition, g_SoftSynth->voices[voice].endPosition);
 
     g_SoftSynth->voices[voice].sound = sound;
 }
@@ -500,7 +498,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                 }
 
                 // Fetch the sample frame that we need
-                auto frame = soundData[(int64_t)voice.position] * voice.volume; // just calculate this once
+                auto frame = soundData[(size_t)voice.position] * voice.volume; // just calculate this once
 
                 // Move to the next sample position based on the pitch
                 voice.position += voice.pitch;
