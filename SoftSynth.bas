@@ -219,7 +219,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
 
         DIM AS _UNSIGNED LONG v, s, i, iPos, soundFrames
-        DIM outFrame AS SINGLE
+        DIM AS SINGLE outFrame, lerpAmnt
 
         IF __SoftSynth.soundBufferFrames <> frames THEN
             ' Only resize the buffer is frames is different from what was last set
@@ -271,7 +271,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
                         END IF
 
                         ' Lerp & volume
-                        outFrame = LerpSingle(__Voice(v).frame, __Voice(v).oldframe, __Voice(v).position - iPos) * __Voice(v).volume
+                        lerpAmnt = __Voice(v).position - iPos
+                        outFrame = ((1! - lerpAmnt) * __Voice(v).oldframe + lerpAmnt * __Voice(v).frame) * __Voice(v).volume
 
                         ' Move to the next sample position based on the pitch
                         __Voice(v).position = __Voice(v).position + __Voice(v).pitch

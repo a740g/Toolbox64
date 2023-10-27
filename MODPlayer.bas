@@ -817,7 +817,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     SELECT CASE nOpX
                         CASE &H0 ' 0: Set Filter
                             ' NOP: We always do HQ mixing
-                            ' SoftSynth_SetHighQuality nOpY
 
                         CASE &H1 ' 1: Fine Portamento Up
                             __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOpY, 2)
