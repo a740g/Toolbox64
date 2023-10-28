@@ -35,7 +35,7 @@ inline void Pointer_SetMemory(T *dst, T value, size_t elements)
 /// @brief Casts a QB64 _OFFSET to a C string. QB64 does the right thing to convert this to a QB64 string
 /// @param p A pointer (_OFFSET)
 /// @return A C string (char ptr)
-inline constexpr const char *CStr(uintptr_t p)
+inline const char *CStr(uintptr_t p)
 {
     return reinterpret_cast<const char *>(p);
 }
@@ -44,7 +44,7 @@ inline constexpr const char *CStr(uintptr_t p)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return BYTE value
-inline constexpr int8_t PeekByte(uintptr_t p, uintptr_t o)
+inline int8_t PeekByte(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const int8_t *>(p) + o);
 }
@@ -62,7 +62,7 @@ inline void PokeByte(uintptr_t p, uintptr_t o, int8_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return INTEGER value
-inline constexpr int16_t PeekInteger(uintptr_t p, uintptr_t o)
+inline int16_t PeekInteger(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const int16_t *>(p) + o);
 }
@@ -80,7 +80,7 @@ inline void PokeInteger(uintptr_t p, uintptr_t o, int16_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return LONG value
-inline constexpr int32_t PeekLong(uintptr_t p, uintptr_t o)
+inline int32_t PeekLong(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const int32_t *>(p) + o);
 }
@@ -98,7 +98,7 @@ inline void PokeLong(uintptr_t p, uintptr_t o, int32_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return INTEGER64 value
-inline constexpr int64_t PeekInteger64(uintptr_t p, uintptr_t o)
+inline int64_t PeekInteger64(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const int64_t *>(p) + o);
 }
@@ -116,7 +116,7 @@ inline void PokeInteger64(uintptr_t p, uintptr_t o, int64_t n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return SINGLE value
-inline constexpr float PeekSingle(uintptr_t p, uintptr_t o)
+inline float PeekSingle(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const float *>(p) + o);
 }
@@ -134,7 +134,7 @@ inline void PokeSingle(uintptr_t p, uintptr_t o, float n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return DOUBLE value
-inline constexpr double PeekDouble(uintptr_t p, uintptr_t o)
+inline double PeekDouble(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const double *>(p) + o);
 }
@@ -152,7 +152,7 @@ inline void PokeDouble(uintptr_t p, uintptr_t o, double n)
 /// @param p Pointer base
 /// @param o Offset from base
 /// @return DOUBLE value
-inline constexpr uintptr_t PeekOffset(uintptr_t p, uintptr_t o)
+inline uintptr_t PeekOffset(uintptr_t p, uintptr_t o)
 {
     return *(reinterpret_cast<const uintptr_t *>(p) + o);
 }
@@ -208,7 +208,7 @@ inline void PokeStringByte(char *s, uintptr_t o, int8_t n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The integer at position o
-inline constexpr int16_t PeekStringInteger(const char *s, uintptr_t o)
+inline int16_t PeekStringInteger(const char *s, uintptr_t o)
 {
     return *reinterpret_cast<const int16_t *>(&s[o * sizeof(int16_t)]);
 }
@@ -226,7 +226,7 @@ inline void PokeStringInteger(char *s, uintptr_t o, int16_t n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The long at position o
-inline constexpr int32_t PeekStringLong(const char *s, uintptr_t o)
+inline int32_t PeekStringLong(const char *s, uintptr_t o)
 {
     return *reinterpret_cast<const int32_t *>(&s[o * sizeof(int32_t)]);
 }
@@ -244,7 +244,7 @@ inline void PokeStringLong(char *s, uintptr_t o, int32_t n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The integer64 at position o
-inline constexpr int64_t PeekStringInteger64(const char *s, uintptr_t o)
+inline int64_t PeekStringInteger64(const char *s, uintptr_t o)
 {
     return *reinterpret_cast<const int64_t *>(&s[o * sizeof(int64_t)]);
 }
@@ -262,7 +262,7 @@ inline void PokeStringInteger64(char *s, uintptr_t o, int64_t n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The single at position o
-inline constexpr float PeekStringSingle(const char *s, uintptr_t o)
+inline float PeekStringSingle(const char *s, uintptr_t o)
 {
     return *reinterpret_cast<const float *>(&s[o * sizeof(float)]);
 }
@@ -280,7 +280,7 @@ inline void PokeStringSingle(char *s, uintptr_t o, float n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The double at position o
-inline constexpr double PeekStringDouble(const char *s, uintptr_t o)
+inline double PeekStringDouble(const char *s, uintptr_t o)
 {
     return *reinterpret_cast<const double *>(&s[o * sizeof(double)]);
 }
@@ -298,7 +298,7 @@ inline void PokeStringDouble(char *s, uintptr_t o, double n)
 /// @param s A QB64 string
 /// @param o Offset from base (zero based)
 /// @return The Offset at position o
-inline constexpr uintptr_t PeekStringOffset(const char *s, uintptr_t o)
+inline uintptr_t PeekStringOffset(const char *s, uintptr_t o)
 {
     return *reinterpret_cast<const uintptr_t *>(&s[o * sizeof(uint64_t)]);
 }

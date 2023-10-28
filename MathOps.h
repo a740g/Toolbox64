@@ -182,7 +182,7 @@ inline constexpr int32_t GetDigitFromLong(uint32_t n, uint32_t p)
 /// @param n A number
 /// @param p The position (where 1 is unit, 2 is tens and so on)
 /// @return The digit at position p
-inline constexpr int32_t GetDigitFromInteger64(uint64_t n, uint32_t p)
+inline int32_t GetDigitFromInteger64(uint64_t n, uint32_t p)
 {
     return (n / (uint64_t)__builtin_powi(10, p)) % 10;
 }
