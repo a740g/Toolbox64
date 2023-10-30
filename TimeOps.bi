@@ -8,8 +8,23 @@ $IF TIMEOPS_BI = UNDEFINED THEN
 
     '$INCLUDE:'Common.bi'
 
-    DECLARE LIBRARY
-        FUNCTION GetTicks~&&
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Small test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$DEBUG
+
+    'DO
+    '    _PRINTSTRING (1, 1), "FPS:" + STR$(Time_GetHertz)
+
+    '    _LIMIT 75
+    'LOOP UNTIL _KEYHIT = KEY_ESCAPE
+
+    'END
+    '-------------------------------------------------------------------------------------------------------------------
+
+    DECLARE LIBRARY "TimeOps"
+        FUNCTION Time_GetTicks~&& ALIAS "GetTicks"
+        FUNCTION Time_GetHertz~&
     END DECLARE
 
 $END IF

@@ -181,14 +181,14 @@ $IF FILEOPS_BAS = UNDEFINED THEN
         DIM h AS LONG: h = _OPENCLIENT("HTTP:" + url)
 
         IF h <> NULL THEN
-            DIM startTick AS _UNSIGNED _INTEGER64: startTick = GetTicks ' record the current tick
+            DIM startTick AS _UNSIGNED _INTEGER64: startTick = Time_GetTicks ' record the current tick
             DIM AS STRING content, buffer
 
             WHILE NOT EOF(h)
                 GET h, , buffer
                 content = content + buffer
                 IF __FileOps.updatesPerSecond > 0 THEN _LIMIT __FileOps.updatesPerSecond
-                IF __FileOps.timeoutTicks > 0 AND (GetTicks - startTick) > __FileOps.timeoutTicks THEN EXIT WHILE
+                IF __FileOps.timeoutTicks > 0 AND (Time_GetTicks - startTick) > __FileOps.timeoutTicks THEN EXIT WHILE
                 __FileOps.percentCompleted = (LEN(content) / LOF(h)) * 100!
             WEND
 
@@ -249,6 +249,5 @@ $IF FILEOPS_BAS = UNDEFINED THEN
 
 
     '$INCLUDE:'StringOps.bas'
-    '$INCLUDE:'TimeOps.bas'
 
 $END IF

@@ -6,44 +6,64 @@
 $IF GRAPHICOPS_BAS = UNDEFINED THEN
     $LET GRAPHICOPS_BAS = TRUE
 
-    '$INCLUDE:'Common.bi'
+    '$INCLUDE:'GraphicOps.bi'
 
-    ' Draws a filled circle
-    ' cx, cy - circle center x, y
-    ' r - circle radius
-    ' c - color
-    SUB CircleFill (cx AS LONG, cy AS LONG, r AS LONG, c AS _UNSIGNED LONG)
-        DIM AS LONG radius, radiusError, x, y
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Small test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$DEBUG
 
-        radius = ABS(r)
-        radiusError = -radius
-        x = radius ' Y = 0
+    '$RESIZE:STRETCH
+    'SCREEN 12
+    'SCREEN 13
+    'SCREEN _NEWIMAGE(640, 480, 32)
 
-        IF radius = 0 THEN
-            PSET (cx, cy), c
-            EXIT SUB
-        END IF
+    '_BLINK OFF
+    'WIDTH 160, 90
+    '_FONT 8
+    'COLOR 17, 6
+    'Graphics_SetForegroundColor 1
+    'Graphics_SetBackgroundColor 14
 
-        LINE (cx - x, cy)-(cx + x, cy), c, BF
+    'PRINT Graphics_GetForegroundColor, Graphics_GetBackgroundColor
+    'PRINT _DEFAULTCOLOR, _BACKGROUNDCOLOR
 
-        WHILE x > y
-            radiusError = radiusError + y * 2 + 1
+    'PRINT Graphics_MakeTextColorAttribute(56, 1, 14)
+    'PRINT Graphics_MakeDefaultTextColorAttribute(56)
 
-            IF radiusError >= 0 THEN
-                IF x <> y + 1 THEN
-                    LINE (cx - y, cy - x)-(cx + y, cy - x), c, BF
-                    LINE (cx - y, cy + x)-(cx + y, cy + x), c, BF
-                END IF
-                x = x - 1
-                radiusError = radiusError - x * 2
-            END IF
+    'Graphics_SetPixel 1, 1, Graphics_MakeDefaultTextColorAttribute(56)
+    'Graphics_SetPixel 1, 1, 14
 
-            y = y + 1
+    'Graphics_DrawHorizontalLine 0, -10, 500, 14
 
-            LINE (cx - x, cy - y)-(cx + x, cy - y), c, BF
-            LINE (cx - x, cy + y)-(cx + x, cy + y), c, BF
-        WEND
-    END SUB
+    'DIM t AS DOUBLE: t = TIMER
+
+    'DIM i AS LONG: FOR i = 1 TO 1000000
+    '    CIRCLE (160, 110), 80, 15
+    '    CIRCLE (160, 110), 80, _RGB32(166, 22, 183)
+    '    Graphics_DrawCircle 160, 110, 80, 15
+    '    Graphics_DrawCircle 160, 110, 80, _RGB32(166, 22, 183)
+    '    Graphics_DrawCircle 50, 35, 25, Graphics_MakeTextColorAttribute(56, 1, 14)
+    '    Graphics_DrawFilledCircle 160, 100, 100, 15
+    '    Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+    '    LINE (0, 0)-(159, 89), 14, B
+    '    Graphics_DrawRectangle 0, 0, 159, 89, 14
+    '    Graphics_DrawRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
+    '    Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    '    LINE (0, 0)-(159, 89), 15, BF
+    '    LINE (0, 0)-(159, 89), _RGB32(166, 22, 183), BF
+    '    Graphics_DrawFilledRectangle 0, 0, 159, 89, 15
+    '    Graphics_DrawFilledRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
+    '    Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    '    LINE (0, 0)-(319, 199), 15
+    '    Graphics_DrawLine 0, 0, 319, 199, 15
+    '    Graphics_DrawLine 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'NEXT
+
+    'PRINT USING "###.### seconds to complete."; TIMER - t#
+
+    'END
+    '-------------------------------------------------------------------------------------------------------------------
 
 
     ' Draws a filled ellipse

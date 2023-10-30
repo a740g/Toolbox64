@@ -69,7 +69,7 @@ $IF IMGUI_BAS = UNDEFINED THEN
         IF UBOUND(Widget) = NULL THEN EXIT SUB ' Exit if there is nothing to do
 
         ' Blinky stuff
-        currentTick = GetTicks
+        currentTick = Time_GetTicks
         IF currentTick > blinkTick + WIDGET_BLINK_INTERVAL THEN
             blinkTick = currentTick
             WidgetManager.focusBlink = NOT WidgetManager.focusBlink
@@ -1002,6 +1002,5 @@ $IF IMGUI_BAS = UNDEFINED THEN
     END SUB
 
     '$INCLUDE:'ColorOps.bas'
-    '$INCLUDE:'TimeOps.bas'
 
 $END IF

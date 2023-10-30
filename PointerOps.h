@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
 
 template <typename T>
 inline void Pointer_SetMemory(T *dst, T value, size_t elements)
