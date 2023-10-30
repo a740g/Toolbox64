@@ -34,30 +34,34 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'Graphics_SetPixel 1, 1, Graphics_MakeDefaultTextColorAttribute(56)
     'Graphics_SetPixel 1, 1, 14
 
-    'Graphics_DrawHorizontalLine 0, -10, 500, 14
+    'Graphics_DrawHorizontalLine -10, 10, 100, 14
+    'Graphics_DrawVerticalLine 10, -10, 100, 14
 
     'DIM t AS DOUBLE: t = TIMER
 
     'DIM i AS LONG: FOR i = 1 TO 1000000
-    '    CIRCLE (160, 110), 80, 15
-    '    CIRCLE (160, 110), 80, _RGB32(166, 22, 183)
-    '    Graphics_DrawCircle 160, 110, 80, 15
-    '    Graphics_DrawCircle 160, 110, 80, _RGB32(166, 22, 183)
-    '    Graphics_DrawCircle 50, 35, 25, Graphics_MakeTextColorAttribute(56, 1, 14)
-    '    Graphics_DrawFilledCircle 160, 100, 100, 15
-    '    Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
-    '    LINE (0, 0)-(159, 89), 14, B
-    '    Graphics_DrawRectangle 0, 0, 159, 89, 14
-    '    Graphics_DrawRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
-    '    Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-    '    LINE (0, 0)-(159, 89), 15, BF
-    '    LINE (0, 0)-(159, 89), _RGB32(166, 22, 183), BF
-    '    Graphics_DrawFilledRectangle 0, 0, 159, 89, 15
-    '    Graphics_DrawFilledRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
-    '    Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-    '    LINE (0, 0)-(319, 199), 15
-    '    Graphics_DrawLine 0, 0, 319, 199, 15
-    '    Graphics_DrawLine 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'CIRCLE (160, 100), 80, 14
+    'CIRCLE (160, 100), 80, _RGB32(166, 22, 183)
+    'Graphics_DrawCircle 160, 100, 80, 14
+    'Graphics_DrawCircle 160, 100, 80, _RGB32(166, 22, 183)
+    'Graphics_DrawCircle 50, 35, 25, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawFilledCircle 160, 100, 80, 14
+    'Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (0, 0)-(159, 89), 14, B
+    'Graphics_DrawRectangle 0, 0, 159, 89, 14
+    'Graphics_DrawRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
+    'Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (0, 0)-(159, 89), 14, BF
+    'LINE (0, 0)-(159, 89), _RGB32(166, 22, 183), BF
+    'Graphics_DrawFilledRectangle 0, 0, 159, 89, 14
+    'Graphics_DrawFilledRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
+    'Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (0, 0)-(319, 199), 14
+    'Graphics_DrawLine 0, 0, 319, 199, 14
+    'Graphics_DrawLine 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawEllipse 160, 100, 120, 80, 14
+    'Graphics_DrawFilledEllipse 160, 100, 120, 80, 14
+    'EllipseFill 160, 100, 120, 80, 14
     'NEXT
 
     'PRINT USING "###.### seconds to complete."; TIMER - t#
