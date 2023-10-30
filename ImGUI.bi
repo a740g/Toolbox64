@@ -15,7 +15,7 @@ $IF IMGUI_BI = UNDEFINED THEN
 
     '$INCLUDE:'Common.bi'
     '$INCLUDE:'Types.bi'
-    '$INCLUDE:'ColorOps.bi'
+    '$INCLUDE:'GraphicOps.bi'
     '$INCLUDE:'TimeOps.bi'
 
     ' These are flags that can be used by the text box widget

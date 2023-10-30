@@ -691,6 +691,6 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         END IF
     END SUB
 
-    '$INCLUDE:'ColorOps.bas'
+    '$INCLUDE:'GraphicOps.bas'
 
 $END IF

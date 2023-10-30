@@ -64,14 +64,13 @@ extern img_struct *write_page;
 
 // These are QB64-PE internal functions
 extern void pset_and_clip(int32_t x, int32_t y, uint32_t color);
-extern void pset(int32_t x, int32_t y, uint32_t color);
 extern void fast_boxfill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color);
 
 /// @brief This is a function pointer type that we'll use to plot "pixels" on graphics as well and "text" surfaces
 typedef void (*Graphics_SetPixelFunction)(int32_t x, int32_t y, uint32_t clrAtr);
 
 /// @brief We'll use this internally so that we do not have the overhead of calling __Graphics_SetSetPixelFunction() for every pixel
-static Graphics_SetPixelFunction __Graphics_SetPixel = nullptr;
+static Graphics_SetPixelFunction __Graphics_SetPixelInternal = nullptr;
 
 /// @brief This is used to plot a text "pixel" on a "text" surface. The pixel is clipped if it is outside bounds
 /// @param x The x position
@@ -85,29 +84,20 @@ inline static void __Graphics_SetTextPixelClipped(int32_t x, int32_t y, uint32_t
     }
 }
 
-/// @brief This is used to plot a text "pixel" on a "text" surface. No clipping is done
-/// @param x The x position
-/// @param y The y position
-/// @param clrAtr A combination of the ASCII character and the text color attributes
-inline static void __Graphics_SetTextPixel(int32_t x, int32_t y, uint32_t clrAtr)
-{
-    *(reinterpret_cast<uint16_t *>(write_page->offset) + write_page->width * y + x) = (uint16_t)clrAtr;
-}
-
 /// @brief This selects the correct "SetPixel" function for later rendering
-inline static void __Graphics_SelectSetPixelFunction(bool clipped)
+inline static void __Graphics_SelectSetPixelFunction()
 {
-    __Graphics_SetPixel = clipped ? (write_page->text ? __Graphics_SetTextPixelClipped : pset_and_clip) : (write_page->text ? __Graphics_SetTextPixel : pset);
+    __Graphics_SetPixelInternal = write_page->text ? __Graphics_SetTextPixelClipped : pset_and_clip;
 }
 
-/// @brief Public library function for plotting pixels on text and graphic surfaces
+/// @brief Public library function for plotting pixels on text and graphic surfaces. This will clip out-of-bounds pixels
 /// @param x The x position
 /// @param y The y position
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 inline void Graphics_SetPixel(int32_t x, int32_t y, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(true); // Always use clipped versions for public function
-    __Graphics_SetPixel(x, y, clrAtr);
+    __Graphics_SelectSetPixelFunction();
+    __Graphics_SetPixelInternal(x, y, clrAtr);
 }
 
 /// @brief Makes a character + text atttribute pair for text mode images
@@ -171,8 +161,6 @@ inline uint32_t Graphics_GetBackgroundColor()
 /// @param c A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(false); // We'll do custom clipping below
-
     // Ensure the starting and ending coordinates are ordered correctly
     if (lx > rx)
         std::swap(lx, rx);
@@ -187,8 +175,19 @@ void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t cl
     if (rx >= write_page->width)
         rx = write_page->width - 1;
 
-    for (auto x = lx; x <= rx; x++)
-        __Graphics_SetPixel(x, ty, clrAtr);
+    if (write_page->text)
+    {
+        // Get pointer to the starting "pixel"
+        auto buffer = (reinterpret_cast<uint16_t *>(write_page->offset) + write_page->width * ty + lx);
+
+        // Draw the complete line
+        std::fill(buffer, buffer + (1 + rx - lx), clrAtr);
+    }
+    else
+    {
+        // Use a different method for non-text mode
+        fast_boxfill(lx, ty, rx, ty, clrAtr);
+    }
 }
 
 /// @brief Draws a vertical line (works in both text and graphics modes)
@@ -198,8 +197,6 @@ void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t cl
 /// @param c A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(false); // We'll do custom clipping below
-
     // Ensure the starting and ending coordinates are ordered correctly
     if (ty > by)
         std::swap(ty, by);
@@ -214,8 +211,23 @@ void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrA
     if (by >= write_page->height)
         by = write_page->height - 1;
 
-    for (auto y = ty; y <= by; y++)
-        __Graphics_SetPixel(lx, y, clrAtr);
+    if (write_page->text)
+    {
+        // Get pointer to the starting "pixel"
+        auto buffer = (reinterpret_cast<uint16_t *>(write_page->offset) + write_page->width * ty + lx);
+
+        // Draw the "pixels" and then step by image width to get to the next pixel
+        for (auto y = ty; y <= by; y++)
+        {
+            *buffer = clrAtr;
+            buffer += write_page->width;
+        }
+    }
+    else
+    {
+        // Use a different method for non-text mode
+        fast_boxfill(lx, ty, lx, by, clrAtr);
+    }
 }
 
 /// @brief Draws a rectangle (works in both text and graphics modes)
@@ -226,24 +238,18 @@ void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrA
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(true);
-
     auto xMin = std::min(lx, rx);
     auto xMax = std::max(lx, rx);
-    auto yMin = std::min(ty, by) + 1; // Avoid re-drawing the corners
-    auto yMax = std::max(ty, by) - 1; // Same as above
+    auto yMin = std::min(ty, by) + 1; // Avoid re-drawing corners
+    auto yMax = std::max(ty, by) - 1; // Avoid re-drawing corners
 
-    for (auto x = xMin; x <= xMax; x++)
-    {
-        __Graphics_SetPixel(x, ty, clrAtr);
-        __Graphics_SetPixel(x, by, clrAtr);
-    }
+    // Draw the top and bottom sides
+    Graphics_DrawHorizontalLine(xMin, ty, xMax, clrAtr);
+    Graphics_DrawHorizontalLine(xMin, by, xMax, clrAtr);
 
-    for (auto y = yMin; y <= yMax; y++)
-    {
-        __Graphics_SetPixel(lx, y, clrAtr);
-        __Graphics_SetPixel(rx, y, clrAtr);
-    }
+    // Draw the left and right sides
+    Graphics_DrawVerticalLine(xMin, yMin, yMax, clrAtr);
+    Graphics_DrawVerticalLine(xMax, yMin, yMax, clrAtr);
 }
 
 /// @brief Draws a filled rectangle (works in both text and graphics modes)
@@ -307,7 +313,7 @@ void Graphics_DrawFilledRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(true);
+    __Graphics_SelectSetPixelFunction();
 
     int32_t deltaX = abs(x2 - x1);
     int32_t deltaY = -abs(y2 - y1);
@@ -317,7 +323,7 @@ void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t 
 
     while (x1 != x2 || y1 != y2)
     {
-        __Graphics_SetPixel(x1, y1, clrAtr);
+        __Graphics_SetPixelInternal(x1, y1, clrAtr);
 
         int32_t err2 = err << 1;
 
@@ -335,7 +341,7 @@ void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t 
     }
 
     // Plot the ending pixel
-    __Graphics_SetPixel(x2, y2, clrAtr);
+    __Graphics_SetPixelInternal(x2, y2, clrAtr);
 }
 
 /// @brief Draws a circle (works in both text and graphics modes)
@@ -345,12 +351,12 @@ void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t 
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(true);
+    __Graphics_SelectSetPixelFunction();
 
     // Special case: draw a single pixel if the radius is <= zero
-    if (radius < 1)
+    if (radius <= 0)
     {
-        __Graphics_SetPixel(x, y, clrAtr);
+        __Graphics_SetPixelInternal(x, y, clrAtr);
         return;
     }
 
@@ -361,24 +367,24 @@ void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
         // Calculate the eight symmetric points and set the pixels
         px = x + cx;
         py = y + cy;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         px = x - cx;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         px = x + cx;
         py = y - cy;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         px = x - cx;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         px = x + cy;
         py = y + cx;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         py = y - cx;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         px = x - cy;
         py = y + cx;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
         py = y - cx;
-        __Graphics_SetPixel(px, py, clrAtr);
+        __Graphics_SetPixelInternal(px, py, clrAtr);
 
         ++cx;
 
@@ -402,43 +408,42 @@ void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 {
     // Special case: draw a single pixel if the radius is < zero
-    if (radius < 1)
+    if (radius <= 0)
     {
         Graphics_SetPixel(x, y, clrAtr);
         return;
     }
 
-    // Initialize the coordinates and error term
-    auto px = radius, py = 0, radiusError = -radius;
+    int32_t cx = 0;
+    int32_t cy = radius;
+    int32_t df = 1 - radius;
+    int32_t d_e = 3;
+    int32_t d_se = -2 * radius + 5;
 
-    // Draw the central horizontal line
-    Graphics_DrawFilledRectangle(x - px, y, x + px, y, clrAtr);
-
-    while (px > py)
+    do
     {
-        // Update the error term
-        radiusError += (py << 1) + 1;
+        Graphics_DrawHorizontalLine(x - cy, y - cx, x + cy, clrAtr);
+        Graphics_DrawHorizontalLine(x - cy, y + cx, x + cy, clrAtr);
 
-        if (radiusError >= 0)
+        if (df < 0)
         {
-            if (px != py + 1)
-            {
-                // Draw horizontal lines at the top and bottom of the circle
-                Graphics_DrawFilledRectangle(x - py, y - px, x + py, y - px, clrAtr);
-                Graphics_DrawFilledRectangle(x - py, y + px, x + py, y + px, clrAtr);
-            }
-            // Decrease the x coordinate and update the error term
-            --px;
-            radiusError -= px << 1;
+            df += d_e;
+            d_e += 2;
+            d_se += 2;
+        }
+        else
+        {
+            Graphics_DrawHorizontalLine(x - cx, y - cy, x + cx, clrAtr);
+            Graphics_DrawHorizontalLine(x - cx, y + cy, x + cx, clrAtr);
+
+            df += d_se;
+            d_e += 2;
+            d_se += 4;
+            --cy;
         }
 
-        // Increase the y coordinate
-        ++py;
-
-        // Draw horizontal lines at the top and bottom of the circle
-        Graphics_DrawFilledRectangle(x - px, y - py, x + px, y - py, clrAtr);
-        Graphics_DrawFilledRectangle(x - px, y + py, x + px, y + py, clrAtr);
-    }
+        ++cx;
+    } while (cx <= cy);
 }
 
 /// @brief Draws an ellipse (works in both text and graphics modes)
@@ -449,19 +454,19 @@ void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t cl
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(true);
+    __Graphics_SelectSetPixelFunction();
 
     // Special case: draw a single pixel if both rx and ry are <= zero
-    if (rx < 1 && ry < 1)
+    if (rx <= 0 && ry <= 0)
     {
-        __Graphics_SetPixel(x, y, clrAtr);
+        __Graphics_SetPixelInternal(x, y, clrAtr);
         return;
     }
 
     // Ensure that rx and ry are at least one pixel
-    if (rx < 1)
+    if (rx <= 0)
         rx = 1;
-    if (ry < 1)
+    if (ry <= 0)
         ry = 1;
 
     int32_t ix, iy;
@@ -488,18 +493,18 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
 
             if ((h != oh || k != ok) && (h < oi))
             {
-                __Graphics_SetPixel(x + h, y + k, clrAtr);
-                __Graphics_SetPixel(x - h, y + k, clrAtr);
-                __Graphics_SetPixel(x + h, y - k, clrAtr);
-                __Graphics_SetPixel(x - h, y - k, clrAtr);
+                __Graphics_SetPixelInternal(x + h, y + k, clrAtr);
+                __Graphics_SetPixelInternal(x - h, y + k, clrAtr);
+                __Graphics_SetPixelInternal(x + h, y - k, clrAtr);
+                __Graphics_SetPixelInternal(x - h, y - k, clrAtr);
             }
 
             if ((i != oi || j != oj) && (h < i))
             {
-                __Graphics_SetPixel(x + i, y + j, clrAtr);
-                __Graphics_SetPixel(x - i, y + j, clrAtr);
-                __Graphics_SetPixel(x + i, y - j, clrAtr);
-                __Graphics_SetPixel(x - i, y - j, clrAtr);
+                __Graphics_SetPixelInternal(x + i, y + j, clrAtr);
+                __Graphics_SetPixelInternal(x - i, y + j, clrAtr);
+                __Graphics_SetPixelInternal(x + i, y - j, clrAtr);
+                __Graphics_SetPixelInternal(x - i, y - j, clrAtr);
             }
 
             ix = ix + (iy / rx);
@@ -525,18 +530,18 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
 
             if ((j != oj || i != oi) && (h < i))
             {
-                __Graphics_SetPixel(x + j, y + i, clrAtr);
-                __Graphics_SetPixel(x - j, y + i, clrAtr);
-                __Graphics_SetPixel(x + j, y - i, clrAtr);
-                __Graphics_SetPixel(x - j, y - i, clrAtr);
+                __Graphics_SetPixelInternal(x + j, y + i, clrAtr);
+                __Graphics_SetPixelInternal(x - j, y + i, clrAtr);
+                __Graphics_SetPixelInternal(x + j, y - i, clrAtr);
+                __Graphics_SetPixelInternal(x - j, y - i, clrAtr);
             }
 
             if ((k != ok || h != oh) && (h < oi))
             {
-                __Graphics_SetPixel(x + k, y + h, clrAtr);
-                __Graphics_SetPixel(x - k, y + h, clrAtr);
-                __Graphics_SetPixel(x + k, y - h, clrAtr);
-                __Graphics_SetPixel(x - k, y - h, clrAtr);
+                __Graphics_SetPixelInternal(x + k, y + h, clrAtr);
+                __Graphics_SetPixelInternal(x - k, y + h, clrAtr);
+                __Graphics_SetPixelInternal(x + k, y - h, clrAtr);
+                __Graphics_SetPixelInternal(x - k, y - h, clrAtr);
             }
 
             ix = ix + (iy / ry);
@@ -545,27 +550,30 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
     }
 }
 
-void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t color)
+/// @brief Draws a filled ellipse (works in both text and graphics modes)
+/// @param x The circles center x position
+/// @param y The circles center y position
+/// @param rx The horizontal radius
+/// @param ry The vertical radius
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction(true);
-
     // Special case: draw a single pixel if both rx and ry are <= zero
-    if (rx < 1 && ry < 1)
+    if (rx <= 0 && ry <= 0)
     {
-        __Graphics_SetPixel(x, y, color);
+        Graphics_SetPixel(x, y, clrAtr);
         return;
     }
 
-    if (rx < 1)
+    if (rx <= 0)
         rx = 1;
-    if (ry < 1)
+    if (ry <= 0)
         ry = 1;
 
     int32_t ix, iy;
     int32_t a, b, c, d;
     int32_t da, db, dc, dd;
     int32_t na, nb, nc, nd;
-    int32_t hx;
 
     if (rx > ry)
     {
@@ -594,21 +602,15 @@ void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, ui
 
             if ((c > dc) && (c < dd))
             {
-                for (hx = (x - b); hx <= (x + b); hx++)
-                {
-                    __Graphics_SetPixel(hx, y - c, color);
-                    __Graphics_SetPixel(hx, y + c, color);
-                }
+                Graphics_DrawHorizontalLine(x - b, y - c, x + b, clrAtr);
+                Graphics_DrawHorizontalLine(x - b, y + c, x + b, clrAtr);
                 dc = c;
             }
 
             if ((d < dd) && (d > dc))
             {
-                for (hx = (x - a); hx <= (x + a); hx++)
-                {
-                    __Graphics_SetPixel(hx, y - d, color);
-                    __Graphics_SetPixel(hx, y + d, color);
-                }
+                Graphics_DrawHorizontalLine(x - a, y - d, x + a, clrAtr);
+                Graphics_DrawHorizontalLine(x - a, y + d, x + a, clrAtr);
                 dd = d;
             }
         } while (b > a);
@@ -640,23 +642,88 @@ void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, ui
 
             if ((a > da) && (a < db))
             {
-                for (hx = (x - d); hx <= (x + d); hx++)
-                {
-                    __Graphics_SetPixel(hx, y - a, color);
-                    __Graphics_SetPixel(hx, y + a, color);
-                }
+                Graphics_DrawHorizontalLine(x - d, y - a, x + d, clrAtr);
+                Graphics_DrawHorizontalLine(x - d, y + a, x + d, clrAtr);
                 da = a;
             }
 
             if ((b < db) && (b > da))
             {
-                for (hx = (x - c); hx <= (x + c); hx++)
-                {
-                    __Graphics_SetPixel(hx, y - b, color);
-                    __Graphics_SetPixel(hx, y + b, color);
-                }
+                Graphics_DrawHorizontalLine(x - c, y - b, x + c, clrAtr);
+                Graphics_DrawHorizontalLine(x - c, y + b, x + c, clrAtr);
                 db = b;
             }
         } while (b > a);
     }
+}
+
+/// @brief Makes a BGRA color from RGBA components.
+/// This is multiple times faster than QB64's built-in _RGB32
+/// @param r Red (0 - 255)
+/// @param g Green (0 - 255)
+/// @param b Blue (0 - 255)
+/// @param a Alpha (0 - 255)
+/// @return Returns an RGBA color
+inline constexpr uint32_t Graphics_MakeBGRA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    return ((static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b));
+}
+
+/// @brief Makes a RGBA color from RGBA components
+/// @param r Red (0 - 255)
+/// @param g Green (0 - 255)
+/// @param b Blue (0 - 255)
+/// @param a Alpha (0 - 255)
+/// @return Returns an RGBA color
+inline constexpr uint32_t Graphics_MakeRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    return ((static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(b) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(r));
+}
+
+/// @brief Returns the Red component
+/// @param rgba An RGBA color
+/// @return Red
+inline constexpr uint8_t Graphics_GetRedFromRGBA(uint32_t rgba)
+{
+    return static_cast<uint8_t>(rgba);
+}
+
+/// @brief Returns the Green component
+/// @param rgba An RGBA color
+/// @return Green
+inline constexpr uint8_t Graphics_GetGreenFromRGBA(uint32_t rgba)
+{
+    return static_cast<uint8_t>(rgba >> 8);
+}
+
+/// @brief Returns the Blue component
+/// @param rgba An RGBA color
+/// @return Blue
+inline constexpr uint8_t Graphics_GetBlueFromRGBA(uint32_t rgba)
+{
+    return static_cast<uint8_t>(rgba >> 16);
+}
+
+/// @brief Returns the Alpha value
+/// @param rgba An RGBA color
+/// @return Alpha
+inline constexpr uint8_t Graphics_GetAlphaFromRGBA(uint32_t rgba)
+{
+    return static_cast<uint8_t>(rgba >> 24);
+}
+
+/// @brief Gets the RGB or BGR value without the alpha
+/// @param rgba An RGBA or BGRA color
+/// @return RGB or BGR value
+inline constexpr uint32_t Graphics_GetRGB(uint32_t clr)
+{
+    return clr & 0xFFFFFFu;
+}
+
+/// @brief Helps convert a BGRA color to an RGBA color and back
+/// @param bgra A BGRA color or an RGBA color
+/// @return An RGBA color or a BGRA color
+inline constexpr uint32_t Graphics_SwapRedBlue(uint32_t clr)
+{
+    return ((clr & 0xFF00FF00u) | ((clr & 0x00FF0000u) >> 16) | ((clr & 0x000000FFu) << 16));
 }

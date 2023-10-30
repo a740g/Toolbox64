@@ -8,7 +8,7 @@ $IF ANSIPRINT_BI = UNDEFINED THEN
 
     '$INCLUDE:'Common.bi'
     '$INCLUDE:'Types.bi'
-    '$INCLUDE:'ColorOps.bi'
+    '$INCLUDE:'GraphicOps.bi'
 
     ' ANSI constants (not an exhaustive list)
     CONST ANSI_NUL = 0 ' Null

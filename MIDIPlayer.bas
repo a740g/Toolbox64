@@ -129,7 +129,7 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
         ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
         IF MIDI_IsPlaying AND NOT __MIDI_Player.isPaused AND _SNDRAWLEN(__MIDI_Player.soundHandle) < bufferTimeSecs THEN
             ' Clear the render buffer
-            SetMemory _OFFSET(__MIDI_SoundBuffer(0)), NULL, __MIDI_Player.soundBufferBytes
+            SetMemoryByte _OFFSET(__MIDI_SoundBuffer(0)), NULL, __MIDI_Player.soundBufferBytes
 
             ' Render some samples to the buffer
             __MIDI_Render __MIDI_SoundBuffer(0), __MIDI_Player.soundBufferBytes

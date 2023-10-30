@@ -91,7 +91,7 @@ $IF OPL3_BAS = UNDEFINED THEN
         ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
         IF _SNDRAWLEN(__OPL3.soundHandle) < bufferTimeSecs THEN
             ' Clear the render buffer
-            SetMemory _OFFSET(__OPL3_SoundBuffer(0)), NULL, __OPL3.soundBufferBytes
+            SetMemoryByte _OFFSET(__OPL3_SoundBuffer(0)), NULL, __OPL3.soundBufferBytes
 
             ' Render some samples to the buffer
             __OPL3_GenerateSamples __OPL3_SoundBuffer(0), __OPL3.soundBufferFrames

@@ -14,8 +14,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     '$DEBUG
 
     '$RESIZE:STRETCH
-    'SCREEN 12
-    'SCREEN 13
+    'SCREEN _NEWIMAGE(640, 480, 13)
     'SCREEN _NEWIMAGE(640, 480, 32)
 
     '_BLINK OFF
@@ -31,37 +30,75 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'PRINT Graphics_MakeTextColorAttribute(56, 1, 14)
     'PRINT Graphics_MakeDefaultTextColorAttribute(56)
 
-    'Graphics_SetPixel 1, 1, Graphics_MakeDefaultTextColorAttribute(56)
-    'Graphics_SetPixel 1, 1, 14
-
-    'Graphics_DrawHorizontalLine -10, 10, 100, 14
-    'Graphics_DrawVerticalLine 10, -10, 100, 14
+    'DIM i AS _UNSIGNED LONG: i = HexToRGB32("090502")
+    'PRINT HEX$(i)
+    'i = ToBGRA(9, 5, 2, 255)
+    'PRINT HEX$(i)
+    'i = ToRGBA(9, 5, 2, 255)
+    'PRINT HEX$(i)
+    'PRINT HEX$(GetRedFromRGBA(i))
+    'PRINT HEX$(GetGreenFromRGBA(i))
+    'PRINT HEX$(GetBlueFromRGBA(i))
+    'PRINT HEX$(GetRGB(i))
+    'PRINT HEX$(SwapRedBlue(i))
 
     'DIM t AS DOUBLE: t = TIMER
 
-    'DIM i AS LONG: FOR i = 1 TO 1000000
-    'CIRCLE (160, 100), 80, 14
-    'CIRCLE (160, 100), 80, _RGB32(166, 22, 183)
-    'Graphics_DrawCircle 160, 100, 80, 14
-    'Graphics_DrawCircle 160, 100, 80, _RGB32(166, 22, 183)
-    'Graphics_DrawCircle 50, 35, 25, Graphics_MakeTextColorAttribute(56, 1, 14)
-    'Graphics_DrawFilledCircle 160, 100, 80, 14
-    'Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
-    'LINE (0, 0)-(159, 89), 14, B
-    'Graphics_DrawRectangle 0, 0, 159, 89, 14
-    'Graphics_DrawRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
-    'Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-    'LINE (0, 0)-(159, 89), 14, BF
-    'LINE (0, 0)-(159, 89), _RGB32(166, 22, 183), BF
-    'Graphics_DrawFilledRectangle 0, 0, 159, 89, 14
-    'Graphics_DrawFilledRectangle 0, 0, 159, 89, _RGB32(166, 22, 183)
-    'Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-    'LINE (0, 0)-(319, 199), 14
-    'Graphics_DrawLine 0, 0, 319, 199, 14
+    'DIM i AS LONG: FOR i = 1 TO 100000
+    'COLOR 17, 6: _PRINTSTRING (11, 11), "8"
+    'Graphics_SetPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'PSET (30, 30), 14
+    'Graphics_SetPixel 30, 30, 14
+    'PSET (30, 30), _RGB32(166, 22, 183)
+    'Graphics_SetPixel 30, 30, _RGB32(166, 22, 183)
+
+    'Graphics_DrawHorizontalLine 0, 45, 159, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (0, 240)-(639, 240), 14
+    'Graphics_DrawHorizontalLine 0, 240, 639, 14
+    'LINE (0, 240)-(639, 240), _RGB32(166, 22, 183)
+    'Graphics_DrawHorizontalLine 0, 240, 639, _RGB32(166, 22, 183)
+
+    'Graphics_DrawVerticalLine 80, 0, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (320, 0)-(320, 479), 14
+    'Graphics_DrawVerticalLine 320, 0, 479, 14
+    'LINE (320, 0)-(320, 479), _RGB32(166, 22, 183)
+    'Graphics_DrawVerticalLine 320, 0, 479, _RGB32(166, 22, 183)
+
     'Graphics_DrawLine 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-    'Graphics_DrawEllipse 160, 100, 120, 80, 14
-    'Graphics_DrawFilledEllipse 160, 100, 120, 80, 14
-    'EllipseFill 160, 100, 120, 80, 14
+    'LINE (0, 0)-(639, 479), 14
+    'Graphics_DrawLine 0, 0, 639, 479, 14
+    'LINE (0, 0)-(639, 479), _RGB32(166, 22, 183)
+    'Graphics_DrawLine 0, 0, 639, 479, _RGB32(166, 22, 183)
+
+    'Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (0, 0)-(639, 479), 14, B
+    'Graphics_DrawRectangle 0, 0, 639, 479, 14
+    'LINE (0, 0)-(639, 479), _RGB32(166, 22, 183), B
+    'Graphics_DrawRectangle 0, 0, 639, 479, _RGB32(166, 22, 183)
+
+    'Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'LINE (0, 0)-(639, 479), 14, BF
+    'Graphics_DrawFilledRectangle 0, 0, 639, 479, 14
+    'LINE (0, 0)-(639, 479), _RGB32(166, 22, 183), BF
+    'Graphics_DrawFilledRectangle 0, 0, 639, 479, _RGB32(166, 22, 183)
+
+    'Graphics_DrawCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'CIRCLE (320, 240), 200, 14
+    'Graphics_DrawCircle 320, 240, 200, 14
+    'CIRCLE (320, 240), 200, _RGB32(166, 22, 183)
+    'Graphics_DrawCircle 320, 240, 200, _RGB32(166, 22, 183)
+
+    'Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawFilledCircle 320, 240, 200, 14
+    'Graphics_DrawFilledCircle 320, 240, 200, _RGB32(166, 22, 183)
+
+    'Graphics_DrawEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawEllipse 320, 240, 300, 200, 14
+    'Graphics_DrawEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
+
+    'Graphics_DrawFilledEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawFilledEllipse 320, 240, 300, 200, 14
+    'Graphics_DrawFilledEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
     'NEXT
 
     'PRINT USING "###.### seconds to complete."; TIMER - t#
@@ -69,30 +106,11 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
-
-    ' Draws a filled ellipse
-    ' cx = center x coordinate
-    ' cy = center y coordinate
-    ' a = semimajor axis
-    ' b = semiminor axis
-    ' c = fill color
-    SUB EllipseFill (cx AS INTEGER, cy AS INTEGER, a AS INTEGER, b AS INTEGER, c AS _UNSIGNED LONG)
-        IF a = 0 OR b = 0 THEN EXIT SUB
-
-        DIM AS _INTEGER64 h2, w2, h2w2
-        DIM AS LONG x, y
-
-        w2 = a * a
-        h2 = b * b
-        h2w2 = h2 * w2
-        LINE (cx - a, cy)-(cx + a, cy), c, BF
-        DO WHILE y < b
-            y = y + 1
-            x = SQR((h2w2 - y * y * w2) \ h2)
-            LINE (cx - x, cy + y)-(cx + x, cy + y), c, BF
-            LINE (cx - x, cy - y)-(cx + x, cy - y), c, BF
-        LOOP
-    END SUB
+    ' Converts a web color in hex format to a 32-bit RGB color
+    FUNCTION Graphics_GetBGRAFromWebColor~& (hexColor AS STRING)
+        IF LEN(hexColor) <> 6 THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        Graphics_GetBGRAFromWebColor = _RGB32(VAL("&H" + LEFT$(hexColor, 2)), VAL("&H" + MID$(hexColor, 3, 2)), VAL("&H" + RIGHT$(hexColor, 2)))
+    END FUNCTION
 
 
     ' Draws a thick line
@@ -100,7 +118,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     ' xe, ye - end x, y
     ' lineWeight - thickness
     ' c - color
-    SUB LineThick (xs AS SINGLE, ys AS SINGLE, xe AS SINGLE, ye AS SINGLE, lineWeight AS _UNSIGNED INTEGER, c AS _UNSIGNED LONG)
+    SUB Graphics_DrawThickLine (xs AS SINGLE, ys AS SINGLE, xe AS SINGLE, ye AS SINGLE, lineWeight AS _UNSIGNED INTEGER, c AS _UNSIGNED LONG)
         STATIC colorSample AS LONG ' static, so that we do not allocate an image on every call
 
         IF colorSample = 0 THEN colorSample = _NEWIMAGE(1, 1, 32) ' done only once
@@ -126,7 +144,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     ' isIn - True or False. True is fade in, False is fade out
     ' fps& - speed (updates / second)
     ' stopPercent - %age when to bail out (use for partial fades)
-    SUB FadeScreen (img AS LONG, isIn AS _BYTE, maxFPS AS _UNSIGNED INTEGER, stopPercent AS _BYTE)
+    SUB Graphics_FadeScreen (img AS LONG, isIn AS _BYTE, maxFPS AS _UNSIGNED INTEGER, stopPercent AS _BYTE)
         ' TOD0: Add support for palette based screen
         DIM AS LONG tmp, x, y, i
         tmp = _COPYIMAGE(img)
@@ -154,7 +172,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
 
     '  Loads an image in 8bpp or 32bpp and optionally sets a transparent color
-    FUNCTION LoadImageTransparent& (fileName AS STRING, transparentColor AS _UNSIGNED LONG, is8bpp AS _BYTE, options AS STRING)
+    FUNCTION Graphics_LoadImage& (fileName AS STRING, transparentColor AS _UNSIGNED LONG, is8bpp AS _BYTE, options AS STRING)
         DIM handle AS LONG
 
         IF is8bpp THEN
@@ -165,7 +183,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
         IF handle < -1 THEN _CLEARCOLOR transparentColor, handle
 
-        LoadImageTransparent = handle
+        Graphics_LoadImage = handle
     END FUNCTION
 
 $END IF
