@@ -750,7 +750,7 @@ void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, ui
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t clrAtr)
 {
-    // TODO: Figure out to way to avoid re-drawing the vetrices (maybe Bresenham algo without the final pixel?)
+    // TODO: Figure out to way to avoid re-drawing the vertices (maybe Bresenham algo without the final pixel?)
     Graphics_DrawLine(x1, y1, x2, y2, clrAtr);
     Graphics_DrawLine(x2, y2, x3, y3, clrAtr);
     Graphics_DrawLine(x3, y3, x1, y1, clrAtr);

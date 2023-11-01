@@ -15,12 +15,13 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     '$CONSOLE
 
     '$RESIZE:STRETCH
-    'SCREEN _NEWIMAGE(640, 480, 13)
+
     'SCREEN _NEWIMAGE(640, 480, 32)
 
-    '_BLINK OFF
-    'WIDTH 160, 90
-    '_FONT 8
+    'SCREEN _NEWIMAGE(640, 480, 13)
+
+    'SCREEN 0: WIDTH 160, 90: _FONT 8: _BLINK OFF
+
     'COLOR 17, 6
     'Graphics_SetForegroundColor 1
     'Graphics_SetBackgroundColor 14
@@ -45,7 +46,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
     'DIM t AS DOUBLE: t = TIMER
 
-    'DIM i AS LONG: FOR i = 1 TO 100000
+    'DIM i AS LONG: FOR i = 1 TO 1000000
     'COLOR 17, 6: _PRINTSTRING (11, 11), "8"
     'Graphics_SetPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
     'PSET (30, 30), 14
@@ -58,7 +59,6 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'Graphics_DrawHorizontalLine 0, 240, 639, 14
     'LINE (0, 240)-(639, 240), _RGB32(166, 22, 183)
     'Graphics_DrawHorizontalLine 0, 240, 639, _RGB32(166, 22, 183)
-    'Graphics_DrawHorizontalLine -10, 240, 759, _RGB32(166, 22, 183)
 
     'Graphics_DrawVerticalLine 80, 0, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
     'LINE (320, 0)-(320, 479), 14
@@ -103,19 +103,28 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'Graphics_DrawFilledEllipse 320, 240, 300, 200, 14
     'Graphics_DrawFilledEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
 
-    'Graphics_DrawFilledTriangle -20, -10, 70, 469, 629, 469, _RGB32(166, 22, 183)
+    'Graphics_DrawTriangle 2, 2, 14, 88, 158, 80, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawTriangle 20, 10, 70, 469, 629, 469, 14
+    'Graphics_DrawTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
+
+    'Graphics_DrawFilledTriangle 2, 2, 14, 88, 158, 80, Graphics_MakeTextColorAttribute(56, 1, 14)
+    'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, 14
     'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
     'NEXT
 
     'PRINT USING "###.### seconds to complete."; TIMER - t#
 
+    '_DISPLAY
+    'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
+    'Graphics_FadeScreen -1, 60, 100
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Converts a web color in hex format to a 32-bit RGB color
-    FUNCTION Graphics_GetBGRAFromWebColor~& (hexColor AS STRING)
-        IF LEN(hexColor) <> 6 THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
-        Graphics_GetBGRAFromWebColor = _RGB32(VAL("&H" + LEFT$(hexColor, 2)), VAL("&H" + MID$(hexColor, 3, 2)), VAL("&H" + RIGHT$(hexColor, 2)))
+    FUNCTION Graphics_GetBGRAFromWebColor~& (webColor AS STRING)
+        IF LEN(webColor) <> 6 THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        Graphics_GetBGRAFromWebColor = _RGB32(VAL("&H" + LEFT$(webColor, 2)), VAL("&H" + MID$(webColor, 3, 2)), VAL("&H" + RIGHT$(webColor, 2)))
     END FUNCTION
 
 
@@ -150,10 +159,10 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     ' isIn - True or False. True is fade in, False is fade out
     ' fps& - speed (updates / second)
     ' stopPercent - %age when to bail out (use for partial fades)
-    SUB Graphics_FadeScreen (img AS LONG, isIn AS _BYTE, maxFPS AS _UNSIGNED INTEGER, stopPercent AS _BYTE)
+    SUB Graphics_FadeScreen (isIn AS _BYTE, maxFPS AS _UNSIGNED INTEGER, stopPercent AS _BYTE)
         ' TOD0: Add support for palette based screen
         DIM AS LONG tmp, x, y, i
-        tmp = _COPYIMAGE(img)
+        tmp = _COPYIMAGE(_DEST)
         x = _WIDTH(tmp) - 1
         y = _HEIGHT(tmp) - 1
 
@@ -170,7 +179,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
             _DISPLAY
 
-            _LIMIT maxFPS
+            IF maxFPS > 0 THEN _LIMIT maxFPS
         NEXT
 
         _FREEIMAGE tmp
