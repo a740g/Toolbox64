@@ -98,7 +98,6 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'Graphics_DrawEllipse 320, 240, 300, 200, 14
     'Graphics_DrawEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
 
-
     'Graphics_DrawFilledEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
     'Graphics_DrawFilledEllipse 320, 240, 300, 200, 14
     'Graphics_DrawFilledEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
@@ -117,6 +116,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     '_DISPLAY
     'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
     'Graphics_FadeScreen -1, 60, 100
+    'Graphics_DrawLine -40, -50, 639, 479, _RGB32(166, 22, 183)
 
     'END
     '-------------------------------------------------------------------------------------------------------------------

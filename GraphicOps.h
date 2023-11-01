@@ -71,14 +71,14 @@ extern void fast_boxfill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_
 /// @brief This is a function pointer type that we'll use to plot "pixels" on graphics as well and "text" surfaces
 typedef void (*Graphics_SetPixelFunction)(int32_t x, int32_t y, uint32_t clrAtr);
 
-/// @brief We'll use this internally so that we do not have the overhead of calling __Graphics_SetSetPixelFunction() for every pixel
-static Graphics_SetPixelFunction __Graphics_SetPixelInternal = nullptr;
+/// @brief We'll use this internally so that we do not have the overhead of calling _Graphics_SetSetPixelFunction() for every pixel
+static Graphics_SetPixelFunction _Graphics_SetPixelInternal = nullptr;
 
 /// @brief This is used to plot a text "pixel" on a "text" surface. The pixel is clipped if it is outside bounds
 /// @param x The x position
 /// @param y The y position
 /// @param clrAtr A combination of the ASCII character and the text color attributes
-inline static void __Graphics_SetTextPixelClipped(int32_t x, int32_t y, uint32_t clrAtr)
+inline static void _Graphics_SetTextPixelClipped(int32_t x, int32_t y, uint32_t clrAtr)
 {
     if (x >= 0 and x < write_page->width and y >= 0 and y < write_page->height)
     {
@@ -87,9 +87,9 @@ inline static void __Graphics_SetTextPixelClipped(int32_t x, int32_t y, uint32_t
 }
 
 /// @brief This selects the correct "SetPixel" function for later rendering
-inline static void __Graphics_SelectSetPixelFunction()
+inline static void _Graphics_SelectSetPixelFunction()
 {
-    __Graphics_SetPixelInternal = write_page->text ? __Graphics_SetTextPixelClipped : pset_and_clip;
+    _Graphics_SetPixelInternal = write_page->text ? _Graphics_SetTextPixelClipped : pset_and_clip;
 }
 
 /// @brief Public library function for plotting pixels on text and graphic surfaces. This will clip out-of-bounds pixels
@@ -98,8 +98,8 @@ inline static void __Graphics_SelectSetPixelFunction()
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 inline void Graphics_SetPixel(int32_t x, int32_t y, uint32_t clrAtr)
 {
-    __Graphics_SelectSetPixelFunction();
-    __Graphics_SetPixelInternal(x, y, clrAtr);
+    _Graphics_SelectSetPixelFunction();
+    _Graphics_SetPixelInternal(x, y, clrAtr);
 }
 
 /// @brief Makes a character + text atttribute pair for text mode images
@@ -244,21 +244,23 @@ void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrA
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by, uint32_t clrAtr)
 {
-    auto xMin = std::min(lx, rx);
-    auto xMax = std::max(lx, rx);
+    // Draw the top and bottom sides. No need to re-order; Graphics_DrawHorizontalLine() will do that
+    Graphics_DrawHorizontalLine(lx, ty, rx, clrAtr);
+    Graphics_DrawHorizontalLine(lx, by, rx, clrAtr);
 
-    // Draw the top and bottom sides
-    Graphics_DrawHorizontalLine(xMin, ty, xMax, clrAtr);
-    Graphics_DrawHorizontalLine(xMin, by, xMax, clrAtr);
+    // Ensure the starting and ending coordinates are ordered correctly
+    if (ty > by)
+        std::swap(ty, by);
 
-    auto yMin = std::min(ty, by) + 1; // Avoid re-drawing corners
-    auto yMax = std::max(ty, by) - 1; // Avoid re-drawing corners
+    // Avoid re-drawing corners
+    ++ty;
+    --by;
 
     // Draw the left and right sides
-    if (yMax >= yMin)
+    if (by >= ty)
     {
-        Graphics_DrawVerticalLine(xMin, yMin, yMax, clrAtr);
-        Graphics_DrawVerticalLine(xMax, yMin, yMax, clrAtr);
+        Graphics_DrawVerticalLine(lx, ty, by, clrAtr);
+        Graphics_DrawVerticalLine(rx, ty, by, clrAtr);
     }
 }
 
@@ -317,6 +319,67 @@ void Graphics_DrawFilledRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by
     }
 }
 
+/// @brief This is an internal line drawing routine. This does not draw the last pixel and hence can be used to make multi-line shapes
+/// @param x1 Starting position x
+/// @param y1 Starting position y
+/// @param x2 Ending position x
+/// @param y2 Ending position y
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+static inline void _Graphics_DrawLineInternal(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t clrAtr)
+{
+    bool isVerticalLonger = false;
+    int32_t shortDistance = y2 - y1;
+    int32_t longDistance = x2 - x1;
+
+    if (abs(shortDistance) > abs(longDistance))
+    {
+        std::swap(shortDistance, longDistance);
+        isVerticalLonger = true;
+    }
+
+    int32_t increment, endDistance = longDistance;
+
+    if (longDistance < 0)
+    {
+        increment = -1;
+        longDistance = -longDistance;
+    }
+    else
+    {
+        increment = 1;
+    }
+
+    int32_t deltaIncrement;
+
+    if (longDistance == 0)
+    {
+        deltaIncrement = 0;
+    }
+    else
+    {
+        deltaIncrement = (shortDistance << 16) / longDistance;
+    }
+
+    int32_t j = 0;
+
+    if (isVerticalLonger)
+    {
+        for (int32_t i = 0; i != endDistance; i += increment)
+        {
+            _Graphics_SetPixelInternal(x1 + (j >> 16), y1 + i, clrAtr);
+            j += deltaIncrement;
+        }
+    }
+    else
+    {
+        for (int32_t i = 0; i != endDistance; i += increment)
+        {
+            _Graphics_SetPixelInternal(x1 + i, y1 + (j >> 16), clrAtr);
+            j += deltaIncrement;
+        }
+    }
+}
+
 /// @brief Draws a line from x1, y1 to x2, y2 (works in both text and graphics modes)
 /// @param x1 Starting position x
 /// @param y1 Starting position y
@@ -329,35 +392,14 @@ void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t 
     if ((x1 < 0 && x2 < 0) || (x1 >= write_page->width && x2 >= write_page->width) || (y1 < 0 && y2 < 0) || (y1 >= write_page->height && y2 >= write_page->height))
         return; // Line is completely outside the image
 
-    __Graphics_SelectSetPixelFunction();
+    // Select the correct pixel drawing routine just once
+    _Graphics_SelectSetPixelFunction();
 
-    int32_t deltaX = abs(x2 - x1);
-    int32_t deltaY = -abs(y2 - y1);
-    int32_t sx = x1 < x2 ? 1 : -1;
-    int32_t sy = y1 < y2 ? 1 : -1;
-    int32_t err = deltaX + deltaY; // Error value
-
-    while (x1 != x2 || y1 != y2)
-    {
-        __Graphics_SetPixelInternal(x1, y1, clrAtr);
-
-        int32_t err2 = err << 1;
-
-        if (err2 >= deltaY)
-        {
-            err += deltaY;
-            x1 += sx;
-        }
-
-        if (err2 <= deltaX)
-        {
-            err += deltaX;
-            y1 += sy;
-        }
-    }
+    // Call the internal line-drawing routine. This will use whatever pixel drawing routine was selected
+    _Graphics_DrawLineInternal(x1, y1, x2, y2, clrAtr);
 
     // Plot the ending pixel
-    __Graphics_SetPixelInternal(x2, y2, clrAtr);
+    _Graphics_SetPixelInternal(x2, y2, clrAtr);
 }
 
 /// @brief Draws a circle (works in both text and graphics modes)
@@ -371,12 +413,12 @@ void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
     if (x + radius < 0 || x - radius >= write_page->width || y + radius < 0 || y - radius >= write_page->height)
         return;
 
-    __Graphics_SelectSetPixelFunction();
+    _Graphics_SelectSetPixelFunction();
 
     // Special case: draw a single pixel if the radius is <= zero
     if (radius <= 0)
     {
-        __Graphics_SetPixelInternal(x, y, clrAtr);
+        _Graphics_SetPixelInternal(x, y, clrAtr);
         return;
     }
 
@@ -387,24 +429,24 @@ void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
         // Calculate the eight symmetric points and set the pixels
         px = x + cx;
         py = y + cy;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         px = x - cx;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         px = x + cx;
         py = y - cy;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         px = x - cx;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         px = x + cy;
         py = y + cx;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         py = y - cx;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         px = x - cy;
         py = y + cx;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
         py = y - cx;
-        __Graphics_SetPixelInternal(px, py, clrAtr);
+        _Graphics_SetPixelInternal(px, py, clrAtr);
 
         ++cx;
 
@@ -488,12 +530,12 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
     if (right < 0 || left >= write_page->width || bottom < 0 || top >= write_page->height)
         return;
 
-    __Graphics_SelectSetPixelFunction();
+    _Graphics_SelectSetPixelFunction();
 
     // Special case: draw a single pixel if both rx and ry are <= zero
     if (rx <= 0 && ry <= 0)
     {
-        __Graphics_SetPixelInternal(x, y, clrAtr);
+        _Graphics_SetPixelInternal(x, y, clrAtr);
         return;
     }
 
@@ -534,18 +576,18 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
 
             if ((h != oh || k != ok) && (h < oi))
             {
-                __Graphics_SetPixelInternal(x + h, y + k, clrAtr);
-                __Graphics_SetPixelInternal(x - h, y + k, clrAtr);
-                __Graphics_SetPixelInternal(x + h, y - k, clrAtr);
-                __Graphics_SetPixelInternal(x - h, y - k, clrAtr);
+                _Graphics_SetPixelInternal(x + h, y + k, clrAtr);
+                _Graphics_SetPixelInternal(x - h, y + k, clrAtr);
+                _Graphics_SetPixelInternal(x + h, y - k, clrAtr);
+                _Graphics_SetPixelInternal(x - h, y - k, clrAtr);
             }
 
             if ((i != oi || j != oj) && (h < i))
             {
-                __Graphics_SetPixelInternal(x + i, y + j, clrAtr);
-                __Graphics_SetPixelInternal(x - i, y + j, clrAtr);
-                __Graphics_SetPixelInternal(x + i, y - j, clrAtr);
-                __Graphics_SetPixelInternal(x - i, y - j, clrAtr);
+                _Graphics_SetPixelInternal(x + i, y + j, clrAtr);
+                _Graphics_SetPixelInternal(x - i, y + j, clrAtr);
+                _Graphics_SetPixelInternal(x + i, y - j, clrAtr);
+                _Graphics_SetPixelInternal(x - i, y - j, clrAtr);
             }
 
             ix = ix + (iy / rx);
@@ -571,18 +613,18 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
 
             if ((j != oj || i != oi) && (h < i))
             {
-                __Graphics_SetPixelInternal(x + j, y + i, clrAtr);
-                __Graphics_SetPixelInternal(x - j, y + i, clrAtr);
-                __Graphics_SetPixelInternal(x + j, y - i, clrAtr);
-                __Graphics_SetPixelInternal(x - j, y - i, clrAtr);
+                _Graphics_SetPixelInternal(x + j, y + i, clrAtr);
+                _Graphics_SetPixelInternal(x - j, y + i, clrAtr);
+                _Graphics_SetPixelInternal(x + j, y - i, clrAtr);
+                _Graphics_SetPixelInternal(x - j, y - i, clrAtr);
             }
 
             if ((k != ok || h != oh) && (h < oi))
             {
-                __Graphics_SetPixelInternal(x + k, y + h, clrAtr);
-                __Graphics_SetPixelInternal(x - k, y + h, clrAtr);
-                __Graphics_SetPixelInternal(x + k, y - h, clrAtr);
-                __Graphics_SetPixelInternal(x - k, y - h, clrAtr);
+                _Graphics_SetPixelInternal(x + k, y + h, clrAtr);
+                _Graphics_SetPixelInternal(x - k, y + h, clrAtr);
+                _Graphics_SetPixelInternal(x + k, y - h, clrAtr);
+                _Graphics_SetPixelInternal(x - k, y - h, clrAtr);
             }
 
             ix = ix + (iy / ry);
@@ -750,10 +792,34 @@ void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, ui
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t clrAtr)
 {
-    // TODO: Figure out to way to avoid re-drawing the vertices (maybe Bresenham algo without the final pixel?)
-    Graphics_DrawLine(x1, y1, x2, y2, clrAtr);
-    Graphics_DrawLine(x2, y2, x3, y3, clrAtr);
-    Graphics_DrawLine(x3, y3, x1, y1, clrAtr);
+    // Sort vertices by their y-coordinates
+    if (y1 > y2)
+    {
+        std::swap(x1, x2);
+        std::swap(y1, y2);
+    }
+    if (y1 > y3)
+    {
+        std::swap(x1, x3);
+        std::swap(y1, y3);
+    }
+    if (y2 > y3)
+    {
+        std::swap(x2, x3);
+        std::swap(y2, y3);
+    }
+
+    // Check if the entire triangle is outside the image bounds
+    if (x3 < 0 || x1 >= write_page->width || y3 < 0 || y1 >= write_page->height)
+        return; // The triangle is completely outside the image
+
+    // Select the correct pixel drawing routine just once
+    _Graphics_SelectSetPixelFunction();
+
+    // Now draw the 3 sides. Since we are using the internal line drawing function, this will not re-draw the vertices
+    _Graphics_DrawLineInternal(x1, y1, x2, y2, clrAtr);
+    _Graphics_DrawLineInternal(x2, y2, x3, y3, clrAtr);
+    _Graphics_DrawLineInternal(x3, y3, x1, y1, clrAtr);
 }
 
 /// @brief Draws a filled triangle (works in both text and graphics modes)
