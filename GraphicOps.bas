@@ -14,9 +14,9 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     '$DEBUG
     '$CONSOLE
 
-    $RESIZE:STRETCH
+    '$RESIZE:STRETCH
     'SCREEN _NEWIMAGE(640, 480, 13)
-    SCREEN _NEWIMAGE(640, 480, 32)
+    'SCREEN _NEWIMAGE(640, 480, 32)
 
     '_BLINK OFF
     'WIDTH 160, 90
@@ -103,9 +103,8 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'Graphics_DrawFilledEllipse 320, 240, 300, 200, 14
     'Graphics_DrawFilledEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
 
-    Graphics_DrawFilledTriangle -20, -10, 70, 469, 629, 469, _RGB32(166, 22, 183)
+    'Graphics_DrawFilledTriangle -20, -10, 70, 469, 629, 469, _RGB32(166, 22, 183)
     'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
-    SLEEP
     'NEXT
 
     'PRINT USING "###.### seconds to complete."; TIMER - t#
