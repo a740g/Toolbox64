@@ -5,6 +5,8 @@
 
 #pragma once
 
+#define TOOLBOX64_DEBUG 0
+#include "Debug.h"
 #include "Common.h"
 #include <cmath>
 #include <cstring>
@@ -166,7 +168,7 @@ void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t cl
         std::swap(lx, rx);
 
     // Ensure ty is within the image height
-    if (ty < 0 || ty >= write_page->height)
+    if (ty < 0 || ty >= write_page->height || lx >= write_page->width || rx < 0)
         return; // Line is completely outside the image
 
     // Clip the line to the image boundaries
@@ -174,6 +176,8 @@ void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t cl
         lx = 0;
     if (rx >= write_page->width)
         rx = write_page->width - 1;
+
+    TOOLBOX64_DEBUG_PRINT("Drawing line segment: (%i, %i) - (%i, %i)", lx, ty, rx, ty);
 
     if (write_page->text)
     {
@@ -202,7 +206,7 @@ void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrA
         std::swap(ty, by);
 
     // Ensure lx is within the image width
-    if (lx < 0 || lx >= write_page->width)
+    if (lx < 0 || lx >= write_page->width || ty >= write_page->height || by < 0)
         return; // Line is completely outside the image
 
     // Clip the line to the image boundaries
@@ -210,6 +214,8 @@ void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrA
         ty = 0;
     if (by >= write_page->height)
         by = write_page->height - 1;
+
+    TOOLBOX64_DEBUG_PRINT("Drawing line segment: (%i, %i) - (%i, %i)", lx, ty, lx, by);
 
     if (write_page->text)
     {
@@ -240,16 +246,20 @@ void Graphics_DrawRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by, uint
 {
     auto xMin = std::min(lx, rx);
     auto xMax = std::max(lx, rx);
-    auto yMin = std::min(ty, by) + 1; // Avoid re-drawing corners
-    auto yMax = std::max(ty, by) - 1; // Avoid re-drawing corners
 
     // Draw the top and bottom sides
     Graphics_DrawHorizontalLine(xMin, ty, xMax, clrAtr);
     Graphics_DrawHorizontalLine(xMin, by, xMax, clrAtr);
 
+    auto yMin = std::min(ty, by) + 1; // Avoid re-drawing corners
+    auto yMax = std::max(ty, by) - 1; // Avoid re-drawing corners
+
     // Draw the left and right sides
-    Graphics_DrawVerticalLine(xMin, yMin, yMax, clrAtr);
-    Graphics_DrawVerticalLine(xMax, yMin, yMax, clrAtr);
+    if (yMax >= yMin)
+    {
+        Graphics_DrawVerticalLine(xMin, yMin, yMax, clrAtr);
+        Graphics_DrawVerticalLine(xMax, yMin, yMax, clrAtr);
+    }
 }
 
 /// @brief Draws a filled rectangle (works in both text and graphics modes)
@@ -279,6 +289,8 @@ void Graphics_DrawFilledRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by
         ty = 0;
     if (by >= write_page->height)
         by = write_page->height - 1;
+
+    TOOLBOX64_DEBUG_PRINT("Drawing filled rectangle: (%i, %i) - (%i, %i)", lx, ty, rx, ty);
 
     if (write_page->text)
     {
@@ -313,6 +325,10 @@ void Graphics_DrawFilledRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t clrAtr)
 {
+    // Check if both endpoints of the line are outside the image bounds
+    if ((x1 < 0 && x2 < 0) || (x1 >= write_page->width && x2 >= write_page->width) || (y1 < 0 && y2 < 0) || (y1 >= write_page->height && y2 >= write_page->height))
+        return; // Line is completely outside the image
+
     __Graphics_SelectSetPixelFunction();
 
     int32_t deltaX = abs(x2 - x1);
@@ -351,6 +367,10 @@ void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t 
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 {
+    // Clip the circle completely if bounding box is completely off-image
+    if (x + radius < 0 || x - radius >= write_page->width || y + radius < 0 || y - radius >= write_page->height)
+        return;
+
     __Graphics_SelectSetPixelFunction();
 
     // Special case: draw a single pixel if the radius is <= zero
@@ -407,6 +427,10 @@ void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 {
+    // Clip the circle completely if bounding box is completely off-image
+    if (x + radius < 0 || x - radius >= write_page->width || y + radius < 0 || y - radius >= write_page->height)
+        return;
+
     // Special case: draw a single pixel if the radius is < zero
     if (radius <= 0)
     {
@@ -454,6 +478,16 @@ void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t cl
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t clrAtr)
 {
+    // Calculate the bounding box
+    auto left = x - rx;
+    auto right = x + rx;
+    auto top = y - ry;
+    auto bottom = y + ry;
+
+    // Clip the ellipse completely if bounding box is completely off-image
+    if (right < 0 || left >= write_page->width || bottom < 0 || top >= write_page->height)
+        return;
+
     __Graphics_SelectSetPixelFunction();
 
     // Special case: draw a single pixel if both rx and ry are <= zero
@@ -463,21 +497,28 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
         return;
     }
 
-    // Ensure that rx and ry are at least one pixel
-    if (rx <= 0)
-        rx = 1;
-    if (ry <= 0)
-        ry = 1;
+    // Special case for rx = 0: draw a vline
+    if (rx == 0)
+    {
+        Graphics_DrawVerticalLine(x, top, bottom, clrAtr);
+        return;
+    }
+
+    // Special case for ry = 0: draw a hline
+    if (ry == 0)
+    {
+        Graphics_DrawHorizontalLine(left, y, right, clrAtr);
+        return;
+    }
 
     int32_t ix, iy;
     int32_t h, i, j, k;
-
     h = i = j = k = 0xFFFF;
 
     if (rx > ry)
     {
         ix = 0;
-        iy = (rx << 6);
+        iy = rx << 6;
 
         do
         {
@@ -514,7 +555,7 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
     else
     {
         ix = 0;
-        iy = (ry << 6);
+        iy = ry << 6;
 
         do
         {
@@ -558,102 +599,220 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
 void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t clrAtr)
 {
-    // Special case: draw a single pixel if both rx and ry are <= zero
+    // Calculate the bounding box
+    auto left = x - rx;
+    auto right = x + rx;
+    auto top = y - ry;
+    auto bottom = y + ry;
+
+    // Clip the ellipse completely if bounding box is outside the image bounds
+    if (right < 0 || left >= write_page->width || bottom < 0 || top >= write_page->height)
+        return;
+
+    // Special case if both rx and ry are <= zero: draw a single pixel
     if (rx <= 0 && ry <= 0)
     {
         Graphics_SetPixel(x, y, clrAtr);
         return;
     }
 
-    if (rx <= 0)
-        rx = 1;
-    if (ry <= 0)
-        ry = 1;
+    // Special case for rx = 0: draw a vline
+    if (rx == 0)
+    {
+        Graphics_DrawVerticalLine(x, top, bottom, clrAtr);
+        return;
+    }
 
+    // Special case for ry = 0: draw a hline
+    if (ry == 0)
+    {
+        Graphics_DrawHorizontalLine(left, y, right, clrAtr);
+        return;
+    }
+
+    // Init vars
+    int32_t x1, y1, x2, y2;
     int32_t ix, iy;
-    int32_t a, b, c, d;
-    int32_t da, db, dc, dd;
-    int32_t na, nb, nc, nd;
+    int32_t h, i, j, k;
+    int32_t xmh, xph;
+    int32_t xmi, xpi;
+    int32_t xmj, xpj;
+    int32_t xmk, xpk;
+    int32_t oh, oi, oj, ok;
+    oh = oi = oj = ok = 0xFFFF;
 
+    // Draw
     if (rx > ry)
     {
-        dc = -1;
-        dd = 0xFFFF;
         ix = 0;
         iy = rx << 6;
-        na = 0;
-        nb = (iy + 32) >> 6;
-        nc = 0;
-        nd = (nb * ry) / rx;
 
         do
         {
-            a = na;
-            b = nb;
-            c = nc;
-            d = nd;
+            h = (ix + 32) >> 6;
+            i = (iy + 32) >> 6;
+            j = (h * ry) / rx;
+            k = (i * ry) / rx;
 
-            ix = ix + (iy / rx);
-            iy = iy - (ix / rx);
-            na = (ix + 32) >> 6;
-            nb = (iy + 32) >> 6;
-            nc = (na * ry) / rx;
-            nd = (nb * ry) / rx;
-
-            if ((c > dc) && (c < dd))
+            if ((ok != k) && (oj != k))
             {
-                Graphics_DrawHorizontalLine(x - b, y - c, x + b, clrAtr);
-                Graphics_DrawHorizontalLine(x - b, y + c, x + b, clrAtr);
-                dc = c;
+                xph = x + h;
+                xmh = x - h;
+                if (k > 0)
+                {
+                    Graphics_DrawHorizontalLine(xmh, y + k, xph, clrAtr);
+                    Graphics_DrawHorizontalLine(xmh, y - k, xph, clrAtr);
+                }
+                else
+                {
+                    Graphics_DrawHorizontalLine(xmh, y, xph, clrAtr);
+                }
+                ok = k;
+            }
+            if ((oj != j) && (ok != j) && (k != j))
+            {
+                xmi = x - i;
+                xpi = x + i;
+                if (j > 0)
+                {
+                    Graphics_DrawHorizontalLine(xmi, y + j, xpi, clrAtr);
+                    Graphics_DrawHorizontalLine(xmi, y - j, xpi, clrAtr);
+                }
+                else
+                {
+                    Graphics_DrawHorizontalLine(xmi, y, xpi, clrAtr);
+                }
+                oj = j;
             }
 
-            if ((d < dd) && (d > dc))
-            {
-                Graphics_DrawHorizontalLine(x - a, y - d, x + a, clrAtr);
-                Graphics_DrawHorizontalLine(x - a, y + d, x + a, clrAtr);
-                dd = d;
-            }
-        } while (b > a);
+            ix = ix + iy / rx;
+            iy = iy - ix / rx;
+
+        } while (i > h);
     }
     else
     {
-        da = -1;
-        db = 0xFFFF;
         ix = 0;
         iy = ry << 6;
-        na = 0;
-        nb = (iy + 32) >> 6;
-        nc = 0;
-        nd = (nb * rx) / ry;
 
         do
         {
-            a = na;
-            b = nb;
-            c = nc;
-            d = nd;
+            h = (ix + 32) >> 6;
+            i = (iy + 32) >> 6;
+            j = (h * rx) / ry;
+            k = (i * rx) / ry;
 
-            ix = ix + (iy / ry);
-            iy = iy - (ix / ry);
-            na = (ix + 32) >> 6;
-            nb = (iy + 32) >> 6;
-            nc = (na * rx) / ry;
-            nd = (nb * rx) / ry;
-
-            if ((a > da) && (a < db))
+            if ((oi != i) && (oh != i))
             {
-                Graphics_DrawHorizontalLine(x - d, y - a, x + d, clrAtr);
-                Graphics_DrawHorizontalLine(x - d, y + a, x + d, clrAtr);
-                da = a;
+                xmj = x - j;
+                xpj = x + j;
+                if (i > 0)
+                {
+                    Graphics_DrawHorizontalLine(xmj, y + i, xpj, clrAtr);
+                    Graphics_DrawHorizontalLine(xmj, y - i, xpj, clrAtr);
+                }
+                else
+                {
+                    Graphics_DrawHorizontalLine(xmj, y, xpj, clrAtr);
+                }
+                oi = i;
+            }
+            if ((oh != h) && (oi != h) && (i != h))
+            {
+                xmk = x - k;
+                xpk = x + k;
+                if (h > 0)
+                {
+                    Graphics_DrawHorizontalLine(xmk, y + h, xpk, clrAtr);
+                    Graphics_DrawHorizontalLine(xmk, y - h, xpk, clrAtr);
+                }
+                else
+                {
+                    Graphics_DrawHorizontalLine(xmk, y, xpk, clrAtr);
+                }
+                oh = h;
             }
 
-            if ((b < db) && (b > da))
-            {
-                Graphics_DrawHorizontalLine(x - c, y - b, x + c, clrAtr);
-                Graphics_DrawHorizontalLine(x - c, y + b, x + c, clrAtr);
-                db = b;
-            }
-        } while (b > a);
+            ix = ix + iy / ry;
+            iy = iy - ix / ry;
+
+        } while (i > h);
+    }
+}
+
+/// @brief Draws a triangle outline (works in both text and graphics modes)
+/// @param x1 Vertex 1 x
+/// @param y1 Vertex 1 y
+/// @param x2 Vertex 2 x
+/// @param y2 Vertex 2 y
+/// @param x3 Vertex 3 x
+/// @param y3 Vertex 3 y
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+void Graphics_DrawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t clrAtr)
+{
+    Graphics_DrawLine(x1, y1, x2, y2, clrAtr);
+    Graphics_DrawLine(x2, y2, x3, y3, clrAtr);
+    Graphics_DrawLine(x3, y3, x1, y1, clrAtr);
+}
+
+/// @brief Draws a filled triangle (works in both text and graphics modes)
+/// @param x1 Vertex 1 x
+/// @param y1 Vertex 1 y
+/// @param x2 Vertex 2 x
+/// @param y2 Vertex 2 y
+/// @param x3 Vertex 3 x
+/// @param y3 Vertex 3 y
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+void Graphics_DrawFilledTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t clrAtr)
+{
+    // Sort vertices by their y-coordinates
+    if (y1 > y2)
+    {
+        std::swap(x1, x2);
+        std::swap(y1, y2);
+    }
+    if (y1 > y3)
+    {
+        std::swap(x1, x3);
+        std::swap(y1, y3);
+    }
+    if (y2 > y3)
+    {
+        std::swap(x2, x3);
+        std::swap(y2, y3);
+    }
+
+    // Check if the entire triangle is outside the image bounds
+    if (x3 < 0 || x1 >= write_page->width || y3 < 0 || y1 >= write_page->height)
+    {
+        return; // The triangle is completely outside the image
+    }
+
+    // Calculate slopes of the two lines
+    float invSlope1 = (float)(x2 - x1) / (y2 - y1);
+    float invSlope2 = (float)(x3 - x1) / (y3 - y1);
+
+    float curX1 = x1;
+    float curX2 = x1;
+
+    // Fill the top part of the clipped triangle
+    for (int32_t scanlineY = y1; scanlineY <= y2; scanlineY++)
+    {
+        Graphics_DrawHorizontalLine(curX1, scanlineY, curX2, clrAtr);
+        curX1 += invSlope1;
+        curX2 += invSlope2;
+    }
+
+    // Calculate the new slope for the bottom part of the clipped triangle
+    invSlope1 = (float)(x3 - x2) / (y3 - y2);
+    curX1 = x2;
+
+    // Fill the bottom part of the clipped triangle
+    for (int32_t scanlineY = y2 + 1; scanlineY <= y3; scanlineY++)
+    {
+        Graphics_DrawHorizontalLine(curX1, scanlineY, curX2, clrAtr);
+        curX1 += invSlope1;
+        curX2 += invSlope2;
     }
 }
 
