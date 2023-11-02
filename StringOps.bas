@@ -181,6 +181,117 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' StrTok$:
+    '  Extracts tokens from a string. A token is a word that is surrounded
+    '  by separators, such as spaces or commas. Tokens are extracted and
+    '  analyzed when parsing sentences or commands. To use the GetToken
+    '  function, pass the string to be parsed on the first call, then pass
+    '  a null string on subsequent calls until the function returns a null
+    '  to indicate that the entire string has been parsed.
+    ' Input:
+    '  Srce = string to search
+    '  Delim  = String of separators
+    ' Output:
+    '  StrTok$ = next token
+    FUNCTION StrTok$ (Srce AS STRING, Delim AS STRING)
+        STATIC Start AS LONG, SaveStr AS STRING
+        DIM AS LONG BegPos, Ln, EndPos
+
+        ' If first call, make a copy of the string.
+        IF LEN(Srce) <> 0 THEN
+            Start = 1
+            SaveStr = Srce
+        END IF
+
+        BegPos = Start
+        Ln = LEN(SaveStr)
+
+        ' Look for start of a token (character that isn't delimiter).
+        WHILE BegPos <= Ln AND INSTR(Delim, MID$(SaveStr, BegPos, 1)) <> 0
+            BegPos = BegPos + 1
+        WEND
+
+        ' Test for token start found.
+        IF BegPos > Ln THEN
+            StrTok = ""
+            EXIT FUNCTION
+        END IF
+
+        ' Find the end of the token.
+        EndPos = BegPos
+        WHILE EndPos <= Ln AND INSTR(Delim, MID$(SaveStr, EndPos, 1)) = 0
+            EndPos = EndPos + 1
+        WEND
+
+        StrTok = MID$(SaveStr, BegPos, EndPos - BegPos)
+
+        ' Set starting point for search for next token.
+        Start = EndPos
+    END FUNCTION
+
+
+    ' Takes unwanted characters out of a string by comparing them with a filter string containing only acceptable numeric characters
+    FUNCTION FilterString$ (txt AS STRING, filter AS STRING)
+        DIM AS STRING temp, c
+        DIM AS LONG txtLength, i
+
+        txtLength = LEN(txt)
+
+        FOR i = 1 TO txtLength ' Isolate each character in
+            c = MID$(txt, i, 1) ' the string.
+
+            ' If the character is in the filter string, save it:
+            IF INSTR(filter, c) <> 0 THEN
+                temp = temp + c
+            END IF
+        NEXT
+
+        FilterString = temp
+    END FUNCTION
+
+
+    FUNCTION ReplaceStringItem$ (text$, old$, new$)
+        DIM find
+        DIM start
+        DIM first$
+        DIM last$
+        DO
+            find = INSTR(start + 1, text$, old$) 'find location of a word in text
+            IF find THEN
+                first$ = LEFT$(text$, find - 1) 'text before word including spaces
+                last$ = RIGHT$(text$, LEN(text$) - (find + LEN(old$) - 1)) 'text after word
+                text$ = first$ + new$ + last$
+            END IF
+            start = find
+        LOOP WHILE find
+        ReplaceStringItem = text$
+    END FUNCTION
+
+
+    FUNCTION ReplaceString$ (a AS STRING, b AS STRING, c AS STRING)
+        DIM j AS LONG: j = INSTR(a, b)
+        DIM r AS STRING
+        IF j > 0 THEN
+            r = LEFT$(a, j - 1) + c + ReplaceString(RIGHT$(a, LEN(a) - j + 1 - LEN(b)), b, c)
+        ELSE
+            r = a
+        END IF
+        ReplaceString = r
+    END FUNCTION
+
+
+    FUNCTION RemoveString$ (a AS STRING, b AS STRING)
+        DIM AS STRING c, r
+        DIM j AS LONG: j = INSTR(a, b)
+        IF j > 0 THEN
+            r = LEFT$(a, j - 1) + c + RemoveString(RIGHT$(a, LEN(a) - j + 1 - LEN(b)), b)
+        ELSE
+            r = a
+        END IF
+        RemoveString = r
+    END FUNCTION
+
+
     ' Reverses and returns the characters of a string
     FUNCTION ReverseString$ (s AS STRING)
         $CHECKING:OFF

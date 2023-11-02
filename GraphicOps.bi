@@ -7,6 +7,7 @@ $IF GRAPHICOPS_BI = UNDEFINED THEN
     $LET GRAPHICOPS_BI = TRUE
 
     '$INCLUDE:'Common.bi'
+    '$INCLUDE:'Types.bi'
 
     ' 32-bit BGRA color constants based on HTML color names
     CONST BGRA_ALICEBLUE~& = &HFFF0F8FF

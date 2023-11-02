@@ -22,6 +22,8 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
     'SCREEN 0: WIDTH 160, 90: _FONT 8: _BLINK OFF
 
+    '_DISPLAY
+
     'COLOR 17, 6
     'Graphics_SetForegroundColor 1
     'Graphics_SetBackgroundColor 14
@@ -149,71 +151,184 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     '    _LIMIT 60
     'LOOP UNTIL _KEYHIT = 27
 
+    'Graphics_FadeScreen TRUE, 60, 100
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Converts a web color in hex format to a 32-bit RGB color
     FUNCTION Graphics_GetBGRAFromWebColor~& (webColor AS STRING)
         IF LEN(webColor) <> 6 THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
-        Graphics_GetBGRAFromWebColor = _RGB32(VAL("&H" + LEFT$(webColor, 2)), VAL("&H" + MID$(webColor, 3, 2)), VAL("&H" + RIGHT$(webColor, 2)))
+        Graphics_GetBGRAFromWebColor = Graphics_MakeBGRA(VAL("&H" + LEFT$(webColor, 2)), VAL("&H" + MID$(webColor, 3, 2)), VAL("&H" + RIGHT$(webColor, 2)), 255)
     END FUNCTION
 
 
-    ' Draws a thick line
-    ' xs, ys - start x, y
-    ' xe, ye - end x, y
-    ' lineWeight - thickness
-    ' c - color
-    SUB Graphics_DrawThickLine (xs AS SINGLE, ys AS SINGLE, xe AS SINGLE, ye AS SINGLE, lineWeight AS _UNSIGNED INTEGER, c AS _UNSIGNED LONG)
-        STATIC colorSample AS LONG ' static, so that we do not allocate an image on every call
+    ' This will progressively change the palette of dstImg to that of srcImg
+    ' Keep calling this repeatedly until it returns true
+    FUNCTION Graphics_MorphPalette%% (dstImage AS LONG, srcImage AS LONG, startIndex AS _UNSIGNED _BYTE, stopIndex AS _UNSIGNED _BYTE)
+        Graphics_MorphPalette = TRUE ' Assume completed
 
-        IF colorSample = 0 THEN colorSample = _NEWIMAGE(1, 1, 32) ' done only once
+        DIM i AS LONG: FOR i = startIndex TO stopIndex
+            ' Get both src and dst colors of the current index
+            DIM srcColor AS _UNSIGNED LONG: srcColor = _PALETTECOLOR(i, srcImage)
+            DIM dstColor AS _UNSIGNED LONG: dstColor = _PALETTECOLOR(i, dstImage)
 
-        DIM prevDest AS LONG: prevDest = _DEST
-        _DEST colorSample
-        PSET (0, 0), c ' set the color
-        _DEST prevDest
+            ' Break down the colors into individual components
+            DIM srcR AS _UNSIGNED _BYTE: srcR = _RED32(srcColor)
+            DIM srcG AS _UNSIGNED _BYTE: srcG = _GREEN32(srcColor)
+            DIM srcB AS _UNSIGNED _BYTE: srcB = _BLUE32(srcColor)
+            DIM dstR AS _UNSIGNED _BYTE: dstR = _RED32(dstColor)
+            DIM dstG AS _UNSIGNED _BYTE: dstG = _GREEN32(dstColor)
+            DIM dstB AS _UNSIGNED _BYTE: dstB = _BLUE32(dstColor)
 
-        DIM a AS SINGLE, x0 AS SINGLE, y0 AS SINGLE
-        a = _ATAN2(ye - ys, xe - xs)
-        a = a + _PI(0.5!)
-        x0 = 0.5! * lineWeight * COS(a)
-        y0 = 0.5! * lineWeight * SIN(a)
+            ' Change red
+            IF dstR < srcR THEN
+                Graphics_MorphPalette = FALSE
+                dstR = dstR + 1
+            ELSEIF dstR > srcR THEN
+                Graphics_MorphPalette = FALSE
+                dstR = dstR - 1
+            END IF
 
-        _MAPTRIANGLE _SEAMLESS(0, 0)-(0, 0)-(0, 0), colorSample TO(xs - x0, ys - y0)-(xs + x0, ys + y0)-(xe + x0, ye + y0), , _SMOOTH
-        _MAPTRIANGLE _SEAMLESS(0, 0)-(0, 0)-(0, 0), colorSample TO(xs - x0, ys - y0)-(xe + x0, ye + y0)-(xe - x0, ye - y0), , _SMOOTH
+            ' Change green
+            IF dstG < srcG THEN
+                Graphics_MorphPalette = FALSE
+                dstG = dstG + 1
+            ELSEIF dstG > srcG THEN
+                Graphics_MorphPalette = FALSE
+                dstG = dstG - 1
+            END IF
+
+            ' Change blue
+            IF dstB < srcB THEN
+                Graphics_MorphPalette = FALSE
+                dstB = dstB + 1
+            ELSEIF dstB > srcB THEN
+                Graphics_MorphPalette = FALSE
+                dstB = dstB - 1
+            END IF
+
+            ' Set the palette index color
+            _PALETTECOLOR i, Graphics_MakeBGRA(dstR, dstG, dstB, 255), dstImage
+        NEXT i
+    END FUNCTION
+
+
+    ' Rotates an image palette left or right
+    SUB Graphics_RotatePalette (dstImage AS LONG, isForward AS _BYTE, startIndex AS _UNSIGNED _BYTE, stopIndex AS _UNSIGNED _BYTE)
+        IF stopIndex > startIndex THEN
+            DIM tempColor AS _UNSIGNED LONG, i AS LONG
+
+            IF isForward THEN
+                ' Save the last color
+                tempColor = _PALETTECOLOR(stopIndex, dstImage)
+
+                ' Shift places for the remaining colors
+                FOR i = stopIndex TO startIndex + 1 STEP -1
+                    _PALETTECOLOR i, _PALETTECOLOR(i - 1, dstImage), dstImage
+                NEXT i
+
+                ' Set first to last
+                _PALETTECOLOR startIndex, tempColor, dstImage
+            ELSE
+                ' Save the first color
+                tempColor = _PALETTECOLOR(startIndex, dstImage)
+
+                ' Shift places for the remaining colors
+                FOR i = startIndex TO stopIndex - 1
+                    _PALETTECOLOR i, _PALETTECOLOR(i + 1, dstImage), dstImage
+                NEXT i
+
+                ' Set last to first
+                _PALETTECOLOR stopIndex, tempColor, dstImage
+            END IF
+        END IF
     END SUB
 
 
-    ' Fades the screen to / from black
+    ' Sets the complete palette to a single color
+    SUB Graphics_ResetPalette (dstImage AS LONG, resetColor AS _UNSIGNED LONG)
+        DIM i AS LONG: FOR i = 0 TO 255
+            _PALETTECOLOR i, resetColor, dstImage
+        NEXT i
+    END SUB
+
+
+    ' Fades the current _DEST to the screen to / from black (works on all kinds of screen)
+    ' Note for paletted display the display palette will be modified
     ' img - image to use. can be the screen or _DEST
     ' isIn - True or False. True is fade in, False is fade out
     ' fps& - speed (updates / second)
     ' stopPercent - %age when to bail out (use for partial fades)
     SUB Graphics_FadeScreen (isIn AS _BYTE, maxFPS AS _UNSIGNED INTEGER, stopPercent AS _BYTE)
-        ' TOD0: Add support for palette based screen
-        DIM AS LONG tmp, x, y, i
-        tmp = _COPYIMAGE(_DEST)
-        x = _WIDTH(tmp) - 1
-        y = _HEIGHT(tmp) - 1
+        DIM AS LONG dspImg, tmpImg, oldDest
 
-        FOR i = 0 TO 255
-            IF stopPercent < (i * 100) \ 255 THEN EXIT FOR ' bail if < 100% we hit the limit
+        dspImg = _DISPLAY ' Get the image handle of the screen being displayed
 
-            _PUTIMAGE , tmp, _DISPLAY ' always stretch and blit to the screen
+        SELECT CASE _PIXELSIZE(dspImg)
+            CASE 0, 1 ' Text mode and other index graphics screens. We'll simply fade the image palette in either direction based on isIn
+                ' Make a copy of the destination image along with the palette
+                tmpImg = _COPYIMAGE(_DEST)
 
-            IF isIn THEN
-                LINE (0, 0)-(x, y), _RGBA32(0, 0, 0, 255 - i), BF
-            ELSE
-                LINE (0, 0)-(x, y), _RGBA32(0, 0, 0, i), BF
-            END IF
+                IF isIn THEN
+                    ' If we are fading in the just reset the display image to all black
+                    Graphics_ResetPalette dspImg, BGRA_BLACK
+                ELSE
+                    ' If we are fading out then first copy the image pallete to the display and then reset the image paletter to all black
+                    _COPYPALETTE tmpImg, dspImg
+                    Graphics_ResetPalette tmpImg, BGRA_BLACK
+                END IF
 
-            _DISPLAY
+                oldDest = _DEST ' Save the old destination
+                _DEST _DISPLAY ' Set destination to the screen
 
-            IF maxFPS > 0 THEN _LIMIT maxFPS
-        NEXT
+                ' Stretch and blit the image to the screen just once
+                IF _PIXELSIZE(dspImg) = 0 THEN
+                    Graphics_PutTextImage tmpImg, 0, 0 ' _PutImage cannot blit text images
+                ELSE
+                    _PUTIMAGE , tmpImg, _DISPLAY
+                END IF
 
-        _FREEIMAGE tmp
+                DO
+                    ' Change the palette in small increments
+                    DIM done AS _BYTE: done = Graphics_MorphPalette(dspImg, tmpImg, 0, 255)
+
+                    _DISPLAY
+
+                    IF maxFPS > 0 THEN _LIMIT maxFPS
+                LOOP UNTIL done
+
+                _DEST oldDest ' Restore destination
+
+                _FREEIMAGE tmpImg
+            CASE ELSE ' 32bpp BGRA graphics. We'll draw a filled rectangle over the screen with varying aplha values
+                ' Make a copy of the destination image
+                tmpImg = _COPYIMAGE(_DEST)
+
+                DIM maxX AS LONG: maxX = _WIDTH(tmpImg) - 1
+                DIM maxY AS LONG: maxY = _HEIGHT(tmpImg) - 1
+
+                DIM i AS LONG: FOR i = 0 TO 255
+                    IF stopPercent < (i * 100) \ 255 THEN EXIT FOR ' bail if < 100% we hit the limit
+
+                    ' Stretch and blit the image to the screen
+                    _PUTIMAGE , tmpImg, _DISPLAY
+
+                    IF isIn THEN
+                        'LINE (0, 0)-(maxX, maxY), _RGBA32(0, 0, 0, 255 - i), BF
+                        Graphics_DrawFilledRectangle 0, 0, maxX, maxY, Graphics_MakeBGRA(0, 0, 0, 255 - i)
+                    ELSE
+                        'LINE (0, 0)-(maxX, maxY), _RGBA32(0, 0, 0, i), BF
+                        Graphics_DrawFilledRectangle 0, 0, maxX, maxY, Graphics_MakeBGRA(0, 0, 0, i)
+                    END IF
+
+                    _DISPLAY
+
+                    IF maxFPS > 0 THEN _LIMIT maxFPS
+                NEXT i
+
+                _FREEIMAGE tmpImg
+        END SELECT
     END SUB
 
 
