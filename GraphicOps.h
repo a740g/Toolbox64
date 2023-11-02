@@ -63,10 +63,14 @@ struct img_struct;
 
 // These are QB64-PE internal structures
 extern img_struct *write_page;
+extern img_struct *img;
+extern const int32_t *page;
+extern const int32_t nextimg;
 
 // These are QB64-PE internal functions
 extern void pset_and_clip(int32_t x, int32_t y, uint32_t color);
 extern void fast_boxfill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color);
+extern void validatepage(int32_t n);
 
 /// @brief This is a function pointer type that we'll use to plot "pixels" on graphics as well and "text" surfaces
 typedef void (*Graphics_SetPixelFunction)(int32_t x, int32_t y, uint32_t clrAtr);
@@ -855,8 +859,6 @@ void Graphics_DrawFilledTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
         return; // The triangle is completely outside the image
     }
 
-    // TODO: Re-implement this using integer math (maybe Bresenham algo for both halves?)
-
     // Calculate slopes of the two lines
     float invSlope1 = (float)(x2 - x1) / (y2 - y1);
     float invSlope2 = (float)(x3 - x1) / (y3 - y1);
@@ -864,7 +866,7 @@ void Graphics_DrawFilledTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
     float curX1 = x1;
     float curX2 = x1;
 
-    // Fill the top part of the clipped triangle
+    // Fill the top part of the triangle
     for (int32_t scanlineY = y1; scanlineY <= y2; scanlineY++)
     {
         Graphics_DrawHorizontalLine(curX1, scanlineY, curX2, clrAtr);
@@ -876,7 +878,7 @@ void Graphics_DrawFilledTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
     invSlope1 = (float)(x3 - x2) / (y3 - y2);
     curX1 = x2;
 
-    // Fill the bottom part of the clipped triangle
+    // Fill the bottom part of the triangle
     for (int32_t scanlineY = y2 + 1; scanlineY <= y3; scanlineY++)
     {
         Graphics_DrawHorizontalLine(curX1, scanlineY, curX2, clrAtr);
@@ -954,4 +956,126 @@ inline constexpr uint32_t Graphics_GetRGB(uint32_t clr)
 inline constexpr uint32_t Graphics_SwapRedBlue(uint32_t clr)
 {
     return ((clr & 0xFF00FF00u) | ((clr & 0x00FF0000u) >> 16) | ((clr & 0x000000FFu) << 16));
+}
+
+/// @brief Set the text image's transparent "color" that will be used by Graphics_PutTextImage()
+/// @param imageHandle A valid text image handle
+/// @param clrAtr A text color attribute for text surfaces. See Graphics_MakeTextColorAttribute()
+void Graphics_SetTextImageClearColor(int32_t imageHandle, uint32_t clrAtr)
+{
+    img_struct *textImage;
+
+    // Validate image handle
+    if (imageHandle >= 0)
+    {
+        validatepage(imageHandle);
+        textImage = &img[page[imageHandle]];
+    }
+    else
+    {
+        imageHandle = -imageHandle;
+        if (imageHandle >= nextimg)
+        {
+            error(ERROR_INVALID_HANDLE);
+            return;
+        }
+        textImage = &img[imageHandle];
+        if (!textImage->valid)
+        {
+            error(ERROR_INVALID_HANDLE);
+            return;
+        }
+    }
+
+    // Check if the this is a text mode handle
+    if (!textImage->text)
+    {
+        error(ERROR_INVALID_HANDLE);
+        return;
+    }
+
+    textImage->transparent_color = clrAtr;
+}
+
+/// @brief Blits a text image on another image (works only with text image; for graphics use _PUTIMAGE)
+/// @param imageHandle A valid text image handle
+/// @param x The x position on _DEST
+/// @param y The y position on _DEST
+/// @param lx [OPTIONAL] The left side to start in imageHandle
+/// @param ty [OPTIONAL] The top side to start in imageHandle
+/// @param rx [OPTIONAL] The right side to start in imageHandle
+/// @param by [OPTIONAL] The bottom side to start in imageHandle
+void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx = -1, int32_t ty = -1, int32_t rx = -1, int32_t by = -1)
+{
+    img_struct *textImage;
+
+    // Validate image handle
+    if (imageHandle >= 0)
+    {
+        validatepage(imageHandle);
+        textImage = &img[page[imageHandle]];
+    }
+    else
+    {
+        imageHandle = -imageHandle;
+        if (imageHandle >= nextimg)
+        {
+            error(ERROR_INVALID_HANDLE);
+            return;
+        }
+        textImage = &img[imageHandle];
+        if (!textImage->valid)
+        {
+            error(ERROR_INVALID_HANDLE);
+            return;
+        }
+    }
+
+    // Check if the this is a text mode handle
+    if (!textImage->text)
+    {
+        error(ERROR_INVALID_HANDLE);
+        return;
+    }
+
+    // Determine the portion of the bitmap to blit
+    if (lx < 0 || lx >= textImage->width)
+        lx = 0;
+    if (ty < 0 || ty >= textImage->height)
+        ty = 0;
+    if (rx < 0 || rx >= textImage->width)
+        rx = textImage->width - 1;
+    if (by < 0 || by >= textImage->height)
+        by = textImage->height - 1;
+    // Keep things in order
+    if (lx > rx)
+        std::swap(lx, rx);
+    if (ty > by)
+        std::swap(ty, by);
+
+    auto srcData = reinterpret_cast<uint16_t *>(textImage->offset);  // Source data
+    auto dstData = reinterpret_cast<uint16_t *>(write_page->offset); // Destination data
+    int32_t dstX, dstY, srcX, srcY;                                  // Destination & source x and y
+    auto dstXmax = x + (rx - lx);                                    // This is our max X position on write_page
+    auto dstYmax = y + (by - ty);                                    // This is our max Y position on write_page
+
+    for (dstY = y, srcY = ty; dstY <= dstYmax; dstY++, srcY++)
+    {
+        if (dstY < 0 || dstY >= write_page->height)
+            continue; // Skip out-of-bounds rows
+
+        for (dstX = x, srcX = lx; dstX <= dstXmax; dstX++, srcX++)
+        {
+            if (dstX < 0 || dstX >= write_page->width)
+                continue; // Skip out-of-bounds columns
+
+            auto pixelValue = srcData[textImage->width * srcY + srcX]; // Get pixel value
+            if (pixelValue != textImage->transparent_color)            // Set only if not transparent
+            {
+                dstData[write_page->width * dstY + dstX] = pixelValue; // Set pixel value
+            }
+        }
+    }
+
+    // TODO: Implement graphics mode rendering
 }

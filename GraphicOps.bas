@@ -118,6 +118,30 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'Graphics_FadeScreen -1, 60, 100
     'Graphics_DrawLine -40, -50, 639, 479, _RGB32(166, 22, 183)
 
+    'DIM txtImg AS LONG: txtImg = _NEWIMAGE(9, 9, 0)
+    'PRINT txtImg
+
+    '_DEST txtImg
+    'Graphics_DrawFilledCircle 4, 4, 4, Graphics_MakeTextColorAttribute(3, 1, 14)
+    '_DEST 0
+
+    'DO
+    '    DIM AS LONG x, y
+
+    '    WHILE _MOUSEINPUT
+    '        x = _MOUSEX
+    '        y = _MOUSEY
+    '    WEND
+
+    '    CLS
+
+    '    Graphics_PutTextImage txtImg, x, y
+
+    '    _DISPLAY
+
+    '    _LIMIT 60
+    'LOOP UNTIL _KEYHIT = 27
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 

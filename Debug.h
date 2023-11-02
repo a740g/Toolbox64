@@ -20,5 +20,6 @@
 
 #define ERROR_ILLEGAL_FUNCTION_CALL 5
 #define ERROR_OUT_OF_MEMORY 257
+#define ERROR_INVALID_HANDLE 258
 
 extern void error(int32_t error_number);

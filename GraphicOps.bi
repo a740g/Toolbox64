@@ -321,6 +321,9 @@ $IF GRAPHICOPS_BI = UNDEFINED THEN
         FUNCTION Graphics_GetAlphaFromRGBA~%% (BYVAL rgba AS _UNSIGNED LONG)
         FUNCTION Graphics_GetRGB~& (BYVAL clr AS _UNSIGNED LONG)
         FUNCTION Graphics_SwapRedBlue~& (BYVAL clr AS _UNSIGNED LONG)
+        SUB Graphics_SetTextImageClearColor (BYVAL imageHandle AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
+        SUB Graphics_PutTextImagePro ALIAS "Graphics_PutTextImage" (BYVAL imageHandle AS LONG, BYVAL x AS LONG, BYVAL y AS LONG, BYVAL lx AS LONG, BYVAL ty AS LONG, BYVAL rx AS LONG, BYVAL by AS LONG)
+        SUB Graphics_PutTextImage (BYVAL imageHandle AS LONG, BYVAL x AS LONG, BYVAL y AS LONG)
     END DECLARE
 
 $END IF
