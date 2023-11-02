@@ -66,6 +66,8 @@ extern img_struct *write_page;
 extern img_struct *img;
 extern const int32_t *page;
 extern const int32_t nextimg;
+extern const uint8_t charset8x8[256][8][8];
+extern const uint8_t charset8x16[256][16][8];
 
 // These are QB64-PE internal functions
 extern void pset_and_clip(int32_t x, int32_t y, uint32_t color);
@@ -997,7 +999,7 @@ void Graphics_SetTextImageClearColor(int32_t imageHandle, uint32_t clrAtr)
     textImage->transparent_color = clrAtr;
 }
 
-/// @brief Blits a text image on another image (works only with text image; for graphics use _PUTIMAGE)
+/// @brief Blits a text image on another text / graphics image (works only with text source image; for graphics source use _PUTIMAGE)
 /// @param imageHandle A valid text image handle
 /// @param x The x position on _DEST
 /// @param y The y position on _DEST
@@ -1053,29 +1055,150 @@ void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx
     if (ty > by)
         std::swap(ty, by);
 
-    auto srcData = reinterpret_cast<uint16_t *>(textImage->offset);  // Source data
-    auto dstData = reinterpret_cast<uint16_t *>(write_page->offset); // Destination data
-    int32_t dstX, dstY, srcX, srcY;                                  // Destination & source x and y
-    auto dstXmax = x + (rx - lx);                                    // This is our max X position on write_page
-    auto dstYmax = y + (by - ty);                                    // This is our max Y position on write_page
+    auto srcData = reinterpret_cast<uint16_t *>(textImage->offset); // Source data
 
-    for (dstY = y, srcY = ty; dstY <= dstYmax; dstY++, srcY++)
+    if (write_page->text) // text mode destination
     {
-        if (dstY < 0 || dstY >= write_page->height)
-            continue; // Skip out-of-bounds rows
+        int32_t dstX, dstY, srcX, srcY;                                  // Destination & source x and y
+        auto dstXmax = x + (rx - lx);                                    // This is our max X position on write_page (in characters)
+        auto dstYmax = y + (by - ty);                                    // This is our max Y position on write_page (in characters)
+        auto dstData = reinterpret_cast<uint16_t *>(write_page->offset); // Destination data
 
-        for (dstX = x, srcX = lx; dstX <= dstXmax; dstX++, srcX++)
+        for (dstY = y, srcY = ty; dstY <= dstYmax; dstY++, srcY++)
         {
-            if (dstX < 0 || dstX >= write_page->width)
-                continue; // Skip out-of-bounds columns
+            if (dstY < 0 || dstY >= write_page->height)
+                continue; // Skip out-of-bounds rows
 
-            auto pixelValue = srcData[textImage->width * srcY + srcX]; // Get pixel value
-            if (pixelValue != textImage->transparent_color)            // Set only if not transparent
+            for (dstX = x, srcX = lx; dstX <= dstXmax; dstX++, srcX++)
             {
-                dstData[write_page->width * dstY + dstX] = pixelValue; // Set pixel value
+                if (dstX < 0 || dstX >= write_page->width)
+                    continue; // Skip out-of-bounds columns
+
+                auto pixelValue = srcData[textImage->width * srcY + srcX]; // Get pixel value
+                if (pixelValue != textImage->transparent_color)            // Set only if not transparent
+                {
+                    dstData[write_page->width * dstY + dstX] = pixelValue; // Set pixel value
+                }
             }
         }
     }
+    else // graphics mode destination
+    {
+        // We'll always render using built-in fonts. We could use custom fonts, however it will make this overly complex and slow
+        auto const fontWidth = 8;                          // Built-in font width is always 8 pixels
+        auto fontHeight = 16;                              // We'll assume 16 pixel height built-in font
+        if (textImage->font == 8 || textImage->font == 14) // Change to 8 or 14 if these are set
+            fontHeight = textImage->font;
 
-    // TODO: Implement graphics mode rendering
+        int32_t dstX, dstY, srcX, srcY;                // Destination & source x and y
+        auto dstXmax = x + (rx - lx + 1) * fontWidth;  // This is our max X position + 1 on write_page (in pixels)
+        auto dstYmax = y + (by - ty + 1) * fontHeight; // This is our max Y position + 1 on write_page (in pixels)
+
+        uint8_t const *builtinFont; // Pointer to the built-in font
+
+        if (write_page->bits_per_pixel == 32) // 32bpp BGRA destination
+        {
+            auto dstData = write_page->offset32; // Destination data
+
+            for (dstY = y, srcY = ty; dstY < dstYmax; dstY += fontHeight, srcY++)
+            {
+                for (dstX = x, srcX = lx; dstX < dstXmax; dstX += fontWidth, srcX++)
+                {
+                    auto pixelValue = srcData[textImage->width * srcY + srcX]; // Get "pixel" value
+                    if (pixelValue != textImage->transparent_color)            // Set only if not transparent
+                    {
+                        auto c = (uint8_t)(pixelValue & 0xFF);                                   // Get the codepoint
+                        pixelValue >>= 8;                                                        // Discard the codepoint
+                        auto fc = (uint8_t)(pixelValue & 0x0F);                                  // Get the foreground color
+                        auto bc = (uint8_t)(((pixelValue >> 4) & 7) + ((pixelValue >> 7) << 3)); // Get the background color
+
+                        switch (fontHeight)
+                        {
+                        case 8:
+                            builtinFont = &charset8x8[c][0][0];
+                            break;
+
+                        case 14:
+                            builtinFont = &charset8x16[c][1][0];
+                            break;
+
+                        default: // 16
+                            builtinFont = &charset8x16[c][0][0];
+                        }
+
+                        // Inner codepoint rendering loop
+                        for (auto dy = dstY, py = 0; py < fontHeight; dy++, py++)
+                        {
+                            if (dy < 0 || dy >= write_page->height)
+                            {
+                                builtinFont += fontWidth; // We need to do this else we'll get rendering issues
+                                continue;                 // Skip out-of-bounds rows
+                            }
+
+                            for (auto dx = dstX, px = 0; px < fontWidth; dx++, px++, builtinFont++)
+                            {
+                                if (dx < 0 || dx >= write_page->width)
+                                    continue; //  Skip out-of-bounds columns
+
+                                // We could do alpha-blending here with pset_and_clip() but then it would make it dead slow
+                                dstData[write_page->width * dy + dx] = *builtinFont ? textImage->pal[fc] : textImage->pal[bc];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else // 8bpp, 4bpp, 2bpp destination
+        {
+            auto dstData = write_page->offset; // Destination data
+
+            for (dstY = y, srcY = ty; dstY < dstYmax; dstY += fontHeight, srcY++)
+            {
+                for (dstX = x, srcX = lx; dstX < dstXmax; dstX += fontWidth, srcX++)
+                {
+                    auto pixelValue = srcData[textImage->width * srcY + srcX]; // Get "pixel" value
+                    if (pixelValue != textImage->transparent_color)            // Set only if not transparent
+                    {
+                        auto c = (uint8_t)(pixelValue & 0xFF);                                   // Get the codepoint
+                        pixelValue >>= 8;                                                        // Discard the codepoint
+                        auto fc = (uint8_t)(pixelValue & 0x0F);                                  // Get the foreground color
+                        auto bc = (uint8_t)(((pixelValue >> 4) & 7) + ((pixelValue >> 7) << 3)); // Get the background color
+
+                        switch (fontHeight)
+                        {
+                        case 8:
+                            builtinFont = &charset8x8[c][0][0];
+                            break;
+
+                        case 14:
+                            builtinFont = &charset8x16[c][1][0];
+                            break;
+
+                        default: // 16
+                            builtinFont = &charset8x16[c][0][0];
+                        }
+
+                        // Inner codepoint rendering loop
+                        for (auto dy = dstY, py = 0; py < fontHeight; dy++, py++)
+                        {
+                            if (dy < 0 || dy >= write_page->height)
+                            {
+                                builtinFont += fontWidth; // We need to do this else we'll get rendering issues
+                                continue;                 // Skip out-of-bounds rows
+                            }
+
+                            for (auto dx = dstX, px = 0; px < fontWidth; dx++, px++, builtinFont++)
+                            {
+                                if (dx < 0 || dx >= write_page->width)
+                                    continue; //  Skip out-of-bounds columns
+
+                                // No palette matching is done for performance reasons
+                                dstData[write_page->width * dy + dx] = *builtinFont ? fc : bc;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

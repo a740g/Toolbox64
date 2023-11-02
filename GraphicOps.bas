@@ -121,9 +121,12 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     'DIM txtImg AS LONG: txtImg = _NEWIMAGE(9, 9, 0)
     'PRINT txtImg
 
-    '_DEST txtImg
+    '_DEST txtImg: _FONT 8 ' Switch to 8x8 font
     'Graphics_DrawFilledCircle 4, 4, 4, Graphics_MakeTextColorAttribute(3, 1, 14)
+    'Graphics_DrawFilledRectangle 0, 0, 9, 9, Graphics_MakeTextColorAttribute(3, 1, 14)
     '_DEST 0
+
+    'Graphics_SetTextImageClearColor txtImg, Graphics_MakeTextColorAttribute(3, 1, 14)
 
     'DO
     '    DIM AS LONG x, y
@@ -135,7 +138,11 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
     '    CLS
 
-    '    Graphics_PutTextImage txtImg, x, y
+    '    IF _PIXELSIZE = 0 THEN
+    '        Graphics_PutTextImage txtImg, x - 5, y - 5
+    '    ELSE
+    '        Graphics_PutTextImage txtImg, x - 36, y - 36
+    '    END IF
 
     '    _DISPLAY
 
