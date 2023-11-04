@@ -296,7 +296,7 @@ $IF GRAPHICOPS_BI = UNDEFINED THEN
     END TYPE
 
     DECLARE LIBRARY "GraphicOps"
-        SUB Graphics_SetPixel (BYVAL x AS LONG, BYVAL y AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
+        SUB Graphics_DrawPixel (BYVAL x AS LONG, BYVAL y AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
         FUNCTION Graphics_MakeTextColorAttribute~% (BYVAL character AS _UNSIGNED _BYTE, BYVAL fColor AS _UNSIGNED _BYTE, BYVAL bColor AS _UNSIGNED _BYTE)
         FUNCTION Graphics_MakeDefaultTextColorAttribute~% (BYVAL character AS _UNSIGNED _BYTE)
         SUB Graphics_SetForegroundColor (BYVAL fColor AS _UNSIGNED LONG)

@@ -102,7 +102,7 @@ inline static void _Graphics_SelectSetPixelFunction()
 /// @param x The x position
 /// @param y The y position
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
-inline void Graphics_SetPixel(int32_t x, int32_t y, uint32_t clrAtr)
+inline void Graphics_DrawPixel(int32_t x, int32_t y, uint32_t clrAtr)
 {
     _Graphics_SelectSetPixelFunction();
     _Graphics_SetPixelInternal(x, y, clrAtr);
@@ -482,7 +482,7 @@ void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t cl
     // Special case: draw a single pixel if the radius is < zero
     if (radius <= 0)
     {
-        Graphics_SetPixel(x, y, clrAtr);
+        Graphics_DrawPixel(x, y, clrAtr);
         return;
     }
 
@@ -660,7 +660,7 @@ void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, ui
     // Special case if both rx and ry are <= zero: draw a single pixel
     if (rx <= 0 && ry <= 0)
     {
-        Graphics_SetPixel(x, y, clrAtr);
+        Graphics_DrawPixel(x, y, clrAtr);
         return;
     }
 
