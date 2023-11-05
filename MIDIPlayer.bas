@@ -64,7 +64,7 @@ $IF MIDIPLAYER_BAS = UNDEFINED THEN
 
         ' Allocate a 40 ms mixer buffer and ensure we round down to power of 2
         ' Power of 2 above is required by most FFT functions
-        __MIDI_Player.soundBufferFrames = RoundLongDownToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
+        __MIDI_Player.soundBufferFrames = Math_RoundDownLongToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
         __MIDI_Player.soundBufferSamples = __MIDI_Player.soundBufferFrames * __MIDI_SOUND_BUFFER_CHANNELS ' buffer samples
         __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferSamples * __MIDI_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
         REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer

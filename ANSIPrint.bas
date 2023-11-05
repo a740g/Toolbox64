@@ -19,6 +19,10 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 32)
+    'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 9)
+    'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 12)
+    'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 13)
+    'SCREEN _NEWIMAGE(80, 28, 0)
     '_FONT 16
 
     'DO
@@ -27,10 +31,9 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
     '    DIM fh AS LONG: fh = FREEFILE
     '    OPEN ansFile FOR BINARY ACCESS READ AS fh
-    '    COLOR BGRA_DARKGRAY, BGRA_BLACK
+    '    COLOR _RGB(170, 170, 170), _RGB(0, 0, 0)
     '    CLS
-    '    ResetANSIEmulator
-    '    PrintANSI INPUT$(LOF(fh), fh)
+    '    ANSI_Print INPUT$(LOF(fh), fh)
     '    CLOSE fh
     '    _TITLE "Press any key to open another file...": SLEEP 3600
     'LOOP
@@ -39,53 +42,50 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Initializes library global variables and tables and then sets the init flag to true
-    SUB InitializeANSIEmulator
+    SUB ANSI_InitializeEmulator
         SHARED __ANSIEmu AS __ANSIEmulatorType
-        SHARED __ANSIColorLUT() AS _UNSIGNED LONG
+        SHARED __ANSIColorLUT() AS BGRType
         SHARED __ANSIArg() AS LONG
 
         IF __ANSIEmu.isInitialized THEN EXIT SUB ' leave if we have already initialized
 
-        IF _PIXELSIZE < 4 THEN ERROR ERROR_FEATURE_UNAVAILABLE ' we only support rendering to 32bpp images
+        ' The first 16 are the standard 16 ANSI colors (matches QB64's VGA palette but with different color indices!)
+        __ANSIColorLUT(0).r = 0: __ANSIColorLUT(0).g = 0: __ANSIColorLUT(0).b = 0 '          0:  _RGB32(0,   0,   0)   (black)
+        __ANSIColorLUT(1).r = 170: __ANSIColorLUT(1).g = 0: __ANSIColorLUT(1).b = 0 '        1:  _RGB32(170, 0,   0)   (red)
+        __ANSIColorLUT(2).r = 0: __ANSIColorLUT(2).g = 170: __ANSIColorLUT(2).b = 0 '        2:  _RGB32(0,   170, 0)   (green)
+        __ANSIColorLUT(3).r = 170: __ANSIColorLUT(3).g = 85: __ANSIColorLUT(3).b = 0 '       3:  _RGB32(170, 85,  0)   (brown)
+        __ANSIColorLUT(4).r = 0: __ANSIColorLUT(4).g = 0: __ANSIColorLUT(4).b = 170 '        4:  _RGB32(0,   0,   170) (blue)
+        __ANSIColorLUT(5).r = 170: __ANSIColorLUT(5).g = 0: __ANSIColorLUT(5).b = 170 '      5:  _RGB32(170, 0,   170) (magenta)
+        __ANSIColorLUT(6).r = 0: __ANSIColorLUT(6).g = 170: __ANSIColorLUT(6).b = 170 '      6:  _RGB32(0,   170, 170) (cyan)
+        __ANSIColorLUT(7).r = 170: __ANSIColorLUT(7).g = 170: __ANSIColorLUT(7).b = 170 '    7:  _RGB32(170, 170, 170) (white)
+        __ANSIColorLUT(8).r = 85: __ANSIColorLUT(8).g = 85: __ANSIColorLUT(8).b = 85 '       8:  _RGB32(85,  85,  85)  (grey)
+        __ANSIColorLUT(9).r = 255: __ANSIColorLUT(9).g = 85: __ANSIColorLUT(9).b = 85 '      9:  _RGB32(255, 85,  85)  (bright red)
+        __ANSIColorLUT(10).r = 85: __ANSIColorLUT(10).g = 255: __ANSIColorLUT(10).b = 85 '   10: _RGB32(85,  255, 85)  (bright green)
+        __ANSIColorLUT(11).r = 255: __ANSIColorLUT(11).g = 255: __ANSIColorLUT(11).b = 85 '  11: _RGB32(255, 255, 85)  (bright yellow)
+        __ANSIColorLUT(12).r = 85: __ANSIColorLUT(12).g = 85: __ANSIColorLUT(12).b = 255 '   12: _RGB32(85,  85,  255) (bright blue)
+        __ANSIColorLUT(13).r = 255: __ANSIColorLUT(13).g = 85: __ANSIColorLUT(13).b = 255 '  13: _RGB32(255, 85,  255) (bright magenta)
+        __ANSIColorLUT(14).r = 85: __ANSIColorLUT(14).g = 255: __ANSIColorLUT(14).b = 255 '  14: _RGB32(85,  255, 255) (bright cyan)
+        __ANSIColorLUT(15).r = 255: __ANSIColorLUT(15).g = 255: __ANSIColorLUT(15).b = 255 ' 15: _RGB32(255, 255, 255) (bright white)
 
-        DIM AS LONG c, i, r, g, b
-
-        ' The first 16 are the standard 16 ANSI colors (VGA style)
-        __ANSIColorLUT(0) = _RGB32(0, 0, 0) ' 0 black
-        __ANSIColorLUT(1) = _RGB32(170, 0, 0) '  1 red
-        __ANSIColorLUT(2) = _RGB32(0, 170, 0) '  2 green
-        __ANSIColorLUT(3) = _RGB32(170, 85, 0) '  3 yellow (not really yellow; oh well)
-        __ANSIColorLUT(4) = _RGB32(0, 0, 170) '  4 blue
-        __ANSIColorLUT(5) = _RGB32(170, 0, 170) '  5 magenta
-        __ANSIColorLUT(6) = _RGB32(0, 170, 170) '  6 cyan
-        __ANSIColorLUT(7) = _RGB32(170, 170, 170) ' white
-        __ANSIColorLUT(8) = _RGB32(85, 85, 85) '  8 grey
-        __ANSIColorLUT(9) = _RGB32(255, 85, 85) '  9 bright red
-        __ANSIColorLUT(10) = _RGB32(85, 255, 85) ' 10 bright green
-        __ANSIColorLUT(11) = _RGB32(255, 255, 85) ' 11 bright yellow
-        __ANSIColorLUT(12) = _RGB32(85, 85, 255) ' 12 bright blue
-        __ANSIColorLUT(13) = _RGB32(255, 85, 255) ' 13 bright magenta
-        __ANSIColorLUT(14) = _RGB32(85, 255, 255) ' 14 bright cyan
-        __ANSIColorLUT(15) = _RGB32(255, 255, 255) ' 15 bright white
-
-        ' The next 216 colors (16-231) are formed by a 3bpc RGB value offset by 16, packed into a single value
+        ' The next 216 colors (16 - 231) are formed by a 3bpc RGB value offset by 16
+        DIM AS LONG c, i
         FOR c = 16 TO 231
             i = ((c - 16) \ 36) MOD 6
-            IF i = 0 THEN r = 0 ELSE r = (14135 + 10280 * i) \ 256
+            IF i = 0 THEN __ANSIColorLUT(c).r = 0 ELSE __ANSIColorLUT(c).r = (14135 + 10280 * i) \ 256
 
             i = ((c - 16) \ 6) MOD 6
-            IF i = 0 THEN g = 0 ELSE g = (14135 + 10280 * i) \ 256
+            IF i = 0 THEN __ANSIColorLUT(c).g = 0 ELSE __ANSIColorLUT(c).g = (14135 + 10280 * i) \ 256
 
             i = ((c - 16) \ 1) MOD 6
-            IF i = 0 THEN b = 0 ELSE b = (14135 + 10280 * i) \ 256
-
-            __ANSIColorLUT(c) = _RGB32(r, g, b)
+            IF i = 0 THEN __ANSIColorLUT(c).b = 0 ELSE __ANSIColorLUT(c).b = (14135 + 10280 * i) \ 256
         NEXT
 
-        ' The final 24 colors (232-255) are grayscale starting from a shade slighly lighter than black, ranging up to shade slightly darker than white
+        ' The final 24 colors (232 - 255) are grayscale starting from a shade slighly lighter than black, ranging up to shade slightly darker than white
         FOR c = 232 TO 255
-            g = (2056 + 2570 * (c - 232)) \ 256
-            __ANSIColorLUT(c) = _RGB32(g, g, g)
+            i = (2056 + 2570 * (c - 232)) \ 256
+            __ANSIColorLUT(c).r = i
+            __ANSIColorLUT(c).g = i
+            __ANSIColorLUT(c).b = i
         NEXT
 
         REDIM __ANSIArg(1 TO UBOUND(__ANSIArg)) AS LONG ' reset the CSI arg list
@@ -95,9 +95,9 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
         ' Reset the foreground and background color
         __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
-        SetANSICanvasColor __ANSIEmu.fC, FALSE, TRUE
+        ANSI_SetTextCanvasColor __ANSIEmu.fC, FALSE, TRUE
         __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
-        SetANSICanvasColor __ANSIEmu.bC, TRUE, TRUE
+        ANSI_SetTextCanvasColor __ANSIEmu.bC, TRUE, TRUE
 
         ' Reset text attributes
         __ANSIEmu.isBold = FALSE
@@ -114,33 +114,42 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
         __ANSIEmu.CPS = 0 ' disable any speed control
 
+        IF _PIXELSIZE = 0 THEN
+            _BLINK OFF ' use ICE colors
+        ELSE
+            _PRINTMODE _FILLBACKGROUND ' set _PRINTMODE to fill the background for graphics mode
+        END IF
+
         _CONTROLCHR ON ' get assist from QB64's control character handling (only for tabs; we are pretty much doing the rest ourselves)
 
         __ANSIEmu.isInitialized = TRUE ' set to true to indicate init is done
     END SUB
 
+
     ' This simply resets the emulator to a clean state
-    SUB ResetANSIEmulator
+    SUB ANSI_ResetEmulator
         SHARED __ANSIEmu AS __ANSIEmulatorType
 
         __ANSIEmu.isInitialized = FALSE ' set the init flag to false
-        InitializeANSIEmulator ' call the init routine
+        ANSI_InitializeEmulator ' call the init routine
     END SUB
+
 
     ' Sets the emulation speed
     ' nCPS - characters / second (bigger numbers means faster; <= 0 to disable)
-    SUB SetANSIEmulationSpeed (nCPS AS LONG)
+    SUB ANSI_SetEmulationSpeed (nCPS AS LONG)
         SHARED __ANSIEmu AS __ANSIEmulatorType
 
         __ANSIEmu.CPS = nCPS
     END SUB
 
+
     ' Processes a single byte and decides what to do with it based on the current emulation state
-    FUNCTION PrintANSICharacter& (ch AS _UNSIGNED _BYTE)
+    FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
         SHARED __ANSIEmu AS __ANSIEmulatorType
         SHARED __ANSIArg() AS LONG
 
-        PrintANSICharacter& = TRUE ' by default we will return true to tell the caller to keep going
+        ANSI_PrintCharacter = TRUE ' by default we will return true to tell the caller to keep going
 
         DIM AS LONG x, y, z ' temp variables used in many places (usually as counter / index)
 
@@ -158,7 +167,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                         IF x > 0 THEN LOCATE , x ' move to the left only if we are not on the edge
 
                     CASE ANSI_LF ' handle Line Feed (including EOL CRLF special case)
-                        PRINT STRING$(1 - (ANSI_CR = __ANSIEmu.lastChar AND GetANSICanvasWidth = __ANSIEmu.lastCharX), ch);
+                        PRINT STRING$(1 - (ANSI_CR = __ANSIEmu.lastChar AND ANSI_GetTextCanvasWidth = __ANSIEmu.lastCharX), ch);
 
                     CASE ANSI_FF ' handle Form Feed - because QB64 does not (even with ControlChr On)
                         LOCATE 1, 1
@@ -286,18 +295,18 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                 SELECT CASE __ANSIArg(1)
                                     CASE 0 ' clear from cursor to end of screen
-                                        ClearANSICanvasArea POS(0), CSRLIN, GetANSICanvasWidth, CSRLIN ' first clear till the end of the line starting from the cursor
-                                        ClearANSICanvasArea 1, CSRLIN + 1, GetANSICanvasWidth, GetANSICanvasHeight ' next clear the whole canvas below the cursor
+                                        ANSI_ClearTextCanvasArea POS(0), CSRLIN, ANSI_GetTextCanvasWidth, CSRLIN ' first clear till the end of the line starting from the cursor
+                                        ANSI_ClearTextCanvasArea 1, CSRLIN + 1, ANSI_GetTextCanvasWidth, ANSI_GetTextCanvasHeight ' next clear the whole canvas below the cursor
 
                                     CASE 1 ' clear from cursor to beginning of the screen
-                                        ClearANSICanvasArea 1, CSRLIN, POS(0), CSRLIN ' first clear from the beginning of the line till the cursor
-                                        ClearANSICanvasArea 1, 1, GetANSICanvasWidth, CSRLIN - 1 ' next clear the whole canvas above the cursor
+                                        ANSI_ClearTextCanvasArea 1, CSRLIN, POS(0), CSRLIN ' first clear from the beginning of the line till the cursor
+                                        ANSI_ClearTextCanvasArea 1, 1, ANSI_GetTextCanvasWidth, CSRLIN - 1 ' next clear the whole canvas above the cursor
 
                                     CASE 2 ' clear entire screen (and moves cursor to upper left like ANSI.SYS)
                                         CLS
 
                                     CASE 3 ' clear entire screen and delete all lines saved in the scrollback buffer (scrollback stuff not supported)
-                                        ClearANSICanvasArea 1, 1, GetANSICanvasWidth, GetANSICanvasHeight
+                                        ANSI_ClearTextCanvasArea 1, 1, ANSI_GetTextCanvasWidth, ANSI_GetTextCanvasHeight
 
                                     CASE ELSE ' throw an error for stuff we are not handling
                                         ERROR ERROR_FEATURE_UNAVAILABLE
@@ -309,13 +318,13 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                 SELECT CASE __ANSIArg(1)
                                     CASE 0 ' erase from cursor to end of line
-                                        ClearANSICanvasArea POS(0), CSRLIN, GetANSICanvasWidth, CSRLIN
+                                        ANSI_ClearTextCanvasArea POS(0), CSRLIN, ANSI_GetTextCanvasWidth, CSRLIN
 
                                     CASE 1 ' erase start of line to the cursor
-                                        ClearANSICanvasArea 1, CSRLIN, POS(0), CSRLIN
+                                        ANSI_ClearTextCanvasArea 1, CSRLIN, POS(0), CSRLIN
 
                                     CASE 2 ' erase the entire line
-                                        ClearANSICanvasArea 1, CSRLIN, GetANSICanvasWidth, CSRLIN
+                                        ANSI_ClearTextCanvasArea 1, CSRLIN, ANSI_GetTextCanvasWidth, CSRLIN
 
                                     CASE ELSE ' throw an error for stuff we are not handling
                                         ERROR ERROR_FEATURE_UNAVAILABLE
@@ -333,18 +342,18 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                                             __ANSIEmu.isBold = FALSE
                                             __ANSIEmu.isBlink = FALSE
                                             __ANSIEmu.isInvert = FALSE
-                                            SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
-                                            SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE 1 ' enable high intensity colors
                                             IF __ANSIEmu.fC < 8 THEN __ANSIEmu.fC = __ANSIEmu.fC + 8
                                             __ANSIEmu.isBold = TRUE
-                                            SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                         CASE 2, 22 ' enable low intensity, disable high intensity colors
                                             IF __ANSIEmu.fC > 7 THEN __ANSIEmu.fC = __ANSIEmu.fC - 8
                                             __ANSIEmu.isBold = FALSE
-                                            SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                         CASE 3, 4, 23, 24 ' set / reset italic & underline mode ignored
                                             ' NOP: This can be used if we load monospaced TTF fonts using 'italics', 'underline' properties
@@ -352,44 +361,44 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                                         CASE 5, 6 ' turn blinking on
                                             IF __ANSIEmu.bC < 8 THEN __ANSIEmu.bC = __ANSIEmu.bC + 8
                                             __ANSIEmu.isBlink = TRUE
-                                            SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE 7 ' enable reverse video
                                             IF NOT __ANSIEmu.isInvert THEN
                                                 __ANSIEmu.isInvert = TRUE
-                                                SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
-                                                SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
                                             END IF
 
                                         CASE 25 ' turn blinking off
                                             IF __ANSIEmu.bC > 7 THEN __ANSIEmu.bC = __ANSIEmu.bC - 8
                                             __ANSIEmu.isBlink = FALSE
-                                            SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE 27 ' disable reverse video
                                             IF __ANSIEmu.isInvert THEN
                                                 __ANSIEmu.isInvert = FALSE
-                                                SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
-                                                SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
                                             END IF
 
                                         CASE 30 TO 37 ' set foreground color
                                             __ANSIEmu.fC = __ANSIArg(x) - 30
                                             IF __ANSIEmu.isBold THEN __ANSIEmu.fC = __ANSIEmu.fC + 8
-                                            SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                         CASE 38 ' set 8-bit 256 or 24-bit RGB foreground color
                                             z = __ANSIEmu.argIndex - x ' get the number of arguments remaining
 
                                             IF __ANSIArg(x + 1) = 2 AND z >= 4 THEN ' 32bpp color with 5 arguments
                                                 __ANSIEmu.fC = _RGB32(__ANSIArg(x + 2) AND &HFF, __ANSIArg(x + 3) AND &HFF, __ANSIArg(x + 4) AND &HFF)
-                                                SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, FALSE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, FALSE
 
                                                 x = x + 4 ' skip to last used arg
 
                                             ELSEIF __ANSIArg(x + 1) = 5 AND z >= 2 THEN ' 256 color with 3 arguments
                                                 __ANSIEmu.fC = __ANSIArg(x + 2)
-                                                SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                                 x = x + 2 ' skip to last used arg
 
@@ -400,25 +409,25 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                         CASE 39 ' set default foreground color
                                             __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
-                                            SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                         CASE 40 TO 47 ' set background color
                                             __ANSIEmu.bC = __ANSIArg(x) - 40
                                             IF __ANSIEmu.isBlink THEN __ANSIEmu.bC = __ANSIEmu.bC + 8
-                                            SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE 48 ' set 8-bit 256 or 24-bit RGB background color
                                             z = __ANSIEmu.argIndex - x ' get the number of arguments remaining
 
                                             IF __ANSIArg(x + 1) = 2 AND z >= 4 THEN ' 32bpp color with 5 arguments
                                                 __ANSIEmu.bC = _RGB32(__ANSIArg(x + 2) AND &HFF, __ANSIArg(x + 3) AND &HFF, __ANSIArg(x + 4) AND &HFF)
-                                                SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, FALSE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, FALSE
 
                                                 x = x + 4 ' skip to last used arg
 
                                             ELSEIF __ANSIArg(x + 1) = 5 AND z >= 2 THEN ' 256 color with 3 arguments
                                                 __ANSIEmu.bC = __ANSIArg(x + 2)
-                                                SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                                ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                                 x = x + 2 ' skip to last used arg
 
@@ -429,15 +438,15 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                         CASE 49 ' set default background color
                                             __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
-                                            SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE 90 TO 97 ' set high intensity foreground color
                                             __ANSIEmu.fC = 8 + __ANSIArg(x) - 90
-                                            SetANSICanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
 
                                         CASE 100 TO 107 ' set high intensity background color
                                             __ANSIEmu.bC = 8 + __ANSIArg(x) - 100
-                                            SetANSICanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
 
                                         CASE ELSE ' throw an error for stuff we are not handling
                                             ERROR ERROR_FEATURE_UNAVAILABLE
@@ -461,19 +470,19 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                             CASE ANSI_ESC_CSI_PABLODRAW_24BPP ' PabloDraw 24-bit ANSI sequences
                                 IF __ANSIEmu.argIndex <> 4 THEN ERROR ERROR_CANNOT_CONTINUE ' we need 4 arguments
 
-                                SetANSICanvasColor _RGB32(__ANSIArg(2) AND &HFF, __ANSIArg(3) AND &HFF, __ANSIArg(4) AND &HFF), __ANSIArg(1) = FALSE, FALSE
+                                ANSI_SetTextCanvasColor _RGB32(__ANSIArg(2) AND &HFF, __ANSIArg(3) AND &HFF, __ANSIArg(4) AND &HFF), __ANSIArg(1) = FALSE, FALSE
 
                             CASE ANSI_ESC_CSI_CUP, ANSI_ESC_CSI_HVP ' Cursor position or Horizontal and vertical position
                                 IF __ANSIEmu.argIndex > 2 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 2 args
 
-                                y = GetANSICanvasHeight
+                                y = ANSI_GetTextCanvasHeight
                                 IF __ANSIArg(1) < 1 THEN
                                     __ANSIArg(1) = 1
                                 ELSEIF __ANSIArg(1) > y THEN
                                     __ANSIArg(1) = y
                                 END IF
 
-                                x = GetANSICanvasWidth
+                                x = ANSI_GetTextCanvasWidth
                                 IF __ANSIArg(2) < 1 THEN
                                     __ANSIArg(2) = 1
                                 ELSEIF __ANSIArg(2) > x THEN
@@ -495,7 +504,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                 IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                                 y = CSRLIN + __ANSIArg(1)
-                                z = GetANSICanvasHeight
+                                z = ANSI_GetTextCanvasHeight
                                 IF y > z THEN y = z
                                 LOCATE y
 
@@ -504,7 +513,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                 IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                                 x = POS(0) + __ANSIArg(1)
-                                z = GetANSICanvasWidth
+                                z = ANSI_GetTextCanvasWidth
                                 IF x > z THEN x = z
                                 LOCATE , x
 
@@ -521,7 +530,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
                                 IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                                 y = CSRLIN + __ANSIArg(1)
-                                z = GetANSICanvasHeight
+                                z = ANSI_GetTextCanvasHeight
                                 IF y > z THEN y = z
                                 LOCATE y, 1
 
@@ -536,7 +545,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                             CASE ANSI_ESC_CSI_CHA ' Cursor Horizontal Absolute
                                 IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
-                                x = GetANSICanvasWidth
+                                x = ANSI_GetTextCanvasWidth
                                 IF __ANSIArg(1) < 1 THEN
                                     __ANSIArg(1) = 1
                                 ELSEIF __ANSIArg(1) > x THEN
@@ -547,7 +556,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                             CASE ANSI_ESC_CSI_VPA ' Vertical Line Position Absolute
                                 IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
-                                y = GetANSICanvasHeight
+                                y = ANSI_GetTextCanvasHeight
                                 IF __ANSIArg(1) < 1 THEN
                                     __ANSIArg(1) = 1
                                 ELSEIF __ANSIArg(1) > y THEN
@@ -587,7 +596,7 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
                 END SELECT
 
             CASE __ANSI_STATE_END ' end of the stream has been reached
-                PrintANSICharacter& = FALSE ' tell the caller the we should stop processing the rest of the stream
+                ANSI_PrintCharacter = FALSE ' tell the caller the we should stop processing the rest of the stream
                 EXIT FUNCTION ' and then leave
 
             CASE ELSE ' this should never happen
@@ -598,77 +607,118 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
         __ANSIEmu.lastChar = ch ' save the character
     END FUNCTION
 
+
     ' Processes the whole string instead of a character like PrintANSICharacter()
     ' This simply wraps PrintANSICharacter()
-    FUNCTION PrintANSIString& (s AS STRING)
-        DIM AS LONG i
+    ' It returns True when EOF is encountered
+    FUNCTION ANSI_PrintString%% (s AS STRING)
+        ANSI_PrintString = TRUE
 
-        PrintANSIString = TRUE
-
-        FOR i = 1 TO LEN(s)
-            IF NOT PrintANSICharacter(ASC(s, i)) THEN
-                PrintANSIString = FALSE ' signal end of stream
+        DIM AS LONG i: FOR i = 1 TO LEN(s)
+            IF NOT ANSI_PrintCharacter(ASC(s, i)) THEN
+                ANSI_PrintString = FALSE ' signal end of stream
                 EXIT FUNCTION
             END IF
-        NEXT
+        NEXT i
     END FUNCTION
+
 
     ' A simple routine that wraps pretty much the whole library
     ' It will reset the library, do the setup and then render the whole ANSI string in one go
-    ' ControlChr is properly restored
-    SUB PrintANSI (sANSI AS STRING)
-        DIM AS LONG oldControlChr ' to save old ContolChr
+    ' _PRINTMODE and _CONTROLCHR is properly restored
+    SUB ANSI_Print (sANSI AS STRING)
+        ' Save _PRINTMODE (if not in SCREEN 0)
+        IF _PIXELSIZE <> 0 THEN
+            DIM pm AS LONG: pm = _PRINTMODE
+        END IF
 
-        ' Save the old ControlChr state
-        oldControlChr = _CONTROLCHR
+        ' Save _CONTROLCHR
+        DIM cc AS LONG: cc = _CONTROLCHR
 
-        ResetANSIEmulator ' reset the emulator
+        ANSI_ResetEmulator ' reset the emulator
 
-        DIM dummy AS LONG: dummy = PrintANSIString(sANSI) ' print the ANSI string and ignore the return value
+        DIM dummy AS _BYTE: dummy = ANSI_PrintString(sANSI) ' print the ANSI string and ignore the return value
 
-        ' Set ControlChr the way we found it
-        IF oldControlChr THEN
+        ' Set _CONTROLCHR the way we found it
+        ' Ewww :(
+        IF cc THEN
             _CONTROLCHR OFF
         ELSE
             _CONTROLCHR ON
         END IF
+
+        ' Set _PRINTMODE the way we found it (if not in SCREEN 0)
+        IF _PIXELSIZE <> 0 THEN
+            ' Ewww :(
+            SELECT CASE pm
+                CASE 1
+                    _PRINTMODE _KEEPBACKGROUND
+
+                CASE 2
+                    _PRINTMODE _ONLYBACKGROUND
+
+                CASE ELSE
+                    _PRINTMODE _FILLBACKGROUND
+            END SELECT
+        END IF
     END SUB
 
+
     ' Set the foreground or background color
-    SUB SetANSICanvasColor (c AS _UNSIGNED LONG, isBackground AS LONG, isLegacy AS LONG)
-        SHARED __ANSIColorLUT() AS _UNSIGNED LONG
+    SUB ANSI_SetTextCanvasColor (c AS _UNSIGNED LONG, isBackground AS LONG, isLegacy AS LONG)
+        SHARED __ANSIColorLUT() AS BGRType
 
         DIM nRGB AS _UNSIGNED LONG
 
+        ' Use _RGB to get the closest matching color index for palatted mode
+        ' For 32-bit surfaces, it will simply return the 32-bit BGRA color passed
+        ' This way we can support all types of modes (i.e. SCREEN 0 - 13 and 32-bit)
+        ' Note that this will obviously hurt performance. But then, does it really matter?
         IF isLegacy THEN
-            nRGB = __ANSIColorLUT(c)
+            nRGB = _RGB(__ANSIColorLUT(c).r, __ANSIColorLUT(c).g, __ANSIColorLUT(c).b)
         ELSE
-            nRGB = c
+            nRGB = _RGB(_RED32(c), _GREEN32(c), _BLUE32(c))
         END IF
 
+        ' Graphics_SetBackgroundColor & Graphics_SetForegroundColor has the logic to deal with SCREEN 0 color nonsense
         IF isBackground THEN
-            ' Echo "Background color" + Str$(c) + " (" + Hex$(nRGB) + ")"
-            COLOR , nRGB
+            Graphics_SetBackgroundColor nRGB
         ELSE
-            ' Echo "Foreground color" + Str$(c) + " (" + Hex$(nRGB) + ")"
-            COLOR nRGB
+            Graphics_SetForegroundColor nRGB
         END IF
     END SUB
 
+
     ' Returns the number of characters per line
-    FUNCTION GetANSICanvasWidth&
-        GetANSICanvasWidth = _WIDTH \ _FONTWIDTH ' this will cause a divide by zero if a variable width font is used; use monospaced fonts to avoid this
+    FUNCTION ANSI_GetTextCanvasWidth&
+        IF _PIXELSIZE = 0 THEN
+            ANSI_GetTextCanvasWidth = _WIDTH
+        ELSE
+            DIM fw AS LONG: fw = _FONTWIDTH
+            IF fw = 0 THEN
+                ANSI_GetTextCanvasWidth = _WIDTH \ _PRINTWIDTH("W") ' :(
+            ELSE
+                ANSI_GetTextCanvasWidth = _WIDTH \ fw
+            END IF
+        END IF
     END FUNCTION
+
 
     ' Returns the number of lines
-    FUNCTION GetANSICanvasHeight&
-        GetANSICanvasHeight = _HEIGHT \ _FONTHEIGHT
+    FUNCTION ANSI_GetTextCanvasHeight&
+        IF _PIXELSIZE = 0 THEN
+            ANSI_GetTextCanvasHeight = _HEIGHT
+        ELSE
+            ANSI_GetTextCanvasHeight = _HEIGHT \ _FONTHEIGHT
+        END IF
     END FUNCTION
 
+
     ' Clears a given portion of screen without disturbing the cursor location and colors
-    SUB ClearANSICanvasArea (l AS LONG, t AS LONG, r AS LONG, b AS LONG)
-        DIM AS LONG i, w, x, y
+    SUB ANSI_ClearTextCanvasArea (l AS LONG, t AS LONG, r AS LONG, b AS LONG)
+        DIM AS LONG i, w
         DIM AS _UNSIGNED LONG fc, bc
+        DIM blankLine AS STRING
 
         w = 1 + r - l ' calculate width
 
@@ -676,18 +726,17 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
             ' Save some stuff
             fc = _DEFAULTCOLOR
             bc = _BACKGROUNDCOLOR
-            x = POS(0)
-            y = CSRLIN
 
-            COLOR BGRA_BLACK, BGRA_BLACK ' lights out
+            blankLine = SPACE$(w) ' do this only once
+
+            COLOR _RGB(0, 0, 0), _RGB(0, 0, 0) ' lights out
 
             FOR i = t TO b
-                LOCATE i, l: PRINT SPACE$(w); ' fill with SPACE
-            NEXT
+                _PRINTSTRING (l, i), blankLine ' fill with SPACE
+            NEXT i
 
             ' Restore saved stuff
             COLOR fc, bc
-            LOCATE y, x
         END IF
     END SUB
 

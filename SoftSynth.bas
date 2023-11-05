@@ -265,7 +265,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
                         ' Get the frame to mix
                         __Voice(v).oldframe = __Voice(v).frame
-                        iPos = SingleToLong(__Voice(v).position)
+                        iPos = Math_SingleToLong(__Voice(v).position)
                         IF iPos < soundFrames THEN
                             __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), iPos)
                         END IF
@@ -372,7 +372,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
 
-        __Voice(voice).volume = ClampSingle(volume, 0!, SOFTSYNTH_VOICE_VOLUME_MAX)
+        __Voice(voice).volume = Math_ClampSingle(volume, 0!, SOFTSYNTH_VOICE_VOLUME_MAX)
         $CHECKING:ON
     END SUB
 
@@ -392,7 +392,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Voice() AS __VoiceType
 
-        __Voice(voice).balance = ClampSingle(balance * 0.5!, -0.5!, 0.5!)
+        __Voice(voice).balance = Math_ClampSingle(balance * 0.5!, -0.5!, 0.5!)
         $CHECKING:ON
     END SUB
 
@@ -486,7 +486,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SoftSynth AS __SoftSynthType
 
-        __SoftSynth.volume = ClampSingle(volume, 0!, SOFTSYNTH_GLOBAL_VOLUME_MAX)
+        __SoftSynth.volume = Math_ClampSingle(volume, 0!, SOFTSYNTH_GLOBAL_VOLUME_MAX)
         $CHECKING:ON
     END SUB
 

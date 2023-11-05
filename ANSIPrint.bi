@@ -110,7 +110,7 @@ $IF ANSIPRINT_BI = UNDEFINED THEN
         bC AS _UNSIGNED LONG ' background color
         isBold AS LONG ' text attributes - high intensity bg color
         isBlink AS LONG ' text attributes - we make this high intensity as well
-        isInvert AS LONG ' text attributes - inverted colors (fg <> bg)
+        isInvert AS LONG ' text attributes - inverted colors (fg <--> bg)
         posDEC AS Vector2LType ' DEC saved cursor position
         posSCO AS Vector2LType ' SCO saved cursor position
         lastChar AS _UNSIGNED _BYTE ' last character rendered
@@ -119,7 +119,7 @@ $IF ANSIPRINT_BI = UNDEFINED THEN
     END TYPE
 
     DIM __ANSIEmu AS __ANSIEmulatorType ' emulator state
-    DIM __ANSIColorLUT(0 TO 255) AS _UNSIGNED LONG ' this table is used to get the RGB for legacy ANSI colors
+    DIM __ANSIColorLUT(0 TO 255) AS BGRType ' this table is used to get the RGB for legacy ANSI colors
     REDIM __ANSIArg(1 TO __ANSI_ARG_COUNT) AS LONG ' CSI dynamic argument list
 
 $END IF
