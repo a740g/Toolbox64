@@ -332,17 +332,30 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
     END SUB
 
 
-    '  Loads an image in 8bpp or 32bpp and optionally sets a transparent color
-    FUNCTION Graphics_LoadImage& (fileName AS STRING, transparentColor AS _UNSIGNED LONG, is8bpp AS _BYTE, options AS STRING)
+    ' Loads an image and returns and image handle
+    ' fileName - filename or memory buffer of the image
+    ' is8bpp - image will be loaded as an 8-bit image if this is true (not supported by hardware images)
+    ' isHardware - image will be loaded as a hardware image (is8bpp must not be true for this to work)
+    ' otherOptions - other image loading options like "memory", "adaptive" and the various image scalers
+    ' transparentColor - if this is >= 0 then the color specified by this becomes the transparency color key
+    FUNCTION Graphics_LoadImage& (fileName AS STRING, is8bpp AS _BYTE, isHardware AS _BYTE, otherOptions AS STRING, transparentColor AS _INTEGER64)
         DIM handle AS LONG
 
         IF is8bpp THEN
-            handle = _LOADIMAGE(fileName, 256, options)
+            handle = _LOADIMAGE(fileName, 256, otherOptions)
         ELSE
-            handle = _LOADIMAGE(fileName, , options)
+            handle = _LOADIMAGE(fileName, 32, otherOptions)
         END IF
 
-        IF handle < -1 THEN _CLEARCOLOR transparentColor, handle
+        IF handle < -1 THEN
+            IF transparentColor >= 0 THEN _CLEARCOLOR transparentColor, handle
+
+            IF isHardware THEN
+                DIM handleHW AS LONG: handleHW = _COPYIMAGE(handle, 33)
+                _FREEIMAGE handle
+                handle = handleHW
+            END IF
+        END IF
 
         Graphics_LoadImage = handle
     END FUNCTION
