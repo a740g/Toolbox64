@@ -53,7 +53,7 @@ inline int32_t Math_GetRandomBetween(int32_t lo, int32_t hi)
 /// @return True if the value is NaN
 inline constexpr qb_bool Math_IsSingleNaN(float n)
 {
-    return TO_QB_BOOL(isnan(n));
+    return TO_QB_BOOL(std::isnan(n));
 }
 
 /// @brief Determines if the given floating point number arg is a not-a-number (NaN) value
@@ -61,7 +61,7 @@ inline constexpr qb_bool Math_IsSingleNaN(float n)
 /// @return True if the value is NaN
 inline constexpr qb_bool Math_IsDoubleNaN(double n)
 {
-    return TO_QB_BOOL(isnan(n));
+    return TO_QB_BOOL(std::isnan(n));
 }
 
 /// @brief Returns true if n is even
