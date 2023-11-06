@@ -695,11 +695,8 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
             ANSI_GetTextCanvasWidth = _WIDTH
         ELSE
             DIM fw AS LONG: fw = _FONTWIDTH
-            IF fw = 0 THEN
-                ANSI_GetTextCanvasWidth = _WIDTH \ _PRINTWIDTH("W") ' :(
-            ELSE
-                ANSI_GetTextCanvasWidth = _WIDTH \ fw
-            END IF
+            IF fw = 0 THEN fw = _PRINTWIDTH("W") ' :(
+            ANSI_GetTextCanvasWidth = _WIDTH \ fw
         END IF
     END FUNCTION
 
@@ -716,27 +713,26 @@ $IF ANSIPRINT_BAS = UNDEFINED THEN
 
     ' Clears a given portion of screen without disturbing the cursor location and colors
     SUB ANSI_ClearTextCanvasArea (l AS LONG, t AS LONG, r AS LONG, b AS LONG)
-        DIM AS LONG i, w
-        DIM AS _UNSIGNED LONG fc, bc
-        DIM blankLine AS STRING
-
-        w = 1 + r - l ' calculate width
+        DIM w AS LONG: w = 1 + r - l ' calculate width
 
         IF w > 0 AND t <= b THEN ' only proceed is width is > 0 and height is > 0
             ' Save some stuff
-            fc = _DEFAULTCOLOR
-            bc = _BACKGROUNDCOLOR
-
-            blankLine = SPACE$(w) ' do this only once
+            DIM fc AS _UNSIGNED LONG: fc = _DEFAULTCOLOR
+            DIM bc AS _UNSIGNED LONG: bc = _BACKGROUNDCOLOR
+            DIM x AS LONG: x = POS(0)
+            DIM y AS LONG: y = CSRLIN
 
             COLOR _RGB(0, 0, 0), _RGB(0, 0, 0) ' lights out
 
-            FOR i = t TO b
-                _PRINTSTRING (l, i), blankLine ' fill with SPACE
+            DIM blankLine AS STRING: blankLine = SPACE$(w) ' do this only once
+
+            DIM i AS LONG: FOR i = t TO b
+                LOCATE i, l: PRINT blankLine; ' fill with SPACE
             NEXT i
 
             ' Restore saved stuff
             COLOR fc, bc
+            LOCATE y, x
         END IF
     END SUB
 
