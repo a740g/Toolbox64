@@ -32,7 +32,7 @@ $IF DEFLATE_BAS = UNDEFINED THEN
 
     ' This uses Zopfli to compress the buffer using the Deflate method
     ' The buffer can then be decompressed using QB64's INFLATE$ command
-    ' compressionLevel can be 0 - 65535. 65535 is the highest compression level and 0 used the library default setting
+    ' compressionLevel can be 0 - 65535. 65535 is the highest compression level and 0 uses the library default setting
     FUNCTION DeflatePro$ (inputBuffer AS STRING, compressionLevel AS _UNSIGNED INTEGER)
         DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
 

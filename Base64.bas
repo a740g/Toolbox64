@@ -32,7 +32,7 @@ $IF BASE64_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Convert a normal string to a base64 string
-    FUNCTION EncodeBase64$ (s AS STRING)
+    FUNCTION Base64_Encode$ (s AS STRING)
         DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
 
         outputPtr = __MODP_B64_Encode(s, LEN(s), outputSize)
@@ -45,13 +45,13 @@ $IF BASE64_BAS = UNDEFINED THEN
 
             FreeMemory outputPtr
 
-            EncodeBase64 = outputBuffer
+            Base64_Encode = outputBuffer
         END IF
     END FUNCTION
 
 
     ' Convert a base64 string to a normal string
-    FUNCTION DecodeBase64$ (s AS STRING)
+    FUNCTION Base64_Decode$ (s AS STRING)
         DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
 
         outputPtr = __MODP_B64_Decode(s, LEN(s), outputSize)
@@ -64,7 +64,7 @@ $IF BASE64_BAS = UNDEFINED THEN
 
             FreeMemory outputPtr
 
-            DecodeBase64 = outputBuffer
+            Base64_Decode = outputBuffer
         END IF
     END FUNCTION
 
@@ -76,8 +76,8 @@ $IF BASE64_BAS = UNDEFINED THEN
     '   3. Load the file like so:
     '       Restore label_generated_by_bin2data
     '       Dim buffer As String
-    '       buffer = LoadResource   ' buffer will now hold the contents of the file
-    FUNCTION LoadResource$
+    '       buffer = Base64_LoadResource ' buffer will now hold the contents of the file
+    FUNCTION Base64_LoadResource$
         DIM AS _UNSIGNED LONG ogSize, resSize
         DIM AS _BYTE isCompressed
 
@@ -92,7 +92,7 @@ $IF BASE64_BAS = UNDEFINED THEN
         LOOP
 
         ' Decode the data
-        buffer = DecodeBase64(result)
+        buffer = Base64_Decode(result)
 
         ' Expand the data if needed
         IF isCompressed THEN
@@ -101,7 +101,7 @@ $IF BASE64_BAS = UNDEFINED THEN
             result = buffer
         END IF
 
-        LoadResource = result
+        Base64_LoadResource = result
     END FUNCTION
 
 $END IF
