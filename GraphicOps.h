@@ -486,36 +486,37 @@ void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t cl
         return;
     }
 
-    int32_t cx = 0;
-    int32_t cy = radius;
-    int32_t df = 1 - radius;
-    int32_t d_e = 3;
-    int32_t d_se = -2 * radius + 5;
+    // Initialize the coordinates and error term
+    auto px = radius, py = 0, radiusError = -radius;
 
-    do
+    // Draw the central horizontal line
+    Graphics_DrawFilledRectangle(x - px, y, x + px, y, clrAtr);
+
+    while (px > py)
     {
-        Graphics_DrawHorizontalLine(x - cy, y - cx, x + cy, clrAtr);
-        Graphics_DrawHorizontalLine(x - cy, y + cx, x + cy, clrAtr);
+        // Update the error term
+        radiusError += (py << 1) + 1;
 
-        if (df < 0)
+        if (radiusError >= 0)
         {
-            df += d_e;
-            d_e += 2;
-            d_se += 2;
-        }
-        else
-        {
-            Graphics_DrawHorizontalLine(x - cx, y - cy, x + cx, clrAtr);
-            Graphics_DrawHorizontalLine(x - cx, y + cy, x + cx, clrAtr);
-
-            df += d_se;
-            d_e += 2;
-            d_se += 4;
-            --cy;
+            if (px != py + 1)
+            {
+                // Draw horizontal lines at the top and bottom of the circle
+                Graphics_DrawFilledRectangle(x - py, y - px, x + py, y - px, clrAtr);
+                Graphics_DrawFilledRectangle(x - py, y + px, x + py, y + px, clrAtr);
+            }
+            // Decrease the x coordinate and update the error term
+            --px;
+            radiusError -= px << 1;
         }
 
-        ++cx;
-    } while (cx <= cy);
+        // Increase the y coordinate
+        ++py;
+
+        // Draw horizontal lines at the top and bottom of the circle
+        Graphics_DrawFilledRectangle(x - px, y - py, x + px, y - py, clrAtr);
+        Graphics_DrawFilledRectangle(x - px, y + py, x + px, y + py, clrAtr);
+    }
 }
 
 /// @brief Draws an ellipse (works in both text and graphics modes)
