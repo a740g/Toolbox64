@@ -8,7 +8,11 @@ $IF BASE64_BI = UNDEFINED THEN
 
     '$INCLUDE:'Common.bi'
     '$INCLUDE:'Types.bi'
+    '$INCLUDE:'PointerOps.bi'
 
-    CONST __BASE64_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    DECLARE LIBRARY "Base64"
+        FUNCTION __MODP_B64_Decode~%& (src AS STRING, BYVAL src_size AS _UNSIGNED _OFFSET, dst_size AS _UNSIGNED _OFFSET)
+        FUNCTION __MODP_B64_Encode~%& (src AS STRING, BYVAL src_size AS _UNSIGNED _OFFSET, dst_size AS _UNSIGNED _OFFSET)
+    END DECLARE
 
 $END IF

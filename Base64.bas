@@ -8,63 +8,64 @@ $IF BASE64_BAS = UNDEFINED THEN
 
     '$INCLUDE:'Base64.bi'
 
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    'DIM a AS STRING: a = "The quick brown fox jumps over the lazy dog."
+
+    'PrintStringDetails a
+
+    'DIM b AS STRING: b = EncodeBase64(a)
+
+    'PrintStringDetails b
+
+    'a = DecodeBase64(b)
+
+    'PrintStringDetails a
+
+    'END
+
+    'SUB PrintStringDetails (s AS STRING)
+    '    PRINT "Sting: "; s
+    '    PRINT "String size:"; LEN(s)
+    'END SUB
+    '-------------------------------------------------------------------------------------------------------------------
+
     ' Convert a normal string to a base64 string
     FUNCTION EncodeBase64$ (s AS STRING)
-        DIM AS STRING buffer, result
-        DIM AS _UNSIGNED LONG i
+        DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
 
-        FOR i = 1 TO LEN(s)
-            buffer = buffer + CHR$(ASC(s, i))
-            IF LEN(buffer) = 3 THEN
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHR(ASC(buffer, 1), 2))))
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHL((ASC(buffer, 1) AND 3), 4) OR _SHR(ASC(buffer, 2), 4))))
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHL((ASC(buffer, 2) AND 15), 2) OR _SHR(ASC(buffer, 3), 6))))
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (ASC(buffer, 3) AND 63)))
-                buffer = EMPTY_STRING
-            END IF
-        NEXT
+        outputPtr = __MODP_B64_Encode(s, LEN(s), outputSize)
 
-        ' Add padding
-        IF LEN(buffer) > 0 THEN
-            result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHR(ASC(buffer, 1), 2))))
-            IF LEN(buffer) = 1 THEN
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHL(ASC(buffer, 1) AND 3, 4))))
-                result = result + "=="
-            ELSE
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHL((ASC(buffer, 1) AND 3), 4) OR _SHR(ASC(buffer, 2), 4))))
-                result = result + CHR$(ASC(__BASE64_CHARACTERS, 1 + (_SHL(ASC(buffer, 2) AND 15, 2))))
-                result = result + "="
+        IF outputPtr <> NULL THEN
+            IF outputSize > 0 THEN
+                DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
+                CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
             END IF
+
+            FreeMemory outputPtr
+
+            EncodeBase64 = outputBuffer
         END IF
-
-        EncodeBase64 = result
     END FUNCTION
 
 
     ' Convert a base64 string to a normal string
     FUNCTION DecodeBase64$ (s AS STRING)
-        DIM AS STRING buffer, result
-        DIM AS _UNSIGNED LONG i
-        DIM AS _UNSIGNED _BYTE char1, char2, char3, char4
+        DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
 
-        FOR i = 1 TO LEN(s) STEP 4
-            char1 = INSTR(__BASE64_CHARACTERS, CHR$(ASC(s, i))) - 1
-            char2 = INSTR(__BASE64_CHARACTERS, CHR$(ASC(s, i + 1))) - 1
-            char3 = INSTR(__BASE64_CHARACTERS, CHR$(ASC(s, i + 2))) - 1
-            char4 = INSTR(__BASE64_CHARACTERS, CHR$(ASC(s, i + 3))) - 1
-            buffer = CHR$(_SHL(char1, 2) OR _SHR(char2, 4)) + CHR$(_SHL(char2 AND 15, 4) OR _SHR(char3, 2)) + CHR$(_SHL(char3 AND 3, 6) OR char4)
+        outputPtr = __MODP_B64_Decode(s, LEN(s), outputSize)
 
-            result = result + buffer
-        NEXT
+        IF outputPtr <> NULL THEN
+            IF outputSize > 0 THEN
+                DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
+                CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
+            END IF
 
-        ' Remove padding
-        IF RIGHT$(s, 2) = "==" THEN
-            result = LEFT$(result, LEN(result) - 2)
-        ELSEIF RIGHT$(s, 1) = "=" THEN
-            result = LEFT$(result, LEN(result) - 1)
+            FreeMemory outputPtr
+
+            DecodeBase64 = outputBuffer
         END IF
-
-        DecodeBase64 = result
     END FUNCTION
 
 
