@@ -34,13 +34,13 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '    END IF
     'LOOP
 
-    'PRINT __LoadS3MFromMemory(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\aryx.s3m"))
+    'PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\aryx.s3m"))
 
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Loads all required LUTs from DATA
-    SUB __LoadTables
+    SUB __MODPlayer_LoadTables
         SHARED __Song AS __SongType
         SHARED __PeriodTable() AS _UNSIGNED INTEGER
         SHARED __SineTable() AS _UNSIGNED _BYTE
@@ -105,25 +105,66 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Cleans any text retrieved from a music module file and makes it printable
-    FUNCTION __SanitizeMODSongText$ (text AS STRING)
+    FUNCTION __MODPlayer_SanitizeText$ (text AS STRING)
         DIM buffer AS STRING: buffer = SPACE$(LEN(text))
 
         DIM i AS LONG: FOR i = 1 TO LEN(text)
             IF ASC(text, i) > KEY_SPACE THEN ASC(buffer, i) = ASC(text, i)
         NEXT i
 
-        __SanitizeMODSongText = buffer
+        __MODPlayer_SanitizeText = buffer
     END FUNCTION
 
 
+    ' This resets all song properties to defaults
+    ' We do this so that every tune load begins is a known consistent state
+    SUB __MODPlayer_InitializeSong
+        SHARED __Song AS __SongType
+
+        __Song.caption = EMPTY_STRING
+        __Song.subtype = EMPTY_STRING
+        __Song.comment = EMPTY_STRING
+        __Song.channels = NULL
+        __Song.instruments = NULL
+        __Song.orders = NULL
+        __Song.rows = NULL
+        __Song.endJumpOrder = NULL
+        __Song.patterns = NULL
+        __Song.orderPosition = NULL
+        __Song.patternRow = NULL
+        __Song.tickPattern = NULL
+        __Song.tickPatternRow = NULL
+        __Song.isLooping = FALSE
+        __Song.isPlaying = FALSE
+        __Song.isPaused = FALSE
+        __Song.patternDelay = NULL
+        __Song.periodTableMax = NULL
+        __Song.speed = NULL
+        __Song.bpm = NULL
+        __Song.tick = NULL
+        __Song.tempoTimerValue = NULL
+        __Song.framesPerTick = NULL
+        __Song.activeChannels = NULL
+        __Song.useAmigaLPF = FALSE
+        __Song.useST2Vibrato = FALSE
+        __Song.useST2Tempo = FALSE
+        __Song.useAMIGASlides = FALSE
+        __Song.useVolumeOptimization = FALSE
+        __Song.useAmigaLimits = FALSE
+        __Song.useFilterSFX = FALSE
+        __Song.useST300VolumeSlides = FALSE
+        __Song.hasSpecialCustomData = FALSE
+    END SUB
+
+
     ' Loads an S3M file into memory and prepares all required globals
-    FUNCTION __LoadS3MFromMemory%% (buffer AS STRING)
+    FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
         SHARED __Song AS __SongType
 
         ' Initialize the softsynth sample mixer
         IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
 
-        __Song.isPlaying = FALSE ' just in case something is playing
+        __MODPlayer_InitializeSong ' just in case something is playing
 
         ' Open the buffer as a StringFile
         DIM memFile AS StringFileType
@@ -138,7 +179,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Seek to the beginning of the file and get the song title
         StringFile_Seek memFile, 0
-        __Song.caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
+        __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
 
         ' Read and discard DOS EOF marker
         DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile) ' TODO: check if we should just use Seek here
@@ -150,20 +191,23 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
 
         ' Read the song orders
-        DIM songLength AS _UNSIGNED INTEGER: songLength = StringFile_ReadInteger(memFile)
+        __Song.orders = StringFile_ReadInteger(memFile) ' TODO: + 1 needed? more fixes needed
 
         ' Read the number of instruments
-        DIM songInstruments AS _UNSIGNED INTEGER: songInstruments = StringFile_ReadInteger(memFile)
+        __Song.instruments = StringFile_ReadInteger(memFile)
 
-        PRINT byte1, word1
+        ' Read the number of patterns
+        __Song.patterns = StringFile_ReadInteger(memFile) ' TODO: more fixes needed
+
+        PRINT byte1, word1, __Song.orders, __Song.instruments, __Song.patterns
         PRINT __Song.subtype; ":"; __Song.caption
 
-        __LoadS3MFromMemory = TRUE
+        __MODPlayer_LoadS3M = TRUE
     END FUNCTION
 
 
     ' Loads an MTM file into memory and prepairs all required globals
-    FUNCTION __LoadMTMFromMemory%% (buffer AS STRING)
+    FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED INTEGER
         SHARED __Pattern() AS __NoteType
@@ -173,7 +217,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Initialize the softsynth sample mixer
         IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
 
-        __Song.isPlaying = FALSE ' just in case something is playing
+        __MODPlayer_InitializeSong ' just in case something is playing
 
         ' Open the buffer as a StringFile
         DIM memFile AS StringFileType
@@ -189,18 +233,16 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         MID$(__Song.subtype, 4, 1) = HEX$(ASC(__Song.subtype, 4) - 15)
 
         ' Read the MTM song title (20 bytes)
-        __Song.caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
+        __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
 
         ' Read the number of tracks saved
         DIM numTracks AS _UNSIGNED INTEGER: numTracks = StringFile_ReadInteger(memFile)
 
         ' Read the highest pattern number saved
-        DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile)
-        __Song.patterns = byte1 + 1 ' convert to count / length
+        __Song.patterns = StringFile_ReadByte(memFile) + 1 ' convert to count / length
 
         ' Read the last order to play
-        byte1 = StringFile_ReadByte(memFile)
-        __Song.orders = byte1 + 1 ' convert to count / length
+        __Song.orders = StringFile_ReadByte(memFile) + 1 ' convert to count / length
 
         ' Read length of the extra comment field
         DIM commentLen AS _UNSIGNED INTEGER: commentLen = StringFile_ReadInteger(memFile)
@@ -209,7 +251,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.instruments = StringFile_ReadByte(memFile)
 
         ' Read the attribute byte and discard it
-        byte1 = StringFile_ReadByte(memFile)
+        DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile)
 
         ' Read the beats per track (row count)
         __Song.rows = StringFile_ReadByte(memFile)
@@ -242,7 +284,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read the instruments information
         FOR i = 0 TO __Song.instruments - 1
             ' Read the sample name
-            __Instrument(i).caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
+            __Instrument(i).caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
 
             ' Read sample length
             __Instrument(i).length = StringFile_ReadLong(memFile)
@@ -267,7 +309,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             ' Read finetune
-            __Instrument(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
+            __Instrument(i).c2Spd = __MODPlayer_GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
             ' Read volume
             __Instrument(i).volume = StringFile_ReadByte(memFile)
@@ -371,14 +413,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT
 
         ' Load all needed LUTs
-        __LoadTables
+        __MODPlayer_LoadTables
 
-        __LoadMTMFromMemory = TRUE
+        __MODPlayer_LoadMTM = TRUE
     END FUNCTION
 
 
     ' Loads the MOD file into memory and prepares all required globals
-    FUNCTION __LoadMODFromMemory%% (buffer AS STRING)
+    FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED INTEGER
         SHARED __Pattern() AS __NoteType
@@ -389,7 +431,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Initialize the softsynth sample mixer
         IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
 
-        __Song.isPlaying = FALSE ' just in case something is playing
+        __MODPlayer_InitializeSong ' just in case something is playing
 
         ' Attempt to open the file
         DIM i AS LONG, memFile AS StringFileType
@@ -401,7 +443,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Also, seek to the beginning of the file and get the song title
         StringFile_Seek memFile, 0
-        __Song.caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
+        __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
         __Song.channels = 0
         __Song.instruments = 0
@@ -456,7 +498,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the instruments headers
         FOR i = 0 TO __Song.instruments - 1
             ' Read the sample name
-            __Instrument(i).caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
+            __Instrument(i).caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
 
             ' Read sample length
             byte1 = StringFile_ReadByte(memFile)
@@ -464,7 +506,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Instrument(i).length = (byte1 * &H100 + byte2) * 2
 
             ' Read finetune
-            __Instrument(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
+            __Instrument(i).c2Spd = __MODPlayer_GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
             ' Read volume
             __Instrument(i).volume = StringFile_ReadByte(memFile)
@@ -551,7 +593,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Skip past the 4 byte signature if this is a 31 sample mod
         IF __Song.instruments = 31 THEN StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
 
-        __LoadTables ' load all needed LUTs
+        __MODPlayer_LoadTables ' load all needed LUTs
 
         DIM AS _UNSIGNED _BYTE byte3, byte4
         DIM AS _UNSIGNED INTEGER a, b, c, period
@@ -627,17 +669,17 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             NEXT
         END IF
 
-        __LoadMODFromMemory = TRUE
+        __MODPlayer_LoadMOD = TRUE
     END FUNCTION
 
 
     ' This basically calls the loaders in a certain order that makes sense
     ' It returns TRUE if a loader is successful
     FUNCTION MODPlayer_LoadFromMemory%% (buffer AS STRING)
-        IF __LoadMTMFromMemory(buffer) THEN
+        IF __MODPlayer_LoadMTM(buffer) THEN
             MODPlayer_LoadFromMemory = TRUE
             EXIT FUNCTION
-        ELSEIF __LoadMODFromMemory(buffer) THEN
+        ELSEIF __MODPlayer_LoadMOD(buffer) THEN
             MODPlayer_LoadFromMemory = TRUE
             EXIT FUNCTION
         END IF
@@ -663,7 +705,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.isPaused = FALSE
 
         ' Set default BPM
-        __SetBPM __SONG_BPM_DEFAULT
+        __MODPlayer_SetBPM __SONG_BPM_DEFAULT
 
         __Song.isPlaying = TRUE
     END SUB
@@ -710,7 +752,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     __Song.tickPatternRow = __Song.patternRow
 
                     ' Process the row
-                    __UpdateMODRow
+                    __MODPlayer_UpdateRow
 
                     ' Increment the row counter
                     ' Note UpdateMODTick() should pickup stuff using tickPattern & tickPatternRow
@@ -737,7 +779,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     __Song.patternDelay = __Song.patternDelay - 1
                 END IF
             ELSE
-                __UpdateMODTick
+                __MODPlayer_UpdateTick
             END IF
 
             ' Mix the current tick
@@ -750,7 +792,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Updates a row of notes and play them out on tick 0
-    SUB __UpdateMODRow
+    SUB __MODPlayer_UpdateRow
         SHARED __Song AS __SongType
         SHARED __Pattern() AS __NoteType
         SHARED __Instrument() AS __InstrumentType
@@ -860,7 +902,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 CASE &HE ' 14: Extended Effects
                     SELECT CASE nOpX
                         CASE &H0 ' 0: Set Filter
-                            ' NOP: We always do HQ mixing
+                            __Song.useAmigaLPF = (nOpY <> FALSE)
 
                         CASE &H1 ' 1: Fine Portamento Up
                             __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOpY, 2)
@@ -876,7 +918,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                             __Channel(nChannel).waveControl = __Channel(nChannel).waveControl OR nOpY
 
                         CASE &H5 ' 5: Set Finetune
-                            __Instrument(__Channel(nChannel).instrument).c2Spd = __GetC2Spd(nOpY)
+                            __Instrument(__Channel(nChannel).instrument).c2Spd = __MODPlayer_GetC2Spd(nOpY)
 
                         CASE &H6 ' 6: Pattern Loop
                             IF nOpY = 0 THEN
@@ -925,18 +967,18 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     IF nOperand < 32 THEN
                         __Song.speed = nOperand
                     ELSE
-                        __SetBPM nOperand
+                        __MODPlayer_SetBPM nOperand
                     END IF
             END SELECT
 
-            __DoInvertLoop nChannel ' called every tick
+            __MODPlayer_DoInvertLoop nChannel ' called every tick
 
             IF NOT noFrequency THEN
                 IF nEffect <> 7 THEN
                     SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
                 END IF
                 IF __Channel(nChannel).period > 0 THEN
-                    SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                    SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
                 END IF
             END IF
         NEXT
@@ -951,7 +993,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Updates any tick based effects after tick 0
-    SUB __UpdateMODTick
+    SUB __MODPlayer_UpdateTick
         SHARED __Song AS __SongType
         SHARED __Pattern() AS __NoteType
         SHARED __Instrument() AS __InstrumentType
@@ -972,49 +1014,49 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 nOpX = _SHR(nOperand, 4)
                 nOpY = nOperand AND &HF
 
-                __DoInvertLoop nChannel ' called every tick
+                __MODPlayer_DoInvertLoop nChannel ' called every tick
 
                 SELECT CASE nEffect
                     CASE &H0 ' 0: Arpeggio
                         IF (nOperand > 0) THEN
                             SELECT CASE __Song.tick MOD 3
                                 CASE 0
-                                    SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                                    SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
                                 CASE 1
-                                    SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpX))
+                                    SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpX))
                                 CASE 2
-                                    SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpY))
+                                    SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__PeriodTable(__Channel(nChannel).note + nOpY))
                             END SELECT
                         END IF
 
                     CASE &H1 ' 1: Porta Up
                         __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOperand, 2)
                         IF __Channel(nChannel).period < 1 THEN __Channel(nChannel).period = 1 ' clamp to avoid division by zero
-                        SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                        SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
 
                     CASE &H2 ' 2: Porta Down
                         __Channel(nChannel).period = __Channel(nChannel).period + _SHL(nOperand, 2)
-                        SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                        SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
 
                     CASE &H3 ' 3: Porta To Note
-                        __DoPortamento nChannel
+                        __MODPlayer_DoPortamento nChannel
 
                     CASE &H4 ' 4: Vibrato
-                        __DoVibrato nChannel
+                        __MODPlayer_DoVibrato nChannel
 
                     CASE &H5 ' 5: Tone Portamento + Volume Slide
-                        __DoPortamento nChannel
-                        __DoVolumeSlide nChannel, nOpX, nOpY
+                        __MODPlayer_DoPortamento nChannel
+                        __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY
 
                     CASE &H6 ' 6: Vibrato + Volume Slide
-                        __DoVibrato nChannel
-                        __DoVolumeSlide nChannel, nOpX, nOpY
+                        __MODPlayer_DoVibrato nChannel
+                        __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY
 
                     CASE &H7 ' 7: Tremolo
-                        __DoTremolo nChannel
+                        __MODPlayer_DoTremolo nChannel
 
                     CASE &HA ' 10: Volume Slide
-                        __DoVolumeSlide nChannel, nOpX, nOpY
+                        __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY
 
                     CASE &HE ' 14: Extended Effects
                         SELECT CASE nOpX
@@ -1035,7 +1077,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                                 IF __Song.tick = nOpY THEN
                                     __Channel(nChannel).volume = __Instrument(__Channel(nChannel).instrument).volume
                                     IF nVolume <= __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
-                                    SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
+                                    SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
                                     SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
                                     SoftSynth_PlayVoice nChannel, __Channel(nChannel).instrument, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), __Instrument(__Channel(nChannel).instrument).playMode, SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopStart, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopEnd, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels)
                                 END IF
@@ -1047,7 +1089,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' We always set the global BPM using this and never directly
-    SUB __SetBPM (nBPM AS _UNSIGNED _BYTE)
+    SUB __MODPlayer_SetBPM (nBPM AS _UNSIGNED _BYTE)
         $CHECKING:OFF
         SHARED __Song AS __SongType
 
@@ -1061,7 +1103,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
     ' Binary search the period table to find the closest value
     ' I hope this is the right way to do glissando. Oh well...
-    FUNCTION __GetClosestPeriod& (target AS LONG)
+    FUNCTION __MODPlayer_GetClosestPeriod& (target AS LONG)
         SHARED __Song AS __SongType
         SHARED __Channel() AS __ChannelType
         SHARED __PeriodTable() AS _UNSIGNED INTEGER
@@ -1069,10 +1111,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM AS LONG startPos, endPos, midPos, leftVal, rightVal
 
         IF target > 27392 THEN
-            __GetClosestPeriod = target
+            __MODPlayer_GetClosestPeriod = target
             EXIT FUNCTION
         ELSEIF target < 14 THEN
-            __GetClosestPeriod = target
+            __MODPlayer_GetClosestPeriod = target
             EXIT FUNCTION
         END IF
 
@@ -1091,15 +1133,15 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         leftVal = ABS(__PeriodTable(endPos) - target)
 
         IF leftVal <= rightVal THEN
-            __GetClosestPeriod = __PeriodTable(endPos)
+            __MODPlayer_GetClosestPeriod = __PeriodTable(endPos)
         ELSE
-            __GetClosestPeriod = __PeriodTable(startPos)
+            __MODPlayer_GetClosestPeriod = __PeriodTable(startPos)
         END IF
     END FUNCTION
 
 
     ' Carry out a tone portamento to a certain note
-    SUB __DoPortamento (chan AS _UNSIGNED _BYTE)
+    SUB __MODPlayer_DoPortamento (chan AS _UNSIGNED _BYTE)
         SHARED __Channel() AS __ChannelType
 
         ' Slide up/down and clamp to destination
@@ -1116,15 +1158,15 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         END IF
 
         IF __Channel(chan).useGlissando THEN
-            SoftSynth_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__GetClosestPeriod(__Channel(chan).period))
+            SoftSynth_SetVoiceFrequency chan, __MODPlayer_GetFrequencyFromPeriod(__MODPlayer_GetClosestPeriod(__Channel(chan).period))
         ELSE
-            SoftSynth_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period)
+            SoftSynth_SetVoiceFrequency chan, __MODPlayer_GetFrequencyFromPeriod(__Channel(chan).period)
         END IF
     END SUB
 
 
     ' Carry out a volume slide using +x -y
-    SUB __DoVolumeSlide (chan AS _UNSIGNED _BYTE, x AS _UNSIGNED _BYTE, y AS _UNSIGNED _BYTE)
+    SUB __MODPlayer_DoVolumeSlide (chan AS _UNSIGNED _BYTE, x AS _UNSIGNED _BYTE, y AS _UNSIGNED _BYTE)
         SHARED __Channel() AS __ChannelType
 
         __Channel(chan).volume = __Channel(chan).volume + x - y
@@ -1136,7 +1178,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Carry out a vibrato at a certain depth and speed
-    SUB __DoVibrato (chan AS _UNSIGNED _BYTE)
+    SUB __MODPlayer_DoVibrato (chan AS _UNSIGNED _BYTE)
         SHARED __Channel() AS __ChannelType
         SHARED __SineTable() AS _UNSIGNED _BYTE
 
@@ -1164,9 +1206,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         delta = _SHL(_SHR(delta * __Channel(chan).vibratoDepth, 7), 2)
 
         IF __Channel(chan).vibratoPosition >= 0 THEN
-            SoftSynth_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period + delta)
+            SoftSynth_SetVoiceFrequency chan, __MODPlayer_GetFrequencyFromPeriod(__Channel(chan).period + delta)
         ELSE
-            SoftSynth_SetVoiceFrequency chan, __GetFrequencyFromPeriod(__Channel(chan).period - delta)
+            SoftSynth_SetVoiceFrequency chan, __MODPlayer_GetFrequencyFromPeriod(__Channel(chan).period - delta)
         END IF
 
         __Channel(chan).vibratoPosition = __Channel(chan).vibratoPosition + __Channel(chan).vibratoSpeed
@@ -1177,7 +1219,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' Carry out a tremolo at a certain depth and speed
-    SUB __DoTremolo (chan AS _UNSIGNED _BYTE)
+    SUB __MODPlayer_DoTremolo (chan AS _UNSIGNED _BYTE)
         SHARED __Channel() AS __ChannelType
         SHARED __SineTable() AS _UNSIGNED _BYTE
 
@@ -1219,7 +1261,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
     ' Carry out an invert loop (EFx) effect
     ' This will trash the sample managed by the SoftSynth
-    SUB __DoInvertLoop (chan AS _UNSIGNED _BYTE)
+    SUB __MODPlayer_DoInvertLoop (chan AS _UNSIGNED _BYTE)
         SHARED __Channel() AS __ChannelType
         SHARED __Instrument() AS __InstrumentType
         SHARED __InvertLoopSpeedTable() AS _UNSIGNED _BYTE
@@ -1246,51 +1288,51 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
 
     ' This gives us the frequency in khz based on the period
-    FUNCTION __GetFrequencyFromPeriod~& (period AS LONG)
+    FUNCTION __MODPlayer_GetFrequencyFromPeriod~& (period AS LONG)
         $CHECKING:OFF
-        __GetFrequencyFromPeriod = 14317056 \ period
+        __MODPlayer_GetFrequencyFromPeriod = 14317056 \ period
         $CHECKING:ON
     END FUNCTION
 
 
     ' Return C2 speed for a finetune
-    FUNCTION __GetC2Spd~% (ft AS _UNSIGNED _BYTE)
+    FUNCTION __MODPlayer_GetC2Spd~% (ft AS _UNSIGNED _BYTE)
         $CHECKING:OFF
         SELECT CASE ft
             CASE 0
-                __GetC2Spd = 8363
+                __MODPlayer_GetC2Spd = 8363
             CASE 1
-                __GetC2Spd = 8413
+                __MODPlayer_GetC2Spd = 8413
             CASE 2
-                __GetC2Spd = 8463
+                __MODPlayer_GetC2Spd = 8463
             CASE 3
-                __GetC2Spd = 8529
+                __MODPlayer_GetC2Spd = 8529
             CASE 4
-                __GetC2Spd = 8581
+                __MODPlayer_GetC2Spd = 8581
             CASE 5
-                __GetC2Spd = 8651
+                __MODPlayer_GetC2Spd = 8651
             CASE 6
-                __GetC2Spd = 8723
+                __MODPlayer_GetC2Spd = 8723
             CASE 7
-                __GetC2Spd = 8757
+                __MODPlayer_GetC2Spd = 8757
             CASE 8
-                __GetC2Spd = 7895
+                __MODPlayer_GetC2Spd = 7895
             CASE 9
-                __GetC2Spd = 7941
+                __MODPlayer_GetC2Spd = 7941
             CASE 10
-                __GetC2Spd = 7985
+                __MODPlayer_GetC2Spd = 7985
             CASE 11
-                __GetC2Spd = 8046
+                __MODPlayer_GetC2Spd = 8046
             CASE 12
-                __GetC2Spd = 8107
+                __MODPlayer_GetC2Spd = 8107
             CASE 13
-                __GetC2Spd = 8169
+                __MODPlayer_GetC2Spd = 8169
             CASE 14
-                __GetC2Spd = 8232
+                __MODPlayer_GetC2Spd = 8232
             CASE 15
-                __GetC2Spd = 8280
+                __MODPlayer_GetC2Spd = 8280
             CASE ELSE
-                __GetC2Spd = 8363
+                __MODPlayer_GetC2Spd = 8363
         END SELECT
         $CHECKING:ON
     END FUNCTION

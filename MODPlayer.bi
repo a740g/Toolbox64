@@ -93,6 +93,15 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         tempoTimerValue AS _UNSIGNED LONG ' (mixer_sample_rate * default_bpm) / 50
         framesPerTick AS _UNSIGNED LONG ' this is the amount of sample frames we have to mix per tick based on mixerRate & bpm
         activeChannels AS _UNSIGNED LONG ' just a count of channels that are "active"
+        useAmigaLPF AS _BYTE ' use Amiga 12 dB/oct Butterworth low-pass filter
+        useST2Vibrato AS _BYTE ' use Scream Tracker 2 vibrato
+        useST2Tempo AS _BYTE ' use Scream Tracker 2 tempo behavior
+        useAMIGASlides AS _BYTE ' use volume slides similar to Amiga hardware
+        useVolumeOptimization AS _BYTE ' turn off looping notes which have a zero volume for more than 2 rows
+        useAmigaLimits AS _BYTE ' use Amiga limits (limit periods to confine to 113 <= x <= 856)
+        useFilterSFX AS _BYTE ' enable filter / sfx with SB
+        useST300VolumeSlides AS _BYTE ' ST3.00 volume slides (automatically enabled if tracker version is <= 0x1300) - if enabled, all volume slides occur every tick
+        hasSpecialCustomData AS _BYTE ' special custom data in file (uses "Special" field)
     END TYPE
 
     DIM __Song AS __SongType ' tune specific data
