@@ -188,4 +188,10 @@ $IF COMMON_BI = UNDEFINED THEN
         z AS SINGLE
     END TYPE
 
+    DECLARE LIBRARY "Common"
+        FUNCTION Compiler_GetDate$
+        FUNCTION Compiler_GetTime$
+        FUNCTION Compiler_GetFunctionName$
+    END DECLARE
+
 $END IF

@@ -19,3 +19,7 @@
 static uint8_t g_TmpBufF[4096];
 // Temporary std::vector shared by various modules
 static std::vector<uint8_t> g_TmpBufV;
+
+#define Compiler_GetDate() (__DATE__)
+#define Compiler_GetTime() (__TIME__)
+#define Compiler_GetFunctionName() (__func__)

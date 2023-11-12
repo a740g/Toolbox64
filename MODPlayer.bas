@@ -347,13 +347,13 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         StringFile_Create memFile, buffer
 
         ' Seek to offset 1080 (438h) in the file & read in 4 bytes
-        IF NOT StringFile_Seek(memFile, 1081) THEN EXIT FUNCTION ' 1081 because StringFile is 1 based
+        StringFile_Seek memFile, 1080
 
         ' Check what kind of MOD file this is
         __Song.subtype = StringFile_ReadString(memFile, 4) ' read 4 bytes
 
         ' Also, seek to the beginning of the file and get the song title
-        IF NOT StringFile_Seek(memFile, 1) THEN EXIT FUNCTION ' 1 because StringFile is 1 based
+        StringFile_Seek memFile, 0
 
         __Song.songName = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
@@ -503,9 +503,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         REDIM __Pattern(0 TO __Song.patterns - 1, 0 TO __Song.rows - 1, 0 TO __Song.channels - 1) AS __NoteType
 
         ' Skip past the 4 byte marker if this is a 31 sample mod
-        IF __Song.samples = 31 THEN
-            IF NOT StringFile_Seek(memFile, StringFile_GetPosition(memFile) + 4) THEN EXIT FUNCTION
-        END IF
+        IF __Song.samples = 31 THEN StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
 
         __LoadTables ' load all needed LUTs
 

@@ -73,6 +73,10 @@ $IF TYPES_BI = UNDEFINED THEN
     'PRINT LNot(0)
     'PRINT LNot(-1)
 
+    'PRINT Compiler_GetDate
+    'PRINT Compiler_GetTime
+    'PRINT Compiler_GetFunctionName
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
