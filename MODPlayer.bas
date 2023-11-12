@@ -33,6 +33,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '        MODPlayer_Stop
     '    END IF
     'LOOP
+
+    'PRINT __LoadS3MFromMemory(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\aryx.s3m"))
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
@@ -113,12 +116,58 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' Loads an S3M file into memory and prepares all required globals
+    FUNCTION __LoadS3MFromMemory%% (buffer AS STRING)
+        SHARED __Song AS __SongType
+
+        ' Initialize the softsynth sample mixer
+        IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
+
+        __Song.isPlaying = FALSE ' just in case something is playing
+
+        ' Open the buffer as a StringFile
+        DIM memFile AS StringFileType
+        StringFile_Create memFile, buffer
+
+        ' Seek to offset 44 (2Ch) in the file & read the file signature
+        StringFile_Seek memFile, 44
+        __Song.subtype = StringFile_ReadString(memFile, 4) ' signature is 4 bytes
+
+        ' Check if this is really an S3M file
+        IF __Song.subtype <> "SCRM" THEN EXIT FUNCTION
+
+        ' Seek to the beginning of the file and get the song title
+        StringFile_Seek memFile, 0
+        __Song.caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
+
+        ' Read and discard DOS EOF marker
+        DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile) ' TODO: check if we should just use Seek here
+
+        ' Read and discard the file type byte (TODO: check if we really need to be strict and compare this to 16)
+        byte1 = StringFile_ReadByte(memFile)
+
+        ' Read and discard the expansion / reserved word (2 bytes)
+        DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
+
+        ' Read the song orders
+        DIM songLength AS _UNSIGNED INTEGER: songLength = StringFile_ReadInteger(memFile)
+
+        ' Read the number of instruments
+        DIM songInstruments AS _UNSIGNED INTEGER: songInstruments = StringFile_ReadInteger(memFile)
+
+        PRINT byte1, word1
+        PRINT __Song.subtype; ":"; __Song.caption
+
+        __LoadS3MFromMemory = TRUE
+    END FUNCTION
+
+
     ' Loads an MTM file into memory and prepairs all required globals
     FUNCTION __LoadMTMFromMemory%% (buffer AS STRING)
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED INTEGER
         SHARED __Pattern() AS __NoteType
-        SHARED __Sample() AS __SampleType
+        SHARED __Instrument() AS __InstrumentType
         SHARED __Channel() AS __ChannelType
 
         ' Initialize the softsynth sample mixer
@@ -140,7 +189,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         MID$(__Song.subtype, 4, 1) = HEX$(ASC(__Song.subtype, 4) - 15)
 
         ' Read the MTM song title (20 bytes)
-        __Song.songName = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
+        __Song.caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
 
         ' Read the number of tracks saved
         DIM numTracks AS _UNSIGNED INTEGER: numTracks = StringFile_ReadInteger(memFile)
@@ -156,8 +205,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read length of the extra comment field
         DIM commentLen AS _UNSIGNED INTEGER: commentLen = StringFile_ReadInteger(memFile)
 
-        ' Read the number of samples
-        __Song.samples = StringFile_ReadByte(memFile)
+        ' Read the number of instruments
+        __Song.instruments = StringFile_ReadByte(memFile)
 
         ' Read the attribute byte and discard it
         byte1 = StringFile_ReadByte(memFile)
@@ -169,7 +218,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.channels = StringFile_ReadByte(memFile)
 
         ' Sanity check
-        IF numTracks = 0 OR __Song.samples = 0 OR __Song.rows = 0 OR __Song.channels = 0 THEN EXIT FUNCTION
+        IF numTracks = 0 OR __Song.instruments = 0 OR __Song.rows = 0 OR __Song.channels = 0 THEN EXIT FUNCTION
 
         ' Resize the channel array
         REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
@@ -187,47 +236,47 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
         NEXT
 
-        ' Resize the sample array
-        REDIM __Sample(0 TO __Song.samples - 1) AS __SampleType
+        ' Resize the instruments array
+        REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
 
-        ' Read the sample information
-        FOR i = 0 TO __Song.samples - 1
+        ' Read the instruments information
+        FOR i = 0 TO __Song.instruments - 1
             ' Read the sample name
-            __Sample(i).sampleName = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
+            __Instrument(i).caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
 
             ' Read sample length
-            __Sample(i).length = StringFile_ReadLong(memFile)
+            __Instrument(i).length = StringFile_ReadLong(memFile)
 
             ' Read loop start
-            __Sample(i).loopStart = StringFile_ReadLong(memFile)
-            IF __Sample(i).loopStart < 0 OR __Sample(i).loopStart >= __Sample(i).length THEN __Sample(i).loopStart = 0 ' sanity check
+            __Instrument(i).loopStart = StringFile_ReadLong(memFile)
+            IF __Instrument(i).loopStart < 0 OR __Instrument(i).loopStart >= __Instrument(i).length THEN __Instrument(i).loopStart = 0 ' sanity check
 
             ' Read loop end
-            __Sample(i).loopEnd = StringFile_ReadLong(memFile)
-            IF __Sample(i).loopEnd < 0 OR __Sample(i).loopEnd >= __Sample(i).length THEN
-                __Sample(i).loopEnd = __Sample(i).length ' sanity check
+            __Instrument(i).loopEnd = StringFile_ReadLong(memFile)
+            IF __Instrument(i).loopEnd < 0 OR __Instrument(i).loopEnd >= __Instrument(i).length THEN
+                __Instrument(i).loopEnd = __Instrument(i).length ' sanity check
             END IF
 
             ' Set sound to looping and fix loop points if needed
-            IF __Sample(i).loopEnd - __Sample(i).loopStart > 1 THEN ' we need 2 frames minimum to mark the sound as looping (TODO: check if this is normal)
-                __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
+            IF __Instrument(i).loopEnd - __Instrument(i).loopStart > 1 THEN ' we need 2 frames minimum to mark the sound as looping (TODO: check if this is normal)
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
             ELSE
-                __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
-                __Sample(i).loopStart = 0
-                __Sample(i).loopEnd = __Sample(i).length
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+                __Instrument(i).loopStart = 0
+                __Instrument(i).loopEnd = __Instrument(i).length
             END IF
 
             ' Read finetune
-            __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
+            __Instrument(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
             ' Read volume
-            __Sample(i).volume = StringFile_ReadByte(memFile)
-            IF __Sample(i).volume > __MOD_SAMPLE_VOLUME_MAX THEN __Sample(i).volume = __MOD_SAMPLE_VOLUME_MAX ' MTM uses MOD volume specs.
+            __Instrument(i).volume = StringFile_ReadByte(memFile)
+            IF __Instrument(i).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __MOD_INSTRUMENT_VOLUME_MAX ' MTM uses MOD volume specs.
 
             ' Read attribute
             byte1 = StringFile_ReadByte(memFile)
-            __Sample(i).sampleSize = SIZE_OF_BYTE + SIZE_OF_BYTE * (byte1 AND &H1) ' 1 if 8-bit else 2 if 16-bit
-            __Sample(i).channels = 1 ' all MTM sounds are mono
+            __Instrument(i).bytesPerSample = SIZE_OF_BYTE + SIZE_OF_BYTE * (byte1 AND &H1) ' 1 if 8-bit else 2 if 16-bit
+            __Instrument(i).channels = 1 ' all MTM sounds are mono
         NEXT
 
         ' Resize the order array (MTMs like MODs always have a 128 byte long order table)
@@ -263,8 +312,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     mtmTrack(i, j).note = mtmTrack(i, j).note + 24
                 END IF
 
-                mtmTrack(i, j).sample = _SHL(byte1 AND &H3, 4) OR _SHR(byte2, 4)
-                IF mtmTrack(i, j).sample > __Song.samples THEN mtmTrack(i, j).sample = 0 ' sanity check
+                mtmTrack(i, j).instrument = _SHL(byte1 AND &H3, 4) OR _SHR(byte2, 4)
+                IF mtmTrack(i, j).instrument > __Song.instruments THEN mtmTrack(i, j).instrument = 0 ' sanity check
 
                 mtmTrack(i, j).effect = byte2 AND &HF
                 mtmTrack(i, j).operand = byte3
@@ -297,7 +346,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     ' Populate empty channel
                     FOR k = 0 TO __Song.rows - 1
                         __Pattern(i, k, j).note = __NOTE_NONE
-                        __Pattern(i, k, j).sample = 0
+                        __Pattern(i, k, j).instrument = 0
                         __Pattern(i, k, j).effect = 0
                         __Pattern(i, k, j).operand = 0
                         __Pattern(i, k, j).volume = __NOTE_NO_VOLUME
@@ -309,16 +358,16 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read the tune comment
         __Song.comment = StringFile_ReadString(memFile, commentLen) ' read the comment and leave it untouched
 
-        ' Load the samples
+        ' Load the instruments
         DIM sampBuf AS STRING
-        FOR i = 0 TO __Song.samples - 1
-            sampBuf = StringFile_ReadString(memFile, __Sample(i).length)
+        FOR i = 0 TO __Song.instruments - 1
+            sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
 
             ' Convert 8-bit unsigned samples to 8-bit signed
-            IF __Sample(i).sampleSize = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
+            IF __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
 
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            SoftSynth_LoadSound i, sampBuf, __Sample(i).sampleSize, __Sample(i).channels
+            SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
         NEXT
 
         ' Load all needed LUTs
@@ -333,7 +382,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SHARED __Song AS __SongType
         SHARED __Order() AS _UNSIGNED INTEGER
         SHARED __Pattern() AS __NoteType
-        SHARED __Sample() AS __SampleType
+        SHARED __Instrument() AS __InstrumentType
         SHARED __Channel() AS __ChannelType
         SHARED __PeriodTable() AS _UNSIGNED INTEGER
 
@@ -346,88 +395,85 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM i AS LONG, memFile AS StringFileType
         StringFile_Create memFile, buffer
 
-        ' Seek to offset 1080 (438h) in the file & read in 4 bytes
+        ' Seek to offset 1080 (438h) in the file and read the file signature
         StringFile_Seek memFile, 1080
-
-        ' Check what kind of MOD file this is
-        __Song.subtype = StringFile_ReadString(memFile, 4) ' read 4 bytes
+        __Song.subtype = StringFile_ReadString(memFile, 4) ' signature is 4 bytes
 
         ' Also, seek to the beginning of the file and get the song title
         StringFile_Seek memFile, 0
-
-        __Song.songName = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
+        __Song.caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
         __Song.channels = 0
-        __Song.samples = 0
+        __Song.instruments = 0
 
         SELECT CASE __Song.subtype
             CASE "FEST", "FIST", "LARD", "M!K!", "M&K!", "M.K.", "N.T.", "NSMS", "PATT"
                 __Song.channels = 4
-                __Song.samples = 31
+                __Song.instruments = 31
             CASE "OCTA", "OKTA"
                 __Song.channels = 8
-                __Song.samples = 31
+                __Song.instruments = 31
             CASE ELSE
                 ' Parse the subtype string to check for more variants
                 IF RIGHT$(__Song.subtype, 3) = "CHN" THEN
                     ' Check xCNH types
                     __Song.channels = VAL(LEFT$(__Song.subtype, 1))
-                    __Song.samples = 31
+                    __Song.instruments = 31
                 ELSEIF RIGHT$(__Song.subtype, 2) = "CH" OR RIGHT$(__Song.subtype, 2) = "CN" THEN
                     ' Check for xxCH & xxCN types
                     __Song.channels = VAL(LEFT$(__Song.subtype, 2))
-                    __Song.samples = 31
+                    __Song.instruments = 31
                 ELSEIF LEFT$(__Song.subtype, 3) = "FLT" OR LEFT$(__Song.subtype, 3) = "TDZ" OR LEFT$(__Song.subtype, 3) = "EXO" THEN
                     ' Check for FLTx, TDZx & EXOx types
                     __Song.channels = VAL(RIGHT$(__Song.subtype, 1))
-                    __Song.samples = 31
+                    __Song.instruments = 31
                 ELSEIF LEFT$(__Song.subtype, 2) = "CD" AND RIGHT$(__Song.subtype, 1) = "1" THEN
                     ' Check for CDx1 types
                     __Song.channels = VAL(MID$(__Song.subtype, 3, 1))
-                    __Song.samples = 31
+                    __Song.instruments = 31
                 ELSEIF LEFT$(__Song.subtype, 2) = "FA" THEN
                     ' Check for FAxx types
                     __Song.channels = VAL(RIGHT$(__Song.subtype, 2))
-                    __Song.samples = 31
+                    __Song.instruments = 31
                 ELSE
                     ' Extra checks for 15 sample MOD
-                    FOR i = 1 TO LEN(__Song.songName)
-                        IF ASC(__Song.songName, i) < KEY_SPACE AND ASC(__Song.songName, i) <> NULL THEN EXIT FUNCTION ' this is probably not a 15 sample MOD file
+                    FOR i = 1 TO LEN(__Song.caption)
+                        IF ASC(__Song.caption, i) < KEY_SPACE AND ASC(__Song.caption, i) <> NULL THEN EXIT FUNCTION ' this is probably not a 15 sample MOD file
                     NEXT
                     __Song.channels = 4
-                    __Song.samples = 15
+                    __Song.instruments = 15
                     __Song.subtype = "MODF" ' change subtype to reflect 15 (Fh) sample mod, otherwise it will contain garbage
                 END IF
         END SELECT
 
         ' Sanity check
-        IF __Song.samples = 0 OR __Song.channels = 0 THEN EXIT FUNCTION
+        IF __Song.instruments = 0 OR __Song.channels = 0 THEN EXIT FUNCTION
 
-        ' Resize the sample array
-        REDIM __Sample(0 TO __Song.samples - 1) AS __SampleType
+        ' Resize the instruments array
+        REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
         DIM AS _UNSIGNED _BYTE byte1, byte2
 
-        ' Load the sample headers
-        FOR i = 0 TO __Song.samples - 1
+        ' Load the instruments headers
+        FOR i = 0 TO __Song.instruments - 1
             ' Read the sample name
-            __Sample(i).sampleName = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
+            __Instrument(i).caption = __SanitizeMODSongText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
 
             ' Read sample length
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
-            __Sample(i).length = (byte1 * &H100 + byte2) * 2
+            __Instrument(i).length = (byte1 * &H100 + byte2) * 2
 
             ' Read finetune
-            __Sample(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
+            __Instrument(i).c2Spd = __GetC2Spd(StringFile_ReadByte(memFile)) ' convert finetune to c2spd
 
             ' Read volume
-            __Sample(i).volume = StringFile_ReadByte(memFile)
-            IF __Sample(i).volume > __MOD_SAMPLE_VOLUME_MAX THEN __Sample(i).volume = __MOD_SAMPLE_VOLUME_MAX ' Sanity check
+            __Instrument(i).volume = StringFile_ReadByte(memFile)
+            IF __Instrument(i).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __MOD_INSTRUMENT_VOLUME_MAX ' Sanity check
 
             ' Read loop start
             byte1 = StringFile_ReadByte(memFile)
             byte2 = StringFile_ReadByte(memFile)
-            __Sample(i).loopStart = (byte1 * &H100 + byte2) * 2
+            __Instrument(i).loopStart = (byte1 * &H100 + byte2) * 2
 
             ' Read loop length
             byte1 = StringFile_ReadByte(memFile)
@@ -437,20 +483,20 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             ' Some MOD file loop points are truly fucked
             ' These checks are taken directly from OpenMPT's MOD loader which seem to do a decent job dealing with messed up MODs
             ' See if loop start is incorrect as words, but correct as bytes (like in Soundtracker modules)
-            IF loopLength > 2 AND __Sample(i).loopStart + loopLength > __Sample(i).length AND __Sample(i).loopStart \ 2 + loopLength <= __Sample(i).length THEN
-                __Sample(i).loopStart = __Sample(i).loopStart \ 2
+            IF loopLength > 2 AND __Instrument(i).loopStart + loopLength > __Instrument(i).length AND __Instrument(i).loopStart \ 2 + loopLength <= __Instrument(i).length THEN
+                __Instrument(i).loopStart = __Instrument(i).loopStart \ 2
             END IF
 
-            IF __Sample(i).length = 2 THEN __Sample(i).length = 0
+            IF __Instrument(i).length = 2 THEN __Instrument(i).length = 0
 
-            IF __Sample(i).length > 0 THEN
-                __Sample(i).loopEnd = __Sample(i).loopStart + loopLength
+            IF __Instrument(i).length > 0 THEN
+                __Instrument(i).loopEnd = __Instrument(i).loopStart + loopLength
 
-                IF __Sample(i).loopStart >= __Sample(i).length THEN __Sample(i).loopStart = __Sample(i).length - 1
+                IF __Instrument(i).loopStart >= __Instrument(i).length THEN __Instrument(i).loopStart = __Instrument(i).length - 1
 
-                IF __Sample(i).loopStart > __Sample(i).loopEnd OR __Sample(i).loopEnd < 4 OR __Sample(i).loopEnd - __Sample(i).loopStart < 4 THEN
-                    __Sample(i).loopStart = 0
-                    __Sample(i).loopEnd = 0
+                IF __Instrument(i).loopStart > __Instrument(i).loopEnd OR __Instrument(i).loopEnd < 4 OR __Instrument(i).loopEnd - __Instrument(i).loopStart < 4 THEN
+                    __Instrument(i).loopStart = 0
+                    __Instrument(i).loopEnd = 0
                 END IF
 
                 ' Fix for most likely broken sample loops. This fixes super_sufm_-_new_life.mod (M.K.) which has a long sample which is looped from 0 to 4.
@@ -458,26 +504,26 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 ' On the other hand, "Crew Generation" by Necros (6CHN) has a sample with a similar loop, which is supposed to be played.
                 ' To be able to correctly play both modules, we will draw a somewhat arbitrary line here and trust the loop points in MODs with more than
                 ' 4 channels, even if they are tiny and at the very beginning of the sample.
-                IF __Sample(i).loopEnd <= 8 AND __Sample(i).loopStart = 0 AND __Sample(i).length > __Sample(i).loopEnd AND __Song.channels = 4 THEN
-                    __Sample(i).loopEnd = 0
+                IF __Instrument(i).loopEnd <= 8 AND __Instrument(i).loopStart = 0 AND __Instrument(i).length > __Instrument(i).loopEnd AND __Song.channels = 4 THEN
+                    __Instrument(i).loopEnd = 0
                 END IF
 
-                IF __Sample(i).loopEnd > __Sample(i).loopStart THEN
-                    __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
+                IF __Instrument(i).loopEnd > __Instrument(i).loopStart THEN
+                    __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
                 ELSE
-                    __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
-                    __Sample(i).loopStart = 0
-                    __Sample(i).loopEnd = __Sample(i).length
+                    __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+                    __Instrument(i).loopStart = 0
+                    __Instrument(i).loopEnd = __Instrument(i).length
                 END IF
             ELSE
-                __Sample(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
-                __Sample(i).loopStart = 0
-                __Sample(i).loopEnd = 0
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+                __Instrument(i).loopStart = 0
+                __Instrument(i).loopEnd = 0
             END IF
 
             ' Set sample frame size as 1 since MODs always use 8-bit mono samples
-            __Sample(i).sampleSize = SIZE_OF_BYTE
-            __Sample(i).channels = 1
+            __Instrument(i).bytesPerSample = SIZE_OF_BYTE
+            __Instrument(i).channels = 1
         NEXT
 
         __Song.orders = StringFile_ReadByte(memFile)
@@ -502,8 +548,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Resize the pattern data array
         REDIM __Pattern(0 TO __Song.patterns - 1, 0 TO __Song.rows - 1, 0 TO __Song.channels - 1) AS __NoteType
 
-        ' Skip past the 4 byte marker if this is a 31 sample mod
-        IF __Song.samples = 31 THEN StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
+        ' Skip past the 4 byte signature if this is a 31 sample mod
+        IF __Song.instruments = 31 THEN StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
 
         __LoadTables ' load all needed LUTs
 
@@ -524,7 +570,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     byte3 = StringFile_ReadByte(memFile)
                     byte4 = StringFile_ReadByte(memFile)
 
-                    __Pattern(i, a, b).sample = (byte1 AND &HF0) OR _SHR(byte3, 4)
+                    __Pattern(i, a, b).instrument = (byte1 AND &HF0) OR _SHR(byte3, 4)
 
                     period = _SHL(byte1 AND &HF, 8) OR byte2
 
@@ -542,17 +588,17 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                     __Pattern(i, a, b).operand = byte4
 
                     ' Some sanity check
-                    IF __Pattern(i, a, b).sample > __Song.samples THEN __Pattern(i, a, b).sample = 0 ' sample 0 means no sample. So valid sample are 1-15/31
+                    IF __Pattern(i, a, b).instrument > __Song.instruments THEN __Pattern(i, a, b).instrument = 0 ' instrument 0 means no instrument. So valid sample are 1-15/31
                 NEXT
             NEXT
         NEXT
 
         DIM sampBuf AS STRING
-        ' Load the samples
-        FOR i = 0 TO __Song.samples - 1
-            sampBuf = StringFile_ReadString(memFile, __Sample(i).length)
+        ' Load the instruments
+        FOR i = 0 TO __Song.instruments - 1
+            sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
             ' Load sample size bytes of data and send it to our softsynth sample manager
-            SoftSynth_LoadSound i, sampBuf, __Sample(i).sampleSize, __Sample(i).channels
+            SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
         NEXT
 
         ' Setup the channel array
@@ -695,7 +741,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END IF
 
             ' Mix the current tick
-            SoftSynth_Update __Song.samplesPerTick
+            SoftSynth_Update __Song.framesPerTick
 
             ' Increment song tick on each update
             __Song.tick = __Song.tick + 1
@@ -707,11 +753,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     SUB __UpdateMODRow
         SHARED __Song AS __SongType
         SHARED __Pattern() AS __NoteType
-        SHARED __Sample() AS __SampleType
+        SHARED __Instrument() AS __InstrumentType
         SHARED __Channel() AS __ChannelType
         SHARED __PeriodTable() AS _UNSIGNED INTEGER
 
-        DIM AS _UNSIGNED _BYTE nChannel, nNote, nSample, nVolume, nEffect, nOperand, nOpX, nOpY
+        DIM AS _UNSIGNED _BYTE nChannel, nNote, nInstrument, nVolume, nEffect, nOperand, nOpX, nOpY
         ' The effect flags below are set to true when a pattern jump effect and pattern break effect are triggered
         DIM AS _BYTE jumpEffectFlag, breakEffectFlag, noFrequency
 
@@ -721,7 +767,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Process all channels
         FOR nChannel = 0 TO __Song.channels - 1
             nNote = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).note
-            nSample = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).sample
+            nInstrument = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).instrument
             nVolume = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).volume
             nEffect = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).effect
             nOperand = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).operand
@@ -731,17 +777,17 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Set volume. We never play if sample number is zero. Our sample array is 1 based
             ' ONLY RESET VOLUME IF THERE IS A SAMPLE NUMBER
-            IF nSample > 0 THEN
-                __Channel(nChannel).sample = nSample - 1
+            IF nInstrument > 0 THEN
+                __Channel(nChannel).instrument = nInstrument - 1
                 __Channel(nChannel).startPosition = 0 ' reset sample offset if sample changes
                 ' Don't get the volume if delay note, set it when the delay note actually happens
                 IF NOT (nEffect = &HE AND nOpX = &HD) THEN
-                    __Channel(nChannel).volume = __Sample(__Channel(nChannel).sample).volume
+                    __Channel(nChannel).volume = __Instrument(__Channel(nChannel).instrument).volume
                 END IF
             END IF
 
             IF nNote < __NOTE_NONE THEN
-                __Channel(nChannel).lastPeriod = (8363 * __PeriodTable(nNote)) \ __Sample(__Channel(nChannel).sample).c2Spd
+                __Channel(nChannel).lastPeriod = (8363 * __PeriodTable(nNote)) \ __Instrument(__Channel(nChannel).instrument).c2Spd
                 __Channel(nChannel).note = nNote
                 __Channel(nChannel).restart = TRUE
                 __Song.activeChannels = nChannel
@@ -758,7 +804,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 __Channel(nChannel).restart = FALSE
             END IF
 
-            IF nVolume <= __MOD_SAMPLE_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
+            IF nVolume <= __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
             IF nNote = __NOTE_KEY_OFF THEN __Channel(nChannel).volume = 0
 
             ' Process tick 0 effects
@@ -786,8 +832,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &H9 ' 9: Set Sample Offset
                     __Channel(nChannel).startPosition = _SHL(nOperand, 8)
-                    IF __Channel(nChannel).startPosition > __Sample(__Channel(nChannel).sample).length THEN
-                        __Channel(nChannel).startPosition = __Sample(__Channel(nChannel).sample).length
+                    IF __Channel(nChannel).startPosition > __Instrument(__Channel(nChannel).instrument).length THEN
+                        __Channel(nChannel).startPosition = __Instrument(__Channel(nChannel).instrument).length
                     END IF
 
                 CASE &HB ' 11: Jump To Pattern
@@ -798,8 +844,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &HC ' 12: Set Volume
                     __Channel(nChannel).volume = nOperand ' Operand can never be -ve cause it is unsigned. So we only clip for max below
-                    IF __Channel(nChannel).volume > __MOD_SAMPLE_VOLUME_MAX THEN
-                        __Channel(nChannel).volume = __MOD_SAMPLE_VOLUME_MAX
+                    IF __Channel(nChannel).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN
+                        __Channel(nChannel).volume = __MOD_INSTRUMENT_VOLUME_MAX
                     END IF
 
                 CASE &HD ' 13: Pattern Break
@@ -830,7 +876,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                             __Channel(nChannel).waveControl = __Channel(nChannel).waveControl OR nOpY
 
                         CASE &H5 ' 5: Set Finetune
-                            __Sample(__Channel(nChannel).sample).c2Spd = __GetC2Spd(nOpY)
+                            __Instrument(__Channel(nChannel).instrument).c2Spd = __GetC2Spd(nOpY)
 
                         CASE &H6 ' 6: Pattern Loop
                             IF nOpY = 0 THEN
@@ -856,8 +902,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                         CASE &HA ' 10: Fine Volume Slide Up
                             __Channel(nChannel).volume = __Channel(nChannel).volume + nOpY
-                            IF __Channel(nChannel).volume > __MOD_SAMPLE_VOLUME_MAX THEN
-                                __Channel(nChannel).volume = __MOD_SAMPLE_VOLUME_MAX
+                            IF __Channel(nChannel).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN
+                                __Channel(nChannel).volume = __MOD_INSTRUMENT_VOLUME_MAX
                             END IF
 
                         CASE &HB ' 11: Fine Volume Slide Down
@@ -887,7 +933,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             IF NOT noFrequency THEN
                 IF nEffect <> 7 THEN
-                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_SAMPLE_VOLUME_MAX
+                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
                 END IF
                 IF __Channel(nChannel).period > 0 THEN
                     SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
@@ -898,7 +944,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Now play all samples that needs to be played
         FOR nChannel = 0 TO __Song.activeChannels
             IF __Channel(nChannel).restart THEN
-                SoftSynth_PlayVoice nChannel, __Channel(nChannel).sample, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels), __Sample(__Channel(nChannel).sample).playMode, SoftSynth_BytesToFrames(__Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels), SoftSynth_BytesToFrames(__Sample(__Channel(nChannel).sample).loopEnd, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels)
+                SoftSynth_PlayVoice nChannel, __Channel(nChannel).instrument, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), __Instrument(__Channel(nChannel).instrument).playMode, SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopStart, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopEnd, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels)
             END IF
         NEXT
     END SUB
@@ -908,7 +954,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     SUB __UpdateMODTick
         SHARED __Song AS __SongType
         SHARED __Pattern() AS __NoteType
-        SHARED __Sample() AS __SampleType
+        SHARED __Instrument() AS __InstrumentType
         SHARED __Channel() AS __ChannelType
         SHARED __PeriodTable() AS _UNSIGNED INTEGER
 
@@ -975,23 +1021,23 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                             CASE &H9 ' 9: Retrigger Note
                                 IF nOpY <> 0 THEN
                                     IF __Song.tick MOD nOpY = 0 THEN
-                                        SoftSynth_PlayVoice nChannel, __Channel(nChannel).sample, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels), __Sample(__Channel(nChannel).sample).playMode, SoftSynth_BytesToFrames(__Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels), SoftSynth_BytesToFrames(__Sample(__Channel(nChannel).sample).loopEnd, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels)
+                                        SoftSynth_PlayVoice nChannel, __Channel(nChannel).instrument, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), __Instrument(__Channel(nChannel).instrument).playMode, SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopStart, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopEnd, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels)
                                     END IF
                                 END IF
 
                             CASE &HC ' 12: Cut Note
                                 IF __Song.tick = nOpY THEN
                                     __Channel(nChannel).volume = 0
-                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_SAMPLE_VOLUME_MAX
+                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
                                 END IF
 
                             CASE &HD ' 13: Delay Note
                                 IF __Song.tick = nOpY THEN
-                                    __Channel(nChannel).volume = __Sample(__Channel(nChannel).sample).volume
-                                    IF nVolume <= __MOD_SAMPLE_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
+                                    __Channel(nChannel).volume = __Instrument(__Channel(nChannel).instrument).volume
+                                    IF nVolume <= __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
                                     SoftSynth_SetVoiceFrequency nChannel, __GetFrequencyFromPeriod(__Channel(nChannel).period)
-                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_SAMPLE_VOLUME_MAX
-                                    SoftSynth_PlayVoice nChannel, __Channel(nChannel).sample, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels), __Sample(__Channel(nChannel).sample).playMode, SoftSynth_BytesToFrames(__Sample(__Channel(nChannel).sample).loopStart, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels), SoftSynth_BytesToFrames(__Sample(__Channel(nChannel).sample).loopEnd, __Sample(__Channel(nChannel).sample).sampleSize, __Sample(__Channel(nChannel).sample).channels)
+                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
+                                    SoftSynth_PlayVoice nChannel, __Channel(nChannel).instrument, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), __Instrument(__Channel(nChannel).instrument).playMode, SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopStart, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopEnd, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels)
                                 END IF
                         END SELECT
                 END SELECT
@@ -1008,7 +1054,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.bpm = nBPM
 
         ' Calculate the number of samples we have to mix per tick
-        __Song.samplesPerTick = __Song.tempoTimerValue \ nBPM
+        __Song.framesPerTick = __Song.tempoTimerValue \ nBPM
         $CHECKING:ON
     END SUB
 
@@ -1083,9 +1129,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         __Channel(chan).volume = __Channel(chan).volume + x - y
         IF __Channel(chan).volume < 0 THEN __Channel(chan).volume = 0
-        IF __Channel(chan).volume > __MOD_SAMPLE_VOLUME_MAX THEN __Channel(chan).volume = __MOD_SAMPLE_VOLUME_MAX
+        IF __Channel(chan).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(chan).volume = __MOD_INSTRUMENT_VOLUME_MAX
 
-        SoftSynth_SetVoiceVolume chan, __Channel(chan).volume / __MOD_SAMPLE_VOLUME_MAX
+        SoftSynth_SetVoiceVolume chan, __Channel(chan).volume / __MOD_INSTRUMENT_VOLUME_MAX
     END SUB
 
 
@@ -1159,11 +1205,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         delta = _SHR(delta * __Channel(chan).tremoloDepth, 6)
 
         IF __Channel(chan).tremoloPosition >= 0 THEN
-            IF __Channel(chan).volume + delta > __MOD_SAMPLE_VOLUME_MAX THEN delta = __MOD_SAMPLE_VOLUME_MAX - __Channel(chan).volume
-            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume + delta) / __MOD_SAMPLE_VOLUME_MAX
+            IF __Channel(chan).volume + delta > __MOD_INSTRUMENT_VOLUME_MAX THEN delta = __MOD_INSTRUMENT_VOLUME_MAX - __Channel(chan).volume
+            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume + delta) / __MOD_INSTRUMENT_VOLUME_MAX
         ELSE
             IF __Channel(chan).volume - delta < 0 THEN delta = __Channel(chan).volume
-            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume - delta) / __MOD_SAMPLE_VOLUME_MAX
+            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume - delta) / __MOD_INSTRUMENT_VOLUME_MAX
         END IF
 
         __Channel(chan).tremoloPosition = __Channel(chan).tremoloPosition + __Channel(chan).tremoloSpeed
@@ -1175,25 +1221,25 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This will trash the sample managed by the SoftSynth
     SUB __DoInvertLoop (chan AS _UNSIGNED _BYTE)
         SHARED __Channel() AS __ChannelType
-        SHARED __Sample() AS __SampleType
+        SHARED __Instrument() AS __InstrumentType
         SHARED __InvertLoopSpeedTable() AS _UNSIGNED _BYTE
 
         __Channel(chan).invertLoopDelay = __Channel(chan).invertLoopDelay + __InvertLoopSpeedTable(__Channel(chan).invertLoopSpeed)
 
-        DIM sampleNumber AS _UNSIGNED _BYTE: sampleNumber = __Channel(chan).sample ' cache the sample number case we'll use this often below
+        DIM sampleNumber AS _UNSIGNED _BYTE: sampleNumber = __Channel(chan).instrument ' cache the sample number case we'll use this often below
 
-        IF __Channel(chan).invertLoopDelay >= 128 AND SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP = __Sample(sampleNumber).playMode THEN
+        IF __Channel(chan).invertLoopDelay >= 128 AND SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP = __Instrument(sampleNumber).playMode THEN
             __Channel(chan).invertLoopDelay = 0 ' reset delay
-            IF __Channel(chan).invertLoopPosition < __Sample(sampleNumber).loopStart THEN
-                __Channel(chan).invertLoopPosition = __Sample(sampleNumber).loopStart
+            IF __Channel(chan).invertLoopPosition < __Instrument(sampleNumber).loopStart THEN
+                __Channel(chan).invertLoopPosition = __Instrument(sampleNumber).loopStart
             END IF
             __Channel(chan).invertLoopPosition = __Channel(chan).invertLoopPosition + 1 ' increment position by 1
-            IF __Channel(chan).invertLoopPosition >= __Sample(sampleNumber).loopEnd THEN
-                __Channel(chan).invertLoopPosition = __Sample(sampleNumber).loopStart
+            IF __Channel(chan).invertLoopPosition >= __Instrument(sampleNumber).loopEnd THEN
+                __Channel(chan).invertLoopPosition = __Instrument(sampleNumber).loopStart
             END IF
 
             ' Yeah I know, this is weird. QB64 NOT is bitwise and not logical
-            DIM p AS _UNSIGNED LONG: p = SoftSynth_BytesToFrames(__Channel(chan).invertLoopPosition, __Sample(sampleNumber).sampleSize, __Sample(sampleNumber).channels)
+            DIM p AS _UNSIGNED LONG: p = SoftSynth_BytesToFrames(__Channel(chan).invertLoopPosition, __Instrument(sampleNumber).bytesPerSample, __Instrument(sampleNumber).channels)
             SoftSynth_PokeSoundFrameByte sampleNumber, p, NOT SoftSynth_PeekSoundFrameByte(sampleNumber, p)
         END IF
     END SUB
@@ -1255,7 +1301,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Song AS __SongType
 
-        MODPlayer_GetName = __Song.songName
+        MODPlayer_GetName = __Song.caption
         $CHECKING:ON
     END FUNCTION
 

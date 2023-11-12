@@ -100,9 +100,9 @@ $IF MEMFILE_BAS = UNDEFINED THEN
     FUNCTION MemFile_ReadString$ (memFile AS _UNSIGNED _OFFSET, size AS _UNSIGNED LONG)
         DIM dst AS STRING: dst = STRING$(size, NULL)
 
-        DIM dummy AS _UNSIGNED _OFFSET: dummy = MemFile_Read(memFile, _OFFSET(dst), LEN(dst)) ' we'll allow partial string reads
+        DIM bytesRead AS _UNSIGNED _OFFSET: bytesRead = MemFile_Read(memFile, _OFFSET(dst), LEN(dst)) ' we'll allow partial string reads
 
-        MemFile_ReadString = dst
+        MemFile_ReadString = LEFT$(dst, bytesRead)
     END FUNCTION
 
 

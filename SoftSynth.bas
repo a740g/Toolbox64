@@ -159,7 +159,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Stores a sound in the sound data array. The sound is always converted to 32-bit floating point format
+    ' Stores a sound in the sound data array. The sound is always converted to 32-bit floating point mono format
     ' All source integer sound data is expected to be to signed. Use SoftSynth_ConvertU8ToS8 for unsigned 8-bit sounds
     SUB SoftSynth_LoadSound (snd AS LONG, source AS STRING, bytesPerSample AS _UNSIGNED _BYTE, channels AS _UNSIGNED _BYTE)
         SHARED __SoftSynth AS __SoftSynthType
