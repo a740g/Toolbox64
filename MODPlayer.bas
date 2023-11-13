@@ -13,28 +13,28 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     $CONSOLE
-    'DO
-    '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
-    '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
+    DO
+        DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
+        IF NOT _FILEEXISTS(fileName) THEN EXIT DO
 
-    '    IF MODPlayer_LoadFromDisk(fileName) THEN
-    '        MODPlayer_Play
-    '        DIM k AS LONG: k = 0
-    '        DO WHILE k <> 27 AND MODPlayer_IsPlaying
-    '            MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
-    '            LOCATE 1, 1
-    '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.BPM; __Song.speed;
-    '            LOCATE 2, 1:
-    '            PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
-    '            _LIMIT 60
-    '            k = _KEYHIT
-    '            IF k = 32 THEN SLEEP: _KEYCLEAR
-    '        LOOP
-    '        MODPlayer_Stop
-    '    END IF
-    'LOOP
+        IF MODPlayer_LoadFromDisk(fileName) THEN
+            MODPlayer_Play
+            DIM k AS LONG: k = 0
+            DO WHILE k <> 27 AND MODPlayer_IsPlaying
+                MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
+                LOCATE 1, 1
+                PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.BPM; __Song.speed;
+                LOCATE 2, 1:
+                PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
+                _LIMIT 60
+                k = _KEYHIT
+                IF k = 32 THEN SLEEP: _KEYCLEAR
+            LOOP
+            MODPlayer_Stop
+        END IF
+    LOOP
 
-    'END
+    END
 
     PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
     '-------------------------------------------------------------------------------------------------------------------
@@ -141,8 +141,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.periodTableMax = NULL
         __Song.speed = NULL
         __Song.BPM = NULL
-        __Song.defaultSpeed = __SONG_SPEED_DEFAULT
-        __Song.defaultBPM = __SONG_BPM_DEFAULT
+        __Song.defaultSpeed = __SONG_SPEED_DEFAULT ' set this to default MOD speed
+        __Song.defaultBPM = __SONG_BPM_DEFAULT ' set this to default MOD BPM
         __Song.tick = NULL
         __Song.tempoTimerValue = NULL
         __Song.framesPerTick = NULL
@@ -200,9 +200,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
         _ECHO "Reserved = " + _BIN$(word1)
 
-        ' Read the song lenght (orders; but this is not accurate and needs to be fixed)
-        DIM songLength AS _UNSIGNED INTEGER: songLength = StringFile_ReadInteger(memFile)
-        _ECHO "Orders:" + STR$(songLength)
+        ' Read the song orders (note that this count includes 254 & 255 marker orders)
+        __Song.orders = StringFile_ReadInteger(memFile)
+        _ECHO "Orders:" + STR$(__Song.orders)
 
         ' Read the number of instruments
         __Song.instruments = StringFile_ReadInteger(memFile)
@@ -245,7 +245,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Read the sample format type
         word1 = StringFile_ReadInteger(memFile)
-        _ECHO "Sample Format = " + _BIN$(word1)
+        _ECHO "Sample Format = " + STR$(word1)
         DIM isSignedFormat AS _BYTE: isSignedFormat = (word1 = 1)
         _ECHO "isSignedFormat =" + STR$(isSignedFormat)
 
@@ -268,12 +268,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         IF __Song.defaultBPM < 33 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT
         _ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
 
-        ' Read and ignore SoundBlaster master volume crap
-        ' (range 16 <= x <= 127) which is only used for Sound Blaster
-        ' It is multiplied by 11/8 when stereo is o
-        ' TODO: check if we should use this somehow or just Seek and skip past
+        ' Read SoundBlaster master volume crap and check if the stereo frag is set
         byte1 = StringFile_ReadByte(memFile)
-        _ECHO "SoundBlaster master volume =" + HEX$(byte1)
+        _ECHO "SoundBlaster master volume =" + STR$(byte1)
+        DIM isStereo AS _BYTE: isStereo = _READBIT(byte1, 7)
+        _ECHO "isStereo =" + STR$(isStereo)
 
         ' Read and ignore Ultrasound ultra-click removal crap
         ' TODO: check if we should use this somehow or just Seek and skip past
@@ -293,41 +292,22 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         word1 = StringFile_ReadInteger(memFile)
         _ECHO "Special parapointer = " + STR$(word1)
 
-        ' Load channel info
-        DIM channelRemap(0 TO __MTM_S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE
-        DIM fmChannelType(0 TO __MTM_S3M_CHANNEL_MAX) AS _BYTE
-        DIM channelPanning(0 TO __MTM_S3M_CHANNEL_MAX) AS SINGLE
+        ' Load channel info and count total channels
+        DIM channelInfo(0 TO __MTM_S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE ' channel info that we'll use later
 
-        SetMemoryByte _OFFSET(channelRemap(0)), 255, __MTM_S3M_CHANNEL_MAX + 1 ' set all elements to an impossible value: 255
         __Song.channels = 0 ' I know this is set to zero above but safety first
 
         DIM i AS LONG: FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
-            byte1 = StringFile_ReadByte(memFile)
+            channelInfo(i) = StringFile_ReadByte(memFile)
 
             ' Check if the channel is enabled
             ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
             ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
             ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
             ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
-            IF byte1 <= 29 THEN
-                channelRemap(i) = __Song.channels ' store the mapped channel
+            IF channelInfo(i) <= 29 THEN __Song.channels = __Song.channels + 1 ' increment the channel counter
 
-                SELECT CASE byte1
-                    CASE 0 TO 7
-                        channelPanning(i) = -__MOD_STEREO_SEPARATION ' pan to the left
-
-                    CASE 8 TO 15
-                        channelPanning(i) = __MOD_STEREO_SEPARATION ' pan it to the right
-
-                    CASE ELSE
-                        fmChannelType(i) = byte1 ' this channel uses FM instrument
-
-                END SELECT
-
-                __Song.channels = __Song.channels + 1 ' increment the channel counter
-            END IF
-
-            _ECHO "Channel" + STR$(i) + " =" + STR$(channelRemap(i)) + ", channelPanning =" + STR$(channelPanning(i)) + ", FM =" + STR$(fmChannelType(i))
+            _ECHO "Channel info" + STR$(i) + " =" + STR$(channelInfo(i))
         NEXT i
 
         IF __Song.channels < 1 THEN __Song.channels = 1
@@ -337,39 +317,85 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Resize the channel array
         REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
 
-        ' Allocate the number of softsynth voices we need
+        ' Allocate the number of SoftSynth voices we need
         SoftSynth_SetTotalVoices __Song.channels
 
         ' Set voice panning positions
-        FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
-            IF channelRemap(i) <= __MTM_S3M_CHANNEL_MAX THEN
-                SoftSynth_SetVoiceBalance channelRemap(i), channelPanning(i)
-                _ECHO "Real channel " + STR$(channelRemap(i)) + " panning =" + STR$(channelPanning(i))
-                __Channel(channelRemap(i)).isFM = (fmChannelType(i) > 0) ' TODO: check what else we need to do for Adlib emu.
-            END IF
+        FOR i = 0 TO __Song.channels - 1
+            ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
+            ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
+            ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
+            ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
+            SELECT CASE channelInfo(i)
+                CASE 0 TO 7
+                    SoftSynth_SetVoiceBalance i, -__CHANNEL_STEREO_SEPARATION ' pan to the left
+                    __Channel(i).subtype = __CHANNEL_PCM
+
+                CASE 8 TO 15
+                    SoftSynth_SetVoiceBalance i, __CHANNEL_STEREO_SEPARATION ' pan it to the right
+                    __Channel(i).subtype = __CHANNEL_PCM
+
+                CASE 16 TO 24
+                    __Channel(i).subtype = __CHANNEL_FM_MELODY ' FM melody channel
+
+                CASE 25 TO 29
+                    __Channel(i).subtype = __CHANNEL_FM_DRUM ' FM drums channel
+            END SELECT
+
+            _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i)) + " , subtype =" + STR$(__Channel(i).subtype)
         NEXT i
 
-        ' Resize the order array based on songLength
-        REDIM __Order(0 TO songLength - 1) AS _UNSIGNED INTEGER
+        ' Resize the order array
+        REDIM __Order(0 TO __Song.orders - 1) AS _UNSIGNED INTEGER
 
-        ' Read order list as is
-        __Song.orders = 0 ' safety
-        FOR i = 0 TO songLength - 1
-            __Order(i) = StringFile_ReadByte(memFile)
-
-            ' TODO: Handle 255 (end of song marker)?
-            __Order(__Song.orders) = __Order(i)
-            IF __Order(i) < 254 THEN
-                __Song.orders = __Song.orders + 1
-
-                'IF __Order(i) >= __Song.patterns THEN __Song.patterns = __Order(i) + 1
-            END IF
-        NEXT i
-
-        _ECHO "Orders =" + STR$(__Song.orders)
+        ' Read order list
+        ' Note: We'll need to handle 254 & 255 marker orders correctly in the player
         FOR i = 0 TO __Song.orders - 1
+            __Order(i) = StringFile_ReadByte(memFile)
             _ECHO "Order" + STR$(i) + " =" + STR$(__Order(i))
-        NEXT
+        NEXT i
+
+        ' Load and convert instrument parapointers
+        DIM instrumentPointer(0 TO __Song.instruments - 1) AS _UNSIGNED LONG
+
+        FOR i = 0 TO __Song.instruments - 1
+            instrumentPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
+            _ECHO "Instrument" + STR$(i) + " is at" + STR$(instrumentPointer(i))
+        NEXT i
+
+        ' Load and convert pattern parapointers
+        DIM patternPointer(0 TO __Song.patterns - 1) AS _UNSIGNED LONG
+
+        FOR i = 0 TO __Song.patterns - 1
+            patternPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
+            _ECHO "Pattern" + STR$(i) + " is at" + STR$(patternPointer(i))
+        NEXT i
+
+        ' Load the panning table if it is present
+        IF useDefaultPanning THEN
+            ' We have a total of 32 pan positions in the file
+            FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
+                byte1 = StringFile_ReadByte(memFile)
+
+                ' Only set the pan position if the channel is there
+                IF i < __Song.channels THEN
+                    ' WTF! Ewww!
+                    IF _READBIT(byte1, 4) THEN ' if bit 4 is set - byte1 AND &H10
+                        SoftSynth_SetVoiceBalance i, (byte1 AND 15) / 15! * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+                        _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
+                    END IF
+                END IF
+            NEXT i
+        END IF
+
+        ' Set everything to mono if stereo flag is not set. This is so retarded! Sigh!
+        IF NOT isStereo THEN
+            FOR i = 0 TO __Song.channels - 1
+                SoftSynth_SetVoiceBalance i, 0!
+                _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
+            NEXT i
+        END IF
+
 
 
         ' What a fucked up format!
@@ -444,7 +470,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile) ' read the raw value
 
             ' Adjust and save the values per our mixer requirements
-            IF byte1 < 16 AND i < __Song.channels THEN
+            IF i < __Song.channels AND byte1 < 16 THEN
+                ' __CHANNEL_PCM = 0 so all MTM channels are by default PCM
                 SoftSynth_SetVoiceBalance i, (byte1 / 15!) * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
             END IF
         NEXT i
@@ -484,7 +511,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Read volume
             __Instrument(i).volume = StringFile_ReadByte(memFile)
-            IF __Instrument(i).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __MOD_INSTRUMENT_VOLUME_MAX ' MTM uses MOD volume specs.
+            IF __Instrument(i).volume > __INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __INSTRUMENT_VOLUME_MAX ' MTM uses MOD volume specs.
 
             ' Read attribute
             byte1 = StringFile_ReadByte(memFile)
@@ -681,7 +708,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Read volume
             __Instrument(i).volume = StringFile_ReadByte(memFile)
-            IF __Instrument(i).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __MOD_INSTRUMENT_VOLUME_MAX ' Sanity check
+            IF __Instrument(i).volume > __INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __INSTRUMENT_VOLUME_MAX ' Sanity check
 
             ' Read loop start
             byte1 = StringFile_ReadByte(memFile)
@@ -815,6 +842,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT
 
         ' Setup the channel array
+        ' __CHANNEL_PCM = 0 so all MOD channels are by default PCM
         REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
 
         ' Allocate the number of softsynth voices we need
@@ -829,14 +857,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' We will also not do hard left or hard right. Some amount of sound from each channel is allowed to blend with the other
         IF __Song.channels > 1 AND __Song.channels < 4 THEN
             ' Just setup channels 0 and 1. If we have a 3rd channel it will be handle by the SoftSynth
-            SoftSynth_SetVoiceBalance 0, -__MOD_STEREO_SEPARATION
-            SoftSynth_SetVoiceBalance 1, __MOD_STEREO_SEPARATION
+            SoftSynth_SetVoiceBalance 0, -__CHANNEL_STEREO_SEPARATION
+            SoftSynth_SetVoiceBalance 1, __CHANNEL_STEREO_SEPARATION
         ELSE
             FOR i = 0 TO __Song.channels - 1 - (__Song.channels MOD 4) STEP 4
-                SoftSynth_SetVoiceBalance i + 0, -__MOD_STEREO_SEPARATION
-                SoftSynth_SetVoiceBalance i + 1, __MOD_STEREO_SEPARATION
-                SoftSynth_SetVoiceBalance i + 2, __MOD_STEREO_SEPARATION
-                SoftSynth_SetVoiceBalance i + 3, -__MOD_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 0, -__CHANNEL_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 1, __CHANNEL_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 2, __CHANNEL_STEREO_SEPARATION
+                SoftSynth_SetVoiceBalance i + 3, -__CHANNEL_STEREO_SEPARATION
             NEXT
         END IF
 
@@ -869,8 +897,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Initialize some important stuff
         __Song.tempoTimerValue = (SoftSynth_GetSampleRate * __Song.defaultBPM) \ 50
-        __Song.orderPosition = 0
-        __Song.patternRow = 0
+        __Song.orderPosition = NULL
+        __Song.patternRow = NULL
         __Song.speed = __Song.defaultSpeed
         __Song.tick = __Song.speed
         __Song.isPaused = FALSE
@@ -1017,7 +1045,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 __Channel(nChannel).restart = FALSE
             END IF
 
-            IF nVolume <= __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
+            IF nVolume <= __INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
             IF nNote = __NOTE_KEY_OFF THEN __Channel(nChannel).volume = 0
 
             ' Process tick 0 effects
@@ -1057,9 +1085,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                 CASE &HC ' 12: Set Volume
                     __Channel(nChannel).volume = nOperand ' Operand can never be -ve cause it is unsigned. So we only clip for max below
-                    IF __Channel(nChannel).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN
-                        __Channel(nChannel).volume = __MOD_INSTRUMENT_VOLUME_MAX
-                    END IF
+                    IF __Channel(nChannel).volume > __INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = __INSTRUMENT_VOLUME_MAX
 
                 CASE &HD ' 13: Pattern Break
                     __Song.patternRow = (nOpX * 10) + nOpY - 1
@@ -1115,9 +1141,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
                         CASE &HA ' 10: Fine Volume Slide Up
                             __Channel(nChannel).volume = __Channel(nChannel).volume + nOpY
-                            IF __Channel(nChannel).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN
-                                __Channel(nChannel).volume = __MOD_INSTRUMENT_VOLUME_MAX
-                            END IF
+                            IF __Channel(nChannel).volume > __INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = __INSTRUMENT_VOLUME_MAX
 
                         CASE &HB ' 11: Fine Volume Slide Down
                             __Channel(nChannel).volume = __Channel(nChannel).volume - nOpY
@@ -1146,7 +1170,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             IF NOT noFrequency THEN
                 IF nEffect <> 7 THEN
-                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
+                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __INSTRUMENT_VOLUME_MAX
                 END IF
                 IF __Channel(nChannel).period > 0 THEN
                     SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
@@ -1241,15 +1265,15 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                             CASE &HC ' 12: Cut Note
                                 IF __Song.tick = nOpY THEN
                                     __Channel(nChannel).volume = 0
-                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
+                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __INSTRUMENT_VOLUME_MAX
                                 END IF
 
                             CASE &HD ' 13: Delay Note
                                 IF __Song.tick = nOpY THEN
                                     __Channel(nChannel).volume = __Instrument(__Channel(nChannel).instrument).volume
-                                    IF nVolume <= __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
+                                    IF nVolume <= __INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
                                     SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
-                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __MOD_INSTRUMENT_VOLUME_MAX
+                                    SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __INSTRUMENT_VOLUME_MAX
                                     SoftSynth_PlayVoice nChannel, __Channel(nChannel).instrument, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), __Instrument(__Channel(nChannel).instrument).playMode, SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopStart, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopEnd, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels)
                                 END IF
                         END SELECT
@@ -1342,9 +1366,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         __Channel(chan).volume = __Channel(chan).volume + x - y
         IF __Channel(chan).volume < 0 THEN __Channel(chan).volume = 0
-        IF __Channel(chan).volume > __MOD_INSTRUMENT_VOLUME_MAX THEN __Channel(chan).volume = __MOD_INSTRUMENT_VOLUME_MAX
+        IF __Channel(chan).volume > __INSTRUMENT_VOLUME_MAX THEN __Channel(chan).volume = __INSTRUMENT_VOLUME_MAX
 
-        SoftSynth_SetVoiceVolume chan, __Channel(chan).volume / __MOD_INSTRUMENT_VOLUME_MAX
+        SoftSynth_SetVoiceVolume chan, __Channel(chan).volume / __INSTRUMENT_VOLUME_MAX
     END SUB
 
 
@@ -1418,11 +1442,11 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         delta = _SHR(delta * __Channel(chan).tremoloDepth, 6)
 
         IF __Channel(chan).tremoloPosition >= 0 THEN
-            IF __Channel(chan).volume + delta > __MOD_INSTRUMENT_VOLUME_MAX THEN delta = __MOD_INSTRUMENT_VOLUME_MAX - __Channel(chan).volume
-            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume + delta) / __MOD_INSTRUMENT_VOLUME_MAX
+            IF __Channel(chan).volume + delta > __INSTRUMENT_VOLUME_MAX THEN delta = __INSTRUMENT_VOLUME_MAX - __Channel(chan).volume
+            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume + delta) / __INSTRUMENT_VOLUME_MAX
         ELSE
             IF __Channel(chan).volume - delta < 0 THEN delta = __Channel(chan).volume
-            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume - delta) / __MOD_INSTRUMENT_VOLUME_MAX
+            SoftSynth_SetVoiceVolume chan, (__Channel(chan).volume - delta) / __INSTRUMENT_VOLUME_MAX
         END IF
 
         __Channel(chan).tremoloPosition = __Channel(chan).tremoloPosition + __Channel(chan).tremoloSpeed

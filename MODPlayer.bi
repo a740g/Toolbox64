@@ -15,14 +15,17 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __NOTE_NONE = 132 ' Note will be set to this when there is nothing
     CONST __NOTE_KEY_OFF = 133 ' We'll use this in a future version
     CONST __NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
-    CONST __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
-    CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM when it is not specified
-    CONST __MOD_INSTRUMENT_VOLUME_MAX = 64 ' this is the maximum volume of any MOD instrument
     CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
     CONST __MOD_MTM_ORDER_MAX = 127 ' maximum position in a MOD / MTM order table
-    CONST __MOD_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
+    CONST __INSTRUMENT_VOLUME_MAX = 64 ' this is the maximum volume of any MOD instrument
+    CONST __CHANNEL_PCM = 0 ' good old digital PCM channel mixed by SoftSynth
+    CONST __CHANNEL_FM_MELODY = 1 ' FM melody channel emulated by FM emulator
+    CONST __CHANNEL_FM_DRUM = 2 ' FM drum channel emulated by FM emulator
+    CONST __CHANNEL_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
     CONST __MTM_S3M_CHANNEL_MAX = 31 ' maximum channel number supported by MTM / S3M
     CONST __S3M_GLOBAL_VOLUME_MAX = 64 ' S3M global volume maximum value
+    CONST __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
+    CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM when it is not specified
 
     TYPE __NoteType
         note AS _UNSIGNED _BYTE ' contains info on 1 note
@@ -46,7 +49,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     TYPE __ChannelType
         instrument AS _UNSIGNED _BYTE ' instrument number to be mixed
-        isFM AS _BYTE ' is this an Adlib channel?
+        subtype AS _UNSIGNED _BYTE ' what kind of instrument is this? (digital, FM melody, FM drum)
         volume AS INTEGER ' channel volume. This is a signed int because we need -ve values & to clip properly
         restart AS _BYTE ' set this to true to retrigger the sample
         note AS _UNSIGNED _BYTE ' last note set in channel
