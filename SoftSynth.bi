@@ -48,8 +48,13 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
         mode AS LONG ' how should the sample be played
     END TYPE
 
+    TYPE __SoundType
+        frames AS _UNSIGNED LONG ' the total frames in the sound
+        pcmData AS STRING ' the buffer that holds the raw PCM data
+    END TYPE
+
     DIM __SoftSynth AS __SoftSynthType ' holds the softsynth state
-    REDIM __SampleData(0 TO 0) AS STRING ' sample data array
+    REDIM __Sound(0 TO 0) AS __SoundType ' sound data array
     REDIM __Voice(0 TO 0) AS __VoiceType ' voice info array
     REDIM __SoftSynth_SoundBuffer(0 TO 0) AS SINGLE ' mixer buffer (stereo interleaved)
 

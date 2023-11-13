@@ -15,16 +15,15 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     '    SoftSynth_SetTotalVoices 4
 
     '    DIM rawSound AS STRING: rawSound = LoadFile("../../../../Downloads/laser.8")
-    '    DIM k AS LONG: FOR k = 1 TO LEN(rawSound)
-    '        ASC(rawSound, k) = ASC(rawSound, k) XOR &H80
-    '    NEXT k
 
-    '    SoftSynth_LoadSound 0, rawSound, SoftSynth_BytesToFrames(LEN(rawSound), SIZE_OF_BYTE, 1), SIZE_OF_BYTE, 1
+    '    SoftSynth_ConvertU8ToS8 rawSound
+
+    '    SoftSynth_LoadSound 0, rawSound, SIZE_OF_BYTE, 1
 
     '    SoftSynth_SetVoiceFrequency 1, 11025
 
     '    DO
-    '        k = _KEYHIT
+    '        DIM k AS LONG: k = _KEYHIT
 
     '        IF k = 32 THEN SoftSynth_PlayVoice 1, 0, 0, SOFTSYNTH_VOICE_PLAY_FORWARD, 0, SoftSynth_BytesToFrames(LEN(rawSound), SIZE_OF_BYTE, 1) - 1
     '        IF k = 19200 THEN SoftSynth_SetVoiceBalance 1, SoftSynth_GetVoiceBalance(1) - 0.01!
@@ -64,12 +63,11 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Converts an unsigned 8-bit sound to signed 8-bit sound
     SUB SoftSynth_ConvertU8ToS8 (buffer AS STRING)
         $CHECKING:OFF
-        DIM frames AS _UNSIGNED LONG: frames = LEN(buffer)
 
-        DIM i AS _UNSIGNED LONG: WHILE i < frames
+        DIM i AS _UNSIGNED LONG: FOR i = 0 TO LEN(buffer) - 1
             PokeStringByte buffer, i, PeekStringByte(buffer, i) XOR &H80
-            i = i + 1
-        WEND
+        NEXT i
+
         $CHECKING:ON
     END SUB
 
@@ -130,7 +128,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Close the mixer - free all allocated resources
     SUB SoftSynth_Finalize
         SHARED __SoftSynth AS __SoftSynthType
-        SHARED __SampleData() AS STRING
+        SHARED __Sound() AS __SoundType
         SHARED __Voice() AS __VoiceType
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
 
@@ -143,7 +141,7 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         __SoftSynth.soundBufferSamples = 0
         __SoftSynth.soundBufferBytes = 0
 
-        REDIM __SampleData(0 TO 0) AS STRING
+        REDIM __Sound(0 TO 0) AS __SoundType
         REDIM __Voice(0 TO 0) AS __VoiceType
         REDIM __SoftSynth_SoundBuffer(0 TO 0) AS SINGLE
     END SUB
@@ -163,43 +161,42 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' All source integer sound data is expected to be to signed. Use SoftSynth_ConvertU8ToS8 for unsigned 8-bit sounds
     SUB SoftSynth_LoadSound (snd AS LONG, source AS STRING, bytesPerSample AS _UNSIGNED _BYTE, channels AS _UNSIGNED _BYTE)
         SHARED __SoftSynth AS __SoftSynthType
-        SHARED __SampleData() AS STRING
+        SHARED __Sound() AS __SoundType
 
         ' Resize the sound data array if needed
-        IF snd > UBOUND(__SampleData) THEN
+        IF snd > UBOUND(__Sound) THEN
             ' Save the number of samples
             __SoftSynth.sounds = snd + 1
 
-            REDIM _PRESERVE __SampleData(0 TO snd) AS STRING
+            REDIM _PRESERVE __Sound(0 TO snd) AS __SoundType
         END IF
 
-        DIM frames AS _UNSIGNED LONG: frames = SoftSynth_BytesToFrames(LEN(source), bytesPerSample, channels)
+        __Sound(snd).frames = SoftSynth_BytesToFrames(LEN(source), bytesPerSample, channels) ' caluclate and store the total frame count
+        __Sound(snd).pcmData = STRING$(__Sound(snd).frames * SIZE_OF_SINGLE, NULL) ' allocate and silence memory for the to-be converted sound
 
-        __SampleData(snd) = STRING$(frames * SIZE_OF_SINGLE, NULL) ' allocate and silence memory for the to-be converted sound
+        IF __Sound(snd).frames = NULL THEN EXIT SUB ' leave if we have no frames to load
 
-        IF frames = NULL THEN EXIT SUB ' leave if we have no frames to load
-
-        DIM AS _UNSIGNED LONG i, j, maxFrame: maxFrame = frames - 1
+        DIM AS _UNSIGNED LONG i, j
 
         SELECT CASE bytesPerSample
             CASE SIZE_OF_BYTE ' 8-bit
-                FOR i = 0 TO maxFrame
+                FOR i = 0 TO __Sound(snd).frames - 1
                     FOR j = 0 TO channels - 1
-                        PokeStringSingle __SampleData(snd), i, PeekStringSingle(__SampleData(snd), i) + PeekStringByte(source, i + j) / 128!
+                        PokeStringSingle __Sound(snd).pcmData, i, PeekStringSingle(__Sound(snd).pcmData, i) + PeekStringByte(source, i + j) / 128!
                     NEXT j
                 NEXT i
 
             CASE SIZE_OF_INTEGER ' 16-bit
-                FOR i = 0 TO maxFrame
+                FOR i = 0 TO __Sound(snd).frames - 1
                     FOR j = 0 TO channels - 1
-                        PokeStringSingle __SampleData(snd), i, PeekStringSingle(__SampleData(snd), i) + PeekStringInteger(source, i + j) / 32768!
+                        PokeStringSingle __Sound(snd).pcmData, i, PeekStringSingle(__Sound(snd).pcmData, i) + PeekStringInteger(source, i + j) / 32768!
                     NEXT j
                 NEXT i
 
             CASE SIZE_OF_SINGLE ' 32-bit
-                FOR i = 0 TO maxFrame
+                FOR i = 0 TO __Sound(snd).frames - 1
                     FOR j = 0 TO channels - 1
-                        PokeStringSingle __SampleData(snd), i, PeekStringSingle(__SampleData(snd), i) + PeekStringSingle(source, i + j)
+                        PokeStringSingle __Sound(snd).pcmData, i, PeekStringSingle(__Sound(snd).pcmData, i) + PeekStringSingle(source, i + j)
                     NEXT j
                 NEXT i
 
@@ -214,12 +211,9 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     SUB SoftSynth_Update (frames AS _UNSIGNED LONG)
         $CHECKING:OFF
         SHARED __SoftSynth AS __SoftSynthType
-        SHARED __SampleData() AS STRING
+        SHARED __Sound() AS __SoundType
         SHARED __Voice() AS __VoiceType
         SHARED __SoftSynth_SoundBuffer() AS SINGLE
-
-        DIM AS _UNSIGNED LONG v, s, i, iPos, soundFrames
-        DIM AS SINGLE outFrame, lerpAmnt
 
         IF __SoftSynth.soundBufferFrames <> frames THEN
             ' Only resize the buffer is frames is different from what was last set
@@ -239,19 +233,20 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
         ' We will iterate through each channel completely rather than jumping from channel to channel
         ' We are doing this because it is easier for the CPU to access adjacent memory rather than something far away
-        v = 0
+        DIM v AS _UNSIGNED LONG
         DO WHILE v < __SoftSynth.voices
             ' Only proceed if we have a valid sample number (>= 0)
-            IF __Voice(v).snd >= 0 THEN
-                ' Only proceed if we have something play in the sound
-                soundFrames = LEN(__SampleData(__Voice(v).snd)) \ SIZE_OF_SINGLE
+            DIM snd AS LONG: snd = __Voice(v).snd
+            IF snd >= 0 THEN
+                ' Only proceed if we have something to play in the sound
+                DIM soundFrames AS _UNSIGNED LONG: soundFrames = __Sound(snd).frames
                 IF soundFrames > 0 THEN
 
                     ' Increment the active voices
                     __SoftSynth.activeVoices = __SoftSynth.activeVoices + 1
 
                     ' Next we go through the channel sample data and mix it to our mixerBuffer
-                    s = 0: i = 0
+                    DIM AS _UNSIGNED LONG s, i: s = 0: i = 0
                     DO WHILE s < frames
                         ' Check if we crossed the end of the sound and take action based on the playback mode
                         IF __Voice(v).position > __Voice(v).endPosition THEN
@@ -265,14 +260,14 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
 
                         ' Get the frame to mix
                         __Voice(v).oldframe = __Voice(v).frame
-                        iPos = Math_SingleToLong(__Voice(v).position)
+                        DIM iPos AS _UNSIGNED LONG: iPos = Math_SingleToLong(__Voice(v).position)
                         IF iPos < soundFrames THEN
-                            __Voice(v).frame = PeekStringSingle(__SampleData(__Voice(v).snd), iPos)
+                            __Voice(v).frame = PeekStringSingle(__Sound(snd).pcmData, iPos)
                         END IF
 
                         ' Lerp & volume
-                        lerpAmnt = __Voice(v).position - iPos
-                        outFrame = ((1! - lerpAmnt) * __Voice(v).oldframe + lerpAmnt * __Voice(v).frame) * __Voice(v).volume
+                        DIM lerpAmnt AS SINGLE: lerpAmnt = __Voice(v).position - iPos
+                        DIM outFrame AS SINGLE: outFrame = ((1! - lerpAmnt) * __Voice(v).oldframe + lerpAmnt * __Voice(v).frame) * __Voice(v).volume
 
                         ' Move to the next sample position based on the pitch
                         __Voice(v).position = __Voice(v).position + __Voice(v).pitch
@@ -310,9 +305,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Get a sample value for a sample from position (in sample frames)
     FUNCTION SoftSynth_PeekSoundFrameByte%% (snd AS LONG, position AS _UNSIGNED LONG)
         $CHECKING:OFF
-        SHARED __SampleData() AS STRING
 
-        SoftSynth_PeekSoundFrameByte = PeekStringSingle(__SampleData(snd), position) * 128!
+        SHARED __Sound() AS __SoundType
+
+        IF position >= __Sound(snd).frames THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+
+        SoftSynth_PeekSoundFrameByte = PeekStringSingle(__Sound(snd).pcmData, position) * 128!
+
         $CHECKING:ON
     END FUNCTION
 
@@ -320,9 +319,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Writes a sample value to a sample at position (in sample frames)
     SUB SoftSynth_PokeSoundFrameByte (snd AS LONG, position AS _UNSIGNED LONG, frame AS _BYTE)
         $CHECKING:OFF
-        SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(snd), position, frame / 128!
+        SHARED __Sound() AS __SoundType
+
+        IF position >= __Sound(snd).frames THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+
+        PokeStringSingle __Sound(snd).pcmData, position, frame / 128!
+
         $CHECKING:ON
     END SUB
 
@@ -330,9 +333,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Get a sample value for a sample from position (in sample frames)
     FUNCTION SoftSynth_PeekSoundFrameInteger% (snd AS LONG, position AS _UNSIGNED LONG)
         $CHECKING:OFF
-        SHARED __SampleData() AS STRING
 
-        SoftSynth_PeekSoundFrameInteger = PeekStringSingle(__SampleData(snd), position) * 32768!
+        SHARED __Sound() AS __SoundType
+
+        IF position >= __Sound(snd).frames THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+
+        SoftSynth_PeekSoundFrameInteger = PeekStringSingle(__Sound(snd).pcmData, position) * 32768!
+
         $CHECKING:ON
     END FUNCTION
 
@@ -340,9 +347,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Writes a sample value to a sample at position (in sample frames)
     SUB SoftSynth_PokeSoundFrameInteger (snd AS LONG, position AS _UNSIGNED LONG, frame AS INTEGER)
         $CHECKING:OFF
-        SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(snd), position, frame / 32768!
+        SHARED __Sound() AS __SoundType
+
+        IF position >= __Sound(snd).frames THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+
+        PokeStringSingle __Sound(snd).pcmData, position, frame / 32768!
+
         $CHECKING:ON
     END SUB
 
@@ -350,9 +361,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Get a sample value for a sample from position (in sample frames)
     FUNCTION SoftSynth_PeekSoundFrameSingle! (snd AS LONG, position AS _UNSIGNED LONG)
         $CHECKING:OFF
-        SHARED __SampleData() AS STRING
 
-        SoftSynth_PeekSoundFrameSingle = PeekStringSingle(__SampleData(snd), position)
+        SHARED __Sound() AS __SoundType
+
+        IF position >= __Sound(snd).frames THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+
+        SoftSynth_PeekSoundFrameSingle = PeekStringSingle(__Sound(snd).pcmData, position)
+
         $CHECKING:ON
     END FUNCTION
 
@@ -360,9 +375,13 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
     ' Writes a sample value to a sample at position (in sample frames)
     SUB SoftSynth_PokeSoundFrameSingle (snd AS LONG, position AS _UNSIGNED LONG, frame AS SINGLE)
         $CHECKING:OFF
-        SHARED __SampleData() AS STRING
 
-        PokeStringSingle __SampleData(snd), position, frame
+        SHARED __Sound() AS __SoundType
+
+        IF position >= __Sound(snd).frames THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+
+        PokeStringSingle __Sound(snd).pcmData, position, frame
+
         $CHECKING:ON
     END SUB
 
@@ -458,20 +477,18 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __SoftSynth AS __SoftSynthType
         SHARED __Voice() AS __VoiceType
-        SHARED __SampleData() AS STRING
+        SHARED __Sound() AS __SoundType
 
         __Voice(voice).mode = mode
         IF mode > SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP THEN __Voice(voice).mode = SOFTSYNTH_VOICE_PLAY_FORWARD
 
         __Voice(voice).position = position
 
-        DIM maxFrame AS LONG: maxFrame = LEN(__SampleData(snd)) - 1
-
         __Voice(voice).startPosition = startFrame
-        IF __Voice(voice).startPosition > maxFrame THEN __Voice(voice).startPosition = maxFrame
+        IF __Voice(voice).startPosition >= __Sound(snd).frames THEN __Voice(voice).startPosition = __Sound(snd).frames - 1
 
         __Voice(voice).endPosition = endFrame
-        IF __Voice(voice).endPosition > maxFrame THEN __Voice(voice).endPosition = maxFrame
+        IF __Voice(voice).endPosition >= __Sound(snd).frames THEN __Voice(voice).endPosition = __Sound(snd).frames - 1
 
         __Voice(voice).snd = snd
         __Voice(voice).frame = 0!
