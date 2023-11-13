@@ -12,7 +12,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
-    '$CONSOLE
+    $CONSOLE
     'DO
     '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
     '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
@@ -23,7 +23,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '        DO WHILE k <> 27 AND MODPlayer_IsPlaying
     '            MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
     '            LOCATE 1, 1
-    '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.bpm; __Song.speed;
+    '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.BPM; __Song.speed;
     '            LOCATE 2, 1:
     '            PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
     '            _LIMIT 60
@@ -34,9 +34,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '    END IF
     'LOOP
 
-    'PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\aryx.s3m"))
-
     'END
+
+    'PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Loads all required LUTs from DATA
@@ -140,7 +140,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.patternDelay = NULL
         __Song.periodTableMax = NULL
         __Song.speed = NULL
-        __Song.bpm = NULL
+        __Song.BPM = NULL
+        __Song.defaultSpeed = __SONG_SPEED_DEFAULT
+        __Song.defaultBPM = __SONG_BPM_DEFAULT
         __Song.tick = NULL
         __Song.tempoTimerValue = NULL
         __Song.framesPerTick = NULL
@@ -148,7 +150,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.useAmigaLPF = FALSE
         __Song.useST2Vibrato = FALSE
         __Song.useST2Tempo = FALSE
-        __Song.useAMIGASlides = FALSE
+        __Song.useAmigaSlides = FALSE
         __Song.useVolumeOptimization = FALSE
         __Song.useAmigaLimits = FALSE
         __Song.useFilterSFX = FALSE
@@ -176,32 +178,168 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Check if this is really an S3M file
         IF __Song.subtype <> "SCRM" THEN EXIT FUNCTION
+        _ECHO "Type: " + __Song.subtype
 
         ' Seek to the beginning of the file and get the song title
         StringFile_Seek memFile, 0
         __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
+        _ECHO "Name: " + __Song.caption
 
         ' Read and discard DOS EOF marker
         DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile) ' TODO: check if we should just use Seek here
 
         ' Read and discard the file type byte (TODO: check if we really need to be strict and compare this to 16)
         byte1 = StringFile_ReadByte(memFile)
+        _ECHO "File type = " + STR$(byte1)
 
         ' Read and discard the expansion / reserved word (2 bytes)
         DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
+        _ECHO "Reserved = " + _BIN$(word1)
 
         ' Read the song orders
         __Song.orders = StringFile_ReadInteger(memFile) ' TODO: + 1 needed? more fixes needed
+        _ECHO "Orders:" + STR$(__Song.orders)
 
         ' Read the number of instruments
         __Song.instruments = StringFile_ReadInteger(memFile)
+        _ECHO "Instruments:" + STR$(__Song.instruments)
 
         ' Read the number of patterns
         __Song.patterns = StringFile_ReadInteger(memFile) ' TODO: more fixes needed
+        _ECHO "Patterns:" + STR$(__Song.patterns)
 
-        PRINT byte1, word1, __Song.orders, __Song.instruments, __Song.patterns
-        PRINT __Song.subtype; ":"; __Song.caption
+        ' Read the 16-bit flags
+        word1 = StringFile_ReadInteger(memFile)
+        _ECHO "Flags = " + _BIN$(word1)
 
+        ' Set individual flags
+        __Song.useST2Vibrato = _READBIT(word1, 0)
+        __Song.useST2Tempo = _READBIT(word1, 1)
+        __Song.useAmigaSlides = _READBIT(word1, 2)
+        __Song.useVolumeOptimization = _READBIT(word1, 3)
+        __Song.useAmigaLimits = _READBIT(word1, 4)
+        __Song.useFilterSFX = _READBIT(word1, 5)
+        __Song.useST300VolumeSlides = _READBIT(word1, 6)
+        __Song.hasSpecialCustomData = _READBIT(word1, 7)
+
+        _ECHO "useST2Vibrato =" + STR$(__Song.useST2Vibrato)
+        _ECHO "useST2Tempo =" + STR$(__Song.useST2Tempo)
+        _ECHO "useAmigaSlides =" + STR$(__Song.useAmigaSlides)
+        _ECHO "useVolumeOptimization =" + STR$(__Song.useVolumeOptimization)
+        _ECHO "useAmigaLimits =" + STR$(__Song.useAmigaLimits)
+        _ECHO "useFilterSFX =" + STR$(__Song.useFilterSFX)
+        _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
+        _ECHO "hasSpecialCustomData =" + STR$(__Song.hasSpecialCustomData)
+
+        ' Read "Created with tracker / version" info
+        word1 = StringFile_ReadInteger(memFile)
+        _ECHO "CWT/V = " + HEX$(word1)
+
+        ' ST3.00 does volumeslides on EVERY tick. So we'll update the flag
+        __Song.useST300VolumeSlides = __Song.useST300VolumeSlides OR (word1 = &H1300)
+        _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
+
+        ' Read the sample format type
+        word1 = StringFile_ReadInteger(memFile)
+        _ECHO "Sample Format = " + _BIN$(word1)
+        DIM isSignedFormat AS _BYTE: isSignedFormat = (word1 = 1)
+        _ECHO "isSignedFormat =" + STR$(isSignedFormat)
+
+        ' Skip the 4 byte signature
+        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
+
+        ' Read and set the global volume
+        byte1 = StringFile_ReadByte(memFile)
+        _ECHO "Global volume =" + STR$(byte1)
+        SoftSynth_SetGlobalVolume byte1 / __S3M_GLOBAL_VOLUME_MAX
+        _ECHO "SoftSynth global volume =" + STR$(SoftSynth_GetGlobalVolume)
+
+        ' Read the initial speed value
+        __Song.defaultSpeed = StringFile_ReadByte(memFile)
+        IF __Song.defaultSpeed = 0 OR __Song.defaultSpeed = 255 THEN __Song.defaultSpeed = __SONG_SPEED_DEFAULT
+        _ECHO "Initial speed =" + STR$(__Song.defaultSpeed)
+
+        ' Read the initial BPM
+        __Song.defaultBPM = StringFile_ReadByte(memFile)
+        IF __Song.defaultBPM < 33 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT
+        _ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
+
+        ' Read and ignore SoundBlaster master volume crap
+        ' (range 16 <= x <= 127) which is only used for Sound Blaster
+        ' It is multiplied by 11/8 when stereo is o
+        ' TODO: check if we should use this somehow or just Seek and skip past
+        byte1 = StringFile_ReadByte(memFile)
+        _ECHO "SoundBlaster master volume =" + HEX$(byte1)
+
+        ' Read and ignore Ultrasound ultra-click removal crap
+        ' TODO: check if we should use this somehow or just Seek and skip past
+        byte1 = StringFile_ReadByte(memFile)
+        _ECHO "Ultrasound ultra-click removal =" + STR$(byte1)
+
+        ' Read and store if we have to load default pan values later
+        byte1 = StringFile_ReadByte(memFile)
+        _ECHO "Default panning =" + STR$(byte1)
+        DIM useDefaultPanning AS _BYTE: useDefaultPanning = (byte1 = 252)
+        _ECHO "useDefaultPanning =" + STR$(useDefaultPanning)
+
+        ' Skip 8 reserved bytes
+        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 8
+
+        ' Read and ignore the "special custom data" parapointer
+        word1 = StringFile_ReadInteger(memFile)
+        _ECHO "Special parapointer = " + STR$(word1)
+
+        ' Load channel info
+        DIM channelRemap(0 TO __S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE
+        DIM fmChannelType(0 TO __S3M_CHANNEL_MAX) AS _BYTE
+        DIM channelPanning(0 TO __S3M_CHANNEL_MAX) AS SINGLE
+
+        SetMemoryByte _OFFSET(channelRemap(0)), 255, __S3M_CHANNEL_MAX + 1 ' set all elements to an impossible value: 255
+        __Song.channels = 0 ' I know this is set to zero above but safety first
+
+        DIM i AS LONG: FOR i = 0 TO __S3M_CHANNEL_MAX
+            byte1 = StringFile_ReadByte(memFile)
+
+            ' Check if the channel is enabled
+            ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
+            ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
+            ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
+            ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
+            IF byte1 <= 29 THEN
+                channelRemap(i) = __Song.channels ' store the mapped channel
+
+                SELECT CASE byte1
+                    CASE 0 TO 7
+                        channelPanning(i) = -__MOD_STEREO_SEPARATION ' pan to the left
+
+                    CASE 8 TO 15
+                        channelPanning(i) = __MOD_STEREO_SEPARATION ' pan it to the right
+
+                    CASE ELSE
+                        fmChannelType(i) = byte1 ' this channel uses FM instrument
+
+                END SELECT
+
+                __Song.channels = __Song.channels + 1 ' increment the channel counter
+            END IF
+
+            _ECHO "Channel" + STR$(i) + " =" + STR$(channelRemap(i)) + ", channelPanning =" + STR$(channelPanning(i)) + ", FM =" + STR$(fmChannelType(i))
+        NEXT i
+
+        _ECHO "Channels =" + STR$(__Song.channels)
+
+        ' Allocate the number of softsynth voices we need
+        SoftSynth_SetTotalVoices __Song.channels
+
+        ' Set voice panning positions
+        FOR i = 0 TO __S3M_CHANNEL_MAX
+            IF channelRemap(i) <= __S3M_CHANNEL_MAX THEN
+                SoftSynth_SetVoiceBalance channelRemap(i), channelPanning(i)
+                _ECHO "Real channel " + STR$(channelRemap(i)) + " panning =" + STR$(channelPanning(i))
+            END IF
+        NEXT i
+
+        ' What a fucked up format!
         __MODPlayer_LoadS3M = TRUE
     END FUNCTION
 
@@ -269,14 +407,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SoftSynth_SetTotalVoices __Song.channels
 
         ' Read the panning positions
-        DIM i AS LONG: FOR i = 0 TO __MTM_CHANNELS - 1
+        DIM i AS LONG: FOR i = 0 TO __MTM_CHANNEL_MAX
             byte1 = StringFile_ReadByte(memFile) ' read the raw value
 
             ' Adjust and save the values per our mixer requirements
             IF byte1 < 16 AND i < __Song.channels THEN
                 SoftSynth_SetVoiceBalance i, (byte1 / 15!) * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
             END IF
-        NEXT
+        NEXT i
 
         ' Resize the instruments array
         REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
@@ -319,7 +457,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             byte1 = StringFile_ReadByte(memFile)
             __Instrument(i).bytesPerSample = SIZE_OF_BYTE + SIZE_OF_BYTE * (byte1 AND &H1) ' 1 if 8-bit else 2 if 16-bit
             __Instrument(i).channels = 1 ' all MTM sounds are mono
-        NEXT
+        NEXT i
 
         ' Resize the order array (MTMs like MODs always have a 128 byte long order table)
         REDIM __Order(0 TO __MOD_ORDERS - 1) AS _UNSIGNED INTEGER
@@ -365,8 +503,8 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 IF mtmTrack(i, j).effect = &HA AND (mtmTrack(i, j).operand AND &HF0) <> 0 THEN
                     mtmTrack(i, j).operand = mtmTrack(i, j).operand AND &HF0
                 END IF
-            NEXT
-        NEXT
+            NEXT j
+        NEXT i
 
         ' Resize the pattern data array
         REDIM __Pattern(0 TO __Song.patterns - 1, 0 TO __Song.rows - 1, 0 TO __Song.channels - 1) AS __NoteType
@@ -374,7 +512,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read track sequencing data and assemble that to our pattern data
         DIM k AS LONG, w AS _UNSIGNED INTEGER
         FOR i = 0 TO __Song.patterns - 1
-            FOR j = 0 TO __MTM_CHANNELS - 1 ' MTM files stores data for 32 channels irrespective of the actual channels used
+            FOR j = 0 TO __MTM_CHANNEL_MAX ' MTM files stores data for 32 channels irrespective of the actual channels used
                 ' Read the data
                 w = StringFile_ReadInteger(memFile)
 
@@ -383,7 +521,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                 IF w > 0 THEN
                     FOR k = 0 TO __Song.rows - 1
                         __Pattern(i, k, j) = mtmTrack(w - 1, k)
-                    NEXT
+                    NEXT k
                 ELSE
                     ' Populate empty channel
                     FOR k = 0 TO __Song.rows - 1
@@ -392,10 +530,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                         __Pattern(i, k, j).effect = 0
                         __Pattern(i, k, j).operand = 0
                         __Pattern(i, k, j).volume = __NOTE_NO_VOLUME
-                    NEXT
+                    NEXT k
                 END IF
-            NEXT
-        NEXT
+            NEXT j
+        NEXT i
 
         ' Read the tune comment
         __Song.comment = StringFile_ReadString(memFile, commentLen) ' read the comment and leave it untouched
@@ -410,7 +548,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Load sample size bytes of data and send it to our softsynth sample manager
             SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
-        NEXT
+        NEXT i
 
         ' Load all needed LUTs
         __MODPlayer_LoadTables
@@ -697,15 +835,15 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SHARED __Song AS __SongType
 
         ' Initialize some important stuff
-        __Song.tempoTimerValue = (SoftSynth_GetSampleRate * __SONG_BPM_DEFAULT) \ 50
+        __Song.tempoTimerValue = (SoftSynth_GetSampleRate * __Song.defaultBPM) \ 50
         __Song.orderPosition = 0
         __Song.patternRow = 0
-        __Song.speed = __SONG_SPEED_DEFAULT
+        __Song.speed = __Song.defaultSpeed
         __Song.tick = __Song.speed
         __Song.isPaused = FALSE
 
         ' Set default BPM
-        __MODPlayer_SetBPM __SONG_BPM_DEFAULT
+        __MODPlayer_SetBPM __Song.defaultBPM
 
         __Song.isPlaying = TRUE
     END SUB
@@ -768,7 +906,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
                         IF __Song.orderPosition >= __Song.orders THEN
                             IF __Song.isLooping THEN
                                 __Song.orderPosition = __Song.endJumpOrder
-                                __Song.speed = __SONG_SPEED_DEFAULT
+                                __Song.speed = __Song.defaultSpeed
                                 __Song.tick = __Song.speed
                             ELSE
                                 __Song.isPlaying = FALSE
@@ -1093,7 +1231,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         $CHECKING:OFF
         SHARED __Song AS __SongType
 
-        __Song.bpm = nBPM
+        __Song.BPM = nBPM
 
         ' Calculate the number of samples we have to mix per tick
         __Song.framesPerTick = __Song.tempoTimerValue \ nBPM

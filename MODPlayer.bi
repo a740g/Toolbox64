@@ -16,12 +16,14 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __NOTE_KEY_OFF = 133 ' We'll use this in a future version
     CONST __NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
     CONST __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
-    CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM
+    CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM when it is not specified
     CONST __MOD_INSTRUMENT_VOLUME_MAX = 64 ' this is the maximum volume of any MOD instrument
     CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
     CONST __MOD_ORDERS = 128 ' maximum positions in a MOD order table
     CONST __MOD_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
-    CONST __MTM_CHANNELS = 32 ' maximum channels supported by MTM
+    CONST __MTM_CHANNEL_MAX = 31 ' maximum channel number supported by MTM
+    CONST __S3M_GLOBAL_VOLUME_MAX = 64 ' S3M global volume maximum value
+    CONST __S3M_CHANNEL_MAX = 31 ' maximum channel number supported by S3M
 
     TYPE __NoteType
         note AS _UNSIGNED _BYTE ' contains info on 1 note
@@ -45,6 +47,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     TYPE __ChannelType
         instrument AS _UNSIGNED _BYTE ' instrument number to be mixed
+        isFM AS _BYTE ' is this an Adlib channel?
         volume AS INTEGER ' channel volume. This is a signed int because we need -ve values & to clip properly
         restart AS _BYTE ' set this to true to retrigger the sample
         note AS _UNSIGNED _BYTE ' last note set in channel
@@ -88,7 +91,9 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         patternDelay AS _UNSIGNED _BYTE ' number of times to delay pattern for effect EE
         periodTableMax AS _UNSIGNED _BYTE ' we need this for searching through the period table for E3x
         speed AS _UNSIGNED _BYTE ' current song speed
-        bpm AS _UNSIGNED _BYTE ' current song BPM
+        BPM AS _UNSIGNED _BYTE ' current song BPM
+        defaultSpeed AS _UNSIGNED _BYTE ' default song speed
+        defaultBPM AS _UNSIGNED _BYTE ' default song BPM
         tick AS _UNSIGNED _BYTE ' current song tick
         tempoTimerValue AS _UNSIGNED LONG ' (mixer_sample_rate * default_bpm) / 50
         framesPerTick AS _UNSIGNED LONG ' this is the amount of sample frames we have to mix per tick based on mixerRate & bpm
@@ -96,7 +101,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
         useAmigaLPF AS _BYTE ' use Amiga 12 dB/oct Butterworth low-pass filter
         useST2Vibrato AS _BYTE ' use Scream Tracker 2 vibrato
         useST2Tempo AS _BYTE ' use Scream Tracker 2 tempo behavior
-        useAMIGASlides AS _BYTE ' use volume slides similar to Amiga hardware
+        useAmigaSlides AS _BYTE ' use volume slides similar to Amiga hardware
         useVolumeOptimization AS _BYTE ' turn off looping notes which have a zero volume for more than 2 rows
         useAmigaLimits AS _BYTE ' use Amiga limits (limit periods to confine to 113 <= x <= 856)
         useFilterSFX AS _BYTE ' enable filter / sfx with SB
