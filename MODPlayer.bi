@@ -19,11 +19,10 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM when it is not specified
     CONST __MOD_INSTRUMENT_VOLUME_MAX = 64 ' this is the maximum volume of any MOD instrument
     CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
-    CONST __MOD_ORDERS = 128 ' maximum positions in a MOD order table
+    CONST __MOD_MTM_ORDER_MAX = 127 ' maximum position in a MOD / MTM order table
     CONST __MOD_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
-    CONST __MTM_CHANNEL_MAX = 31 ' maximum channel number supported by MTM
+    CONST __MTM_S3M_CHANNEL_MAX = 31 ' maximum channel number supported by MTM / S3M
     CONST __S3M_GLOBAL_VOLUME_MAX = 64 ' S3M global volume maximum value
-    CONST __S3M_CHANNEL_MAX = 31 ' maximum channel number supported by S3M
 
     TYPE __NoteType
         note AS _UNSIGNED _BYTE ' contains info on 1 note

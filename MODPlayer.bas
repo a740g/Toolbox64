@@ -36,7 +36,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
     'END
 
-    'PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
+    PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Loads all required LUTs from DATA
@@ -162,6 +162,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Loads an S3M file into memory and prepares all required globals
     FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
         SHARED __Song AS __SongType
+        SHARED __Order() AS _UNSIGNED INTEGER
+        SHARED __Pattern() AS __NoteType
+        SHARED __Instrument() AS __InstrumentType
+        SHARED __Channel() AS __ChannelType
 
         ' Initialize the softsynth sample mixer
         IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
@@ -196,9 +200,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
         _ECHO "Reserved = " + _BIN$(word1)
 
-        ' Read the song orders
-        __Song.orders = StringFile_ReadInteger(memFile) ' TODO: + 1 needed? more fixes needed
-        _ECHO "Orders:" + STR$(__Song.orders)
+        ' Read the song lenght (orders; but this is not accurate and needs to be fixed)
+        DIM songLength AS _UNSIGNED INTEGER: songLength = StringFile_ReadInteger(memFile)
+        _ECHO "Orders:" + STR$(songLength)
 
         ' Read the number of instruments
         __Song.instruments = StringFile_ReadInteger(memFile)
@@ -290,14 +294,14 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         _ECHO "Special parapointer = " + STR$(word1)
 
         ' Load channel info
-        DIM channelRemap(0 TO __S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE
-        DIM fmChannelType(0 TO __S3M_CHANNEL_MAX) AS _BYTE
-        DIM channelPanning(0 TO __S3M_CHANNEL_MAX) AS SINGLE
+        DIM channelRemap(0 TO __MTM_S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE
+        DIM fmChannelType(0 TO __MTM_S3M_CHANNEL_MAX) AS _BYTE
+        DIM channelPanning(0 TO __MTM_S3M_CHANNEL_MAX) AS SINGLE
 
-        SetMemoryByte _OFFSET(channelRemap(0)), 255, __S3M_CHANNEL_MAX + 1 ' set all elements to an impossible value: 255
+        SetMemoryByte _OFFSET(channelRemap(0)), 255, __MTM_S3M_CHANNEL_MAX + 1 ' set all elements to an impossible value: 255
         __Song.channels = 0 ' I know this is set to zero above but safety first
 
-        DIM i AS LONG: FOR i = 0 TO __S3M_CHANNEL_MAX
+        DIM i AS LONG: FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
             byte1 = StringFile_ReadByte(memFile)
 
             ' Check if the channel is enabled
@@ -326,18 +330,47 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             _ECHO "Channel" + STR$(i) + " =" + STR$(channelRemap(i)) + ", channelPanning =" + STR$(channelPanning(i)) + ", FM =" + STR$(fmChannelType(i))
         NEXT i
 
+        IF __Song.channels < 1 THEN __Song.channels = 1
+
         _ECHO "Channels =" + STR$(__Song.channels)
+
+        ' Resize the channel array
+        REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
 
         ' Allocate the number of softsynth voices we need
         SoftSynth_SetTotalVoices __Song.channels
 
         ' Set voice panning positions
-        FOR i = 0 TO __S3M_CHANNEL_MAX
-            IF channelRemap(i) <= __S3M_CHANNEL_MAX THEN
+        FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
+            IF channelRemap(i) <= __MTM_S3M_CHANNEL_MAX THEN
                 SoftSynth_SetVoiceBalance channelRemap(i), channelPanning(i)
                 _ECHO "Real channel " + STR$(channelRemap(i)) + " panning =" + STR$(channelPanning(i))
+                __Channel(channelRemap(i)).isFM = (fmChannelType(i) > 0) ' TODO: check what else we need to do for Adlib emu.
             END IF
         NEXT i
+
+        ' Resize the order array based on songLength
+        REDIM __Order(0 TO songLength - 1) AS _UNSIGNED INTEGER
+
+        ' Read order list as is
+        __Song.orders = 0 ' safety
+        FOR i = 0 TO songLength - 1
+            __Order(i) = StringFile_ReadByte(memFile)
+
+            ' TODO: Handle 255 (end of song marker)?
+            __Order(__Song.orders) = __Order(i)
+            IF __Order(i) < 254 THEN
+                __Song.orders = __Song.orders + 1
+
+                'IF __Order(i) >= __Song.patterns THEN __Song.patterns = __Order(i) + 1
+            END IF
+        NEXT i
+
+        _ECHO "Orders =" + STR$(__Song.orders)
+        FOR i = 0 TO __Song.orders - 1
+            _ECHO "Order" + STR$(i) + " =" + STR$(__Order(i))
+        NEXT
+
 
         ' What a fucked up format!
         __MODPlayer_LoadS3M = TRUE
@@ -407,7 +440,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         SoftSynth_SetTotalVoices __Song.channels
 
         ' Read the panning positions
-        DIM i AS LONG: FOR i = 0 TO __MTM_CHANNEL_MAX
+        DIM i AS LONG: FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
             byte1 = StringFile_ReadByte(memFile) ' read the raw value
 
             ' Adjust and save the values per our mixer requirements
@@ -460,10 +493,10 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT i
 
         ' Resize the order array (MTMs like MODs always have a 128 byte long order table)
-        REDIM __Order(0 TO __MOD_ORDERS - 1) AS _UNSIGNED INTEGER
+        REDIM __Order(0 TO __MOD_MTM_ORDER_MAX) AS _UNSIGNED INTEGER
 
         ' Read order list
-        FOR i = 0 TO __MOD_ORDERS - 1 ' MTMs like MODs always have a 128 byte long order table
+        FOR i = 0 TO __MOD_MTM_ORDER_MAX ' MTMs like MODs always have a 128 byte long order table
             __Order(i) = StringFile_ReadByte(memFile)
         NEXT
 
@@ -512,7 +545,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read track sequencing data and assemble that to our pattern data
         DIM k AS LONG, w AS _UNSIGNED INTEGER
         FOR i = 0 TO __Song.patterns - 1
-            FOR j = 0 TO __MTM_CHANNEL_MAX ' MTM files stores data for 32 channels irrespective of the actual channels used
+            FOR j = 0 TO __MTM_S3M_CHANNEL_MAX ' MTM files stores data for 32 channels irrespective of the actual channels used
                 ' Read the data
                 w = StringFile_ReadInteger(memFile)
 
@@ -707,17 +740,17 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         NEXT
 
         __Song.orders = StringFile_ReadByte(memFile)
-        IF __Song.orders > __MOD_ORDERS THEN __Song.orders = __MOD_ORDERS ' clamp to MOD specific max
+        IF __Song.orders >= __MOD_MTM_ORDER_MAX THEN __Song.orders = __MOD_MTM_ORDER_MAX + 1 ' clamp to MOD specific max
 
         __Song.endJumpOrder = StringFile_ReadByte(memFile)
         IF __Song.endJumpOrder >= __Song.orders THEN __Song.endJumpOrder = 0
 
         ' Resize the order array (MODs always have a 128 byte long order table)
-        REDIM __Order(0 TO __MOD_ORDERS - 1) AS _UNSIGNED INTEGER
+        REDIM __Order(0 TO __MOD_MTM_ORDER_MAX) AS _UNSIGNED INTEGER
 
         ' Load the pattern table, and find the highest pattern to load
         __Song.patterns = 0
-        FOR i = 0 TO __MOD_ORDERS - 1 ' MODs always have a 128 byte long order table
+        FOR i = 0 TO __MOD_MTM_ORDER_MAX ' MODs always have a 128 byte long order table
             __Order(i) = StringFile_ReadByte(memFile)
             IF __Order(i) > __Song.patterns THEN __Song.patterns = __Order(i)
         NEXT
