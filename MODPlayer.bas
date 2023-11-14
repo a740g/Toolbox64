@@ -305,7 +305,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
             ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
             ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
-            IF channelInfo(i) <= 29 THEN __Song.channels = __Song.channels + 1 ' increment the channel counter
+            IF channelInfo(i) <= 29 THEN __Song.channels = i + 1 ' bump channel count to max enabled channel + 1
 
             _ECHO "Channel info" + STR$(i) + " =" + STR$(channelInfo(i))
         NEXT i
@@ -396,7 +396,77 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             NEXT i
         END IF
 
+        ' Resize the instruments array
+        REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
 
+        ' Go through the instrument data and load whatever we need
+        FOR i = 0 TO __Song.instruments - 1
+            ' Seek to the correct position in the file to read the instrument info
+            StringFile_Seek memFile, instrumentPointer(i)
+
+            ' Read the instrument type
+            __Instrument(i).subtype = StringFile_ReadByte(memFile)
+
+            ' Read the instrument file name. We'll replace it with the title later on if needed
+            __Instrument(i).caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 13))
+
+            ' Read and convert the actual address to the instrument PCM / FM data
+            ' Convert this to a long. Eww! WTF!
+            byte1 = StringFile_ReadByte(memFile)
+            word1 = StringFile_ReadInteger(memFile)
+            instrumentPointer(i) = _SHL(byte1, 16) + word1 ' we'll re-use instrumentPointer array for this
+
+            ' Read the length
+            __Instrument(i).length = StringFile_ReadLong(memFile)
+
+            ' Read loop start
+            __Instrument(i).loopStart = StringFile_ReadLong(memFile)
+
+            ' Read loop end
+            __Instrument(i).loopEnd = StringFile_ReadLong(memFile)
+
+            ' Read volume
+            __Instrument(i).volume = StringFile_ReadByte(memFile)
+            IF __Instrument(i).volume > __INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __INSTRUMENT_VOLUME_MAX
+
+            ' Skip 1 reserved byte
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
+
+            ' Skip pack flag (1 byte). TODO: Do we really skip or implement an ADPCM unpacker?
+            ' So 0 = PCM, 1 = DP30ADPCM, 3 = ADPCM
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
+
+            ' bits: 0 = loop, 1 = stereo (chans not interleaved!), 2 = 16-bit samples (little endian)
+            byte1 = StringFile_ReadByte(memFile)
+
+            IF _READBIT(byte1, 0) THEN
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
+            ELSE
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+            END IF
+
+            IF _READBIT(byte1, 1) THEN
+                __Instrument(i).channels = 2
+            ELSE
+                __Instrument(i).channels = 1
+            END IF
+
+            IF _READBIT(byte1, 2) THEN
+                __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
+            ELSE
+                __Instrument(i).bytesPerSample = SIZE_OF_BYTE
+            END IF
+
+            ' Read C2SPD (only the low word is used)
+            __Instrument(i).c2Spd = StringFile_ReadLong(memFile) AND &HFFFF
+
+            ' Store the instrument name if it is not empty
+            DIM instrumentName AS STRING: instrumentName = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28))
+            IF LEN(_TRIM$(instrumentName)) <> NULL THEN __Instrument(i).caption = instrumentName
+
+            ' Skip the 'SCRS' label. TODO: Check if we need to be strict with this one
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
+        NEXT i
 
         ' What a fucked up format!
         __MODPlayer_LoadS3M = TRUE

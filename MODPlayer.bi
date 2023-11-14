@@ -37,6 +37,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     TYPE __InstrumentType
         caption AS STRING ' instrument name or message
+        subtype AS _UNSIGNED _BYTE ' what kind of instrument is this? (digital, FM melody, FM drum)
         length AS _UNSIGNED LONG ' sample length in bytes
         c2Spd AS _UNSIGNED INTEGER ' sample finetune is converted to c2spd
         volume AS _UNSIGNED _BYTE ' volume: 0 - 64
@@ -49,7 +50,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     TYPE __ChannelType
         instrument AS _UNSIGNED _BYTE ' instrument number to be mixed
-        subtype AS _UNSIGNED _BYTE ' what kind of instrument is this? (digital, FM melody, FM drum)
+        subtype AS _UNSIGNED _BYTE ' what kind of channel is this? (digital, FM melody, FM drum)
         volume AS INTEGER ' channel volume. This is a signed int because we need -ve values & to clip properly
         restart AS _BYTE ' set this to true to retrigger the sample
         note AS _UNSIGNED _BYTE ' last note set in channel
