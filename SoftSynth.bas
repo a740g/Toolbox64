@@ -483,13 +483,8 @@ $IF SOFTSYNTH_BAS = UNDEFINED THEN
         IF mode > SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP THEN __Voice(voice).mode = SOFTSYNTH_VOICE_PLAY_FORWARD
 
         __Voice(voice).position = position
-
         __Voice(voice).startPosition = startFrame
-        IF __Voice(voice).startPosition >= __Sound(snd).frames THEN __Voice(voice).startPosition = __Sound(snd).frames - 1
-
         __Voice(voice).endPosition = endFrame
-        IF __Voice(voice).endPosition >= __Sound(snd).frames THEN __Voice(voice).endPosition = __Sound(snd).frames - 1
-
         __Voice(voice).snd = snd
         __Voice(voice).frame = 0!
         __Voice(voice).oldframe = 0!
