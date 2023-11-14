@@ -21,14 +21,18 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             MODPlayer_Play
             DIM k AS LONG: k = 0
             DO WHILE k <> 27 AND MODPlayer_IsPlaying
-                MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
+                MODPlayer_Update 0.05! 'SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
                 LOCATE 1, 1
                 PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.BPM; __Song.speed;
                 LOCATE 2, 1:
                 PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
                 _LIMIT 60
                 k = _KEYHIT
-                IF k = 32 THEN SLEEP: _KEYCLEAR
+                IF k = 32 THEN
+                    DIM pause AS _BYTE: pause = NOT pause
+                    MODPlayer_Pause pause
+                    _KEYCLEAR
+                END IF
             LOOP
             MODPlayer_Stop
         END IF
