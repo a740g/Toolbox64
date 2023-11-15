@@ -13,9 +13,6 @@ $IF SOFTSYNTH_BI = UNDEFINED THEN
 
     CONST SOFTSYNTH_VOICE_PLAY_FORWARD = 0 ' single-shot forward playback
     CONST SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP = 1 ' forward-looping playback
-    CONST SOFTSYNTH_VOICE_PLAY_REVERSE = 2 ' reverse playback
-    CONST SOFTSYNTH_VOICE_PLAY_REVERSE_LOOP = 3 ' reverse loop
-    CONST SOFTSYNTH_VOICE_PLAY_BIDIRECTIONAL_LOOP = 4 ' BIDI loop
     CONST SOFTSYNTH_VOICE_VOLUME_MAX = 1! ' this is the maximum volume of any sample
     CONST SOFTSYNTH_VOICE_PAN_LEFT = -1! ' leftmost pannning position
     CONST SOFTSYNTH_VOICE_PAN_RIGHT = 1! ' rightmost pannning position

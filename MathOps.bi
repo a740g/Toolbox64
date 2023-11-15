@@ -11,18 +11,20 @@ $IF MATHOPS_BI = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    'PRINT GetRandomValue
-    'PRINT GetRandomMaximum
-    'PRINT MaxDouble(24.4, 645.355)
-    'PRINT MaxLong(-20, 0)
-    'PRINT MinLong(0, 20)
-    'PRINT MinInteger64(-244334, 0)
+    'PRINT Math_GetRandomValue
+    'PRINT Math_GetRandomMax
+    'PRINT Math_GetMaxDouble(24.4, 645.355)
+    'PRINT Math_GetMaxLong(-20, 0)
+    'PRINT Math_GetMinLong(0, 20)
+    'PRINT Math_GetMinInteger64(-244334, 0)
     'PRINT FIX(2.5!), FIX(1.5!), FIX(2.1!), FIX(1.1!)
-    'PRINT SingleToLong(2.5!), SingleToLong(1.5!), SingleToLong(2.1!), SingleToLong(1.1!)
+    'PRINT Math_SingleToLong(2.5!), Math_SingleToLong(1.5!), Math_SingleToLong(2.1!), Math_SingleToLong(1.1!)
     'DIM n AS SINGLE, i AS LONG
     'n = 1.5!
-    'i = SingleToLong(n)
+    'i = Math_SingleToLong(n)
     'PRINT n, i
+    'PRINT Math_FastSquareRoot(256)
+    'PRINT Math_FastInverseSquareRoot(256)
 
     'END
     '-------------------------------------------------------------------------------------------------------------------
@@ -62,14 +64,14 @@ $IF MATHOPS_BI = UNDEFINED THEN
         FUNCTION Math_RemapInteger64&& (BYVAL value AS _INTEGER64, BYVAL oldMin AS _INTEGER64, BYVAL oldMax AS _INTEGER64, BYVAL newMin AS _INTEGER64, BYVAL newMax AS _INTEGER64)
         FUNCTION Math_RemapSingle! (BYVAL value AS SINGLE, BYVAL oldMin AS SINGLE, BYVAL oldMax AS SINGLE, BYVAL newMin AS SINGLE, BYVAL newMax AS SINGLE)
         FUNCTION Math_RemapDouble# (BYVAL value AS DOUBLE, BYVAL oldMin AS DOUBLE, BYVAL oldMax AS DOUBLE, BYVAL newMin AS DOUBLE, BYVAL newMax AS DOUBLE)
-        FUNCTION Math_GetSingleMax! ALIAS "fmaxf" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
-        FUNCTION Math_GetSingleMin! ALIAS "fminf" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
-        FUNCTION Math_GetDoubleMax# ALIAS "fmax" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
-        FUNCTION Math_GetDoubleMin# ALIAS "fmin" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
-        FUNCTION Math_GetLongMax& (BYVAL a AS LONG, BYVAL b AS LONG)
-        FUNCTION Math_GetLongMin& (BYVAL a AS LONG, BYVAL b AS LONG)
-        FUNCTION Math_GetInteger64Max&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
-        FUNCTION Math_GetInteger64Min&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
+        FUNCTION Math_GetMaxSingle! ALIAS "fmaxf" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
+        FUNCTION Math_GetMinSingle! ALIAS "fminf" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
+        FUNCTION Math_GetMaxDouble# ALIAS "fmax" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+        FUNCTION Math_GetMinDouble# ALIAS "fmin" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+        FUNCTION Math_GetMaxLong& (BYVAL a AS LONG, BYVAL b AS LONG)
+        FUNCTION Math_GetMinLong& (BYVAL a AS LONG, BYVAL b AS LONG)
+        FUNCTION Math_GetMaxInteger64&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
+        FUNCTION Math_GetMinInteger64&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
         FUNCTION Math_LerpSingle! (BYVAL startValue AS SINGLE, BYVAL endValue AS SINGLE, BYVAL amount AS SINGLE)
         FUNCTION Math_LerpDouble# (BYVAL startValue AS DOUBLE, BYVAL endValue AS DOUBLE, BYVAL amount AS DOUBLE)
         FUNCTION Math_NormalizeSingle! (BYVAL value AS SINGLE, BYVAL startValue AS SINGLE, BYVAL endValue AS SINGLE)
@@ -80,11 +82,12 @@ $IF MATHOPS_BI = UNDEFINED THEN
         FUNCTION Math_IsDoubleEqual%% (BYVAL x AS DOUBLE, BYVAL y AS DOUBLE)
         FUNCTION Math_FMASingle! ALIAS "fmaf" (BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE)
         FUNCTION Math_FMADouble# ALIAS "fma" (BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE)
-        FUNCTION Math_FastIntegerPower&& (BYVAL b AS _INTEGER64, BYVAL e AS _UNSIGNED _BYTE)
-        FUNCTION Math_SinglePower! ALIAS "powf" (BYVAL b AS SINGLE, BYVAL e AS SINGLE)
-        FUNCTION Math_DoublePower# ALIAS "pow" (BYVAL b AS DOUBLE, BYVAL e AS DOUBLE)
-        function Math_FastSquareRoot!(BYVAL n AS SINGLE)
-        function Math_FastInverseSquareRoot!(BYVAL n AS SINGLE)
+        FUNCTION Math_PowerSingle! ALIAS "powf" (BYVAL b AS SINGLE, BYVAL e AS SINGLE)
+        FUNCTION Math_PowerDouble# ALIAS "pow" (BYVAL b AS DOUBLE, BYVAL e AS DOUBLE)
+        FUNCTION Math_FastPowerSingle! ALIAS "__builtin_powif" (BYVAL b AS SINGLE, BYVAL e AS LONG)
+        FUNCTION Math_FastPowerDouble# ALIAS "__builtin_powi" (BYVAL b AS DOUBLE, BYVAL e AS LONG)
+        FUNCTION Math_FastSquareRoot! (BYVAL n AS SINGLE)
+        FUNCTION Math_FastInverseSquareRoot! (BYVAL n AS SINGLE)
         FUNCTION Math_Log10Single! ALIAS "log10f" (BYVAL n AS SINGLE)
         FUNCTION Math_Log10Double# ALIAS "log10" (BYVAL n AS DOUBLE)
         FUNCTION Math_Log2Single! ALIAS "log2f" (BYVAL n AS SINGLE)

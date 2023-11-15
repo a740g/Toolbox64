@@ -23,10 +23,10 @@ inline constexpr T Math_Clamp(T x, T lo, T hi)
 #define Math_ClampInteger64(_x_, _lo_, _hi_) Math_Clamp<int64_t>((_x_), (_lo_), (_hi_))
 #define Math_ClampSingle(_x_, _lo_, _hi_) Math_Clamp<float>((_x_), (_lo_), (_hi_))
 #define Math_ClampDouble(_x_, _lo_, _hi_) Math_Clamp<double>((_x_), (_lo_), (_hi_))
-#define Math_GetLongMax(_a_, _b_) std::max<int32_t>((_a_), (_b_))
-#define Math_GetInteger64Max(_a_, _b_) std::max<int64_t>((_a_), (_b_))
-#define Math_GetLongMin(_a_, _b_) std::min<int32_t>((_a_), (_b_))
-#define Math_GetInteger64Min(_a_, _b_) std::min<int64_t>((_a_), (_b_))
+#define Math_GetMaxLong(_a_, _b_) std::max<int32_t>((_a_), (_b_))
+#define Math_GetMaxInteger64(_a_, _b_) std::max<int64_t>((_a_), (_b_))
+#define Math_GetMinLong(_a_, _b_) std::min<int32_t>((_a_), (_b_))
+#define Math_GetMinInteger64(_a_, _b_) std::min<int64_t>((_a_), (_b_))
 #define Math_GetRandomMax() RAND_MAX
 
 extern void sub_randomize(double seed, int32_t passed); // QB64's random seed function
@@ -345,94 +345,6 @@ inline qb_bool Math_IsSingleEqual(float x, float y)
 inline qb_bool Math_IsDoubleEqual(double x, double y)
 {
     return TO_QB_BOOL(fabs(x - y) <= DBL_EPSILON * fmax(1.0, fmax(fabs(x), fabs(y))));
-}
-
-/// @brief Returns base raised to the power of exp (https://gist.github.com/orlp/3551590)
-/// @param base An integer base
-/// @param exp A positive integer exponent (0 - 63)
-/// @return base raised to the opower of exp
-int64_t Math_FastIntegerPower(int64_t base, uint8_t exp)
-{
-    // clang-format off
-    static const uint8_t highest_bit_set[] = {
-        0, 1, 2, 2, 3, 3, 3, 3,
-        4, 4, 4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 255, // anything past 63 is a guaranteed overflow with base > 1
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-        255, 255, 255, 255, 255, 255, 255, 255,
-    };
-    // clang-format on
-
-    int64_t result = 1;
-
-    switch (highest_bit_set[exp])
-    {
-    case 255: // we use 255 as an overflow marker and return 0 on overflow/underflow
-        if (base == 1)
-            return 1;
-
-        if (base == -1)
-            return 1 - 2 * (exp & 1);
-
-        return 0;
-    case 6:
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    case 5:
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    case 4:
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    case 3:
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    case 2:
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
-    case 1:
-        if (exp & 1)
-            result *= base;
-    default:
-        return result;
-    }
 }
 
 /// @brief This one comes from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Approximations_that_depend_on_the_floating_point_representation
