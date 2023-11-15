@@ -12,53 +12,53 @@
 #include <vector>
 #include <memory>
 
-struct Voice
-{
-    static const auto NO_SOUND = -1; // used to unbind a sound from a voice
-
-    /// @brief Various playing modes
-    enum PlayMode
-    {
-        FORWARD = 0,        // single-shot forward playback
-        FORWARD_LOOP,       // forward-looping playback
-        REVERSE,            // single-shot reverse playback
-        REVERSE_LOOP,       // reverse-looping playback
-        BIDIRECTIONAL_LOOP, // bi-directional looping playback
-        COUNT               // total number of playback modes
-    };
-
-    int32_t sound;          // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
-    uint32_t frequency;     // the frequency of the sound
-    float pitch;            // the mixer uses this to step through the sound frames correctly
-    float volume;           // voice volume (0.0 - 1.0)
-    float balance;          // position -0.5 is leftmost ... 0.5 is rightmost
-    float position;         // sample frame position in the sound buffer
-    uint32_t startPosition; // this can be loop start or just start depending on play mode (in frames!)
-    uint32_t endPosition;   // this can be loop end or just end depending on play mode (in frames!)
-    int32_t mode;           // how should the sound be played?
-    float frame;            // current frame
-    float oldFrame;         // the previous frame
-
-    /// @brief Initialized the voice (including pan position)
-    Voice()
-    {
-        Reset();
-        balance = 0.0f; // center the voice only when creating it the first time
-    }
-
-    /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
-    void Reset()
-    {
-        sound = NO_SOUND;
-        volume = 1.0f;
-        frequency = startPosition = endPosition = 0;
-        position = pitch = frame = oldFrame = 0.0f;
-        mode = PlayMode::FORWARD;
-    }
-};
-
 struct SoftSynth
 {
+    struct Voice
+    {
+        static const auto NO_SOUND = -1; // used to unbind a sound from a voice
+
+        /// @brief Various playing modes
+        enum PlayMode
+        {
+            FORWARD = 0,        // single-shot forward playback
+            FORWARD_LOOP,       // forward-looping playback
+            REVERSE,            // single-shot reverse playback
+            REVERSE_LOOP,       // reverse-looping playback
+            BIDIRECTIONAL_LOOP, // bi-directional looping playback
+            COUNT               // total number of playback modes
+        };
+
+        int32_t sound;          // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
+        uint32_t frequency;     // the frequency of the sound
+        float pitch;            // the mixer uses this to step through the sound frames correctly
+        float volume;           // voice volume (0.0 - 1.0)
+        float balance;          // position -0.5 is leftmost ... 0.5 is rightmost
+        float position;         // sample frame position in the sound buffer
+        uint32_t startPosition; // this can be loop start or just start depending on play mode (in frames!)
+        uint32_t endPosition;   // this can be loop end or just end depending on play mode (in frames!)
+        int32_t mode;           // how should the sound be played?
+        float frame;            // current frame
+        float oldFrame;         // the previous frame
+
+        /// @brief Initialized the voice (including pan position)
+        Voice()
+        {
+            Reset();
+            balance = 0.0f; // center the voice only when creating it the first time
+        }
+
+        /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
+        void Reset()
+        {
+            sound = NO_SOUND;
+            volume = 1.0f;
+            frequency = startPosition = endPosition = 0;
+            position = pitch = frame = oldFrame = 0.0f;
+            mode = PlayMode::FORWARD;
+        }
+    };
+
     std::vector<std::vector<float>> sounds; // managed sounds
     std::vector<Voice> voices;              // managed voices
     uint32_t sampleRate;                    // the mixer sampling rate
@@ -432,7 +432,7 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
         return;
     }
 
-    g_SoftSynth->voices[voice].mode = mode < Voice::PlayMode::FORWARD or mode >= Voice::PlayMode::COUNT ? Voice::PlayMode::FORWARD : mode;
+    g_SoftSynth->voices[voice].mode = mode < SoftSynth::Voice::PlayMode::FORWARD or mode >= SoftSynth::Voice::PlayMode::COUNT ? SoftSynth::Voice::PlayMode::FORWARD : mode;
     g_SoftSynth->voices[voice].position = position;           // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].startPosition = startPosition; // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].endPosition = endPosition;     // if this value is junk then the mixer should deal with it correctly
@@ -489,7 +489,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                     // Check if we crossed the end of the sound and take action based on the playback mode
                     if (voice.position > voice.endPosition)
                     {
-                        if (Voice::PlayMode::FORWARD_LOOP == voice.mode)
+                        if (SoftSynth::Voice::PlayMode::FORWARD_LOOP == voice.mode)
                         {
                             // Reset loop position if we reached the end of the loop
                             voice.position = voice.startPosition;
@@ -497,8 +497,8 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                         else
                         {
                             // For non-looping sound simply stop playing if we reached the end
-                            voice.sound = Voice::NO_SOUND; // just invalidate the sound leaving other properties intact
-                            break;                         // exit the mixing loop as we have no more samples to mix for this channel
+                            voice.sound = SoftSynth::Voice::NO_SOUND; // just invalidate the sound leaving other properties intact
+                            break;                                    // exit the mixing loop as we have no more samples to mix for this channel
                         }
                     }
 
