@@ -5,8 +5,8 @@
 
 #pragma once
 
-#define TOOLBOX64_DEBUG 0
 #include "Debug.h"
+#include "Types.h"
 #include "MathOps.h"
 #include <cstdint>
 #include <vector>
@@ -32,6 +32,8 @@ struct Voice
     uint32_t startPosition; // this can be loop start or just start depending on play mode (in frames!)
     uint32_t endPosition;   // this can be loop end or just end depending on play mode (in frames!)
     int32_t mode;           // how should the sound be played?
+    float frame;            // current frame
+    float oldFrame;         // the previous frame
 
     /// @brief Initialized the voice (including pan position)
     Voice()
@@ -46,7 +48,7 @@ struct Voice
         sound = SOFTSYNTH_NO_SOUND;
         volume = 1.0f;
         frequency = startPosition = endPosition = 0;
-        position = pitch = 0.0f;
+        position = pitch = frame = oldFrame = 0.0f;
         mode = SOFTSYNTH_VOICE_PLAY_FORWARD;
     }
 };
@@ -74,8 +76,6 @@ static inline constexpr bool SoftSynth_IsBytesPerSampleValid(uint8_t bytesPerSam
 
 inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
 {
-    TOOLBOX64_DEBUG_CHECK(bytesPerSample > 0 and channels > 0);
-
     return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
 }
 
@@ -104,8 +104,6 @@ inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
     g_SoftSynth->sampleRate = sampleRate;
     g_SoftSynth->activeVoices = 0;
     g_SoftSynth->volume = 1.0f;
-
-    TOOLBOX64_DEBUG_PRINT("SoftSynth initialized at sampling rate of %uhz", sampleRate);
 
     return QB_TRUE;
 }
@@ -195,7 +193,7 @@ void SoftSynth_SetGlobalVolume(float volume)
         return;
     }
 
-    g_SoftSynth->volume = ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->volume = Math_ClampSingle(volume, 0.0f, 1.0f);
 }
 
 /// @brief Copies and prepares the sound data in memory. Multi-channel sounds are flattened to mono.
@@ -215,12 +213,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
 
     // Resize the vector to fit the number of sounds if needed
     if (sound >= g_SoftSynth->sounds.size())
-    {
         g_SoftSynth->sounds.resize(sound + 1);
-        TOOLBOX64_DEBUG_PRINT("std::sounds resized to %zu", g_SoftSynth->sounds.size());
-    }
-
-    TOOLBOX64_DEBUG_PRINT("Initializing sound %i", sound);
 
     auto frames = SoftSynth_BytesToFrames(bytes, bytesPerSample, channels);
     auto &data = g_SoftSynth->sounds[sound];
@@ -230,9 +223,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
     if (!frames)
         return; // no need to proceed if we have no frames to load
 
-    data.resize(frames, 0.0f); // initialize all frames to silence
-
-    TOOLBOX64_DEBUG_PRINT("Loading %i frames (%i bytes, bytes / sample = %i, channels = %i)", frames, frames * bytesPerSample * channels, (int)bytesPerSample, (int)channels);
+    data.resize(frames); // resize the buffer
 
     switch (bytesPerSample)
     {
@@ -282,7 +273,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
     break;
 
     default:
-        TOOLBOX64_DEBUG_PRINT("Unsupported bytes / sample");
+        error(ERROR_ILLEGAL_FUNCTION_CALL);
     }
 }
 
@@ -294,7 +285,6 @@ float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position)
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -310,7 +300,6 @@ void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float fram
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size())
     {
-        TOOLBOX64_DEBUG_PRINT("Tried to access sound %i, position %u", sound, position);
         error(ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -359,7 +348,7 @@ void SoftSynth_SetVoiceVolume(uint32_t voice, float volume)
         return;
     }
 
-    g_SoftSynth->voices[voice].volume = ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->voices[voice].volume = Math_ClampSingle(volume, 0.0f, 1.0f);
 }
 
 float SoftSynth_GetVoiceBalance(uint32_t voice)
@@ -381,7 +370,7 @@ void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
         return;
     }
 
-    g_SoftSynth->voices[voice].balance = ClampSingle(balance * 0.5f, -0.5f, 0.5f); // scale and clamp (-1.0 to 1.0 > -0.5 to 0.5)
+    g_SoftSynth->voices[voice].balance = Math_ClampSingle(balance * 0.5f, -0.5f, 0.5f); // scale and clamp (-1.0 to 1.0 > -0.5 to 0.5)
 }
 
 /// @brief Gets the voice frequency
@@ -440,20 +429,12 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
     }
 
     g_SoftSynth->voices[voice].mode = mode < SOFTSYNTH_VOICE_PLAY_FORWARD or mode >= SOFTSYNTH_VOICE_PLAY_MODE_COUNT ? SOFTSYNTH_VOICE_PLAY_FORWARD : mode;
-
-    auto maxFrame = (int64_t)(g_SoftSynth->sounds[sound].size()) - 1;
-
-    TOOLBOX64_DEBUG_PRINT("Playing sound %i using voice %u (mode = %i)", sound, voice, g_SoftSynth->voices[voice].mode);
-    TOOLBOX64_DEBUG_PRINT("Original position = %u, start = %u, end = %u", position, startPosition, endPosition);
-
-    g_SoftSynth->voices[voice].position = position; // if this value is junk then the mixer should deal with it correctly
-    g_SoftSynth->voices[voice].startPosition = startPosition > maxFrame ? maxFrame : startPosition;
-    g_SoftSynth->voices[voice].endPosition = endPosition > maxFrame ? maxFrame : endPosition;
-
-    TOOLBOX64_DEBUG_CHECK(startPosition < g_SoftSynth->sounds[sound].size() and endPosition < g_SoftSynth->sounds[sound].size());
-    TOOLBOX64_DEBUG_PRINT("New position = %f, start = %u, end = %u", g_SoftSynth->voices[voice].position, g_SoftSynth->voices[voice].startPosition, g_SoftSynth->voices[voice].endPosition);
-
+    g_SoftSynth->voices[voice].position = position;           // if this value is junk then the mixer should deal with it correctly
+    g_SoftSynth->voices[voice].startPosition = startPosition; // if this value is junk then the mixer should deal with it correctly
+    g_SoftSynth->voices[voice].endPosition = endPosition;     // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].sound = sound;
+    g_SoftSynth->voices[voice].frame = 0.0f;
+    g_SoftSynth->voices[voice].oldFrame = 0.0f;
 }
 
 /// @brief This mixes and writes the mixed samples to "buffer"
@@ -467,47 +448,75 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
         return;
     }
 
+    // Get the total voices we need to mix
     auto voiceCount = g_SoftSynth->voices.size();
+
+    //  Set the active voice count to zero
     g_SoftSynth->activeVoices = 0;
 
+    // We will iterate through each channel completely rather than jumping from channel to channel
+    // We are doing this because it is easier for the CPU to access adjacent memory rather than something far away
     for (size_t v = 0; v < voiceCount; v++)
     {
+        // Get the current voice we need to work with
         auto &voice = g_SoftSynth->voices[v];
 
-        if (voice.sound >= 0 && g_SoftSynth->sounds[voice.sound].size() > 0)
+        // Only proceed if we have a valid sound number (>= 0)
+        if (voice.sound >= 0)
         {
-            ++g_SoftSynth->activeVoices;
-
-            auto output = buffer;
+            // Get the sample data we need to work with
             auto &soundData = g_SoftSynth->sounds[voice.sound];
 
-            for (uint32_t s = 0; s < frames; s++)
+            // Cache the total sound frames as we need to use this frequently inside the loop
+            auto soundFrames = soundData.size();
+
+            // Only proceed if we have something to play in the sound
+            if (soundFrames > 0)
             {
-                // Check if we are looping or done with the sound
-                if (SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP == voice.mode and voice.position > voice.endPosition)
+                // Increment the active voices
+                ++g_SoftSynth->activeVoices;
+
+                // Copy the buffer address
+                auto output = buffer;
+
+                //  Next we go through the channel sample data and mix it to our mixer buffer
+                for (uint32_t s = 0; s < frames; s++)
                 {
-                    // Reset loop position if we reached the end of the loop
-                    voice.position = voice.startPosition;
+                    // Check if we crossed the end of the sound and take action based on the playback mode
+                    if (voice.position > voice.endPosition)
+                    {
+                        if (SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP == voice.mode)
+                        {
+                            // Reset loop position if we reached the end of the loop
+                            voice.position = voice.startPosition;
+                        }
+                        else
+                        {
+                            // For non-looping sound simply stop playing if we reached the end
+                            voice.sound = SOFTSYNTH_NO_SOUND; // just invalidate the sound leaving other properties intact
+                            break;                            // exit the mixing loop as we have no more samples to mix for this channel
+                        }
+                    }
+
+                    // Fetch the sample frame to mix
+                    voice.oldFrame = voice.frame; // first save the previous frame
+                    uint32_t iPos = (uint32_t)voice.position;
+                    if (iPos < soundFrames)
+                        voice.frame = soundData[iPos];
+
+                    // Lerp & volume
+                    float lerpAmnt = voice.position - iPos;
+                    float outFrame = ((1.0f - lerpAmnt) * voice.oldFrame + lerpAmnt * voice.frame) * voice.volume;
+
+                    // Move to the next sample position based on the pitch
+                    voice.position += voice.pitch;
+
+                    // Mixing and panning
+                    *output += outFrame * (0.5f - voice.balance); // left channel
+                    ++output;
+                    *output += outFrame * (0.5f + voice.balance); // right channel
+                    ++output;
                 }
-                else if (voice.position > voice.endPosition)
-                {
-                    // For non-looping sound simply stop playing if we reached the end
-                    voice.sound = SOFTSYNTH_NO_SOUND; // just invalidate the sound leaving other properties intact
-                    TOOLBOX64_DEBUG_PRINT("Voice %zu: end of sound reached", v);
-                    break; // exit the mixing loop as we have no more samples to mix for this channel
-                }
-
-                // Fetch the sample frame that we need
-                auto frame = soundData[(size_t)voice.position] * voice.volume; // just calculate this once
-
-                // Move to the next sample position based on the pitch
-                voice.position += voice.pitch;
-
-                // Mixing and panning
-                *output += frame * (0.5f - voice.balance); // left channel
-                ++output;
-                *output += frame * (0.5f + voice.balance); // right channel
-                ++output;
             }
         }
     }
