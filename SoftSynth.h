@@ -25,8 +25,15 @@ struct SoftSynth
             FORWARD_LOOP,       // forward-looping playback
             REVERSE,            // single-shot reverse playback
             REVERSE_LOOP,       // reverse-looping playback
-            BIDIRECTIONAL_LOOP, // bi-directional looping playback
+            BIDIRECTIONAL_LOOP, // bidirectional looping playback
             COUNT               // total number of playback modes
+        };
+
+        /// @brief Playback direction values for bidirectional mode
+        enum PlayDirection
+        {
+            REVERSE = -1,
+            FORWARD = 1
         };
 
         int32_t sound;          // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
