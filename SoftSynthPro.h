@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------------------------------------
-// Simple floatimg-point stereo sample-based software synthesizer
+// Simple floatimg-point stereo PCM software synthesizer
 // Copyright (c) 2023 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -478,7 +478,7 @@ void SoftSynth_SetVoiceVolume(uint32_t voice, float volume)
         return;
     }
 
-    g_SoftSynth->voices[voice].volume = ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->voices[voice].volume = Math_ClampSingle(volume, 0.0f, 1.0f);
 }
 
 float SoftSynth_GetVoiceVolume(uint32_t voice)
@@ -500,7 +500,7 @@ void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
         return;
     }
 
-    g_SoftSynth->voices[voice].balance = ClampSingle(balance * 0.5f, -0.5f, 0.5f); // scale and clamp (-1.0 to 1.0 > -0.5 to 0.5)
+    g_SoftSynth->voices[voice].balance = Math_ClampSingle(balance * 0.5f, -0.5f, 0.5f); // scale and clamp (-1.0 to 1.0 > -0.5 to 0.5)
 }
 
 float SoftSynth_GetVoiceBalance(uint32_t voice)
@@ -568,7 +568,7 @@ void SoftSynth_SetGlobalVolume(float volume)
         return;
     }
 
-    g_SoftSynth->volume = ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->volume = Math_ClampSingle(volume, 0.0f, 1.0f);
 }
 
 float SoftSynth_GetGlobalVolume()

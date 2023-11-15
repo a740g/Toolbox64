@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------------------------------------
-// Simple floatimg-point stereo sample-based software synthesizer
+// Simple floatimg-point stereo PCM software synthesizer
 // Copyright (c) 2023 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -509,7 +509,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                         voice.frame = soundData[iPos];
 
                     // Lerp & volume
-                    auto lerpAmnt = voice.position - (float)iPos;
+                    auto lerpAmnt = voice.position - iPos;
                     auto outFrame = ((1.0f - lerpAmnt) * voice.oldFrame + lerpAmnt * voice.frame) * voice.volume;
 
                     // Move to the next sample position based on the pitch
