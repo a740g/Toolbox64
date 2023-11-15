@@ -12,17 +12,21 @@
 #include <vector>
 #include <memory>
 
-static const auto SOFTSYNTH_NO_SOUND = -1; // used to unbind a voice from a sound
-
-enum
-{
-    SOFTSYNTH_VOICE_PLAY_FORWARD = 0,  // single-shot forward playback
-    SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP, // forward-looping playback
-    SOFTSYNTH_VOICE_PLAY_MODE_COUNT    // total number of playback modes
-};
-
 struct Voice
 {
+    static const auto NO_SOUND = -1; // used to unbind a sound from a voice
+
+    /// @brief Various playing modes
+    enum PlayMode
+    {
+        FORWARD = 0,        // single-shot forward playback
+        FORWARD_LOOP,       // forward-looping playback
+        REVERSE,            // single-shot reverse playback
+        REVERSE_LOOP,       // reverse-looping playback
+        BIDIRECTIONAL_LOOP, // bi-directional looping playback
+        COUNT               // total number of playback modes
+    };
+
     int32_t sound;          // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
     uint32_t frequency;     // the frequency of the sound
     float pitch;            // the mixer uses this to step through the sound frames correctly
@@ -45,11 +49,11 @@ struct Voice
     /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
     void Reset()
     {
-        sound = SOFTSYNTH_NO_SOUND;
+        sound = NO_SOUND;
         volume = 1.0f;
         frequency = startPosition = endPosition = 0;
         position = pitch = frame = oldFrame = 0.0f;
-        mode = SOFTSYNTH_VOICE_PLAY_FORWARD;
+        mode = PlayMode::FORWARD;
     }
 };
 
@@ -428,7 +432,7 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
         return;
     }
 
-    g_SoftSynth->voices[voice].mode = mode < SOFTSYNTH_VOICE_PLAY_FORWARD or mode >= SOFTSYNTH_VOICE_PLAY_MODE_COUNT ? SOFTSYNTH_VOICE_PLAY_FORWARD : mode;
+    g_SoftSynth->voices[voice].mode = mode < Voice::PlayMode::FORWARD or mode >= Voice::PlayMode::COUNT ? Voice::PlayMode::FORWARD : mode;
     g_SoftSynth->voices[voice].position = position;           // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].startPosition = startPosition; // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].endPosition = endPosition;     // if this value is junk then the mixer should deal with it correctly
@@ -485,7 +489,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                     // Check if we crossed the end of the sound and take action based on the playback mode
                     if (voice.position > voice.endPosition)
                     {
-                        if (SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP == voice.mode)
+                        if (Voice::PlayMode::FORWARD_LOOP == voice.mode)
                         {
                             // Reset loop position if we reached the end of the loop
                             voice.position = voice.startPosition;
@@ -493,20 +497,20 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                         else
                         {
                             // For non-looping sound simply stop playing if we reached the end
-                            voice.sound = SOFTSYNTH_NO_SOUND; // just invalidate the sound leaving other properties intact
-                            break;                            // exit the mixing loop as we have no more samples to mix for this channel
+                            voice.sound = Voice::NO_SOUND; // just invalidate the sound leaving other properties intact
+                            break;                         // exit the mixing loop as we have no more samples to mix for this channel
                         }
                     }
 
                     // Fetch the sample frame to mix
                     voice.oldFrame = voice.frame; // first save the previous frame
-                    uint32_t iPos = (uint32_t)voice.position;
+                    auto iPos = (uint32_t)voice.position;
                     if (iPos < soundFrames)
                         voice.frame = soundData[iPos];
 
                     // Lerp & volume
-                    float lerpAmnt = voice.position - iPos;
-                    float outFrame = ((1.0f - lerpAmnt) * voice.oldFrame + lerpAmnt * voice.frame) * voice.volume;
+                    auto lerpAmnt = voice.position - (float)iPos;
+                    auto outFrame = ((1.0f - lerpAmnt) * voice.oldFrame + lerpAmnt * voice.frame) * voice.volume;
 
                     // Move to the next sample position based on the pitch
                     voice.position += voice.pitch;
