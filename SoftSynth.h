@@ -17,6 +17,10 @@ struct SoftSynth
     struct Voice
     {
         static const auto NO_SOUND = -1; // used to unbind a sound from a voice
+        static constexpr auto MULTIPLIER_32_TO_16 = 32768.0f;
+        static constexpr auto MULTIPLIER_32_TO_8 = 128.0f;
+        static constexpr auto MULTIPLIER_16_TO_32 = 1.0f / MULTIPLIER_32_TO_16;
+        static constexpr auto MULTIPLIER_8_TO_32 = 1.0f / MULTIPLIER_32_TO_8;
 
         /// @brief Various playing modes
         enum PlayMode
@@ -236,7 +240,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
             // Flatten all channels to mono
             for (auto j = 0; j < channels; j++)
             {
-                data[i] += *src / 128.0f;
+                data[i] = fmaf(*src, SoftSynth::Voice::MULTIPLIER_8_TO_32, data[i]);
                 ++src;
             }
         }
@@ -251,7 +255,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
             // Flatten all channels to mono
             for (auto j = 0; j < channels; j++)
             {
-                data[i] += *src / 32768.0f;
+                data[i] = fmaf(*src, SoftSynth::Voice::MULTIPLIER_16_TO_32, data[i]);
                 ++src;
             }
         }
@@ -310,24 +314,22 @@ void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float fram
 
 inline int16_t SoftSynth_PeekSoundFrameInteger(int32_t sound, uint32_t position)
 {
-    return SoftSynth_PeekSoundFrameSingle(sound, position) * 32768.0f;
+    return SoftSynth_PeekSoundFrameSingle(sound, position) * SoftSynth::Voice::MULTIPLIER_32_TO_16;
 }
 
 inline void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t frame)
 {
-    static constexpr auto SOFTSYNTH_POKESOUNDFRAMEINTEGER_MULTIPLIER = 1.0f / 32768.0f;
-    SoftSynth_PokeSoundFrameSingle(sound, position, SOFTSYNTH_POKESOUNDFRAMEINTEGER_MULTIPLIER * frame);
+    SoftSynth_PokeSoundFrameSingle(sound, position, SoftSynth::Voice::MULTIPLIER_16_TO_32 * frame);
 }
 
 inline int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position)
 {
-    return SoftSynth_PeekSoundFrameSingle(sound, position) * 128.0f;
+    return SoftSynth_PeekSoundFrameSingle(sound, position) * SoftSynth::Voice::MULTIPLIER_32_TO_8;
 }
 
 inline void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame)
 {
-    static constexpr auto SOFTSYNTH_POKESOUNDFRAMEBYTE_MULTIPLIER = 1.0f / 128.0f;
-    SoftSynth_PokeSoundFrameSingle(sound, position, SOFTSYNTH_POKESOUNDFRAMEBYTE_MULTIPLIER * frame);
+    SoftSynth_PokeSoundFrameSingle(sound, position, SoftSynth::Voice::MULTIPLIER_8_TO_32 * frame);
 }
 
 float SoftSynth_GetVoiceVolume(uint32_t voice)
@@ -506,23 +508,22 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                     auto iPos = (uint32_t)voice.position;
                     if (iPos != voice.iPosition) // only fetch a new frame if we have really crossed over to the new one
                     {
-                        voice.oldFrame = voice.frame; // save the current frame first
-                        voice.iPosition = iPos;
-                        if (voice.iPosition < soundFrames)
+                        voice.oldFrame = voice.frame;      // save the current frame first
+                        voice.iPosition = iPos;            // save the new integer position
+                        if (voice.iPosition < soundFrames) // this protects us from segfaults
                             voice.frame = soundData[voice.iPosition];
                     }
 
                     // Lerp & volume
-                    auto lerpAmnt = voice.position - voice.iPosition;
-                    auto outFrame = ((1.0f - lerpAmnt) * voice.oldFrame + lerpAmnt * voice.frame) * voice.volume;
+                    auto outFrame = fmaf(voice.frame - voice.oldFrame, voice.position - voice.iPosition, voice.oldFrame) * voice.volume;
 
                     // Move to the next sample position based on the pitch
                     voice.position += voice.pitch;
 
                     // Mixing and panning
-                    *output += outFrame * (0.5f - voice.balance); // left channel
+                    *output = fmaf(outFrame, (0.5f - voice.balance), *output); // left channel
                     ++output;
-                    *output += outFrame * (0.5f + voice.balance); // right channel
+                    *output = fmaf(outFrame, (0.5f + voice.balance), *output); // right channel
                     ++output;
                 }
             }
@@ -531,6 +532,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
 
     // Make one more pass to apply global volume
     // TODO: Move this out to SoftSynth.bas so that we do the global volume only once after mixing FM, reverb and stuff
+    // Or probably we can move this to it's own function that can mix several buffers in one go and apply global volume
     auto output = buffer;
     for (uint32_t s = 0; s < frames; s++)
     {
