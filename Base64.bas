@@ -11,24 +11,39 @@ $IF BASE64_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
-    'DIM a AS STRING: a = "The quick brown fox jumps over the lazy dog."
+    'CONST ITERATIONS = 1000000
+    'CONST LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut " + _
+    '    "labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip " + _
+    '    "ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat " + _
+    '    "nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
-    'PrintStringDetails a
+    'DIM encTxt AS STRING, decTxt AS STRING, i AS LONG, t AS DOUBLE
 
-    'DIM b AS STRING: b = EncodeBase64(a)
+    'PRINT ITERATIONS; "iterations,"; LEN(LOREM_IPSUM); "bytes."
 
-    'PrintStringDetails b
+    'PRINT "Base64 encode..."
 
-    'a = DecodeBase64(b)
+    't = TIMER
+    'FOR i = 1 TO ITERATIONS
+    '    encTxt = Base64_Encode(LOREM_IPSUM)
+    'NEXT
+    'PRINT USING "#####.##### seconds"; TIMER - t
 
-    'PrintStringDetails a
+    'PRINT "Base64 decode..."
+
+    't = TIMER
+    'FOR i = 1 TO ITERATIONS
+    '    decTxt = Base64_Decode(encTxt)
+    'NEXT
+    'PRINT USING "#####.##### seconds"; TIMER - t
+
+    'IF _STRCMP(decTxt, LOREM_IPSUM) = 0 THEN
+    '    PRINT "Passed"
+    'ELSE
+    '    PRINT "Failed"
+    'END IF
 
     'END
-
-    'SUB PrintStringDetails (s AS STRING)
-    '    PRINT "Sting: "; s
-    '    PRINT "String size:"; LEN(s)
-    'END SUB
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Convert a normal string to a base64 string
@@ -69,6 +84,18 @@ $IF BASE64_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' This function loads a resource directly from a string variable or constant (like the ones made by Bin2Data)
+    FUNCTION Base64_LoadResourceString$ (src AS STRING, ogSize AS _UNSIGNED LONG, isComp AS _BYTE)
+        ' Decode the data
+        DIM buffer AS STRING: buffer = Base64_Decode(src)
+
+        ' Expand the data if needed
+        IF isComp THEN buffer = _INFLATE$(buffer, ogSize)
+
+        Base64_LoadResourceString = buffer
+    END FUNCTION
+
+
     ' Loads a binary file encoded with Bin2Data
     ' Usage:
     '   1. Encode the binary file with Bin2Data
@@ -76,32 +103,27 @@ $IF BASE64_BAS = UNDEFINED THEN
     '   3. Load the file like so:
     '       Restore label_generated_by_bin2data
     '       Dim buffer As String
-    '       buffer = Base64_LoadResource ' buffer will now hold the contents of the file
-    FUNCTION Base64_LoadResource$
-        DIM AS _UNSIGNED LONG ogSize, resSize
-        DIM AS _BYTE isCompressed
+    '       buffer = Base64_LoadResourceData   ' buffer will now hold the contents of the file
+    FUNCTION Base64_LoadResourceData$
+        DIM ogSize AS _UNSIGNED LONG, resize AS _UNSIGNED LONG, isComp AS _BYTE
+        READ ogSize, resize, isComp ' read the header
 
-        READ ogSize, resSize, isCompressed ' read the header
-
-        DIM AS STRING buffer, result
+        DIM buffer AS STRING: buffer = SPACE$(resize) ' preallocate complete buffer
 
         ' Read the whole resource data
-        DO WHILE LEN(result) < resSize
-            READ buffer
-            result = result + buffer
+        DIM i AS _UNSIGNED LONG: DO WHILE i < resize
+            DIM chunk AS STRING: READ chunk
+            MID$(buffer, i + 1) = chunk
+            i = i + LEN(chunk)
         LOOP
 
         ' Decode the data
-        buffer = Base64_Decode(result)
+        buffer = Base64_Decode(buffer)
 
         ' Expand the data if needed
-        IF isCompressed THEN
-            result = _INFLATE$(buffer, ogSize)
-        ELSE
-            result = buffer
-        END IF
+        IF isComp THEN buffer = _INFLATE$(buffer, ogSize)
 
-        Base64_LoadResource = result
+        Base64_LoadResourceData = buffer
     END FUNCTION
 
 $END IF

@@ -12,35 +12,35 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' Small test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
-    $CONSOLE
-    DO
-        DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
-        IF NOT _FILEEXISTS(fileName) THEN EXIT DO
+    '$CONSOLE
+    'DO
+    '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
+    '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
 
-        IF MODPlayer_LoadFromDisk(fileName) THEN
-            MODPlayer_Play
-            DIM k AS LONG: k = 0
-            DO WHILE k <> 27 AND MODPlayer_IsPlaying
-                MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
-                LOCATE 1, 1
-                PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.BPM; __Song.speed;
-                LOCATE 2, 1:
-                PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
-                _LIMIT 60
-                k = _KEYHIT
-                IF k = 32 THEN
-                    DIM pause AS _BYTE: pause = NOT pause
-                    MODPlayer_Pause pause
-                    _KEYCLEAR
-                END IF
-            LOOP
-            MODPlayer_Stop
-        END IF
-    LOOP
+    '    IF MODPlayer_LoadFromDisk(fileName) THEN
+    '        MODPlayer_Play
+    '        DIM k AS LONG: k = 0
+    '        DO WHILE k <> 27 AND MODPlayer_IsPlaying
+    '            MODPlayer_Update SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT
+    '            LOCATE 1, 1
+    '            PRINT USING "Order: ### / ###    Pattern: ### / ###    Row: ## / 63    BPM: ###    Speed: ###"; MODPlayer_GetPosition; MODPlayer_GetOrders - 1; __Order(__Song.orderPosition); __Song.patterns - 1; __Song.patternRow; __Song.BPM; __Song.speed;
+    '            LOCATE 2, 1:
+    '            PRINT USING "Buffer Time: #####ms"; SoftSynth_GetBufferedSoundTime * 1000;
+    '            _LIMIT 60
+    '            k = _KEYHIT
+    '            IF k = 32 THEN
+    '                DIM pause AS _BYTE: pause = NOT pause
+    '                MODPlayer_Pause pause
+    '                _KEYCLEAR
+    '            END IF
+    '        LOOP
+    '        MODPlayer_Stop
+    '    END IF
+    'LOOP
 
-    END
+    'END
 
-    PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
+    'PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Loads all required LUTs from DATA
@@ -162,146 +162,146 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.hasSpecialCustomData = FALSE
     END SUB
 
+    $IF TESTING_S3M_LOADER = DEFINED THEN
+            ' Loads an S3M file into memory and prepares all required globals
+            FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
+            SHARED __Song AS __SongType
+            SHARED __Order() AS _UNSIGNED INTEGER
+            SHARED __Pattern() AS __NoteType
+            SHARED __Instrument() AS __InstrumentType
+            SHARED __Channel() AS __ChannelType
 
-    ' Loads an S3M file into memory and prepares all required globals
-    FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
-        SHARED __Song AS __SongType
-        SHARED __Order() AS _UNSIGNED INTEGER
-        SHARED __Pattern() AS __NoteType
-        SHARED __Instrument() AS __InstrumentType
-        SHARED __Channel() AS __ChannelType
+            ' Initialize the softsynth sample mixer
+            IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
 
-        ' Initialize the softsynth sample mixer
-        IF NOT SoftSynth_Initialize THEN EXIT FUNCTION
+            __MODPlayer_InitializeSong ' just in case something is playing
 
-        __MODPlayer_InitializeSong ' just in case something is playing
+            ' Open the buffer as a StringFile
+            DIM memFile AS StringFileType
+            StringFile_Create memFile, buffer
 
-        ' Open the buffer as a StringFile
-        DIM memFile AS StringFileType
-        StringFile_Create memFile, buffer
+            ' Seek to offset 44 (2Ch) in the file & read the file signature
+            StringFile_Seek memFile, 44
+            __Song.subtype = StringFile_ReadString(memFile, 4) ' signature is 4 bytes
 
-        ' Seek to offset 44 (2Ch) in the file & read the file signature
-        StringFile_Seek memFile, 44
-        __Song.subtype = StringFile_ReadString(memFile, 4) ' signature is 4 bytes
+            ' Check if this is really an S3M file
+            IF __Song.subtype <> "SCRM" THEN EXIT FUNCTION
+            _ECHO "Type: " + __Song.subtype
 
-        ' Check if this is really an S3M file
-        IF __Song.subtype <> "SCRM" THEN EXIT FUNCTION
-        _ECHO "Type: " + __Song.subtype
+            ' Seek to the beginning of the file and get the song title
+            StringFile_Seek memFile, 0
+            __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
+            _ECHO "Name: " + __Song.caption
 
-        ' Seek to the beginning of the file and get the song title
-        StringFile_Seek memFile, 0
-        __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
-        _ECHO "Name: " + __Song.caption
+            ' Read and discard DOS EOF marker
+            DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile) ' TODO: check if we should just use Seek here
 
-        ' Read and discard DOS EOF marker
-        DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile) ' TODO: check if we should just use Seek here
+            ' Read and discard the file type byte (TODO: check if we really need to be strict and compare this to 16)
+            byte1 = StringFile_ReadByte(memFile)
+            _ECHO "File type = " + STR$(byte1)
 
-        ' Read and discard the file type byte (TODO: check if we really need to be strict and compare this to 16)
-        byte1 = StringFile_ReadByte(memFile)
-        _ECHO "File type = " + STR$(byte1)
+            ' Read and discard the expansion / reserved word (2 bytes)
+            DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
+            _ECHO "Reserved = " + _BIN$(word1)
 
-        ' Read and discard the expansion / reserved word (2 bytes)
-        DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile) ' TODO: check if we should just use Seek here
-        _ECHO "Reserved = " + _BIN$(word1)
+            ' Read the song orders (note that this count includes 254 & 255 marker orders)
+            __Song.orders = StringFile_ReadInteger(memFile)
+            _ECHO "Orders:" + STR$(__Song.orders)
 
-        ' Read the song orders (note that this count includes 254 & 255 marker orders)
-        __Song.orders = StringFile_ReadInteger(memFile)
-        _ECHO "Orders:" + STR$(__Song.orders)
+            ' Read the number of instruments
+            __Song.instruments = StringFile_ReadInteger(memFile)
+            _ECHO "Instruments:" + STR$(__Song.instruments)
 
-        ' Read the number of instruments
-        __Song.instruments = StringFile_ReadInteger(memFile)
-        _ECHO "Instruments:" + STR$(__Song.instruments)
+            ' Read the number of patterns
+            __Song.patterns = StringFile_ReadInteger(memFile) ' TODO: more fixes needed
+            _ECHO "Patterns:" + STR$(__Song.patterns)
 
-        ' Read the number of patterns
-        __Song.patterns = StringFile_ReadInteger(memFile) ' TODO: more fixes needed
-        _ECHO "Patterns:" + STR$(__Song.patterns)
+            ' Read the 16-bit flags
+            word1 = StringFile_ReadInteger(memFile)
+            _ECHO "Flags = " + _BIN$(word1)
 
-        ' Read the 16-bit flags
-        word1 = StringFile_ReadInteger(memFile)
-        _ECHO "Flags = " + _BIN$(word1)
+            ' Set individual flags
+            __Song.useST2Vibrato = _READBIT(word1, 0)
+            __Song.useST2Tempo = _READBIT(word1, 1)
+            __Song.useAmigaSlides = _READBIT(word1, 2)
+            __Song.useVolumeOptimization = _READBIT(word1, 3)
+            __Song.useAmigaLimits = _READBIT(word1, 4)
+            __Song.useFilterSFX = _READBIT(word1, 5)
+            __Song.useST300VolumeSlides = _READBIT(word1, 6)
+            __Song.hasSpecialCustomData = _READBIT(word1, 7)
 
-        ' Set individual flags
-        __Song.useST2Vibrato = _READBIT(word1, 0)
-        __Song.useST2Tempo = _READBIT(word1, 1)
-        __Song.useAmigaSlides = _READBIT(word1, 2)
-        __Song.useVolumeOptimization = _READBIT(word1, 3)
-        __Song.useAmigaLimits = _READBIT(word1, 4)
-        __Song.useFilterSFX = _READBIT(word1, 5)
-        __Song.useST300VolumeSlides = _READBIT(word1, 6)
-        __Song.hasSpecialCustomData = _READBIT(word1, 7)
+            _ECHO "useST2Vibrato =" + STR$(__Song.useST2Vibrato)
+            _ECHO "useST2Tempo =" + STR$(__Song.useST2Tempo)
+            _ECHO "useAmigaSlides =" + STR$(__Song.useAmigaSlides)
+            _ECHO "useVolumeOptimization =" + STR$(__Song.useVolumeOptimization)
+            _ECHO "useAmigaLimits =" + STR$(__Song.useAmigaLimits)
+            _ECHO "useFilterSFX =" + STR$(__Song.useFilterSFX)
+            _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
+            _ECHO "hasSpecialCustomData =" + STR$(__Song.hasSpecialCustomData)
 
-        _ECHO "useST2Vibrato =" + STR$(__Song.useST2Vibrato)
-        _ECHO "useST2Tempo =" + STR$(__Song.useST2Tempo)
-        _ECHO "useAmigaSlides =" + STR$(__Song.useAmigaSlides)
-        _ECHO "useVolumeOptimization =" + STR$(__Song.useVolumeOptimization)
-        _ECHO "useAmigaLimits =" + STR$(__Song.useAmigaLimits)
-        _ECHO "useFilterSFX =" + STR$(__Song.useFilterSFX)
-        _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
-        _ECHO "hasSpecialCustomData =" + STR$(__Song.hasSpecialCustomData)
+            ' Read "Created with tracker / version" info
+            word1 = StringFile_ReadInteger(memFile)
+            _ECHO "CWT/V = " + HEX$(word1)
 
-        ' Read "Created with tracker / version" info
-        word1 = StringFile_ReadInteger(memFile)
-        _ECHO "CWT/V = " + HEX$(word1)
+            ' ST3.00 does volumeslides on EVERY tick. So we'll update the flag
+            __Song.useST300VolumeSlides = __Song.useST300VolumeSlides OR (word1 = &H1300)
+            _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
 
-        ' ST3.00 does volumeslides on EVERY tick. So we'll update the flag
-        __Song.useST300VolumeSlides = __Song.useST300VolumeSlides OR (word1 = &H1300)
-        _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
+            ' Read the sample format type
+            word1 = StringFile_ReadInteger(memFile)
+            _ECHO "Sample Format = " + STR$(word1)
+            DIM isSignedFormat AS _BYTE: isSignedFormat = (word1 = 1)
+            _ECHO "isSignedFormat =" + STR$(isSignedFormat)
 
-        ' Read the sample format type
-        word1 = StringFile_ReadInteger(memFile)
-        _ECHO "Sample Format = " + STR$(word1)
-        DIM isSignedFormat AS _BYTE: isSignedFormat = (word1 = 1)
-        _ECHO "isSignedFormat =" + STR$(isSignedFormat)
+            ' Skip the 4 byte signature
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
 
-        ' Skip the 4 byte signature
-        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
+            ' Read and set the global volume
+            byte1 = StringFile_ReadByte(memFile)
+            _ECHO "Global volume =" + STR$(byte1)
+            SoftSynth_SetGlobalVolume byte1 / __S3M_GLOBAL_VOLUME_MAX
+            _ECHO "SoftSynth global volume =" + STR$(SoftSynth_GetGlobalVolume)
 
-        ' Read and set the global volume
-        byte1 = StringFile_ReadByte(memFile)
-        _ECHO "Global volume =" + STR$(byte1)
-        SoftSynth_SetGlobalVolume byte1 / __S3M_GLOBAL_VOLUME_MAX
-        _ECHO "SoftSynth global volume =" + STR$(SoftSynth_GetGlobalVolume)
+            ' Read the initial speed value
+            __Song.defaultSpeed = StringFile_ReadByte(memFile)
+            IF __Song.defaultSpeed = 0 OR __Song.defaultSpeed = 255 THEN __Song.defaultSpeed = __SONG_SPEED_DEFAULT
+            _ECHO "Initial speed =" + STR$(__Song.defaultSpeed)
 
-        ' Read the initial speed value
-        __Song.defaultSpeed = StringFile_ReadByte(memFile)
-        IF __Song.defaultSpeed = 0 OR __Song.defaultSpeed = 255 THEN __Song.defaultSpeed = __SONG_SPEED_DEFAULT
-        _ECHO "Initial speed =" + STR$(__Song.defaultSpeed)
+            ' Read the initial BPM
+            __Song.defaultBPM = StringFile_ReadByte(memFile)
+            IF __Song.defaultBPM < 33 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT
+            _ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
 
-        ' Read the initial BPM
-        __Song.defaultBPM = StringFile_ReadByte(memFile)
-        IF __Song.defaultBPM < 33 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT
-        _ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
+            ' Read SoundBlaster master volume crap and check if the stereo frag is set
+            byte1 = StringFile_ReadByte(memFile)
+            _ECHO "SoundBlaster master volume =" + STR$(byte1)
+            DIM isStereo AS _BYTE: isStereo = _READBIT(byte1, 7)
+            _ECHO "isStereo =" + STR$(isStereo)
 
-        ' Read SoundBlaster master volume crap and check if the stereo frag is set
-        byte1 = StringFile_ReadByte(memFile)
-        _ECHO "SoundBlaster master volume =" + STR$(byte1)
-        DIM isStereo AS _BYTE: isStereo = _READBIT(byte1, 7)
-        _ECHO "isStereo =" + STR$(isStereo)
+            ' Read and ignore Ultrasound ultra-click removal crap
+            ' TODO: check if we should use this somehow or just Seek and skip past
+            byte1 = StringFile_ReadByte(memFile)
+            _ECHO "Ultrasound ultra-click removal =" + STR$(byte1)
 
-        ' Read and ignore Ultrasound ultra-click removal crap
-        ' TODO: check if we should use this somehow or just Seek and skip past
-        byte1 = StringFile_ReadByte(memFile)
-        _ECHO "Ultrasound ultra-click removal =" + STR$(byte1)
+            ' Read and store if we have to load default pan values later
+            byte1 = StringFile_ReadByte(memFile)
+            _ECHO "Default panning =" + STR$(byte1)
+            DIM useDefaultPanning AS _BYTE: useDefaultPanning = (byte1 = 252)
+            _ECHO "useDefaultPanning =" + STR$(useDefaultPanning)
 
-        ' Read and store if we have to load default pan values later
-        byte1 = StringFile_ReadByte(memFile)
-        _ECHO "Default panning =" + STR$(byte1)
-        DIM useDefaultPanning AS _BYTE: useDefaultPanning = (byte1 = 252)
-        _ECHO "useDefaultPanning =" + STR$(useDefaultPanning)
+            ' Skip 8 reserved bytes
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 8
 
-        ' Skip 8 reserved bytes
-        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 8
+            ' Read and ignore the "special custom data" parapointer
+            word1 = StringFile_ReadInteger(memFile)
+            _ECHO "Special parapointer = " + STR$(word1)
 
-        ' Read and ignore the "special custom data" parapointer
-        word1 = StringFile_ReadInteger(memFile)
-        _ECHO "Special parapointer = " + STR$(word1)
+            ' Load channel info and count total channels
+            DIM channelInfo(0 TO __MTM_S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE ' channel info that we'll use later
 
-        ' Load channel info and count total channels
-        DIM channelInfo(0 TO __MTM_S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE ' channel info that we'll use later
+            __Song.channels = 0 ' I know this is set to zero above but safety first
 
-        __Song.channels = 0 ' I know this is set to zero above but safety first
-
-        DIM i AS LONG: FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
+            DIM i AS LONG: FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
             channelInfo(i) = StringFile_ReadByte(memFile)
 
             ' Check if the channel is enabled
@@ -312,99 +312,99 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             IF channelInfo(i) <= 29 THEN __Song.channels = i + 1 ' bump channel count to max enabled channel + 1
 
             _ECHO "Channel info" + STR$(i) + " =" + STR$(channelInfo(i))
-        NEXT i
+            NEXT i
 
-        IF __Song.channels < 1 THEN __Song.channels = 1
+            IF __Song.channels < 1 THEN __Song.channels = 1
 
-        _ECHO "Channels =" + STR$(__Song.channels)
+            _ECHO "Channels =" + STR$(__Song.channels)
 
-        ' Resize the channel array
-        REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
+            ' Resize the channel array
+            REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
 
-        ' Allocate the number of SoftSynth voices we need
-        SoftSynth_SetTotalVoices __Song.channels
+            ' Allocate the number of SoftSynth voices we need
+            SoftSynth_SetTotalVoices __Song.channels
 
-        ' Set voice panning positions
-        FOR i = 0 TO __Song.channels - 1
+            ' Set voice panning positions
+            FOR i = 0 TO __Song.channels - 1
             ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
             ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
             ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
             ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
             SELECT CASE channelInfo(i)
-                CASE 0 TO 7
-                    SoftSynth_SetVoiceBalance i, -__CHANNEL_STEREO_SEPARATION ' pan to the left
-                    __Channel(i).subtype = __CHANNEL_PCM
+            CASE 0 TO 7
+            SoftSynth_SetVoiceBalance i, -__CHANNEL_STEREO_SEPARATION ' pan to the left
+            __Channel(i).subtype = __CHANNEL_PCM
 
-                CASE 8 TO 15
-                    SoftSynth_SetVoiceBalance i, __CHANNEL_STEREO_SEPARATION ' pan it to the right
-                    __Channel(i).subtype = __CHANNEL_PCM
+            CASE 8 TO 15
+            SoftSynth_SetVoiceBalance i, __CHANNEL_STEREO_SEPARATION ' pan it to the right
+            __Channel(i).subtype = __CHANNEL_PCM
 
-                CASE 16 TO 24
-                    __Channel(i).subtype = __CHANNEL_FM_MELODY ' FM melody channel
+            CASE 16 TO 24
+            __Channel(i).subtype = __CHANNEL_FM_MELODY ' FM melody channel
 
-                CASE 25 TO 29
-                    __Channel(i).subtype = __CHANNEL_FM_DRUM ' FM drums channel
+            CASE 25 TO 29
+            __Channel(i).subtype = __CHANNEL_FM_DRUM ' FM drums channel
             END SELECT
 
             _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i)) + " , subtype =" + STR$(__Channel(i).subtype)
-        NEXT i
+            NEXT i
 
-        ' Resize the order array
-        REDIM __Order(0 TO __Song.orders - 1) AS _UNSIGNED INTEGER
+            ' Resize the order array
+            REDIM __Order(0 TO __Song.orders - 1) AS _UNSIGNED INTEGER
 
-        ' Read order list
-        ' Note: We'll need to handle 254 & 255 marker orders correctly in the player
-        FOR i = 0 TO __Song.orders - 1
+            ' Read order list
+            ' Note: We'll need to handle 254 & 255 marker orders correctly in the player
+            FOR i = 0 TO __Song.orders - 1
             __Order(i) = StringFile_ReadByte(memFile)
             _ECHO "Order" + STR$(i) + " =" + STR$(__Order(i))
-        NEXT i
+            NEXT i
 
-        ' Load and convert instrument parapointers
-        DIM instrumentPointer(0 TO __Song.instruments - 1) AS _UNSIGNED LONG
+            ' Load and convert instrument parapointers
+            DIM instrumentPointer(0 TO __Song.instruments - 1) AS _UNSIGNED LONG
 
-        FOR i = 0 TO __Song.instruments - 1
+            FOR i = 0 TO __Song.instruments - 1
             instrumentPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
             _ECHO "Instrument" + STR$(i) + " is at" + STR$(instrumentPointer(i))
-        NEXT i
+            NEXT i
 
-        ' Load and convert pattern parapointers
-        DIM patternPointer(0 TO __Song.patterns - 1) AS _UNSIGNED LONG
+            ' Load and convert pattern parapointers
+            DIM patternPointer(0 TO __Song.patterns - 1) AS _UNSIGNED LONG
 
-        FOR i = 0 TO __Song.patterns - 1
+            FOR i = 0 TO __Song.patterns - 1
             patternPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
             _ECHO "Pattern" + STR$(i) + " is at" + STR$(patternPointer(i))
-        NEXT i
+            NEXT i
 
-        ' Load the panning table if it is present
-        IF useDefaultPanning THEN
+            ' Load the panning table if it is present
+            IF useDefaultPanning THEN
             ' We have a total of 32 pan positions in the file
             FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
-                byte1 = StringFile_ReadByte(memFile)
+            byte1 = StringFile_ReadByte(memFile)
 
-                ' Only set the pan position if the channel is there
-                IF i < __Song.channels THEN
-                    ' WTF! Ewww!
-                    IF _READBIT(byte1, 4) THEN ' if bit 4 is set - byte1 AND &H10
-                        SoftSynth_SetVoiceBalance i, (byte1 AND 15) / 15! * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
-                        _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
-                    END IF
-                END IF
+            ' Only set the pan position if the channel is there
+            IF i < __Song.channels THEN
+            ' WTF! Ewww!
+            IF _READBIT(byte1, 4) THEN ' if bit 4 is set - byte1 AND &H10
+            SoftSynth_SetVoiceBalance i, (byte1 AND 15) / 15! * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+            _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
+            END IF
+            END IF
             NEXT i
-        END IF
+            END IF
 
-        ' Set everything to mono if stereo flag is not set. This is so retarded! Sigh!
-        IF NOT isStereo THEN
+            ' Set everything to mono if stereo flag is not set. This is so retarded! Sigh!
+            IF NOT isStereo THEN
             FOR i = 0 TO __Song.channels - 1
-                SoftSynth_SetVoiceBalance i, 0!
-                _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
+            SoftSynth_SetVoiceBalance i, 0!
+            _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
             NEXT i
-        END IF
+            END IF
 
-        ' Resize the instruments array
-        REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
+            ' Resize the instruments array
+            REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
 
-        ' Go through the instrument data and load whatever we need
-        FOR i = 0 TO __Song.instruments - 1
+            ' Go through the instrument data and load whatever we need
+            FOR i = 0 TO __Song.instruments - 1
             ' Seek to the correct position in the file to read the instrument info
             StringFile_Seek memFile, instrumentPointer(i)
 
@@ -437,28 +437,28 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
 
             ' Skip pack flag (1 byte). TODO: Do we really skip or implement an ADPCM unpacker?
-            ' So 0 = PCM, 1 = DP30ADPCM, 3 = ADPCM
+            ' 0 = PCM, 1 = DP30ADPCM (WTF is this?), 3 = ADPCM (this is mostly ModPlug)
             StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
 
-            ' bits: 0 = loop, 1 = stereo (chans not interleaved!), 2 = 16-bit samples (little endian)
+            ' bits: 0 = loop, 1 = stereo (chans not interleaved! fuck fuck fuck), 2 = 16-bit samples (little endian)
             byte1 = StringFile_ReadByte(memFile)
 
             IF _READBIT(byte1, 0) THEN
-                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
+            __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
             ELSE
-                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+            __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
             END IF
 
             IF _READBIT(byte1, 1) THEN
-                __Instrument(i).channels = 2
+            __Instrument(i).channels = 2
             ELSE
-                __Instrument(i).channels = 1
+            __Instrument(i).channels = 1
             END IF
 
             IF _READBIT(byte1, 2) THEN
-                __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
+            __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
             ELSE
-                __Instrument(i).bytesPerSample = SIZE_OF_BYTE
+            __Instrument(i).bytesPerSample = SIZE_OF_BYTE
             END IF
 
             ' Read C2SPD (only the low word is used)
@@ -470,11 +470,12 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Skip the 'SCRS' label. TODO: Check if we need to be strict with this one
             StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
-        NEXT i
+            NEXT i
 
-        ' What a fucked up format!
-        __MODPlayer_LoadS3M = TRUE
-    END FUNCTION
+            ' What a fucked up format!
+            __MODPlayer_LoadS3M = TRUE
+            END FUNCTION
+    $END IF
 
 
     ' Loads an MTM file into memory and prepairs all required globals
