@@ -105,13 +105,13 @@ $IF BASE64_BAS = UNDEFINED THEN
     '       Dim buffer As String
     '       buffer = Base64_LoadResourceData   ' buffer will now hold the contents of the file
     FUNCTION Base64_LoadResourceData$
-        DIM ogSize AS _UNSIGNED LONG, resize AS _UNSIGNED LONG, isComp AS _BYTE
-        READ ogSize, resize, isComp ' read the header
+        DIM ogSize AS _UNSIGNED LONG, datSize AS _UNSIGNED LONG, isComp AS _BYTE
+        READ ogSize, datSize, isComp ' read the header
 
-        DIM buffer AS STRING: buffer = SPACE$(resize) ' preallocate complete buffer
+        DIM buffer AS STRING: buffer = SPACE$(datSize) ' preallocate complete buffer
 
         ' Read the whole resource data
-        DIM i AS _UNSIGNED LONG: DO WHILE i < resize
+        DIM i AS _UNSIGNED LONG: DO WHILE i < datSize
             DIM chunk AS STRING: READ chunk
             MID$(buffer, i + 1) = chunk
             i = i + LEN(chunk)
