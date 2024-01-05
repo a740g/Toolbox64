@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // File, path and filesystem routines
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -10,9 +10,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
-#include <dirent.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 // These must be kept in sync with FileOps.bi
 #define __FILE_ATTRIBUTE_DIRECTORY 1
@@ -20,6 +18,8 @@
 #define __FILE_ATTRIBUTE_HIDDEN 4
 #define __FILE_ATTRIBUTE_ARCHIVE 8
 #define __FILE_ATTRIBUTE_SYSTEM 16
+
+// TODO: Implement Win32 versions of these!
 
 /// @brief Returns some basic attributes of a file or directory
 /// @param pathName The path name to get the attribute for
@@ -63,139 +63,4 @@ inline int64_t __GetFileSize(const char *fileName)
         return st.st_size;
 
     return -1; // -1 to indicate file not found or not a regular file
-}
-
-/// @brief This is a basic pattern matching function used by __Dir64()
-/// @param fileSpec The pattern to match
-/// @param fileName The filename to match
-/// @return True if it is a match, false otherwise
-static inline bool __Dir64MatchSpec(const char *const fileSpec, const char *const fileName)
-{
-    auto spec = fileSpec;
-    auto name = fileName;
-    const char *wildcard = nullptr;
-
-    while (*spec && *name)
-    {
-        switch (*spec)
-        {
-        case '*': // handle wildcard '*' character
-            wildcard = spec;
-            spec++;
-            while (*name && *name != *spec)
-                name++;
-            break;
-
-        case '?': // handle wildcard '?' character
-            spec++;
-            name++;
-            break;
-
-        default: // compare non-wildcard characters
-            if (*spec != *name)
-            {
-                if (wildcard && *name)
-                {
-                    spec = wildcard;
-                    name = fileName + (name - wildcard) + 1; // reset name to the position after '*'
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                spec++;
-                name++;
-            }
-        }
-    }
-
-    // If we reached the end of both strings, it's a match
-    return (*spec == '\0' && *name == '\0');
-}
-
-/// @brief A MS BASIC PDS DIR$ style function
-/// @param fileSpec This can be a directory with wildcard for the final level (i.e. C:/Windows/*.* or /usr/lib/* etc.)
-/// @return Returns a file or directory name matching fileSpec or an empty string when there is nothing left
-inline const char *__Dir64(const char *fileSpec)
-{
-    static DIR *pDir = nullptr;
-    static char pattern[FILENAME_MAX];
-
-    g_TmpBufF[0] = '\0'; // Set to an empty string
-
-    if (!IS_STRING_EMPTY(fileSpec))
-    {
-        // We got a filespec. Check if we have one already going and if so, close it
-        if (pDir)
-        {
-            closedir(pDir);
-            pDir = nullptr;
-        }
-
-        char dirName[FILENAME_MAX]; // we only need this for opendir()
-
-        if (strchr(fileSpec, '*') || strchr(fileSpec, '?'))
-        {
-            // We have a pattern. Check if we have a path in it
-            auto p = strrchr(fileSpec, '/'); // try *nix style separator
-#ifdef _WIN32
-            if (!p)
-                p = strrchr(fileSpec, '\\'); // try windows style separator
-#endif
-
-            if (p)
-            {
-                // Split the path and the filespec
-                strncpy(pattern, p + 1, FILENAME_MAX);
-                pattern[FILENAME_MAX - 1] = '\0';
-                auto len = std::min<size_t>((p - fileSpec) + 1, FILENAME_MAX - 1);
-                memcpy(dirName, fileSpec, len);
-                dirName[len] = '\0';
-            }
-            else
-            {
-                // No path. Use the current path
-                strncpy(pattern, fileSpec, FILENAME_MAX);
-                pattern[FILENAME_MAX - 1] = '\0';
-                strcpy(dirName, "./");
-            }
-        }
-        else
-        {
-            // No pattern. We'll just assume it's a directory
-            strncpy(dirName, fileSpec, FILENAME_MAX);
-            dirName[FILENAME_MAX - 1] = '\0';
-            strcpy(pattern, "*");
-        }
-
-        pDir = opendir(dirName);
-    }
-
-    if (pDir)
-    {
-        for (;;)
-        {
-            auto pDirent = readdir(pDir);
-            if (!pDirent)
-            {
-                closedir(pDir);
-                pDir = nullptr;
-
-                break;
-            }
-
-            if (__Dir64MatchSpec(pattern, pDirent->d_name))
-            {
-                strncpy(reinterpret_cast<char *>(g_TmpBufF), pDirent->d_name, sizeof(g_TmpBufF) - 1);
-                g_TmpBufF[sizeof(g_TmpBufF) - 1] = '\0';
-
-                break;
-            }
-        }
-    }
-
-    return reinterpret_cast<char *>(g_TmpBufF);
 }

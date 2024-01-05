@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' File, path and filesystem routines
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF FILEOPS_BI = UNDEFINED THEN
@@ -34,7 +34,6 @@ $IF FILEOPS_BI = UNDEFINED THEN
     DECLARE LIBRARY "FileOps"
         FUNCTION __GetFileAttributes~& (pathName AS STRING)
         FUNCTION __GetFileSize&& (pathName AS STRING)
-        FUNCTION __Dir64$ (fileSpec AS STRING)
     END DECLARE
 
     DIM __FileOps AS __FileOpsType

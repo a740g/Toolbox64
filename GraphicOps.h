@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Extended graphics routines
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -108,7 +108,7 @@ inline void Graphics_DrawPixel(int32_t x, int32_t y, uint32_t clrAtr)
     _Graphics_SetPixelInternal(x, y, clrAtr);
 }
 
-/// @brief Makes a character + text atttribute pair for text mode images
+/// @brief Makes a character + text attribute pair for text mode images
 /// @param character An ASCII character
 /// @param fColor The foreground color (0 - 15)
 /// @param bColor The background color (0 - 15)
@@ -118,7 +118,7 @@ inline constexpr uint16_t Graphics_MakeTextColorAttribute(uint8_t character, uin
     return (uint16_t)character | ((((bColor > 7) << 7) | (bColor << 4) | (fColor & 0x0F)) << 8);
 }
 
-/// @brief Makes a character + text atttribute pair for text mode images using the _DEFAULTCOLOR and _BACKGROUNDCOLOR
+/// @brief Makes a character + text attribute pair for text mode images using the _DEFAULTCOLOR and _BACKGROUNDCOLOR
 /// @param character An ASCII character
 /// @return A 16-bit text + color attribute pair
 inline uint16_t Graphics_MakeDefaultTextColorAttribute(uint8_t character)
@@ -979,13 +979,13 @@ void Graphics_SetTextImageClearColor(int32_t imageHandle, uint32_t clrAtr)
         imageHandle = -imageHandle;
         if (imageHandle >= nextimg)
         {
-            error(ERROR_INVALID_HANDLE);
+            error(QB_ERROR_INVALID_HANDLE);
             return;
         }
         textImage = &img[imageHandle];
         if (!textImage->valid)
         {
-            error(ERROR_INVALID_HANDLE);
+            error(QB_ERROR_INVALID_HANDLE);
             return;
         }
     }
@@ -993,7 +993,7 @@ void Graphics_SetTextImageClearColor(int32_t imageHandle, uint32_t clrAtr)
     // Check if the this is a text mode handle
     if (!textImage->text)
     {
-        error(ERROR_INVALID_HANDLE);
+        error(QB_ERROR_INVALID_HANDLE);
         return;
     }
 
@@ -1023,13 +1023,13 @@ void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx
         imageHandle = -imageHandle;
         if (imageHandle >= nextimg)
         {
-            error(ERROR_INVALID_HANDLE);
+            error(QB_ERROR_INVALID_HANDLE);
             return;
         }
         textImage = &img[imageHandle];
         if (!textImage->valid)
         {
-            error(ERROR_INVALID_HANDLE);
+            error(QB_ERROR_INVALID_HANDLE);
             return;
         }
     }
@@ -1037,7 +1037,7 @@ void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx
     // Check if the this is a text mode handle
     if (!textImage->text)
     {
-        error(ERROR_INVALID_HANDLE);
+        error(QB_ERROR_INVALID_HANDLE);
         return;
     }
 

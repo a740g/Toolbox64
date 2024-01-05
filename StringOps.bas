@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' String related routines
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF STRINGOPS_BAS = UNDEFINED THEN
@@ -81,6 +81,18 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
         $CHECKING:OFF
         ToCString = s + CHR$(NULL)
         $CHECKING:ON
+    END FUNCTION
+
+
+    ' Cleans any text retrieved from a music module file and makes it printable
+    FUNCTION String_SanitizeText$ (text AS STRING)
+        DIM buffer AS STRING: buffer = SPACE$(LEN(text))
+
+        DIM i AS LONG: FOR i = 1 TO LEN(text)
+            IF ASC(text, i) > KEY_SPACE THEN ASC(buffer, i) = ASC(text, i)
+        NEXT i
+
+        String_SanitizeText = buffer
     END FUNCTION
 
 

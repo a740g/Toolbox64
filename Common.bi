@@ -1,13 +1,13 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Common header
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF COMMON_BI = UNDEFINED THEN
     $LET COMMON_BI = TRUE
 
     ' Check QB64-PE compiler version and complain if it does not meet minimum version requirement
-    $IF VERSION < 3.9.1 THEN
+    $IF VERSION < 3.11.0 THEN
             $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
     $END IF
 

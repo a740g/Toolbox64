@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
-// Simple floatimg-point stereo PCM software synthesizer
-// Copyright (c) 2023 Samuel Gomes
+// Simple floating-point stereo PCM software synthesizer
+// Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -127,7 +127,7 @@ uint32_t SoftSynth_GetSampleRate()
 {
     if (!g_SoftSynth)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
@@ -138,7 +138,7 @@ uint32_t SoftSynth_GetTotalSounds()
 {
     if (!g_SoftSynth)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
@@ -149,7 +149,7 @@ uint32_t SoftSynth_GetTotalVoices()
 {
     if (!g_SoftSynth)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
@@ -160,7 +160,7 @@ void SoftSynth_SetTotalVoices(uint32_t voices)
 {
     if (!g_SoftSynth or voices < 1)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -172,7 +172,7 @@ uint32_t SoftSynth_GetActiveVoices()
 {
     if (!g_SoftSynth)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
 
@@ -183,7 +183,7 @@ float SoftSynth_GetGlobalVolume()
 {
     if (!g_SoftSynth)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
@@ -194,7 +194,7 @@ void SoftSynth_SetGlobalVolume(float volume)
 {
     if (!g_SoftSynth)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -202,7 +202,7 @@ void SoftSynth_SetGlobalVolume(float volume)
 }
 
 /// @brief Copies and prepares the sound data in memory. Multi-channel sounds are flattened to mono.
-/// All sample types are converted to 32-bit floating point. All interger based samples passed must be signed.
+/// All sample types are converted to 32-bit floating point. All integer based samples passed must be signed.
 /// @param sound The sound slot / index
 /// @param source A pointer to the raw sound data
 /// @param bytes The size of the raw sound in bytes
@@ -212,7 +212,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
 {
     if (!g_SoftSynth or sound < 0 or !source or !SoftSynth_IsBytesPerSampleValid(bytesPerSample) or !SoftSynth_IsChannelsValid(channels))
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -278,7 +278,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
     break;
 
     default:
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 }
 
@@ -290,7 +290,7 @@ float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position)
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
@@ -305,7 +305,7 @@ void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float fram
 {
     if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -336,7 +336,7 @@ float SoftSynth_GetVoiceVolume(uint32_t voice)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
@@ -347,7 +347,7 @@ void SoftSynth_SetVoiceVolume(uint32_t voice, float volume)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -358,7 +358,7 @@ float SoftSynth_GetVoiceBalance(uint32_t voice)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
@@ -369,7 +369,7 @@ void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -383,7 +383,7 @@ uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
 
@@ -397,7 +397,7 @@ void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or !frequency)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -409,7 +409,7 @@ void SoftSynth_StopVoice(uint32_t voice)
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -427,7 +427,7 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
 {
     if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or sound < 0 or sound >= g_SoftSynth->sounds.size())
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
@@ -450,7 +450,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
 {
     if (!g_SoftSynth or !buffer or !frames)
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 

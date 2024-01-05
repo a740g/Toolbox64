@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' MOD Player Library
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF MODPLAYER_BAS = UNDEFINED THEN
@@ -108,18 +108,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     END SUB
 
 
-    ' Cleans any text retrieved from a music module file and makes it printable
-    FUNCTION __MODPlayer_SanitizeText$ (text AS STRING)
-        DIM buffer AS STRING: buffer = SPACE$(LEN(text))
-
-        DIM i AS LONG: FOR i = 1 TO LEN(text)
-            IF ASC(text, i) > KEY_SPACE THEN ASC(buffer, i) = ASC(text, i)
-        NEXT i
-
-        __MODPlayer_SanitizeText = buffer
-    END FUNCTION
-
-
     ' This resets all song properties to defaults
     ' We do this so that every tune load begins is a known consistent state
     SUB __MODPlayer_InitializeSong
@@ -162,6 +150,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         __Song.hasSpecialCustomData = FALSE
     END SUB
 
+
     $IF TESTING_S3M_LOADER = DEFINED THEN
             ' Loads an S3M file into memory and prepares all required globals
             FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
@@ -190,7 +179,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Seek to the beginning of the file and get the song title
             StringFile_Seek memFile, 0
-            __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
+            __Song.caption = String_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
             _ECHO "Name: " + __Song.caption
 
             ' Read and discard DOS EOF marker
@@ -412,7 +401,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Instrument(i).subtype = StringFile_ReadByte(memFile)
 
             ' Read the instrument file name. We'll replace it with the title later on if needed
-            __Instrument(i).caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 13))
+            __Instrument(i).caption = String_SanitizeText(StringFile_ReadString(memFile, 13))
 
             ' Read and convert the actual address to the instrument PCM / FM data
             ' Convert this to a long. Eww! WTF!
@@ -465,7 +454,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Instrument(i).c2Spd = StringFile_ReadLong(memFile) AND &HFFFF
 
             ' Store the instrument name if it is not empty
-            DIM instrumentName AS STRING: instrumentName = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 28))
+            DIM instrumentName AS STRING: instrumentName = String_SanitizeText(StringFile_ReadString(memFile, 28))
             IF LEN(_TRIM$(instrumentName)) <> NULL THEN __Instrument(i).caption = instrumentName
 
             ' Skip the 'SCRS' label. TODO: Check if we need to be strict with this one
@@ -505,7 +494,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         MID$(__Song.subtype, 4, 1) = HEX$(ASC(__Song.subtype, 4) - 15)
 
         ' Read the MTM song title (20 bytes)
-        __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
+        __Song.caption = String_SanitizeText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
 
         ' Read the number of tracks saved
         DIM numTracks AS _UNSIGNED INTEGER: numTracks = StringFile_ReadInteger(memFile)
@@ -557,7 +546,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Read the instruments information
         FOR i = 0 TO __Song.instruments - 1
             ' Read the sample name
-            __Instrument(i).caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
+            __Instrument(i).caption = String_SanitizeText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
 
             ' Read sample length
             __Instrument(i).length = StringFile_ReadLong(memFile)
@@ -716,7 +705,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Also, seek to the beginning of the file and get the song title
         StringFile_Seek memFile, 0
-        __Song.caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
+        __Song.caption = String_SanitizeText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
         __Song.channels = 0
         __Song.instruments = 0
@@ -771,7 +760,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         ' Load the instruments headers
         FOR i = 0 TO __Song.instruments - 1
             ' Read the sample name
-            __Instrument(i).caption = __MODPlayer_SanitizeText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
+            __Instrument(i).caption = String_SanitizeText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
 
             ' Read sample length
             byte1 = StringFile_ReadByte(memFile)

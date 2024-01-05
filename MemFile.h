@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // File I/O like routines for memory loaded files
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -42,7 +42,7 @@ void MemFile_Destroy(uintptr_t p)
     if (p)
         delete reinterpret_cast<MemFile *>(p);
     else
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
 }
 
 /// @brief Returns QB_TRUE if the cursor moved past the end of the buffer
@@ -55,7 +55,7 @@ qb_bool MemFile_IsEOF(uintptr_t p)
     if (memFile)
         return TO_QB_BOOL(memFile->cursor >= memFile->buffer.size());
 
-    error(ERROR_ILLEGAL_FUNCTION_CALL);
+    error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     return QB_FALSE;
 }
 
@@ -69,7 +69,7 @@ size_t MemFile_GetSize(uintptr_t p)
     if (memFile)
         return memFile->buffer.size();
 
-    error(ERROR_ILLEGAL_FUNCTION_CALL);
+    error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     return 0;
 }
 
@@ -83,7 +83,7 @@ size_t MemFile_GetPosition(uintptr_t p)
     if (memFile)
         return memFile->cursor;
 
-    error(ERROR_ILLEGAL_FUNCTION_CALL);
+    error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     return 0;
 }
 
@@ -97,7 +97,7 @@ void MemFile_Seek(uintptr_t p, size_t position)
     if (memFile && position <= memFile->buffer.size())
         memFile->cursor = position;
     else
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
 }
 
 /// @brief Resizes the buffer of a MemFile object
@@ -116,7 +116,7 @@ void MemFile_Resize(uintptr_t p, size_t newSize)
     }
     else
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 }
 
@@ -142,7 +142,7 @@ size_t MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
     }
     else
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 
     return 0;
@@ -166,7 +166,7 @@ size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
     }
     else
     {
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 
     return 0;
@@ -182,7 +182,7 @@ inline T MemFile_Read(uintptr_t p)
     T value = T();
 
     if (MemFile_Read(p, reinterpret_cast<uintptr_t>(&value), sizeof(T)) != sizeof(T))
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
 
     return value;
 }
@@ -195,7 +195,7 @@ template <typename T>
 inline void MemFile_Write(uintptr_t p, T value)
 {
     if (MemFile_Write(p, reinterpret_cast<uintptr_t>(&value), sizeof(T)) != sizeof(T))
-        error(ERROR_ILLEGAL_FUNCTION_CALL);
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
 }
 
 #define MemFile_ReadByte(p) MemFile_Read<uint8_t>(p)
