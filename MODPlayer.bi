@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' MOD Player Library
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF MODPLAYER_BI = UNDEFINED THEN
@@ -12,20 +12,25 @@ $IF MODPLAYER_BI = UNDEFINED THEN
     '$INCLUDE:'MemFile.bi'
     '$INCLUDE:'FileOps.bi'
 
-    CONST __NOTE_NONE = 132 ' Note will be set to this when there is nothing
-    CONST __NOTE_KEY_OFF = 133 ' We'll use this in a future version
-    CONST __NOTE_NO_VOLUME = 255 ' When a note has no volume, then it will be set to this
-    CONST __MOD_ROWS = 64 ' number of rows in a MOD pattern
-    CONST __MOD_MTM_ORDER_MAX = 127 ' maximum position in a MOD / MTM order table
-    CONST __INSTRUMENT_VOLUME_MAX = 64 ' this is the maximum volume of any MOD instrument
-    CONST __CHANNEL_PCM = 0 ' good old digital PCM channel mixed by SoftSynth
-    CONST __CHANNEL_FM_MELODY = 1 ' FM melody channel emulated by FM emulator
-    CONST __CHANNEL_FM_DRUM = 2 ' FM drum channel emulated by FM emulator
-    CONST __CHANNEL_STEREO_SEPARATION = 0.5! ' 100% stereo separation sounds bad on headphones
-    CONST __MTM_S3M_CHANNEL_MAX = 31 ' maximum channel number supported by MTM / S3M
-    CONST __S3M_GLOBAL_VOLUME_MAX = 64 ' S3M global volume maximum value
-    CONST __SONG_SPEED_DEFAULT = 6 ' This is the default speed for song where it is not specified
-    CONST __SONG_BPM_DEFAULT = 125 ' Default song BPM when it is not specified
+    CONST __NOTE_NONE~%% = 132~%% ' Note will be set to this when there is nothing
+    CONST __NOTE_KEY_OFF~%% = 133~%% ' We'll use this in a future version
+    CONST __NOTE_NO_VOLUME~%% = 255~%% ' When a note has no volume, then it will be set to this
+    CONST __MOD_S3M_ROWS~%% = 64~%% ' number of rows in a MOD / S3M pattern
+    CONST __MOD_MTM_ORDER_MAX~%% = 127~%% ' maximum position in a MOD / MTM order table
+    CONST __INSTRUMENT_VOLUME_MAX~%% = 64~%% ' this is the maximum volume of any MOD instrument
+    CONST __INSTRUMENT_NONE~%% = 0~%% ' no instrument
+    CONST __INSTRUMENT_PCM~%% = 1~%% ' good old digital PCM instrument
+    CONST __INSTRUMENT_FM_MELODY~%% = 2~%% ' FM melody instrument
+    CONST __INSTRUMENT_FM_BASSDRUM~%% = 3~%% ' FM bass drum instrument
+    CONST __INSTRUMENT_FM_SNAREDRUM~%% = 4~%% ' FM snare instrument
+    CONST __INSTRUMENT_FM_TOMTOM~%% = 5~%% ' FM tom-tom instrument
+    CONST __INSTRUMENT_FM_CYMBAL~%% = 6~%% ' FM cymbal instrument
+    CONST __INSTRUMENT_FM_HIHAT~%% = 7~%% ' FM hi-hat instrument
+    CONST __CHANNEL_STEREO_SEPARATION! = 0.5! ' 100% stereo separation sounds bad on headphones
+    CONST __MTM_S3M_CHANNEL_MAX~%% = 31~%% ' maximum channel number supported by MTM / S3M
+    CONST __S3M_GLOBAL_VOLUME_MAX~%% = 64~%% ' S3M global volume maximum value
+    CONST __SONG_SPEED_DEFAULT~%% = 6~%% ' This is the default speed for song where it is not specified
+    CONST __SONG_BPM_DEFAULT~%% = 125~%% ' Default song BPM when it is not specified
 
     TYPE __NoteType
         note AS _UNSIGNED _BYTE ' contains info on 1 note
@@ -37,7 +42,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     TYPE __InstrumentType
         caption AS STRING ' instrument name or message
-        subtype AS _UNSIGNED _BYTE ' what kind of instrument is this? (digital, FM melody, FM drum)
+        subtype AS _UNSIGNED _BYTE ' what kind of instrument is this? (PCM, FM melody, FM drum, etc.)
         length AS _UNSIGNED LONG ' sample length in bytes
         c2Spd AS _UNSIGNED INTEGER ' sample finetune is converted to c2spd
         volume AS _UNSIGNED _BYTE ' volume: 0 - 64
@@ -50,7 +55,7 @@ $IF MODPLAYER_BI = UNDEFINED THEN
 
     TYPE __ChannelType
         instrument AS _UNSIGNED _BYTE ' instrument number to be mixed
-        subtype AS _UNSIGNED _BYTE ' what kind of channel is this? (digital, FM melody, FM drum)
+        subtype AS _UNSIGNED _BYTE ' what kind of channel is this? (PCM, FM melody, FM drum, etc.) TODO: Do we really need this?
         volume AS INTEGER ' channel volume. This is a signed int because we need -ve values & to clip properly
         restart AS _BYTE ' set this to true to retrigger the sample
         note AS _UNSIGNED _BYTE ' last note set in channel
