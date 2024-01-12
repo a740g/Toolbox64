@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Immediate mode GUI library
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '
 ' This is very loosely based on Terry Ritchie's GLINPUT & RQBL
 ' The library has an input manager, tabbed focus and implements text box and push button widgets (so far)
@@ -875,7 +875,7 @@ $IF IMGUI_BAS = UNDEFINED THEN
                             END IF
                     END SELECT
 
-                    IF K <> EMPTY_STRING THEN ' was an allowed keystroke saved?
+                    IF LEN(K) <> NULL THEN ' was an allowed keystroke saved?
                         IF Widget(WidgetManager.current).flags AND TEXT_BOX_LOWER THEN ' should it be forced to lower case?
                             K = LCASE$(K) ' yes, force the keystroke to lower case
                         END IF

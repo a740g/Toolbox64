@@ -230,14 +230,14 @@ $IF FILEOPS_BAS = UNDEFINED THEN
 
     ' Returns the size of a file
     FUNCTION GetFileSize&& (pathName AS STRING)
-        GetFileSize = __GetFileSize(ToCString(pathName))
+        GetFileSize = __GetFileSize(String_ToCStr(pathName))
     END FUNCTION
 
 
     ' Returns the attributes of a file / directory
     ' See FILE_ATTRIBUTE_* CONSTs
     FUNCTION GetFileAttributes~& (pathName AS STRING)
-        GetFileAttributes = __GetFileAttributes(ToCString(pathName))
+        GetFileAttributes = __GetFileAttributes(String_ToCStr(pathName))
     END FUNCTION
 
     '$INCLUDE:'StringOps.bas'

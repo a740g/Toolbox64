@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // String related routines
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -13,11 +13,23 @@
 #include <cstdio>
 #include <regex>
 
+// Pseudo-constants (because we cannot do `CONST STRING_CR = CHR$(13)` yet; sigh!)
+#define STRING_NULL() "\0"
+#define STRING_BS() "\b"
+#define STRING_HT() "\t"
+#define STRING_LF() "\n"
+#define STRING_VT() "\v"
+#define STRING_FF() "\f"
+#define STRING_CR() "\r"
+#define STRING_ESC() "\x1B"
+#define STRING_QUOTE() "\""
+#define STRING_CRLF() "\r\n"
+
 /// @brief Formats a string
 /// @param s A string to format
 /// @param fmt The format specifier
 /// @return A formatted string
-inline const char *__FormatString(const char *s, const char *fmt)
+inline const char *__String_FormatString(const char *s, const char *fmt)
 {
     g_TmpBufF[0] = '\0';
     snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, s);
@@ -28,7 +40,7 @@ inline const char *__FormatString(const char *s, const char *fmt)
 /// @param n A 32-bit integer
 /// @param fmt The format specifier
 /// @return A formatted string
-inline const char *__FormatLong(int32_t n, const char *fmt)
+inline const char *__String_FormatLong(int32_t n, const char *fmt)
 {
     g_TmpBufF[0] = '\0';
     snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, n);
@@ -39,7 +51,7 @@ inline const char *__FormatLong(int32_t n, const char *fmt)
 /// @param n A 64-bit integer
 /// @param fmt The format specifier
 /// @return A formatted string
-inline const char *__FormatInteger64(int64_t n, const char *fmt)
+inline const char *__String_FormatInteger64(int64_t n, const char *fmt)
 {
     g_TmpBufF[0] = '\0';
     snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, n);
@@ -50,7 +62,7 @@ inline const char *__FormatInteger64(int64_t n, const char *fmt)
 /// @param n A 32-bit float
 /// @param fmt The format specifier
 /// @return A formatted string
-inline const char *__FormatSingle(float n, const char *fmt)
+inline const char *__String_FormatSingle(float n, const char *fmt)
 {
     g_TmpBufF[0] = '\0';
     snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, n);
@@ -61,7 +73,7 @@ inline const char *__FormatSingle(float n, const char *fmt)
 /// @param n A 64-bit double
 /// @param fmt The format specifier
 /// @return A formatted string
-inline const char *__FormatDouble(double n, const char *fmt)
+inline const char *__String_FormatDouble(double n, const char *fmt)
 {
     g_TmpBufF[0] = '\0';
     snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, n);
@@ -72,7 +84,7 @@ inline const char *__FormatDouble(double n, const char *fmt)
 /// @param n A pointer
 /// @param fmt The format specifier
 /// @return A formatted string
-inline const char *__FormatOffset(uintptr_t n, const char *fmt)
+inline const char *__String_FormatOffset(uintptr_t n, const char *fmt)
 {
     g_TmpBufF[0] = '\0';
     snprintf(reinterpret_cast<char *>(g_TmpBufF), sizeof(g_TmpBufF), fmt, n);
@@ -83,7 +95,7 @@ inline const char *__FormatOffset(uintptr_t n, const char *fmt)
 /// @param n A boolean value
 /// @param fmt The format type needed
 /// @return A string form of the boolean value
-inline const char *FormatBoolean(int32_t n, uint32_t fmt)
+inline const char *String_FormatBoolean(int32_t n, uint32_t fmt)
 {
     static const char *const BOOLEAN_STRINGS[][2] = {
         {"False", "True"},
@@ -119,7 +131,7 @@ inline const char *FormatBoolean(int32_t n, uint32_t fmt)
 /// @brief Check if the character is an alphanumeric character
 /// @param ch The character to check
 /// @return True if the character is an alphanumeric character
-inline qb_bool IsAlphaNumeric(uint32_t ch)
+inline qb_bool String_IsAlphaNumeric(uint32_t ch)
 {
     return TO_QB_BOOL(isalnum(ch));
 }
@@ -127,15 +139,15 @@ inline qb_bool IsAlphaNumeric(uint32_t ch)
 /// @brief Check if the character is an alphabetic character
 /// @param ch The character to check
 /// @return True if the character is an alphabetic character
-inline qb_bool IsAlphabetic(uint32_t ch)
+inline qb_bool String_IsAlphabetic(uint32_t ch)
 {
     return TO_QB_BOOL(isalpha(ch));
 }
 
-/// @brief Check if the character is a lowercase characte
+/// @brief Check if the character is a lowercase character
 /// @param ch The character to check
-/// @return True if the character is a lowercase characte
-inline qb_bool IsLowerCase(uint32_t ch)
+/// @return True if the character is a lowercase character
+inline qb_bool String_IsLowerCase(uint32_t ch)
 {
     return TO_QB_BOOL(islower(ch));
 }
@@ -143,7 +155,7 @@ inline qb_bool IsLowerCase(uint32_t ch)
 /// @brief Check if the character is an uppercase character
 /// @param ch The character to check
 /// @return True if the character is an uppercase character
-inline qb_bool IsUpperCase(uint32_t ch)
+inline qb_bool String_IsUpperCase(uint32_t ch)
 {
     return TO_QB_BOOL(isupper(ch));
 }
@@ -151,7 +163,7 @@ inline qb_bool IsUpperCase(uint32_t ch)
 /// @brief Check if the character is a numeric character
 /// @param ch The character to check
 /// @return True if the character is a numeric character
-inline qb_bool IsDigit(uint32_t ch)
+inline qb_bool String_IsDigit(uint32_t ch)
 {
     return TO_QB_BOOL(isdigit(ch));
 }
@@ -159,7 +171,7 @@ inline qb_bool IsDigit(uint32_t ch)
 /// @brief Check if the character is a hexadecimal numeric character
 /// @param ch The character to check
 /// @return True if the character is a hexadecimal numeric character
-inline qb_bool IsHexadecimalDigit(uint32_t ch)
+inline qb_bool String_IsHexadecimalDigit(uint32_t ch)
 {
     return TO_QB_BOOL(isxdigit(ch));
 }
@@ -167,7 +179,7 @@ inline qb_bool IsHexadecimalDigit(uint32_t ch)
 /// @brief Check if the character is a control character
 /// @param ch The character to check
 /// @return True if the character is a control character
-inline qb_bool IsControlCharacter(uint32_t ch)
+inline qb_bool String_IsControlCharacter(uint32_t ch)
 {
     return TO_QB_BOOL(iscntrl(ch));
 }
@@ -175,7 +187,7 @@ inline qb_bool IsControlCharacter(uint32_t ch)
 /// @brief Check if the character has a graphical representation
 /// @param ch The character to check
 /// @return True if the character has a graphical representation
-inline qb_bool IsGraphicalCharacter(uint32_t ch)
+inline qb_bool String_IsGraphicalCharacter(uint32_t ch)
 {
     return TO_QB_BOOL(isgraph(ch));
 }
@@ -183,7 +195,7 @@ inline qb_bool IsGraphicalCharacter(uint32_t ch)
 /// @brief Check if the character is a white-space character
 /// @param ch The character to check
 /// @return True if the character is white-space character
-inline qb_bool IsWhiteSpace(uint32_t ch)
+inline qb_bool String_IsWhiteSpace(uint32_t ch)
 {
     return TO_QB_BOOL(isspace(ch));
 }
@@ -191,7 +203,7 @@ inline qb_bool IsWhiteSpace(uint32_t ch)
 /// @brief Check if the character is a blank character
 /// @param ch The character to check
 /// @return True if the character is a blank character
-inline qb_bool IsBlank(uint32_t ch)
+inline qb_bool String_IsBlank(uint32_t ch)
 {
     return TO_QB_BOOL(isblank(ch));
 }
@@ -199,7 +211,7 @@ inline qb_bool IsBlank(uint32_t ch)
 /// @brief Check if the character can be printed
 /// @param ch The character to check
 /// @return True if the character can be printed
-inline qb_bool IsPrintable(uint32_t ch)
+inline qb_bool String_IsPrintable(uint32_t ch)
 {
     return TO_QB_BOOL(isprint(ch));
 }
@@ -207,34 +219,15 @@ inline qb_bool IsPrintable(uint32_t ch)
 /// @brief Check if the character is a punctuation character
 /// @param ch The character to check
 /// @return True if the character is a punctuation character
-inline qb_bool IsPunctuation(uint32_t ch)
+inline qb_bool String_IsPunctuation(uint32_t ch)
 {
     return TO_QB_BOOL(ispunct(ch));
-}
-
-/// @brief Reverses the order of bytes in memory
-/// @param ptr A pointer to a memory buffer
-/// @param size The size of the memory buffer
-inline void ReverseMemory(uintptr_t ptr, size_t size)
-{
-    auto start = (uint8_t *)ptr;
-    auto end = start + size - 1;
-
-    while (start < end)
-    {
-        *start ^= *end;
-        *end ^= *start;
-        *start ^= *end;
-
-        start++;
-        end--;
-    }
 }
 
 /// @brief Compiles a RegEx and returns a context
 /// @param pattern A RegEx pattern
 /// @return A RegEx context
-inline uintptr_t __RegExCompile(const char *pattern)
+inline uintptr_t __String_RegExCompile(const char *pattern)
 {
     try
     {
@@ -249,7 +242,7 @@ inline uintptr_t __RegExCompile(const char *pattern)
 
 /// @brief Frees resources for a compiled pattern
 /// @param pattern A RegEx context
-inline void RegExFree(uintptr_t pattern)
+inline void String_RegExFree(uintptr_t pattern)
 {
     if (pattern)
     {
@@ -257,13 +250,13 @@ inline void RegExFree(uintptr_t pattern)
     }
 }
 
-/// @brief Searches of a occurence of a compiled pattern in `text`
+/// @brief Searches of a occurrence of a compiled pattern in `text`
 /// @param pattern A RegEx context
 /// @param text The string to search
 /// @param index The position in the string to start searching
 /// @param matchLength The length of the match [output]
 /// @return Starting position of the match (>= 0) or a negative value indicating the error
-inline int32_t __RegExSearchCompiled(uintptr_t pattern, const char *text, int32_t index, int32_t *matchLength)
+inline int32_t __String_RegExSearchCompiled(uintptr_t pattern, const char *text, int32_t index, int32_t *matchLength)
 {
     if (!pattern)
         return -2; // invalid context
@@ -288,11 +281,11 @@ inline int32_t __RegExSearchCompiled(uintptr_t pattern, const char *text, int32_
 /// @param index The position in the string to start searching
 /// @param matchLength The length of the match [output]
 /// @return Starting position of the match (>= 0) or a negative value indicating the error
-inline int32_t __RegExSearch(const char *pattern, const char *text, int32_t index, int32_t *matchLength)
+inline int32_t __String_RegExSearch(const char *pattern, const char *text, int32_t index, int32_t *matchLength)
 {
-    auto compiledPattern = __RegExCompile(pattern);
-    auto result = __RegExSearchCompiled(compiledPattern, text, index, matchLength);
-    RegExFree(compiledPattern); // clean up compiled context
+    auto compiledPattern = __String_RegExCompile(pattern);
+    auto result = __String_RegExSearchCompiled(compiledPattern, text, index, matchLength);
+    String_RegExFree(compiledPattern); // clean up compiled context
     return result;
 }
 
@@ -300,7 +293,7 @@ inline int32_t __RegExSearch(const char *pattern, const char *text, int32_t inde
 /// @param pattern A RegEx context
 /// @param text The string to match
 /// @return True if it is a match. False otherwise
-inline qb_bool __RegExMatchCompiled(uintptr_t pattern, const char *text)
+inline qb_bool __String_RegExMatchCompiled(uintptr_t pattern, const char *text)
 {
     if (!pattern)
         return QB_FALSE; // invalid context
@@ -313,10 +306,10 @@ inline qb_bool __RegExMatchCompiled(uintptr_t pattern, const char *text)
 /// @param pattern A RegEx pattern
 /// @param text The string to match
 /// @return True if it is a match. False otherwise
-inline qb_bool __RegExMatch(const char *pattern, const char *text)
+inline qb_bool __String_RegExMatch(const char *pattern, const char *text)
 {
-    uintptr_t compiledPattern = __RegExCompile(pattern);
-    auto result = __RegExMatchCompiled(compiledPattern, text);
-    RegExFree(compiledPattern); // clean up compiled context
+    uintptr_t compiledPattern = __String_RegExCompile(pattern);
+    auto result = __String_RegExMatchCompiled(compiledPattern, text);
+    String_RegExFree(compiledPattern); // clean up compiled context
     return result;
 }

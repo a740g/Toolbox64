@@ -94,7 +94,7 @@ $IF SAUCE_BAS = UNDEFINED THEN
         SetMemoryByte _OFFSET(sauce.record), NULL, LEN(sauce.record)
 
         ' Zap the comments
-        sauce.comments = EMPTY_STRING
+        sauce.comments = STRING_EMPTY
 
         ' Set the SAUCE ID
         sauce.record.id = __SAUCE_ID
@@ -120,7 +120,7 @@ $IF SAUCE_BAS = UNDEFINED THEN
             IF position > 0 THEN
                 sauce.comments = MID$(buffer, position + LEN(__SAUCE_COMMENT_ID), sauce.record.commentLines * __SAUCE_COMMENT_SIZE) ' read comments
             ELSE
-                sauce.comments = EMPTY_STRING ' no comments
+                sauce.comments = STRING_EMPTY ' no comments
             END IF
 
         ELSE
@@ -234,14 +234,14 @@ $IF SAUCE_BAS = UNDEFINED THEN
         IF sauce.record.id <> __SAUCE_ID THEN SAUCE_Initialize sauce
 
         ' Do some validation
-        IF IsDigit(ASC(dateString, 1)) THEN
-            IF IsDigit(ASC(dateString, 2)) THEN
-                IF IsDigit(ASC(dateString, 3)) THEN
-                    IF IsDigit(ASC(dateString, 4)) THEN
-                        IF IsDigit(ASC(dateString, 5)) THEN
-                            IF IsDigit(ASC(dateString, 6)) THEN
-                                IF IsDigit(ASC(dateString, 7)) THEN
-                                    IF IsDigit(ASC(dateString, 8)) THEN
+        IF String_IsDigit(ASC(dateString, 1)) THEN
+            IF String_IsDigit(ASC(dateString, 2)) THEN
+                IF String_IsDigit(ASC(dateString, 3)) THEN
+                    IF String_IsDigit(ASC(dateString, 4)) THEN
+                        IF String_IsDigit(ASC(dateString, 5)) THEN
+                            IF String_IsDigit(ASC(dateString, 6)) THEN
+                                IF String_IsDigit(ASC(dateString, 7)) THEN
+                                    IF String_IsDigit(ASC(dateString, 8)) THEN
                                         sauce.record.date = dateString
                                         EXIT SUB
                                     END IF
@@ -411,7 +411,7 @@ $IF SAUCE_BAS = UNDEFINED THEN
         ' Initialze the sauce record if needed
         IF sauce.record.id <> __SAUCE_ID THEN SAUCE_Initialize sauce
 
-        SAUCE_GetTypeInfoString = ToBString(sauce.record.tInfoS)
+        SAUCE_GetTypeInfoString = String_ToBStr(sauce.record.tInfoS)
     END FUNCTION
 
 

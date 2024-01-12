@@ -13,10 +13,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     '$DEBUG
     '$CONSOLE
-    '$LET TESTING_S3M_LOADER = 1
 
     'DO
-    '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", "", "*.mod|*.MOD|*.mtm|*.MTM", "Music Module Files")
+    '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open", , "*.mod|*.MOD|*.mtm|*.MTM|*.s3m|*.S3M", "Music Module Files")
     '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
 
     '    IF MODPlayer_LoadFromDisk(fileName) THEN
@@ -41,8 +40,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     'LOOP
 
     'END
-
-    'PRINT __MODPlayer_LoadS3M(LoadFile("C:\Users\samue\source\repos\a740g\QB64-MOD-Player\mods\''exuding titleness''.s3m"))
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Loads all required LUTs from DATA
@@ -115,9 +112,9 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     SUB __MODPlayer_InitializeSong
         SHARED __Song AS __SongType
 
-        __Song.caption = EMPTY_STRING
-        __Song.subtype = EMPTY_STRING
-        __Song.comment = EMPTY_STRING
+        __Song.caption = STRING_EMPTY
+        __Song.subtype = STRING_EMPTY
+        __Song.comment = STRING_EMPTY
         __Song.channels = NULL
         __Song.instruments = NULL
         __Song.orders = NULL
@@ -153,7 +150,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     END SUB
 
 
-    $IF TESTING_S3M_LOADER = DEFINED THEN
+    $IF FALSE THEN
             ' Loads an S3M file into memory and prepares all required globals
             FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
             SHARED __Song AS __SongType
@@ -181,7 +178,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
             ' Seek to the beginning of the file and get the song title
             StringFile_Seek memFile, 0
-            __Song.caption = String_SanitizeText(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
+            __Song.caption = String_MakePrintable(StringFile_ReadString(memFile, 28)) ' S3M song title is 28 bytes long
             _ECHO "Name: " + __Song.caption
 
             ' Read and discard DOS EOF marker
@@ -407,7 +404,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             _ECHO " Type =" + STR$(__Instrument(i).subtype)
 
             ' Read the instrument file name. We'll replace it with the title later on if needed
-            __Instrument(i).caption = String_SanitizeText(ToBString(StringFile_ReadString(memFile, 12)))
+            __Instrument(i).caption = String_MakePrintable(String_ToBStr(StringFile_ReadString(memFile, 12)))
             _ECHO " File name = " + __Instrument(i).caption
 
             IF __Instrument(i).subtype > __INSTRUMENT_PCM THEN ' this is an FM instrument
@@ -477,7 +474,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             StringFile_Seek memFile, StringFile_GetPosition(memFile) + 12
 
             ' Store the instrument name if it is not empty
-            DIM instrumentName AS STRING: instrumentName = String_SanitizeText(StringFile_ReadString(memFile, 28))
+            DIM instrumentName AS STRING: instrumentName = String_MakePrintable(StringFile_ReadString(memFile, 28))
             IF LEN(_TRIM$(instrumentName)) <> NULL THEN __Instrument(i).caption = instrumentName
             _ECHO " Instrument name = " + __Instrument(i).caption
 
@@ -625,7 +622,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             ERROR ERROR_FEATURE_UNAVAILABLE
 
             CASE &H8 ' Set Panning
-            ERROR ERROR_FEATURE_UNAVAILABLE
+            'ERROR ERROR_FEATURE_UNAVAILABLE
 
             CASE &H9 ' Sound Control
             ERROR ERROR_FEATURE_UNAVAILABLE
@@ -709,7 +706,6 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             END FUNCTION
     $END IF
 
-
     ' Loads an MTM file into memory and prepairs all required globals
     FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
         SHARED __Song AS __SongType
@@ -737,7 +733,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
         MID$(__Song.subtype, 4, 1) = HEX$(ASC(__Song.subtype, 4) - 15)
 
         ' Read the MTM song title (20 bytes)
-        __Song.caption = String_SanitizeText(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
+        __Song.caption = String_MakePrintable(StringFile_ReadString(memFile, 20)) ' MTM song name is 20 bytes
 
         ' Read the number of tracks saved
         DIM numTracks AS _UNSIGNED INTEGER: numTracks = StringFile_ReadInteger(memFile)
@@ -791,7 +787,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Instrument(i).subtype = __INSTRUMENT_PCM ' this format only uses PCM instruments
 
             ' Read the sample name
-            __Instrument(i).caption = String_SanitizeText(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
+            __Instrument(i).caption = String_MakePrintable(StringFile_ReadString(memFile, 22)) ' MTM sample names are 22 bytes long
 
             ' Read sample length
             __Instrument(i).length = StringFile_ReadLong(memFile)
@@ -949,7 +945,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
 
         ' Also, seek to the beginning of the file and get the song title
         StringFile_Seek memFile, 0
-        __Song.caption = String_SanitizeText(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
+        __Song.caption = String_MakePrintable(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
         __Song.channels = 0
         __Song.instruments = 0
@@ -1006,7 +1002,7 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
             __Instrument(i).subtype = __INSTRUMENT_PCM ' this format only uses PCM instruments
 
             ' Read the sample name
-            __Instrument(i).caption = String_SanitizeText(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
+            __Instrument(i).caption = String_MakePrintable(StringFile_ReadString(memFile, 22)) ' MOD sample names are 22 bytes long
 
             ' Read sample length
             byte1 = StringFile_ReadByte(memFile)
@@ -1185,6 +1181,13 @@ $IF MODPLAYER_BAS = UNDEFINED THEN
     ' This basically calls the loaders in a certain order that makes sense
     ' It returns TRUE if a loader is successful
     FUNCTION MODPlayer_LoadFromMemory%% (buffer AS STRING)
+        $IF FALSE THEN
+                IF __MODPlayer_LoadS3M(buffer) THEN
+                MODPlayer_LoadFromMemory = TRUE
+                EXIT FUNCTION
+                ELSE
+        $END IF
+
         IF __MODPlayer_LoadMTM(buffer) THEN
             MODPlayer_LoadFromMemory = TRUE
             EXIT FUNCTION

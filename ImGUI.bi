@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Immediate mode GUI library
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '
 ' This is very loosely based on Terry Ritchie's GLINPUT & RQBL
 ' The library has an input manager, tabbed focus and implements text box and push button widgets (so far)
