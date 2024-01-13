@@ -14,6 +14,8 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     '$DEBUG
     '$CONSOLE:ONLY
 
+    'PRINT String_ToCStr("abcd") + "<END", LEN(String_ToCStr("abcd"))
+
     'PRINT String_Filter("Hello, -234.234world!", "+-01234567890.", FALSE) + "<END"
     'PRINT String_Filter("Hello,-234.234 world!", "+-01234567890.", TRUE) + "<END"
 
@@ -83,7 +85,7 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     ' Returns a BASIC string (bstring) from a NULL terminated C string (cstring)
     FUNCTION String_ToBStr$ (s AS STRING)
         $CHECKING:OFF
-        DIM zeroPos AS LONG: zeroPos = INSTR(s, STRING_NULL)
+        DIM zeroPos AS LONG: zeroPos = INSTR(s, CHR$(NULL))
         IF zeroPos > NULL THEN String_ToBStr = LEFT$(s, zeroPos - 1) ELSE String_ToBStr = s
         $CHECKING:ON
     END FUNCTION
@@ -92,7 +94,7 @@ $IF STRINGOPS_BAS = UNDEFINED THEN
     ' Just a convenience function for use when calling external libraries
     FUNCTION String_ToCStr$ (s AS STRING)
         $CHECKING:OFF
-        String_ToCStr = s + STRING_NULL
+        String_ToCStr = s + CHR$(NULL)
         $CHECKING:ON
     END FUNCTION
 

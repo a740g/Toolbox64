@@ -14,7 +14,6 @@
 #include <regex>
 
 // Pseudo-constants (because we cannot do `CONST STRING_CR = CHR$(13)` yet; sigh!)
-#define STRING_NULL() "\0"
 #define STRING_BS() "\b"
 #define STRING_HT() "\t"
 #define STRING_LF() "\n"
