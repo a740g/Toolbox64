@@ -7,6 +7,7 @@
 '   https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#window-title
 '   https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#soft-reset
 '   https://github.com/a740g/ANSIPrint/blob/master/docs/ansimtech.txt
+'   https://conemu.github.io/en/AnsiEscapeCodes.html
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF ANSIPRINT_BAS = UNDEFINED THEN

@@ -12,7 +12,7 @@ $IF COMMON_BI = UNDEFINED THEN
     $END IF
 
     ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64
-    DEFLNG A-Z
+    _DEFINE A-Z AS LONG
 
     ' Force all arrays to be defined (technically not required, since we use _EXPLICIT below)
     OPTION _EXPLICITARRAY

@@ -641,18 +641,18 @@ void Graphics_DrawEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t
 }
 
 /// @brief Draws a filled ellipse (works in both text and graphics modes)
-/// @param x The circles center x position
-/// @param y The circles center y position
+/// @param cx The circles center x position
+/// @param cy The circles center y position
 /// @param rx The horizontal radius
 /// @param ry The vertical radius
 /// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
-void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, uint32_t clrAtr)
+void Graphics_DrawFilledEllipse(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint32_t clrAtr)
 {
     // Calculate the bounding box
-    auto left = x - rx;
-    auto right = x + rx;
-    auto top = y - ry;
-    auto bottom = y + ry;
+    auto left = cx - rx;
+    auto right = cx + rx;
+    auto top = cy - ry;
+    auto bottom = cy + ry;
 
     // Clip the ellipse completely if bounding box is outside the image bounds
     if (right < 0 || left >= write_page->width || bottom < 0 || top >= write_page->height)
@@ -661,131 +661,79 @@ void Graphics_DrawFilledEllipse(int32_t x, int32_t y, int32_t rx, int32_t ry, ui
     // Special case if both rx and ry are <= zero: draw a single pixel
     if (rx <= 0 && ry <= 0)
     {
-        Graphics_DrawPixel(x, y, clrAtr);
+        Graphics_DrawPixel(cx, cy, clrAtr);
         return;
     }
 
     // Special case for rx = 0: draw a vline
     if (rx == 0)
     {
-        Graphics_DrawVerticalLine(x, top, bottom, clrAtr);
+        Graphics_DrawVerticalLine(cx, top, bottom, clrAtr);
         return;
     }
 
     // Special case for ry = 0: draw a hline
     if (ry == 0)
     {
-        Graphics_DrawHorizontalLine(left, y, right, clrAtr);
+        Graphics_DrawHorizontalLine(left, cy, right, clrAtr);
         return;
     }
 
-    // Init vars
-    int32_t x1, y1, x2, y2;
-    int32_t ix, iy;
-    int32_t h, i, j, k;
-    int32_t xmh, xph;
-    int32_t xmi, xpi;
-    int32_t xmj, xpj;
-    int32_t xmk, xpk;
-    int32_t oh, oi, oj, ok;
-    oh = oi = oj = ok = 0xFFFF;
+    int32_t a = 2 * rx * rx;
+    int32_t b = 2 * ry * ry;
+    int32_t x = rx;
+    int32_t y = 0;
+    int32_t xx = ry * ry * (1 - rx - rx);
+    int32_t yy = rx * rx;
+    int32_t sx = b * rx;
+    int32_t sy = 0;
+    int32_t e = 0;
 
-    // Draw
-    if (rx > ry)
+    while (sx >= sy)
     {
-        ix = 0;
-        iy = rx << 6;
+        Graphics_DrawHorizontalLine(cx - x, cy - y, cx + x, clrAtr);
+        if (y != 0)
+            Graphics_DrawHorizontalLine(cx - x, cy + y, cx + x, clrAtr);
 
-        do
+        y = y + 1;
+        sy = sy + a;
+        e = e + yy;
+        yy = yy + a;
+
+        if ((e + e + xx) > 0)
         {
-            h = (ix + 32) >> 6;
-            i = (iy + 32) >> 6;
-            j = (h * ry) / rx;
-            k = (i * ry) / rx;
-
-            if ((ok != k) && (oj != k))
-            {
-                xph = x + h;
-                xmh = x - h;
-                if (k > 0)
-                {
-                    Graphics_DrawHorizontalLine(xmh, y + k, xph, clrAtr);
-                    Graphics_DrawHorizontalLine(xmh, y - k, xph, clrAtr);
-                }
-                else
-                {
-                    Graphics_DrawHorizontalLine(xmh, y, xph, clrAtr);
-                }
-                ok = k;
-            }
-            if ((oj != j) && (ok != j) && (k != j))
-            {
-                xmi = x - i;
-                xpi = x + i;
-                if (j > 0)
-                {
-                    Graphics_DrawHorizontalLine(xmi, y + j, xpi, clrAtr);
-                    Graphics_DrawHorizontalLine(xmi, y - j, xpi, clrAtr);
-                }
-                else
-                {
-                    Graphics_DrawHorizontalLine(xmi, y, xpi, clrAtr);
-                }
-                oj = j;
-            }
-
-            ix = ix + iy / rx;
-            iy = iy - ix / rx;
-
-        } while (i > h);
+            x = x - 1;
+            sx = sx - b;
+            e = e + xx;
+            xx = xx + b;
+        }
     }
-    else
+
+    x = 0;
+    y = ry;
+    xx = rx * ry;
+    yy = rx * rx * (1 - ry - ry);
+    e = 0;
+    sx = 0;
+    sy = a * ry;
+
+    while (sx <= sy)
     {
-        ix = 0;
-        iy = ry << 6;
+        Graphics_DrawHorizontalLine(cx - x, cy - y, cx + x, clrAtr);
+        Graphics_DrawHorizontalLine(cx - x, cy + y, cx + x, clrAtr);
 
         do
         {
-            h = (ix + 32) >> 6;
-            i = (iy + 32) >> 6;
-            j = (h * rx) / ry;
-            k = (i * rx) / ry;
+            x = x + 1;
+            sx = sx + b;
+            e = e + xx;
+            xx = xx + b;
+        } while ((e + e + yy) <= 0);
 
-            if ((oi != i) && (oh != i))
-            {
-                xmj = x - j;
-                xpj = x + j;
-                if (i > 0)
-                {
-                    Graphics_DrawHorizontalLine(xmj, y + i, xpj, clrAtr);
-                    Graphics_DrawHorizontalLine(xmj, y - i, xpj, clrAtr);
-                }
-                else
-                {
-                    Graphics_DrawHorizontalLine(xmj, y, xpj, clrAtr);
-                }
-                oi = i;
-            }
-            if ((oh != h) && (oi != h) && (i != h))
-            {
-                xmk = x - k;
-                xpk = x + k;
-                if (h > 0)
-                {
-                    Graphics_DrawHorizontalLine(xmk, y + h, xpk, clrAtr);
-                    Graphics_DrawHorizontalLine(xmk, y - h, xpk, clrAtr);
-                }
-                else
-                {
-                    Graphics_DrawHorizontalLine(xmk, y, xpk, clrAtr);
-                }
-                oh = h;
-            }
-
-            ix = ix + iy / ry;
-            iy = iy - ix / ry;
-
-        } while (i > h);
+        y = y - 1;
+        sy = sy - a;
+        e = e + yy;
+        yy = yy + a;
     }
 }
 

@@ -15,11 +15,11 @@
 #include "Types.h"
 #include "Debug.h"
 #define STB_VORBIS_HEADER_ONLY
-#include "external/stb_vorbis.c"
+#include "external/stb/stb_vorbis.c"
 #define TSF_IMPLEMENTATION
-#include "external/tsf.h"
+#include "external/tinysoundfont/tsf.h"
 #define TML_IMPLEMENTATION
-#include "external/tml.h"
+#include "external/tinysoundfont/tml.h"
 #include "MIDISoundFont.h"
 #undef STB_VORBIS_HEADER_ONLY
 #include "external/ymfm/ymfm_adpcm.cpp"

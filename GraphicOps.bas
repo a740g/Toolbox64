@@ -48,7 +48,7 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
 
     'DIM t AS DOUBLE: t = TIMER
 
-    'DIM i AS LONG: FOR i = 1 TO 1000000
+    'DIM i AS LONG: FOR i = 1 TO 100000
     'COLOR 17, 6: _PRINTSTRING (11, 11), "8"
     'Graphics_SetPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
     'PSET (30, 30), 14
@@ -251,6 +251,136 @@ $IF GRAPHICOPS_BAS = UNDEFINED THEN
         DIM i AS LONG: FOR i = 0 TO 255
             _PALETTECOLOR i, resetColor, dstImage
         NEXT i
+    END SUB
+
+
+    ' Generates a gradient palette
+    SUB Graphics_SetGradientPalette (dstImage AS LONG, s AS _UNSIGNED _BYTE, e AS _UNSIGNED _BYTE, rs AS _UNSIGNED _BYTE, gs AS _UNSIGNED _BYTE, bs AS _UNSIGNED _BYTE, re AS _UNSIGNED _BYTE, ge AS _UNSIGNED _BYTE, be AS _UNSIGNED _BYTE)
+        ' Calculate gradient height
+        DIM h AS SINGLE: h = 1! + CSNG(e) - CSNG(s)
+
+        ' Set initial rgb values
+        DIM r AS SINGLE: r = rs
+        DIM g AS SINGLE: g = gs
+        DIM b AS SINGLE: b = bs
+
+        ' Calculate RGB stepping
+        DIM rStep AS SINGLE: rStep = (CSNG(re) - CSNG(rs)) / h
+        DIM gStep AS SINGLE: gStep = (CSNG(ge) - CSNG(gs)) / h
+        DIM bStep AS SINGLE: bStep = (CSNG(be) - CSNG(bs)) / h
+
+        ' Generate palette
+        DIM i AS LONG: FOR i = s TO e
+            _PALETTECOLOR i, Graphics_MakeBGRA(r, g, b, 255), dstImage
+
+            r = r + rStep
+            g = g + gStep
+            b = b + bStep
+        NEXT i
+    END SUB
+
+
+    ' Palletize src using the palette in dst. The resulting image is stored in dst
+    ' @param LONG dst The destination image. This must be an 8bpp image with the palette already loaded
+    ' @param LONG src The source image. This must be an 8bpp image with its own palette
+    SUB Graphics_PalettizeImage (dst AS LONG, src AS LONG)
+        ' Set the destination image
+        DIM oldDst AS LONG: oldDst = _DEST
+        _DEST dst
+
+        ' Set the source image
+        DIM oldSrc AS LONG: oldSrc = _SOURCE
+        _SOURCE src
+
+        ' Calculate image limits just once
+        DIM maxX AS LONG: maxX = _WIDTH(src) - 1
+        DIM maxY AS LONG: maxY = _HEIGHT(src) - 1
+
+        DIM AS LONG x, y
+
+        ' Remap and write the pixels to img_pal
+        IF _PIXELSIZE(src) = 4 THEN
+            FOR y = 0 TO maxY
+                FOR x = 0 TO maxX
+                    DIM pc32 AS _UNSIGNED LONG: pc32 = POINT(x, y)
+                    PSET (x, y), _RGB(_RED32(pc32), _GREEN32(pc32), _BLUE32(pc32), dst)
+                NEXT x
+            NEXT y
+        ELSE
+            FOR y = 0 TO maxY
+                FOR x = 0 TO maxX
+                    DIM pc AS _UNSIGNED _BYTE: pc = POINT(x, y)
+                    PSET (x, y), _RGB(_RED(pc, src), _GREEN(pc, src), _BLUE(pc, src), dst)
+                NEXT x
+            NEXT y
+        END IF
+
+        ' Restore destination and source
+        _SOURCE oldSrc
+        _DEST oldDst
+    END SUB
+
+
+    ' Loads a GPL color palette into an 8bpp image
+    ' @param STRING gpl_file Filename of GPL palette to load
+    ' @param LONG dst The destination image. This must be an 8bpp image where the palette is loaded
+    SUB Graphics_LoadGPLPalette (gplFileName AS STRING, dst AS LONG)
+        DIM fh AS LONG: fh = FREEFILE
+        OPEN gplFileName FOR INPUT AS fh
+
+        ' Read the header
+        DIM lin AS STRING: LINE INPUT #fh, lin
+
+        IF lin = "GIMP Palette" THEN
+            ' Clear the palette
+            DIM i AS LONG: FOR i = 0 TO 255
+                _PALETTECOLOR i, &HFF000000~&, dst
+            NEXT i
+
+            DIM c AS LONG
+
+            WHILE NOT EOF(fh)
+                LINE INPUT #fh, lin
+                lin = LTRIM$(lin) ' trim leading spaces
+
+                ' Proceed only if we have something to process
+                IF LEN(lin) <> 0 THEN
+                    DIM char AS _UNSIGNED _BYTE: char = ASC(lin, 1) ' fetch the first character
+
+                    ' Skip comments and other junk (i.e. first character is not a digit)
+                    IF char >= 48 AND char <= 57 THEN
+                        ' Parse and read the 3 color components
+                        DIM comp AS LONG: comp = 0
+                        DIM lastChar AS _UNSIGNED _BYTE: lastChar = 0
+                        REDIM clr(0 TO 2) AS _UNSIGNED LONG
+
+                        FOR i = 1 TO LEN(lin)
+                            char = ASC(lin, i)
+
+                            IF char >= 48 AND char <= 57 THEN
+                                clr(comp) = clr(comp) * 10 + (char - 48)
+                            ELSE
+                                ' Move to the next component only if the we are fresh out of a successful component read
+                                IF lastChar >= 48 AND lastChar <= 57 THEN comp = comp + 1
+                            END IF
+
+                            ' Set the color and bail if we have all 3 components
+                            IF comp > 2 OR (comp > 1 AND i = LEN(lin)) THEN
+                                _PALETTECOLOR c, _RGB32(clr(0), clr(1), clr(2)), dst
+
+                                c = c + 1
+
+                                EXIT FOR
+                            END IF
+
+                            lastChar = char
+                        NEXT i
+                    END IF
+                END IF
+            WEND
+        END IF
+
+        CLOSE fh
     END SUB
 
 
