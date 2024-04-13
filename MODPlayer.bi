@@ -80,6 +80,10 @@ TYPE __ChannelType
     invertLoopPosition AS _UNSIGNED LONG ' position in the sample where we are for the invert loop effect
     lastVolumeSlide AS _UNSIGNED _BYTE ' last S3M volume slide value
     lastPortamento AS _UNSIGNED _BYTE ' last S3M portamento up or down value
+    tremorPosition AS _UNSIGNED _BYTE ' tremor position
+    tremorParameters AS _UNSIGNED _BYTE ' tremor parameters
+    retriggerVolumeSlide AS _UNSIGNED _BYTE ' last retrigger volume slide
+    retriggerTickCount AS _UNSIGNED _BYTE ' last retrigger tick count
 END TYPE
 
 TYPE __SongType

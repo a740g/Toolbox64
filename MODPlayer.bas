@@ -108,7 +108,7 @@ END SUB
 
 
 ' This resets all song properties to defaults
-' We do this so that every tune load begins is a known consistent state
+' We do this so that every tune load begins in a known consistent state
 SUB __MODPlayer_InitializeSong
     SHARED __Song AS __SongType
 
@@ -150,9 +150,8 @@ SUB __MODPlayer_InitializeSong
 END SUB
 
 
-$IF FALSE THEN
-    ' Loads an S3M file into memory and prepares all required globals
-    FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
+' Loads an S3M file into memory and prepares all required globals
+FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
     SHARED __Song AS __SongType
     SHARED __Order() AS _UNSIGNED INTEGER
     SHARED __Pattern() AS __NoteType
@@ -174,31 +173,25 @@ $IF FALSE THEN
 
     ' Check if this is really an S3M file
     IF __Song.subtype <> "SCRM" THEN EXIT FUNCTION
-    _ECHO "Type: " + __Song.subtype
 
     ' Seek to the beginning of the file and get the song title
     StringFile_Seek memFile, 0
     __Song.caption = String_MakePrintable(StringFile_ReadString(memFile, 28)) ' 28 bytes
-    _ECHO "Name: " + __Song.caption
 
     ' Skip past the DOS EOF marker byte, file type byte and expansion / reserved word
     StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4 ' 4 bytes
 
     ' Read the song orders (note that this count includes 254 & 255 marker orders)
     __Song.orders = StringFile_ReadInteger(memFile) ' TODO: this includes markers!
-    _ECHO "Orders:" + STR$(__Song.orders)
 
     ' Read the number of instruments
     __Song.instruments = StringFile_ReadInteger(memFile)
-    _ECHO "Instruments:" + STR$(__Song.instruments)
 
     ' Read the number of patterns
     __Song.patterns = StringFile_ReadInteger(memFile) ' TODO: includes marker patterns!
-    _ECHO "Patterns:" + STR$(__Song.patterns)
 
     ' Read the 16-bit flags
     DIM word1 AS _UNSIGNED INTEGER: word1 = StringFile_ReadInteger(memFile)
-    _ECHO "Flags = " + _BIN$(word1)
 
     ' Set individual flags
     ' TODO: Check and discard members which are not really needed
@@ -211,62 +204,63 @@ $IF FALSE THEN
     __Song.useST300VolumeSlides = _READBIT(word1, 6)
     __Song.hasSpecialCustomData = _READBIT(word1, 7)
 
-    _ECHO "useST2Vibrato =" + STR$(__Song.useST2Vibrato)
-    _ECHO "useST2Tempo =" + STR$(__Song.useST2Tempo)
-    _ECHO "useAmigaSlides =" + STR$(__Song.useAmigaSlides)
-    _ECHO "useVolumeOptimization =" + STR$(__Song.useVolumeOptimization)
-    _ECHO "useAmigaLimits =" + STR$(__Song.useAmigaLimits)
-    _ECHO "useFilterSFX =" + STR$(__Song.useFilterSFX)
-    _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
-    _ECHO "hasSpecialCustomData =" + STR$(__Song.hasSpecialCustomData)
+    '_ECHO "useST2Vibrato =" + STR$(__Song.useST2Vibrato)
+    '_ECHO "useST2Tempo =" + STR$(__Song.useST2Tempo)
+    '_ECHO "useAmigaSlides =" + STR$(__Song.useAmigaSlides)
+    '_ECHO "useVolumeOptimization =" + STR$(__Song.useVolumeOptimization)
+    '_ECHO "useAmigaLimits =" + STR$(__Song.useAmigaLimits)
+    '_ECHO "useFilterSFX =" + STR$(__Song.useFilterSFX)
+    '_ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
+    '_ECHO "hasSpecialCustomData =" + STR$(__Song.hasSpecialCustomData)
 
     ' Read "Created with tracker / version" info
     word1 = StringFile_ReadInteger(memFile)
-    _ECHO "CWT/V = " + HEX$(word1)
+    '_ECHO "CWT/V = " + HEX$(word1)
 
     ' ST3.00 does volumeslides on EVERY tick. So we'll update the flag
     __Song.useST300VolumeSlides = __Song.useST300VolumeSlides OR (word1 = &H1300)
-    _ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
+    '_ECHO "useST300VolumeSlides =" + STR$(__Song.useST300VolumeSlides)
 
     ' Read the sample format type
     word1 = StringFile_ReadInteger(memFile)
-    _ECHO "Sample Format =" + STR$(word1)
+    '_ECHO "Sample Format =" + STR$(word1)
     DIM isUnsignedFormat AS _BYTE: isUnsignedFormat = (word1 = 2)
-    _ECHO "isUnsignedFormat =" + STR$(isUnsignedFormat)
+    '_ECHO "isUnsignedFormat =" + STR$(isUnsignedFormat)
 
     ' Skip the 4 byte signature
     StringFile_Seek memFile, StringFile_GetPosition(memFile) + 4
 
     ' Read and set the global volume
     DIM byte1 AS _UNSIGNED _BYTE: byte1 = StringFile_ReadByte(memFile)
-    _ECHO "Global volume =" + STR$(byte1)
+    '_ECHO "Global volume =" + STR$(byte1)
+    IF byte1 > __S3M_GLOBAL_VOLUME_MAX THEN byte1 = __S3M_GLOBAL_VOLUME_MAX
     SoftSynth_SetGlobalVolume byte1 / __S3M_GLOBAL_VOLUME_MAX
-    _ECHO "SoftSynth global volume =" + STR$(SoftSynth_GetGlobalVolume)
+    '_ECHO "SoftSynth global volume =" + STR$(SoftSynth_GetGlobalVolume)
 
     ' Read the initial speed value
     __Song.defaultSpeed = StringFile_ReadByte(memFile)
     IF __Song.defaultSpeed = 0 OR __Song.defaultSpeed = 255 THEN __Song.defaultSpeed = __SONG_SPEED_DEFAULT
-    _ECHO "Initial speed =" + STR$(__Song.defaultSpeed)
+    '_ECHO "Initial speed =" + STR$(__Song.defaultSpeed)
 
     ' Read the initial BPM
     __Song.defaultBPM = StringFile_ReadByte(memFile)
     IF __Song.defaultBPM < 33 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT
-    _ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
+    '_ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
 
     ' Read SoundBlaster master volume crap and check if the stereo frag is set
     byte1 = StringFile_ReadByte(memFile)
-    _ECHO "SoundBlaster master volume =" + STR$(byte1)
+    '_ECHO "SoundBlaster master volume =" + STR$(byte1)
     DIM isStereo AS _BYTE: isStereo = _READBIT(byte1, 7)
-    _ECHO "isStereo =" + STR$(isStereo)
+    '_ECHO "isStereo =" + STR$(isStereo)
 
     ' Skip Ultrasound ultra-click removal crap
     StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1 ' 1 byte
 
     ' Read and store if we have to load default pan values later
     byte1 = StringFile_ReadByte(memFile)
-    _ECHO "Default panning =" + STR$(byte1)
+    '_ECHO "Default panning =" + STR$(byte1)
     DIM useDefaultPanning AS _BYTE: useDefaultPanning = (byte1 = 252)
-    _ECHO "useDefaultPanning =" + STR$(useDefaultPanning)
+    '_ECHO "useDefaultPanning =" + STR$(useDefaultPanning)
 
     ' Skip 8 reserved bytes and the 2 byte special parapointer
     StringFile_Seek memFile, StringFile_GetPosition(memFile) + 10
@@ -275,24 +269,24 @@ $IF FALSE THEN
     DIM channelInfo(0 TO __MTM_S3M_CHANNEL_MAX) AS _UNSIGNED _BYTE ' channel info that we'll use later
 
     DIM i AS LONG: FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
-    channelInfo(i) = StringFile_ReadByte(memFile)
+        channelInfo(i) = StringFile_ReadByte(memFile)
 
-    ' Check if the channel is enabled
-    ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
-    ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
-    ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
-    ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
-    IF NOT _READBIT(channelInfo(i), 7) THEN
-    ' Channel is active is bit 7 is not set
-    IF __Song.channels < channelInfo(i) THEN __Song.channels = channelInfo(i)
-    END IF
+        ' Check if the channel is enabled
+        ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
+        ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
+        ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
+        ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
+        IF NOT _READBIT(channelInfo(i), 7) THEN
+            ' Channel is active is bit 7 is not set
+            IF __Song.channels < channelInfo(i) THEN __Song.channels = channelInfo(i)
+        END IF
 
-    _ECHO "Channel info" + STR$(i) + " =" + STR$(channelInfo(i))
+        '_ECHO "Channel info" + STR$(i) + " =" + STR$(channelInfo(i))
     NEXT i
 
     __Song.channels = __Song.channels + 1 ' change to count
 
-    _ECHO "Channels =" + STR$(__Song.channels)
+    '_ECHO "Channels =" + STR$(__Song.channels)
 
     ' Resize the channel array
     REDIM __Channel(0 TO __Song.channels - 1) AS __ChannelType
@@ -302,27 +296,27 @@ $IF FALSE THEN
 
     ' Set voice panning positions
     FOR i = 0 TO __Song.channels - 1
-    ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
-    ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
-    ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
-    ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
-    SELECT CASE channelInfo(i)
-    CASE 0 TO 7
-    SoftSynth_SetVoiceBalance i, -__CHANNEL_STEREO_SEPARATION ' pan to the left
-    __Channel(i).subtype = __INSTRUMENT_PCM
+        ' 0 <= x <= 7: Left PCM channel 1-8 (Lx)
+        ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
+        ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
+        ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
+        SELECT CASE channelInfo(i)
+            CASE 0 TO 7
+                SoftSynth_SetVoiceBalance i, -__CHANNEL_STEREO_SEPARATION ' pan to the left
+                __Channel(i).subtype = __INSTRUMENT_PCM
 
-    CASE 8 TO 15
-    SoftSynth_SetVoiceBalance i, __CHANNEL_STEREO_SEPARATION ' pan it to the right
-    __Channel(i).subtype = __INSTRUMENT_PCM
+            CASE 8 TO 15
+                SoftSynth_SetVoiceBalance i, __CHANNEL_STEREO_SEPARATION ' pan it to the right
+                __Channel(i).subtype = __INSTRUMENT_PCM
 
-    CASE 16 TO 24
-    __Channel(i).subtype = __INSTRUMENT_FM_MELODY ' FM melody channel
+            CASE 16 TO 24
+                __Channel(i).subtype = __INSTRUMENT_FM_MELODY ' FM melody channel
 
-    CASE 25 TO 29
-    __Channel(i).subtype = __INSTRUMENT_FM_BASSDRUM ' FM drums channel
-    END SELECT
+            CASE 25 TO 29
+                __Channel(i).subtype = __INSTRUMENT_FM_BASSDRUM ' FM drums channel
+        END SELECT
 
-    _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i)) + " , subtype =" + STR$(__Channel(i).subtype)
+        '_ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i)) + " , subtype =" + STR$(__Channel(i).subtype)
     NEXT i
 
     ' Resize the order array
@@ -331,49 +325,49 @@ $IF FALSE THEN
     ' Read order list
     ' Note: We'll need to handle 254 & 255 marker orders correctly in the player
     FOR i = 0 TO __Song.orders - 1
-    __Order(i) = StringFile_ReadByte(memFile)
-    _ECHO "Order" + STR$(i) + " =" + STR$(__Order(i))
+        __Order(i) = StringFile_ReadByte(memFile)
+        '_ECHO "Order" + STR$(i) + " =" + STR$(__Order(i))
     NEXT i
 
     ' Load and convert instrument parapointers
     DIM instrumentPointer(0 TO __Song.instruments - 1) AS _UNSIGNED LONG
 
     FOR i = 0 TO __Song.instruments - 1
-    instrumentPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
-    _ECHO "Instrument" + STR$(i) + " is at" + STR$(instrumentPointer(i))
+        instrumentPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
+        '_ECHO "Instrument" + STR$(i) + " is at" + STR$(instrumentPointer(i))
     NEXT i
 
     ' Load and convert pattern parapointers
     DIM patternPointer(0 TO __Song.patterns - 1) AS _UNSIGNED LONG
 
     FOR i = 0 TO __Song.patterns - 1
-    patternPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
-    _ECHO "Pattern" + STR$(i) + " is at" + STR$(patternPointer(i))
+        patternPointer(i) = _SHL(StringFile_ReadInteger(memFile), 4) ' convert to real file offset (x 16)
+        '_ECHO "Pattern" + STR$(i) + " is at" + STR$(patternPointer(i))
     NEXT i
 
     ' Load the panning table if it is present
     IF useDefaultPanning THEN
-    ' We have a total of 32 pan positions in the file
-    FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
-    byte1 = StringFile_ReadByte(memFile)
+        ' We have a total of 32 pan positions in the file
+        FOR i = 0 TO __MTM_S3M_CHANNEL_MAX
+            byte1 = StringFile_ReadByte(memFile)
 
-    ' Only set the pan position if the channel is there
-    IF i < __Song.channels THEN
-    ' WTF! Ewww!
-    IF _READBIT(byte1, 4) THEN ' if bit 4 is set - byte1 AND &H10
-    SoftSynth_SetVoiceBalance i, (byte1 AND 15) / 15! * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
-    _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
-    END IF
-    END IF
-    NEXT i
+            ' Only set the pan position if the channel is there
+            IF i < __Song.channels THEN
+                ' WTF! Ewww!
+                IF _READBIT(byte1, 4) THEN ' if bit 4 is set - byte1 AND &H10
+                    SoftSynth_SetVoiceBalance i, (byte1 AND 15) / 15! * 2! - SOFTSYNTH_VOICE_PAN_RIGHT ' pan = (x / 15) * 2 - 1
+                    '_ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
+                END IF
+            END IF
+        NEXT i
     END IF
 
     ' Set everything to mono if stereo flag is not set. This is so retarded! Sigh!
     IF NOT isStereo THEN
-    FOR i = 0 TO __Song.channels - 1
-    SoftSynth_SetVoiceBalance i, 0!
-    _ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
-    NEXT i
+        FOR i = 0 TO __Song.channels - 1
+            SoftSynth_SetVoiceBalance i, 0!
+            '_ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i))
+        NEXT i
     END IF
 
     ' Resize the instruments array
@@ -381,97 +375,104 @@ $IF FALSE THEN
 
     ' Go through the instrument data and load whatever we need
     FOR i = 0 TO __Song.instruments - 1
-    _ECHO "Instrument:" + STR$(i)
+        '_ECHO "Instrument:" + STR$(i)
 
-    ' Seek to the correct position in the file to read the instrument info
-    StringFile_Seek memFile, instrumentPointer(i)
+        ' Seek to the correct position in the file to read the instrument info
+        StringFile_Seek memFile, instrumentPointer(i)
 
-    ' Read the instrument type
-    __Instrument(i).subtype = StringFile_ReadByte(memFile)
-    _ECHO " Type =" + STR$(__Instrument(i).subtype)
+        ' Read the instrument type
+        __Instrument(i).subtype = StringFile_ReadByte(memFile)
+        '_ECHO " Type =" + STR$(__Instrument(i).subtype)
 
-    ' Read the instrument file name. We'll replace it with the title later on if needed
-    __Instrument(i).caption = String_MakePrintable(String_ToBStr(StringFile_ReadString(memFile, 12)))
-    _ECHO " File name = " + __Instrument(i).caption
+        ' Read the instrument file name. We'll replace it with the title later on if needed
+        __Instrument(i).caption = String_MakePrintable(String_ToBStr(StringFile_ReadString(memFile, 12)))
+        '_ECHO " File name = " + __Instrument(i).caption
 
-    IF __Instrument(i).subtype > __INSTRUMENT_PCM THEN ' this is an FM instrument
-    'TODO: Implement FM instrument loading support
-    ERROR ERROR_FEATURE_UNAVAILABLE
-    ELSE ' this is a standard PCM or blank instrument
-    ' Read and convert the actual address to the PCM instrument sample data
-    ' Convert this to a long. Eww! WTF!
-    byte1 = StringFile_ReadByte(memFile)
-    word1 = StringFile_ReadInteger(memFile)
-    instrumentPointer(i) = _SHL(_SHL(byte1, 16) + word1, 4) ' we'll re-use instrumentPointer array for this
+        IF __Instrument(i).subtype > __INSTRUMENT_PCM THEN ' this is an FM instrument
+            'TODO: Implement FM instrument loading support
+            ERROR ERROR_FEATURE_UNAVAILABLE
+        ELSE ' this is a standard PCM or blank instrument
+            ' Read and convert the actual address to the PCM instrument sample data
+            ' Convert this to a long. Eww! WTF!
+            byte1 = StringFile_ReadByte(memFile)
+            word1 = StringFile_ReadInteger(memFile)
+            instrumentPointer(i) = _SHL(_SHL(byte1, 16) + word1, 4) ' we'll re-use instrumentPointer array for this
 
-    ' Read the length
-    __Instrument(i).length = StringFile_ReadLong(memFile)
-    _ECHO " Length =" + STR$(__Instrument(i).length)
+            '_ECHO "Sample" + STR$(i) + " is at" + STR$(instrumentPointer(i))
 
-    ' Read loop start
-    __Instrument(i).loopStart = StringFile_ReadLong(memFile)
-    _ECHO " Loop start =" + STR$(__Instrument(i).loopStart)
+            ' Read the length
+            __Instrument(i).length = StringFile_ReadLong(memFile)
+            '_ECHO " Length =" + STR$(__Instrument(i).length)
 
-    ' Read loop end
-    __Instrument(i).loopEnd = StringFile_ReadLong(memFile)
-    _ECHO " Loop end =" + STR$(__Instrument(i).loopEnd)
+            ' Read loop start
+            __Instrument(i).loopStart = StringFile_ReadLong(memFile)
+            '_ECHO " Loop start =" + STR$(__Instrument(i).loopStart)
 
-    ' Read volume
-    __Instrument(i).volume = StringFile_ReadByte(memFile)
-    IF __Instrument(i).volume > __INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __INSTRUMENT_VOLUME_MAX
-    _ECHO " Volume =" + STR$(__Instrument(i).volume)
+            ' Read loop end
+            __Instrument(i).loopEnd = StringFile_ReadLong(memFile)
+            '_ECHO " Loop end =" + STR$(__Instrument(i).loopEnd)
 
-    ' Skip 1 reserved byte
-    StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
+            ' Read volume
+            __Instrument(i).volume = StringFile_ReadByte(memFile)
+            IF __Instrument(i).volume > __INSTRUMENT_VOLUME_MAX THEN __Instrument(i).volume = __INSTRUMENT_VOLUME_MAX
+            '_ECHO " Volume =" + STR$(__Instrument(i).volume)
 
-    ' Skip pack flag (1 byte). TODO: Do we really skip or implement an ADPCM unpacker?
-    ' 0 = PCM, 1 = DP30ADPCM (WTF is this?), 3 = ADPCM (this is mostly ModPlug), 4 = also ADPCM (apparently; per milkyplay)
-    byte1 = StringFile_ReadByte(memFile)
-    _ECHO " Compression type =" + STR$(byte1)
+            ' Skip 1 reserved byte
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
 
-    ' bits: 0 = loop, 1 = stereo (chans not interleaved! fuck fuck fuck), 2 = 16-bit samples (little endian)
-    byte1 = StringFile_ReadByte(memFile)
+            ' Skip pack flag (1 byte). TODO: Do we really skip or implement an ADPCM unpacker?
+            ' 0 = PCM, 1 = DP30ADPCM (WTF is this?), 3 = ADPCM (this is mostly ModPlug), 4 = also ADPCM (apparently; per milkyplay)
+            byte1 = StringFile_ReadByte(memFile)
+            '_ECHO " Compression type =" + STR$(byte1)
 
-    IF _READBIT(byte1, 0) THEN
-    __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
-    ELSE
-    __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
-    END IF
-    _ECHO " Playmode =" + STR$(__Instrument(i).playMode)
+            ' bits: 0 = loop, 1 = stereo (chans not interleaved! fuck fuck fuck), 2 = 16-bit samples (little endian)
+            byte1 = StringFile_ReadByte(memFile)
 
-    IF _READBIT(byte1, 1) THEN
-    __Instrument(i).channels = 2
-    ELSE
-    __Instrument(i).channels = 1
-    END IF
-    _ECHO " Channels =" + STR$(__Instrument(i).channels)
+            IF _READBIT(byte1, 0) THEN
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP
+            ELSE
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+            END IF
+            '_ECHO " Playmode =" + STR$(__Instrument(i).playMode)
 
-    IF _READBIT(byte1, 2) THEN
-    __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
-    ELSE
-    __Instrument(i).bytesPerSample = SIZE_OF_BYTE
-    END IF
-    _ECHO " Bytes / sample =" + STR$(__Instrument(i).bytesPerSample)
+            IF _READBIT(byte1, 1) THEN
+                __Instrument(i).channels = 2
+            ELSE
+                __Instrument(i).channels = 1
+            END IF
+            '_ECHO " Channels =" + STR$(__Instrument(i).channels)
 
-    ' Read C2SPD (only the low word is used)
-    __Instrument(i).c2Spd = StringFile_ReadLong(memFile) AND &HFFFF
-    _ECHO " C2SPD =" + STR$(__Instrument(i).c2Spd)
+            IF _READBIT(byte1, 2) THEN
+                __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
+            ELSE
+                __Instrument(i).bytesPerSample = SIZE_OF_BYTE
+            END IF
+            '_ECHO " Bytes / sample =" + STR$(__Instrument(i).bytesPerSample)
 
-    ' Skip 12 useless bytes
-    StringFile_Seek memFile, StringFile_GetPosition(memFile) + 12
+            ' Read C2SPD (only the low word is used)
+            __Instrument(i).c2Spd = StringFile_ReadLong(memFile) AND &HFFFF
+            '_ECHO " C2SPD =" + STR$(__Instrument(i).c2Spd)
 
-    ' Store the instrument name if it is not empty
-    DIM instrumentName AS STRING: instrumentName = String_MakePrintable(StringFile_ReadString(memFile, 28))
-    IF LEN(_TRIM$(instrumentName)) <> NULL THEN __Instrument(i).caption = instrumentName
-    _ECHO " Instrument name = " + __Instrument(i).caption
+            ' Skip 12 useless bytes
+            StringFile_Seek memFile, StringFile_GetPosition(memFile) + 12
 
-    ' Read and verify the 'SCRS' label. This will ensure we are reading the file correctly somewhat until this point
-    IF StringFile_ReadString(memFile, 4) <> "SCRS" AND __INSTRUMENT_PCM = __Instrument(i).subtype THEN EXIT FUNCTION
+            ' Store the instrument name if it is not empty
+            DIM instrumentName AS STRING: instrumentName = String_MakePrintable(StringFile_ReadString(memFile, 28))
+            IF LEN(_TRIM$(instrumentName)) <> NULL THEN __Instrument(i).caption = instrumentName
+            '_ECHO " Instrument name = " + __Instrument(i).caption
 
-    ' Validate a few things
-    IF __Instrument(i).loopEnd > __Instrument(i).length THEN __Instrument(i).loopEnd = __Instrument(i).length
-    IF __Instrument(i).loopEnd <= 2 THEN __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
-    END IF
+            ' Read and verify the 'SCRS' label. This will ensure we are reading the file correctly somewhat until this point
+            IF StringFile_ReadString(memFile, 4) <> "SCRS" AND __INSTRUMENT_PCM = __Instrument(i).subtype THEN EXIT FUNCTION
+
+            ' Validate a few things
+            IF __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP AND __Instrument(i).loopEnd > 2 THEN
+                IF __Instrument(i).loopEnd > __Instrument(i).length THEN __Instrument(i).loopEnd = __Instrument(i).length
+            ELSE
+                __Instrument(i).playMode = SOFTSYNTH_VOICE_PLAY_FORWARD
+                __Instrument(i).loopStart = 0
+                __Instrument(i).loopEnd = __Instrument(i).length
+            END IF
+        END IF
     NEXT i
 
     __Song.rows = __MOD_S3M_ROWS ' S3M specific value
@@ -481,222 +482,245 @@ $IF FALSE THEN
 
     ' Load pattern data and convert it to MOD / MTM style
     FOR i = 0 TO __Song.patterns - 1
-    ' Set the entire pattern to defaults first
-    DIM row AS LONG: FOR row = 0 TO __Song.rows - 1
-    DIM chan AS LONG: FOR chan = 0 TO __Song.channels - 1
-    __Pattern(i, row, chan).note = __NOTE_NONE
-    __Pattern(i, row, chan).instrument = 0
-    __Pattern(i, row, chan).effect = 0
-    __Pattern(i, row, chan).operand = 0
-    __Pattern(i, row, chan).volume = __NOTE_NO_VOLUME
-    NEXT chan
-    NEXT row
+        ' Set the entire pattern to defaults first
+        DIM row AS LONG: FOR row = 0 TO __Song.rows - 1
+            DIM chan AS LONG: FOR chan = 0 TO __Song.channels - 1
+                __Pattern(i, row, chan).note = __NOTE_NONE
+                __Pattern(i, row, chan).instrument = 0
+                __Pattern(i, row, chan).effect = 0
+                __Pattern(i, row, chan).operand = 0
+                __Pattern(i, row, chan).volume = __NOTE_NO_VOLUME
+            NEXT chan
+        NEXT row
 
-    ' Seek to the correct position in the file to read the pattern data
-    StringFile_Seek memFile, patternPointer(i) + 2 ' + 2 here is for the packed data size that we'll conveniently ignore
+        ' Seek to the correct position in the file to read the pattern data
+        StringFile_Seek memFile, patternPointer(i) + 2 ' + 2 here is for the packed data size that we'll conveniently ignore
 
-    row = 0
-    WHILE row < __Song.rows
-    DIM flags AS _UNSIGNED _BYTE: flags = StringFile_ReadByte(memFile)
+        row = 0
+        WHILE row < __Song.rows
+            DIM flags AS _UNSIGNED _BYTE: flags = StringFile_ReadByte(memFile)
 
-    IF flags THEN ' we have some data; unpack it
-    chan = flags AND 31 ' get the channel number
+            IF flags THEN ' we have some data; unpack it
+                chan = flags AND 31 ' get the channel number
 
-    IF chan >= __Song.channels THEN _ECHO "Invalid channel:" + STR$(chan) + " flags =" + HEX$(flags): BEEP
+                IF chan >= __Song.channels THEN
+                    ' Invalid channel: we'll ignore the remaining packed data
+                    IF flags AND 32 THEN ' ignore the note
+                        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 2
+                    END IF
 
-    IF flags AND 32 THEN ' we have a note
-    word1 = StringFile_ReadByte(memFile)
+                    IF flags AND 64 THEN ' ignore the volume data
+                        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
+                    END IF
 
-    SELECT CASE word1
-    CASE 255
-    __Pattern(i, row, chan).note = __NOTE_NONE
+                    IF flags AND 128 THEN ' ignore the effect data
+                        StringFile_Seek memFile, StringFile_GetPosition(memFile) + 2
+                    END IF
+                ELSE
+                    IF flags AND 32 THEN ' we have a note
+                        word1 = StringFile_ReadByte(memFile)
 
-    CASE 254
-    __Pattern(i, row, chan).note = __NOTE_KEY_OFF
+                        SELECT CASE word1
+                            CASE 255
+                                __Pattern(i, row, chan).note = __NOTE_NONE
 
-    CASE ELSE
-    __Pattern(i, row, chan).note = _SHR(word1, 4) * 12 + (word1 AND &HF)
-    END SELECT
+                            CASE 254
+                                __Pattern(i, row, chan).note = __NOTE_KEY_OFF
 
-    __Pattern(i, row, chan).instrument = StringFile_ReadByte(memFile)
+                            CASE ELSE
+                                __Pattern(i, row, chan).note = _SHR(word1, 4) * 12 + (word1 AND &HF)
+                        END SELECT
 
-    IF __Pattern(i, row, chan).instrument >= __Song.instruments THEN
-    _ECHO "Invalid instrument:" + STR$(__Pattern(i, row, chan).instrument)
-    END IF
-    END IF
+                        __Pattern(i, row, chan).instrument = StringFile_ReadByte(memFile)
 
-    IF flags AND 64 THEN ' we have volume data
-    __Pattern(i, row, chan).volume = StringFile_ReadByte(memFile)
-    END IF
+                        'IF __Pattern(i, row, chan).instrument >= __Song.instruments THEN _ECHO "Invalid instrument:" + STR$(__Pattern(i, row, chan).instrument)
+                    END IF
 
-    IF flags AND 128 THEN ' we have effect data
-    __Pattern(i, row, chan).effect = StringFile_ReadByte(memFile)
-    __Pattern(i, row, chan).operand = StringFile_ReadByte(memFile)
+                    IF flags AND 64 THEN ' we have volume data
+                        __Pattern(i, row, chan).volume = StringFile_ReadByte(memFile)
+                    END IF
 
-    ' Convert S3M effects to MOD effects
-    SELECT CASE __Pattern(i, row, chan).effect
-    CASE &H0 ' None
-    __Pattern(i, row, chan).operand = &H0 ' get rid of any false arpeggio if there is any param
+                    IF flags AND 128 THEN ' we have effect data
+                        __Pattern(i, row, chan).effect = StringFile_ReadByte(memFile)
+                        __Pattern(i, row, chan).operand = StringFile_ReadByte(memFile)
 
-    CASE &H1 ' Axx Set Speed
-    __Pattern(i, row, chan).effect = &H10
+                        ' Convert S3M effects to MOD effects
+                        SELECT CASE __Pattern(i, row, chan).effect
+                            CASE &H0 ' None
+                                __Pattern(i, row, chan).operand = &H0 ' get rid of any false arpeggio if there is any param
 
-    CASE &H2 ' Bxx Position Jumpp
-    __Pattern(i, row, chan).effect = &HB
+                            CASE &H1 ' Axx Set Speed
+                                __Pattern(i, row, chan).effect = &H10
 
-    CASE &H3 ' Cxx Pattern Break
-    __Pattern(i, row, chan).effect = &HD
+                            CASE &H2 ' Bxx Position Jumpp
+                                __Pattern(i, row, chan).effect = &HB
 
-    CASE &H4 ' Dxy Volume Slide or Fine Volume Slide
-    __Pattern(i, row, chan).effect = &H11
+                            CASE &H3 ' Cxx Pattern Break
+                                __Pattern(i, row, chan).effect = &HD
 
-    CASE &H5 ' Exx Portamento Down or Fine Portamento Down or Extra Fine Portamento Down
-    __Pattern(i, row, chan).effect = &H12
+                            CASE &H4 ' Dxy Volume Slide or Fine Volume Slide
+                                __Pattern(i, row, chan).effect = &H11
 
-    CASE &H6 ' Fxx Portamento Up or Fine Portamento Up or Extra Fine Portamento Up
-    __Pattern(i, row, chan).effect = &H13
+                            CASE &H5 ' Exx Portamento Down or Fine Portamento Down or Extra Fine Portamento Down
+                                __Pattern(i, row, chan).effect = &H12
 
-    CASE &H7 ' Gxx Tone Portamento
-    __Pattern(i, row, chan).effect = &H3
+                            CASE &H6 ' Fxx Portamento Up or Fine Portamento Up or Extra Fine Portamento Up
+                                __Pattern(i, row, chan).effect = &H13
 
-    CASE &H8 ' Hxy Vibrato
-    __Pattern(i, row, chan).effect = &H4
+                            CASE &H7 ' Gxx Tone Portamento
+                                __Pattern(i, row, chan).effect = &H3
 
-    CASE &H9 ' Ixy Tremor
-    __Pattern(i, row, chan).effect = &H14
+                            CASE &H8 ' Hxy Vibrato
+                                __Pattern(i, row, chan).effect = &H4
 
-    CASE &HA ' Jxy Arpeggio
-    __Pattern(i, row, chan).effect = &H0
+                            CASE &H9 ' Ixy Tremor
+                                __Pattern(i, row, chan).effect = &H14
 
-    CASE &HB ' Kxy Volume Slide + Vibrato
-    __Pattern(i, row, chan).effect = &H15
+                            CASE &HA ' Jxy Arpeggio
+                                __Pattern(i, row, chan).effect = &H0
 
-    CASE &HC ' Lxy Volume Slide + Tone Portamento
-    __Pattern(i, row, chan).effect = &H16
+                            CASE &HB ' Kxy Volume Slide + Vibrato
+                                __Pattern(i, row, chan).effect = &H15
 
-    CASE &HD ' Mxx Set Channel Volume
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                            CASE &HC ' Lxy Volume Slide + Tone Portamento
+                                __Pattern(i, row, chan).effect = &H16
 
-    CASE &HE ' Nxy Channel Volume Slide
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                            CASE &HD ' Mxx Set Channel Volume
+                                ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &HF ' Oxx Sample Offset
-    __Pattern(i, row, chan).effect = &H9
+                            CASE &HE ' Nxy Channel Volume Slide
+                                ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &H10 ' Pxy Panning Slide or Fine Panning Slide
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                            CASE &HF ' Oxx Sample Offset
+                                __Pattern(i, row, chan).effect = &H9
 
-    CASE &H11 ' Qxy Retrigger + Volume Slide
-    __Pattern(i, row, chan).effect = &H17
+                            CASE &H10 ' Pxy Panning Slide or Fine Panning Slide
+                                ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &H12 ' Rxy Tremolo
-    __Pattern(i, row, chan).effect = &H7 ' Rxy tremolo
+                            CASE &H11 ' Qxy Retrigger + Volume Slide
+                                __Pattern(i, row, chan).effect = &H17
 
-    CASE &H13 ' Sxy Special commands
-    SELECT CASE _SHR(__Pattern(i, row, chan).operand, 4)
-    CASE &H1 ' S1x Glissando Control
-    __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
-    __Pattern(i, row, chan).operand = &H30 + (__Pattern(i, row, chan).operand AND &HF)
+                            CASE &H12 ' Rxy Tremolo
+                                __Pattern(i, row, chan).effect = &H7 ' Rxy tremolo
 
-    CASE &H2 ' S2x Set Finetune
-    __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
-    __Pattern(i, row, chan).operand = &H50 + (__Pattern(i, row, chan).operand AND &HF)
+                            CASE &H13 ' Sxy Special commands
+                                SELECT CASE _SHR(__Pattern(i, row, chan).operand, 4)
+                                    CASE &H1 ' S1x Glissando Control
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &H30 + (__Pattern(i, row, chan).operand AND &HF)
 
-    CASE &H3 ' S3x Set Vibrato Waveform
-    __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
-    __Pattern(i, row, chan).operand = &H40 + (__Pattern(i, row, chan).operand AND &HF)
+                                    CASE &H2 ' S2x Set Finetune
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &H50 + (__Pattern(i, row, chan).operand AND &HF)
 
-    CASE &H4 ' S4x Set Tremolo Waveform
-    __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
-    __Pattern(i, row, chan).operand = &H70 + (__Pattern(i, row, chan).operand AND &HF)
+                                    CASE &H3 ' S3x Set Vibrato Waveform
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &H40 + (__Pattern(i, row, chan).operand AND &HF)
 
-    CASE &H5 ' S5x Set Panbrello Waveform
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    CASE &H4 ' S4x Set Tremolo Waveform
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &H70 + (__Pattern(i, row, chan).operand AND &HF)
 
-    CASE &H6 ' S6x Fine Pattern Delay
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    CASE &H5 ' S5x Set Panbrello Waveform
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &H8 ' S8x Set Panning
-    __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
-    __Pattern(i, row, chan).operand = &H80 + (__Pattern(i, row, chan).operand AND &HF)
+                                    CASE &H6 ' S6x Fine Pattern Delay
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &H9 ' S9x Sound Control
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    CASE &H8 ' S8x Set Panning
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &H80 + (__Pattern(i, row, chan).operand AND &HF)
 
-    CASE &HA ' SAx High Offset
-    __Pattern(i, row, chan).effect = &H1A
-    __Pattern(i, row, chan).operand = __Pattern(i, row, chan).operand AND &HF
+                                    CASE &H9 ' S9x Sound Control
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &HB ' SB0 Pattern Loop Start
-    __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
-    __Pattern(i, row, chan).operand = &H60 + (__Pattern(i, row, chan).operand AND &HF) ' SBx
+                                    CASE &HA ' SAx High Offset
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        ' TODO: This is wrong!
+                                        __Pattern(i, row, chan).effect = &H1A
+                                        __Pattern(i, row, chan).operand = __Pattern(i, row, chan).operand AND &HF
 
-    CASE &HC ' SCx Note Cut
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    CASE &HB ' SB0 Pattern Loop Start
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &H60 + (__Pattern(i, row, chan).operand AND &HF) ' SBx
 
-    CASE &HD ' SDx Note Delay
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    CASE &HC ' SCx Note Cut
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &HE ' SEx Pattern Delay
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    CASE &HD ' SDx Note Delay
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE ELSE
-    ' Trap for unhandled stuff
-    _ECHO "Uhandled special effect:" + STR$(__Pattern(i, row, chan).operand) + " |" + STR$(_SHR(__Pattern(i, row, chan).operand, 4))
-    ERROR ERROR_FEATURE_UNAVAILABLE
-    END SELECT
+                                    CASE &HE ' SEx Pattern Delay
+                                        ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &H14 ' Txx Tempo
-    __Pattern(i, row, chan).effect = &HF
+                                        'CASE ELSE
+                                        ' Trap for unhandled stuff
+                                        '_ECHO "Uhandled special effect:" + STR$(__Pattern(i, row, chan).operand) + " |" + STR$(_SHR(__Pattern(i, row, chan).operand, 4))
+                                END SELECT
 
-    CASE &H15 ' Uxy Fine Vibrato
-    __Pattern(i, row, chan).effect = &H18
+                            CASE &H14 ' Txx Tempo
+                                __Pattern(i, row, chan).effect = &HF
 
-    CASE &H16 ' Vxx Set Global Volume
-    __Pattern(i, row, chan).effect = &H19
+                            CASE &H15 ' Uxy Fine Vibrato
+                                __Pattern(i, row, chan).effect = &H18
 
-    CASE &H17 ' Wxy Global Volume Slide
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                            CASE &H16 ' Vxx Set Global Volume
+                                __Pattern(i, row, chan).effect = &H19
 
-    CASE &H18 ' Xxx Set Panning
-    __Pattern(i, row, chan).effect = &H8
+                            CASE &H17 ' Wxy Global Volume Slide
+                                ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE &H19 ' Yxy Panbrello
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                            CASE &H18 ' Xxx Set Panning
+                                IF __Pattern(i, row, chan).operand <= 128 THEN
+                                    ' Ranges from 0 (left) to 128 (right)
+                                    __Pattern(i, row, chan).effect = &H8
+                                    __Pattern(i, row, chan).operand = (__Pattern(i, row, chan).operand * 255&) \ 128&
+                                ELSE
+                                    ' If it is anything else, then we'll simply ignore the effect
+                                    __Pattern(i, row, chan).effect = &H0
+                                    __Pattern(i, row, chan).operand = &H0
+                                END IF
 
-    CASE &H20 ' Zxx MIDI Macro
-    ERROR ERROR_FEATURE_UNAVAILABLE
+                            CASE &H19 ' Yxy Panbrello
+                                ERROR ERROR_FEATURE_UNAVAILABLE
 
-    CASE ELSE
-    ' Trap for unhandled stuff
-    _ECHO "Uhandled effect:" + STR$(__Pattern(i, row, chan).effect)
-    ERROR ERROR_FEATURE_UNAVAILABLE
-    END SELECT
-    END IF
-    ELSE ' end of row; move to the next one
-    row = row + 1
-    END IF
-    WEND
+                            CASE &H20 ' Zxx MIDI Macro
+                                ERROR ERROR_FEATURE_UNAVAILABLE
+
+                                'CASE ELSE
+                                ' Trap for unhandled stuff
+                                '_ECHO "Uhandled effect:" + STR$(__Pattern(i, row, chan).effect)
+                        END SELECT
+                    END IF
+                END IF
+            ELSE ' end of row; move to the next one
+                row = row + 1
+            END IF
+        WEND
     NEXT i
 
     ' Read the PCM instrument sample data
     FOR i = 0 TO __Song.instruments - 1
-    IF __INSTRUMENT_PCM = __Instrument(i).subtype THEN
-    ' Seek to the correct position in the file to read the PCM instrument sample data
-    StringFile_Seek memFile, instrumentPointer(i)
+        IF __Instrument(i).subtype > __INSTRUMENT_PCM THEN
+            ' TODO: Can this happen? Probably a corrupt file?
+            ERROR ERROR_FEATURE_UNAVAILABLE
+        ELSE
+            ' Seek to the correct position in the file to read the PCM instrument sample data
+            StringFile_Seek memFile, instrumentPointer(i)
 
-    ' Load the data
-    DIM sampBuf AS STRING: sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
+            ' Load the data
+            DIM sampBuf AS STRING: sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
 
-    ' Convert 8-bit unsigned samples to 8-bit signed
-    IF isUnsignedFormat AND __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
+            ' Convert 8-bit unsigned samples to 8-bit signed
+            IF isUnsignedFormat AND __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
 
-    ' TODO: Stereo sample data is not interleaved! This should be fixed before sending it to the SoftSynth!
-    ' TODO: Decode ADPCM samples before sending it to the SoftSynth!
+            ' TODO: Stereo sample data is not interleaved! This should be fixed before sending it to the SoftSynth!
+            ' TODO: Decode ADPCM samples before sending it to the SoftSynth!
 
-    ' Load sample size bytes of data and send it to our softsynth sample manager
-    SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
-    END IF
+            ' Load sample size bytes of data and send it to our softsynth sample manager
+            ' Sounds with zero frames will not cause any issues
+            SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
+        END IF
     NEXT i
 
     ' Load all needed LUTs
@@ -704,8 +728,8 @@ $IF FALSE THEN
 
     ' What a fucked up format!
     __MODPlayer_LoadS3M = TRUE
-    END FUNCTION
-$END IF
+END FUNCTION
+
 
 ' Loads an MTM file into memory and prepairs all required globals
 FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
@@ -948,9 +972,6 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     StringFile_Seek memFile, 0
     __Song.caption = String_MakePrintable(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
-    __Song.channels = 0
-    __Song.instruments = 0
-
     SELECT CASE __Song.subtype
         CASE "FEST", "FIST", "LARD", "M!K!", "M&K!", "M.K.", "N.T.", "NSMS", "PATT"
             __Song.channels = 4
@@ -1083,7 +1104,6 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     REDIM __Order(0 TO __MOD_MTM_ORDER_MAX) AS _UNSIGNED INTEGER
 
     ' Load the pattern table, and find the highest pattern to load
-    __Song.patterns = 0
     FOR i = 0 TO __MOD_MTM_ORDER_MAX ' MODs always have a 128 byte long order table
         __Order(i) = StringFile_ReadByte(memFile)
         IF __Order(i) > __Song.patterns THEN __Song.patterns = __Order(i)
@@ -1182,14 +1202,10 @@ END FUNCTION
 ' This basically calls the loaders in a certain order that makes sense
 ' It returns TRUE if a loader is successful
 FUNCTION MODPlayer_LoadFromMemory%% (buffer AS STRING)
-    $IF FALSE THEN
-        IF __MODPlayer_LoadS3M(buffer) THEN
+    IF __MODPlayer_LoadS3M(buffer) THEN
         MODPlayer_LoadFromMemory = TRUE
         EXIT FUNCTION
-        ELSE
-    $END IF
-
-    IF __MODPlayer_LoadMTM(buffer) THEN
+    ELSEIF __MODPlayer_LoadMTM(buffer) THEN
         MODPlayer_LoadFromMemory = TRUE
         EXIT FUNCTION
     ELSEIF __MODPlayer_LoadMOD(buffer) THEN
@@ -1244,13 +1260,10 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
     ' Keep feeding the buffer until it is filled to our specified upper limit
     DO WHILE SoftSynth_GetBufferedSoundTime < bufferTimeSecs
         ' Check conditions for which we should just exit and not process anything
-        IF __Song.orderPosition >= __Song.orders THEN EXIT SUB
-
-        ' Set the playing flag to true
-        __Song.isPlaying = TRUE
-
-        ' If song is paused then exit
-        IF __Song.isPaused THEN EXIT SUB
+        ' 1. Song is done and we are not looping
+        ' 2. Playback was not requested
+        ' 3. Playback is paused
+        IF _NEGATE __Song.isPlaying _ORELSE __Song.orderPosition >= __Song.orders _ORELSE __Song.isPaused THEN EXIT SUB
 
         IF __Song.tick >= __Song.speed THEN
             ' Reset song tick
@@ -1278,9 +1291,8 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
 
                 ' Check for end of song marker
                 IF __PATTERN_END = __Order(__Song.orderPosition) THEN
-                    __Song.orderPosition = __Song.orders ' move the position past the last order
                     __Song.isPlaying = FALSE
-                    EXIT SUB
+                    EXIT SUB ' bail
                 END IF
 
                 ' Save the pattern and row for __MODPlayer_UpdateTick()
@@ -1308,7 +1320,7 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
                             __Song.speed = __Song.defaultSpeed
                             __Song.tick = __Song.speed
                         ELSE
-                            __Song.isPlaying = FALSE
+                            __Song.isPlaying = FALSE ' we'll not bail here to allow any remaining samples to mix and play below
                         END IF
                     END IF
                 END IF
@@ -1530,6 +1542,45 @@ SUB __MODPlayer_UpdateRow
                     __Channel(nChannel).period = __Channel(nChannel).period + nOpY
                 END IF
 
+            CASE &H13 ' Fxx Portamento Up or Fine Portamento Up or Extra Fine Portamento Up
+                IF nOperand > 0 THEN __Channel(nChannel).lastPortamento = nOperand
+                IF nOpX = &HF THEN
+                    __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOpY, 2)
+                ELSEIF nOpX = &HE THEN
+                    __Channel(nChannel).period = __Channel(nChannel).period - nOpY
+                END IF
+
+            CASE &H14 ' Ixy Tremor
+                IF nOperand > 0 THEN __Channel(nChannel).tremorParameters = (_SHL(nOpX, 4) + 1) + (nOpY + 1)
+                __MODPlayer_DoS3MTremor nChannel
+
+            CASE &H15 ' Kxy Volume Slide + Vibrato
+                IF nOperand > 0 THEN __Channel(nChannel).lastVolumeSlide = nOperand
+                noFrequency = TRUE
+
+            CASE &H16 ' Lxy Volume Slide + Tone Portamento
+                ERROR ERROR_FEATURE_UNAVAILABLE
+
+            CASE &H17 ' Qxy Retrigger + Volume Slide
+                IF nOperand > 0 THEN
+                    __Channel(nChannel).retriggerVolumeSlide = nOpX
+                    __Channel(nChannel).retriggerTickCount = nOpY
+                END IF
+
+            CASE &H18 ' Uxy Fine Vibrato
+                IF nOpX > 0 THEN __Channel(nChannel).vibratoSpeed = nOpX
+                IF nOpY > 0 THEN __Channel(nChannel).vibratoDepth = nOpY
+
+            CASE &H19 ' Vxx Set Global Volume
+                IF nOperand > __S3M_GLOBAL_VOLUME_MAX THEN
+                    SoftSynth_SetGlobalVolume SOFTSYNTH_GLOBAL_VOLUME_MAX
+                ELSE
+                    SoftSynth_SetGlobalVolume nOperand / __S3M_GLOBAL_VOLUME_MAX
+                END IF
+
+            CASE &H1A ' TODO: FIX ME!
+                ERROR ERROR_FEATURE_UNAVAILABLE
+
         END SELECT
 
         __MODPlayer_DoInvertLoop nChannel ' called every tick
@@ -1603,21 +1654,21 @@ SUB __MODPlayer_UpdateTick
                     __MODPlayer_DoPortamento nChannel
 
                 CASE &H4 ' 4: Vibrato
-                    __MODPlayer_DoVibrato nChannel
+                    __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
 
                 CASE &H5 ' 5: Tone Portamento + Volume Slide
                     __MODPlayer_DoPortamento nChannel
-                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY
+                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
 
                 CASE &H6 ' 6: Vibrato + Volume Slide
-                    __MODPlayer_DoVibrato nChannel
-                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY
+                    __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
+                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
 
                 CASE &H7 ' 7: Tremolo
                     __MODPlayer_DoTremolo nChannel
 
                 CASE &HA ' 10: Volume Slide
-                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY
+                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
 
                 CASE &HE ' 14: Extended Effects
                     SELECT CASE nOpX
@@ -1645,11 +1696,95 @@ SUB __MODPlayer_UpdateTick
                     END SELECT
 
                 CASE &H11 ' Dxy Volume Slide or Fine Volume Slide
-                    __MODPlayer_DoS3MVolumeSlide nChannel
+                    __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, FALSE ' false here means fine volume slide
 
                 CASE &H12 ' Exx Portamento Down or Fine Portamento Down or Extra Fine Portamento Down
                     IF __Channel(nChannel).lastPortamento < &HE0 THEN __Channel(nChannel).period = __Channel(nChannel).period + _SHL(__Channel(nChannel).lastPortamento, 2)
                     SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
+
+                CASE &H13 ' Fxx Portamento Up or Fine Portamento Up or Extra Fine Portamento Up
+                    IF __Channel(nChannel).lastPortamento < &HE0 THEN __Channel(nChannel).period = __Channel(nChannel).period - _SHL(__Channel(nChannel).lastPortamento, 2)
+                    SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
+
+                CASE &H14 ' Ixy Tremor
+                    __MODPlayer_DoS3MTremor nChannel
+
+                CASE &H15 ' Kxy Volume Slide + Vibrato
+                    __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
+                    __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, FALSE ' false here means fine volume slide
+
+                CASE &H16 ' Lxy Volume Slide + Tone Portamento
+                    ERROR ERROR_FEATURE_UNAVAILABLE
+
+                CASE &H17 ' Qxy Retrigger + Volume Slide
+                    IF __Channel(nChannel).retriggerTickCount > 0 THEN
+                        IF __Song.tick MOD __Channel(nChannel).retriggerTickCount = 0 THEN
+                            IF __Channel(nChannel).retriggerVolumeSlide > 0 THEN
+                                'Parameter  Effect              Parameter   Effect
+                                '0          No volume change    8           No volume change
+                                '1          Volume - 1          9           Volume + 1
+                                '2          Volume - 2          A           Volume + 2
+                                '3          Volume - 4          B           Volume + 4
+                                '4          Volume - 8          C           Volume + 8
+                                '5          Volume - 16         D           Volume + 16
+                                '6          Volume x 2/3        E           Volume x 1.5
+                                '7          Volume x 1/2        F           Volume x 2
+                                SELECT CASE __Channel(nChannel).retriggerVolumeSlide
+                                    CASE &H1
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume - 1
+
+                                    CASE &H2
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume - 2
+
+                                    CASE &H3
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume - 4
+
+                                    CASE &H4
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume - 8
+
+                                    CASE &H5
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume - 16
+
+                                    CASE &H6
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume * (2! / 3!)
+
+                                    CASE &H7
+                                        __Channel(nChannel).volume = _SHR(__Channel(nChannel).volume, 1)
+
+                                    CASE &H9
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume + 1
+
+                                    CASE &HA
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume + 2
+
+                                    CASE &HB
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume + 4
+
+                                    CASE &HC
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume + 8
+
+                                    CASE &HD
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume + 16
+
+                                    CASE &HE
+                                        __Channel(nChannel).volume = __Channel(nChannel).volume * (3! / 2!)
+
+                                    CASE &HF
+                                        __Channel(nChannel).volume = _SHL(__Channel(nChannel).volume, 1)
+
+                                END SELECT
+
+                                __Channel(nChannel).volume = Math_ClampLong(__Channel(nChannel).volume, 0, __INSTRUMENT_VOLUME_MAX)
+
+                                SoftSynth_SetVoiceVolume nChannel, __Channel(nChannel).volume / __INSTRUMENT_VOLUME_MAX
+                            END IF
+
+                            SoftSynth_PlayVoice nChannel, __Channel(nChannel).instrument, SoftSynth_BytesToFrames(__Channel(nChannel).startPosition, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), __Instrument(__Channel(nChannel).instrument).playMode, SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopStart, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels), SoftSynth_BytesToFrames(__Instrument(__Channel(nChannel).instrument).loopEnd, __Instrument(__Channel(nChannel).instrument).bytesPerSample, __Instrument(__Channel(nChannel).instrument).channels)
+                        END IF
+                    END IF
+
+                CASE &H18 ' Uxy Fine Vibrato
+                    __MODPlayer_DoVibrato nChannel, FALSE ' false here means fine vibrato
 
             END SELECT
         END IF
@@ -1734,11 +1869,18 @@ SUB __MODPlayer_DoPortamento (chan AS _UNSIGNED _BYTE)
 END SUB
 
 
-' Carry out a volume slide using +x -y
-SUB __MODPlayer_DoVolumeSlide (chan AS _UNSIGNED _BYTE, x AS _UNSIGNED _BYTE, y AS _UNSIGNED _BYTE)
+' Carry out a [fine] volume slide
+' Uses +x -y in non-fine mode, else D0x = slide down, Dx0 = slide up, DFx = fine slide down, DxF = fine slide up
+SUB __MODPlayer_DoVolumeSlide (chan AS _UNSIGNED _BYTE, x AS _UNSIGNED _BYTE, y AS _UNSIGNED _BYTE, isNotFine AS _BYTE)
     SHARED __Channel() AS __ChannelType
 
-    __Channel(chan).volume = __Channel(chan).volume + x - y
+    IF isNotFine THEN
+        __Channel(chan).volume = __Channel(chan).volume + x - y
+    ELSE
+        IF y = 0 THEN __Channel(chan).volume = __Channel(chan).volume + x
+        IF x = 0 THEN __Channel(chan).volume = __Channel(chan).volume - y
+    END IF
+
     IF __Channel(chan).volume > __INSTRUMENT_VOLUME_MAX THEN __Channel(chan).volume = __INSTRUMENT_VOLUME_MAX
     IF __Channel(chan).volume < 0 THEN __Channel(chan).volume = 0
 
@@ -1746,24 +1888,24 @@ SUB __MODPlayer_DoVolumeSlide (chan AS _UNSIGNED _BYTE, x AS _UNSIGNED _BYTE, y 
 END SUB
 
 
-' Carry out an S3M volume slide
-' D0x = slide down, Dx0 = slide up, DFx = fine slide down, DxF = fine slide up
-SUB __MODPlayer_DoS3MVolumeSlide (chan AS _UNSIGNED _BYTE)
+' Carry out an S3M tremor command
+SUB __MODPlayer_DoS3MTremor (chan AS _UNSIGNED _BYTE)
     SHARED __Channel() AS __ChannelType
 
-    DIM nOpX AS _UNSIGNED _BYTE: nOpX = _SHR(__Channel(chan).lastVolumeSlide, 4)
-    DIM nOpY AS _UNSIGNED _BYTE: nOpY = __Channel(chan).lastVolumeSlide AND &HF
-    IF nOpY = 0 THEN __Channel(chan).volume = __Channel(chan).volume + nOpX
-    IF nOpX = 0 THEN __Channel(chan).volume = __Channel(chan).volume - nOpY
-    IF __Channel(chan).volume > __INSTRUMENT_VOLUME_MAX THEN __Channel(chan).volume = __INSTRUMENT_VOLUME_MAX
-    IF __Channel(chan).volume < 0 THEN __Channel(chan).volume = 0
+    __Channel(chan).tremorPosition = __Channel(chan).tremorPosition MOD (_SHR(__Channel(chan).tremorParameters, 4) + (__Channel(chan).tremorParameters AND &HF))
 
-    SoftSynth_SetVoiceVolume chan, __Channel(chan).volume / __INSTRUMENT_VOLUME_MAX
+    IF __Channel(chan).tremorPosition < _SHR(__Channel(chan).tremorParameters, 4) THEN
+        SoftSynth_SetVoiceVolume chan, __Channel(chan).volume / __INSTRUMENT_VOLUME_MAX
+    ELSE
+        SoftSynth_SetVoiceVolume chan, 0
+    END IF
+
+    __Channel(chan).tremorPosition = __Channel(chan).tremorPosition + 1
 END SUB
 
 
-' Carry out a vibrato at a certain depth and speed
-SUB __MODPlayer_DoVibrato (chan AS _UNSIGNED _BYTE)
+' Carry out a [fine] vibrato at a certain depth and speed
+SUB __MODPlayer_DoVibrato (chan AS _UNSIGNED _BYTE, isNotFine AS _BYTE)
     SHARED __Channel() AS __ChannelType
     SHARED __SineTable() AS _UNSIGNED _BYTE
 
@@ -1788,7 +1930,8 @@ SUB __MODPlayer_DoVibrato (chan AS _UNSIGNED _BYTE)
             delta = RND * 255!
     END SELECT
 
-    delta = _SHL(_SHR(delta * __Channel(chan).vibratoDepth, 7), 2)
+    delta = _SHR(delta * __Channel(chan).vibratoDepth, 7)
+    IF isNotFine THEN delta = _SHL(delta, 2) ' make vibrato 4 times bigger
 
     IF __Channel(chan).vibratoPosition >= 0 THEN
         SoftSynth_SetVoiceFrequency chan, __MODPlayer_GetFrequencyFromPeriod(__Channel(chan).period + delta)
