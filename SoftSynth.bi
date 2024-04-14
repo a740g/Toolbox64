@@ -32,7 +32,6 @@ END TYPE
 
 DECLARE LIBRARY "SoftSynth"
     FUNCTION SoftSynth_BytesToFrames~& (BYVAL bytes AS _UNSIGNED LONG, BYVAL bytesPerSample AS _UNSIGNED _BYTE, BYVAL channels AS _UNSIGNED _BYTE)
-    SUB __SoftSynth_ConvertU8ToS8 (buffer AS STRING, BYVAL frames AS _UNSIGNED LONG)
     FUNCTION __SoftSynth_Initialize%% (BYVAL sampleRate AS _UNSIGNED LONG)
     SUB __SoftSynth_Finalize
     FUNCTION SoftSynth_IsInitialized%%

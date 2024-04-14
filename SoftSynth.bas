@@ -145,14 +145,6 @@ FUNCTION SoftSynth_GetBufferedSoundTime#
 END FUNCTION
 
 
-' Converts 8-bit unsigned sound data to 8-bit signed data (in-place)
-SUB SoftSynth_ConvertU8ToS8 (buffer AS STRING)
-    $CHECKING:OFF
-    __SoftSynth_ConvertU8ToS8 buffer, LEN(buffer)
-    $CHECKING:ON
-END SUB
-
-
 ' Sets the master volume
 SUB SoftSynth_SetMasterVolume (volume AS SINGLE)
     $CHECKING:OFF

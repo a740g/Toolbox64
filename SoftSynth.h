@@ -84,14 +84,6 @@ inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesP
     return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
 }
 
-inline void __SoftSynth_ConvertU8ToS8(char *source, uint32_t frames)
-{
-    auto buffer = reinterpret_cast<uint8_t *>(source);
-
-    for (size_t i = 0; i < frames; i++)
-        buffer[i] ^= 0x80; // xor_eq
-}
-
 /// @brief Initializes the SoftSynth object
 /// @param sampleRate This should ideally be the device sampling rate
 inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)

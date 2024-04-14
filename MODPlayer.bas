@@ -372,6 +372,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
     ' Resize the instruments array
     REDIM __Instrument(0 TO __Song.instruments - 1) AS __InstrumentType
+    DIM isSampleCompressed(0 TO __Song.instruments - 1) AS _BYTE ' flags that tells us if we need to decode ADPCM samples
 
     ' Go through the instrument data and load whatever we need
     FOR i = 0 TO __Song.instruments - 1
@@ -420,10 +421,8 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
             ' Skip 1 reserved byte
             StringFile_Seek memFile, StringFile_GetPosition(memFile) + 1
 
-            ' Skip pack flag (1 byte). TODO: Do we really skip or implement an ADPCM unpacker?
             ' 0 = PCM, 1 = DP30ADPCM (WTF is this?), 3 = ADPCM (this is mostly ModPlug), 4 = also ADPCM (apparently; per milkyplay)
-            byte1 = StringFile_ReadByte(memFile)
-            '_ECHO " Compression type =" + STR$(byte1)
+            isSampleCompressed(i) = StringFile_ReadByte(memFile) > 0 ' we'll attempt to decompress anything that is not PCM. Oh well...
 
             ' bits: 0 = loop, 1 = stereo (chans not interleaved! fuck fuck fuck), 2 = 16-bit samples (little endian)
             byte1 = StringFile_ReadByte(memFile)
@@ -437,6 +436,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
             IF _READBIT(byte1, 1) THEN
                 __Instrument(i).channels = 2
+                isSampleCompressed(i) = FALSE ' per OpenMPT stereo samples cannot be compressed
             ELSE
                 __Instrument(i).channels = 1
             END IF
@@ -444,6 +444,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
             IF _READBIT(byte1, 2) THEN
                 __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
+                isSampleCompressed(i) = FALSE ' per OpenMPT 16-bit samples cannot be compressed
             ELSE
                 __Instrument(i).bytesPerSample = SIZE_OF_BYTE
             END IF
@@ -708,14 +709,32 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
             ' Seek to the correct position in the file to read the PCM instrument sample data
             StringFile_Seek memFile, instrumentPointer(i)
 
-            ' Load the data
-            DIM sampBuf AS STRING: sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
+            DIM sampBuf AS STRING
 
-            ' Convert 8-bit unsigned samples to 8-bit signed
-            IF isUnsignedFormat AND __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
+            ' Load the data
+            IF isSampleCompressed(i) THEN
+                ' Decode ADPCM samples before sending it to the SoftSynth!
+                DIM compressionTable AS STRING * 16: compressionTable = StringFile_ReadString(memFile, LEN(compressionTable))
+                sampBuf = AudioConv_ConvertADPCM4ToU8(StringFile_ReadString(memFile, (__Instrument(i).length + 1) \ 2), compressionTable)
+            ELSE
+                sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
+            END IF
+
+            ' Convert unsigned samples to signed if unsigned flag was set or the sample is compressed using ADPCM4
+            IF isUnsignedFormat OR isSampleCompressed(i) THEN
+                IF __Instrument(i).bytesPerSample = SIZE_OF_INTEGER THEN
+                    ' Apparently 16-bit audio data is also unsigned when the unsigned flag is set! Fuck!
+                    AudioConv_ConvertU16ToS16 sampBuf
+                ELSE
+                    ' Else we'll assume these are 8-bit samples
+                    AudioConv_ConvertU8ToS8 sampBuf
+                END IF
+            END IF
 
             ' TODO: Stereo sample data is not interleaved! This should be fixed before sending it to the SoftSynth!
-            ' TODO: Decode ADPCM samples before sending it to the SoftSynth!
+            IF __Instrument(i).channels = 2 THEN
+                ERROR ERROR_FEATURE_UNAVAILABLE
+            END IF
 
             ' Load sample size bytes of data and send it to our softsynth sample manager
             ' Sounds with zero frames will not cause any issues
@@ -933,7 +952,7 @@ FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
         DIM sampBuf AS STRING: sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
 
         ' Convert 8-bit unsigned samples to 8-bit signed
-        IF __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN SoftSynth_ConvertU8ToS8 sampBuf
+        IF __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN AudioConv_ConvertU8ToS8 sampBuf
 
         ' Load sample size bytes of data and send it to our softsynth sample manager
         SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
@@ -2193,5 +2212,6 @@ FUNCTION MODPlayer_GetOrders~%
 END FUNCTION
 
 '$INCLUDE:'SoftSynth.bas'
+'$INCLUDE:'AudioConv.bas'
 '$INCLUDE:'MemFile.bas'
 '$INCLUDE:'FileOps.bas'

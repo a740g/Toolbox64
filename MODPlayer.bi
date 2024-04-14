@@ -8,6 +8,7 @@ $INCLUDEONCE
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'SoftSynth.bi'
+'$INCLUDE:'AudioConv.bi'
 '$INCLUDE:'MemFile.bi'
 '$INCLUDE:'FileOps.bi'
 
