@@ -1,15 +1,15 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' QB64-PE pointer helper routines
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 
-'-------------------------------------------------------------------------------------------------------------------
-' Small test code for debugging the library
-'-------------------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
+' TEST CODE
+'-----------------------------------------------------------------------------------------------------------------------
 '$DEBUG
 
 'DIM x AS _OFFSET: x = &HDEADBEEF
@@ -60,12 +60,12 @@ $INCLUDEONCE
 'FreeMemory m
 
 'END
-'-------------------------------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
 
 DECLARE LIBRARY "PointerOps"
     $IF 32BIT THEN
-    FUNCTION  GetCStringLength~& ALIAS "__GetCStringLength" (BYVAL str As _UNSIGNED _OFFSET)
-    FUNCTION CLngPtr~& ALIAS "uintptr_t" (BYVAL p As _UNSIGNED _OFFSET)
+        FUNCTION  GetCStringLength~& ALIAS "__GetCStringLength" (BYVAL str As _UNSIGNED _OFFSET)
+        FUNCTION CLngPtr~& ALIAS "uintptr_t" (BYVAL p As _UNSIGNED _OFFSET)
     $ELSE
         FUNCTION GetCStringLength~&& ALIAS "__GetCStringLength" (BYVAL str AS _UNSIGNED _OFFSET)
         FUNCTION CLngPtr~&& ALIAS "uintptr_t" (BYVAL p AS _UNSIGNED _OFFSET)

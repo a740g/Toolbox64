@@ -12,6 +12,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdlib>
 
 /// @brief Converts unsigned 8-bit audio samples to signed 8-bit inplace.
 /// @param source The input unsigned 8-bit sample frame buffer.
@@ -226,7 +227,7 @@ inline void __AudioConv_ConvertADPCM4ToS8(const void *src, uint32_t srcLen, cons
     }
 }
 
-/// @brief Converts a dual mono audio buffer to a stereo interleaved audio buffer (inplace).
+/// @brief Converts a dual mono audio buffer to a stereo interleaved audio buffer.
 /// @tparam T Data type of the audio samples.
 /// @param src Pointer to the dual mono audio buffer.
 /// @param samples Number of samples in the buffer.
@@ -234,19 +235,14 @@ inline void __AudioConv_ConvertADPCM4ToS8(const void *src, uint32_t srcLen, cons
 template <typename T>
 inline void AudioConv_ConvertDualMonoToStereoInterleaved(const void *src, uint32_t samples, void *dst)
 {
-    // Check parameters
     if (!src || !dst || samples < 4)
         return;
 
-    // Cast the input and output buffers to the appropriate types
     auto srcBuffer = reinterpret_cast<const T *>(src);
     auto dstBuffer = reinterpret_cast<T *>(dst);
 
-    // Calculate the half length of the input buffer (number of samples in each channel)
     uint32_t halfLength = samples >> 1;
 
-    // Iterate through each sample in the input buffer and copy them to the output
-    // buffer, interleaving them.
     for (size_t i = 0, j = 0; i < halfLength; i++, j += 2)
     {
         dstBuffer[j] = srcBuffer[i];

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // FFT routines for spectrum analyzers
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 // Copyright (c) 2004-2022 Stian Skjelstad
 // Copyright (c) 1994-2005 Niklas Beisert
 //

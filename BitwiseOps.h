@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Bitwise operation routines
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //
 // Some of these came from my old game library and some from:
 // https://graphics.stanford.edu/~seander/bithacks.html

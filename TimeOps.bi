@@ -1,30 +1,27 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Time related routines
-' Copyright (c) 2023 Samuel Gomes
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF TIMEOPS_BI = UNDEFINED THEN
-    $LET TIMEOPS_BI = TRUE
+$INCLUDEONCE
 
-    '$INCLUDE:'Common.bi'
+'$INCLUDE:'Common.bi'
 
-    '-------------------------------------------------------------------------------------------------------------------
-    ' Small test code for debugging the library
-    '-------------------------------------------------------------------------------------------------------------------
-    '$DEBUG
+'-----------------------------------------------------------------------------------------------------------------------
+' TEST CODE
+'-----------------------------------------------------------------------------------------------------------------------
+'$DEBUG
 
-    'DO
-    '    _PRINTSTRING (1, 1), "FPS:" + STR$(Time_GetHertz)
+'DO
+'    _PRINTSTRING (1, 1), "FPS:" + STR$(Time_GetHertz)
 
-    '    _LIMIT 75
-    'LOOP UNTIL _KEYHIT = KEY_ESCAPE
+'    _LIMIT 75
+'LOOP UNTIL _KEYHIT = KEY_ESCAPE
 
-    'END
-    '-------------------------------------------------------------------------------------------------------------------
+'END
+'-----------------------------------------------------------------------------------------------------------------------
 
-    DECLARE LIBRARY "TimeOps"
-        FUNCTION Time_GetTicks~&& ALIAS "GetTicks"
-        FUNCTION Time_GetHertz~&
-    END DECLARE
-
-$END IF
+DECLARE LIBRARY "TimeOps"
+    FUNCTION Time_GetTicks~&& ALIAS "GetTicks"
+    FUNCTION Time_GetHertz~&
+END DECLARE

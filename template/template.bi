@@ -3,17 +3,14 @@
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF TEMPLATE_BI = UNDEFINED THEN
-    $LET TEMPLATE_BI = TRUE
+$INCLUDEONCE
 
-    '$INCLUDE:'Common.bi'
+'$INCLUDE:'Common.bi'
 
-    ' CONSTANTS
+' CONSTANTS
 
-    ' UDTS
+' UDTS
 
-    ' EXTERNAL LIBRARY
+' EXTERNAL LIBRARY
 
-    ' GLOBALS
-    
-$END IF
+' GLOBALS

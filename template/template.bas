@@ -3,15 +3,12 @@
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF TEMPLATE_BAS = UNDEFINED THEN
-    $LET TEMPLATE_BAS = TRUE
+$INCLUDEONCE
 
-    '$INCLUDE:'Template.bi'
+'$INCLUDE:'template.bi'
 
-    ' TEST CODE
+' TEST CODE
 
-    ' FUNCTIONs & SUBROUTINEs
+' FUNCTIONs & SUBROUTINEs
 
-    ' DEPENDENCIES
-    
-$END IF
+' DEPENDENCIES

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Base64 encoding & decoding library for QB64-PE
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //
 // This is a heavily modified and amalgamated version of MODP_B64 library taken directy from the Google Chromium Project
 //----------------------------------------------------------------------------------------------------------------------

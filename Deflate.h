@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Compression library for QB64-PE based on Google Zopfli
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //
 // This is a heavily modified and amalgamated version of the Google Zopfli library
 // Only the zlib and deflate capabilities are kept (so that QB64-PE's _INFLATE can be used to decompress the data)

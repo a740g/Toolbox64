@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // MIDI Player Library
-// Copyright (c) 2023 Samuel Gomes
+// Copyright (c) 2024 Samuel Gomes
 //
 // This uses:
 // TinySoundFont from https://github.com/schellingb/TinySoundFont/blob/master/tsf.h
