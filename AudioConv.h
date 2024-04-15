@@ -152,7 +152,7 @@ void __AudioConv_ConvertALawToF32(const void *src, uint32_t frames, void *dst)
 /// @brief Decodes an 8-bit unsigned integer using the mu-Law.
 /// @param number The number that will be decoded.
 /// @return The decoded number.
-static int16_t __AudioConv_DecodeMuLawSample(int8_t number)
+static inline int16_t __AudioConv_DecodeMuLawSample(int8_t number)
 {
     const uint16_t MULAW_BIAS = 33;
     uint8_t sign = 0, position = 0;
@@ -204,15 +204,15 @@ void __AudioConv_ConvertMuLawToF32(const void *src, uint32_t samples, void *dst)
         dstBuffer[i] = (float)__AudioConv_DecodeMuLawSample(srcBuffer[i]) / 32768.0f;
 }
 
-/// @brief Converts 4-bit ADPCM compressed audio samples to 8-bit unsigned samples.
+/// @brief Converts 4-bit ADPCM compressed audio samples to 8-bit signed samples.
 /// @param src Pointer to the ADPCM compressed audio samples buffer.
 /// @param srcLen The number of bytes in the input buffer.
 /// @param compTab Pointer to the compression table used to decode the ADPCM codes.
-/// @param dst Pointer to the buffer where the 8-bit unsigned samples will be stored. The buffer size must be at least srcLen * 2 bytes.
-static void __AudioConv_ConvertADPCM4ToU8(const void *src, uint32_t srcLen, const char *compTab, void *dst)
+/// @param dst Pointer to the buffer where the 8-bit signed samples will be stored. The buffer size must be at least srcLen * 2 bytes.
+inline void __AudioConv_ConvertADPCM4ToS8(const void *src, uint32_t srcLen, const char *compTab, void *dst)
 {
     auto srcBuffer = reinterpret_cast<const uint8_t *>(src);
-    auto dstBuffer = reinterpret_cast<uint8_t *>(dst);
+    auto dstBuffer = reinterpret_cast<int8_t *>(dst);
 
     int8_t delta = 0;
 
@@ -225,6 +225,39 @@ static void __AudioConv_ConvertADPCM4ToU8(const void *src, uint32_t srcLen, cons
         srcBuffer++;
     }
 }
+
+/// @brief Converts a dual mono audio buffer to a stereo interleaved audio buffer (inplace).
+/// @tparam T Data type of the audio samples.
+/// @param src Pointer to the dual mono audio buffer.
+/// @param samples Number of samples in the buffer.
+/// @param dst Pointer to the buffer where the stereo interleaved audio samples will be stored. The buffer size must be at least samples * sizeof(T) bytes.
+template <typename T>
+inline void AudioConv_ConvertDualMonoToStereoInterleaved(const void *src, uint32_t samples, void *dst)
+{
+    // Check parameters
+    if (!src || !dst || samples < 4)
+        return;
+
+    // Cast the input and output buffers to the appropriate types
+    auto srcBuffer = reinterpret_cast<const T *>(src);
+    auto dstBuffer = reinterpret_cast<T *>(dst);
+
+    // Calculate the half length of the input buffer (number of samples in each channel)
+    uint32_t halfLength = samples >> 1;
+
+    // Iterate through each sample in the input buffer and copy them to the output
+    // buffer, interleaving them.
+    for (size_t i = 0, j = 0; i < halfLength; i++, j += 2)
+    {
+        dstBuffer[j] = srcBuffer[i];
+        dstBuffer[j + 1] = srcBuffer[halfLength + i];
+    }
+}
+
+// Specializations of AudioConv_ConvertDualMonoToStereoInterleaved() for different data types
+#define __AudioConv_ConvertDualMonoToStereoInterleavedS8(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereoInterleaved<int8_t>(_src_, _samples_, _dst_)
+#define __AudioConv_ConvertDualMonoToStereoInterleavedS16(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereoInterleaved<int16_t>(_src_, _samples_, _dst_)
+#define __AudioConv_ConvertDualMonoToStereoInterleavedF32(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereoInterleaved<float>(_src_, _samples_, _dst_)
 
 /// @brief Resamples 16-bit audio samples. Set output to NULL to get the output buffer size in samples frames
 /// @param input The input 16-bit integer sample frame buffer

@@ -20,7 +20,7 @@ CONST SOFTSYNTH_MASTER_VOLUME_MAX! = 1! ' max master volume
 CONST SOFTSYNTH_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
 CONST SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE = SIZE_OF_SINGLE ' 4 bytes (32-bits floating point)
 CONST SOFTSYNTH_SOUND_BUFFER_FRAME_SIZE = SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE * SOFTSYNTH_SOUND_BUFFER_CHANNELS
-CONST SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT! = 0.1! ' we will check that we have this amount of time left in the playback buffer
+CONST SOFTSYNTH_SOUND_BUFFER_TIME_DEFAULT! = 0.05! ' we will check that we have this amount of time left in the playback buffer
 
 TYPE __SoftSynthType
     soundBufferFrames AS _UNSIGNED LONG ' size of the render buffer in frames

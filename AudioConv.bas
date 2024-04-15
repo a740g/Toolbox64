@@ -89,11 +89,41 @@ FUNCTION AudioConv_ConvertMuLawToF32$ (buffer AS STRING)
 END FUNCTION
 
 
-' Converts 4-bit ADPCM compressed audio samples to 8-bit unsigned samples.
-FUNCTION AudioConv_ConvertADPCM4ToU8$ (buffer AS STRING, compTab AS STRING)
+' Converts 4-bit ADPCM compressed audio samples to 8-bit signed samples.
+FUNCTION AudioConv_ConvertADPCM4ToS8$ (buffer AS STRING, compTab AS STRING)
     DIM outBuffer AS STRING: outBuffer = STRING$(LEN(buffer) * 2~&, NULL)
 
-    __AudioConv_ConvertADPCM4ToU8 buffer, LEN(buffer), compTab, outBuffer
+    __AudioConv_ConvertADPCM4ToS8 buffer, LEN(buffer), compTab, outBuffer
 
-    AudioConv_ConvertADPCM4ToU8 = outBuffer
+    AudioConv_ConvertADPCM4ToS8 = outBuffer
+END FUNCTION
+
+
+' Converts a dual mono audio buffer to a stereo interleaved audio buffer (8-bit signed; inplace).
+FUNCTION AudioConv_ConvertDualMonoToStereoS8$ (buffer AS STRING)
+    DIM outBuffer AS STRING: outBuffer = STRING$(LEN(buffer), NULL)
+
+    __AudioConv_ConvertDualMonoToStereoS8 buffer, LEN(buffer), outBuffer
+
+    AudioConv_ConvertDualMonoToStereoS8 = outBuffer
+END FUNCTION
+
+
+' Converts a dual mono audio buffer to a stereo interleaved audio buffer (16-bit signed; inplace).
+FUNCTION AudioConv_ConvertDualMonoToStereoS16$ (buffer AS STRING)
+    DIM outBuffer AS STRING: outBuffer = STRING$(LEN(buffer), NULL)
+
+    __AudioConv_ConvertDualMonoToStereoS16 buffer, LEN(buffer) \ SIZE_OF_INTEGER, outBuffer
+
+    AudioConv_ConvertDualMonoToStereoS16 = outBuffer
+END FUNCTION
+
+
+' Converts a dual mono audio buffer to a stereo interleaved audio buffer (floating point; inplace).
+FUNCTION AudioConv_ConvertDualMonoToStereoF32$ (buffer AS STRING)
+    DIM outBuffer AS STRING: outBuffer = STRING$(LEN(buffer), NULL)
+
+    __AudioConv_ConvertDualMonoToStereoF32 buffer, LEN(buffer) \ SIZE_OF_SINGLE, outBuffer
+
+    AudioConv_ConvertDualMonoToStereoF32 = outBuffer
 END FUNCTION
