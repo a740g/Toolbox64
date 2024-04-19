@@ -649,7 +649,8 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                         ERROR ERROR_FEATURE_UNAVAILABLE
 
                                     CASE &HD ' SDx Note Delay
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &HD0 + (__Pattern(i, row, chan).operand AND &HF) ' SDx
 
                                     CASE &HE ' SEx Pattern Delay
                                         ERROR ERROR_FEATURE_UNAVAILABLE
@@ -1158,7 +1159,7 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     ' | Byte 0   | Byte 1    | Byte 2   | Byte 3    |
     ' | aaaaBBBB | CCCCCCCCC | DDDDeeee | FFFFFFFFF |
     ' +----------+-----------+----------+-----------+
-    ' TODO: special handling for FLT8?
+    ' TODO: special handling for FLT8
     FOR i = 0 TO __Song.patterns - 1
         FOR a = 0 TO __Song.rows - 1
             FOR b = 0 TO __Song.channels - 1
@@ -1247,6 +1248,7 @@ END FUNCTION
 
 ' Load the MOD file from disk or a URL
 FUNCTION MODPlayer_LoadFromDisk%% (fileName AS STRING)
+    ' TODO: Startrekker .mod + .nt support
     MODPlayer_LoadFromDisk = MODPlayer_LoadFromMemory(LoadFile(fileName))
 END FUNCTION
 
