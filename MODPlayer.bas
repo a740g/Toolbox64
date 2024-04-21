@@ -646,18 +646,20 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                         __Pattern(i, row, chan).operand = &H60 + (__Pattern(i, row, chan).operand AND &HF) ' SBx
 
                                     CASE &HC ' SCx Note Cut
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &HC0 + (__Pattern(i, row, chan).operand AND &HF) ' SCx
 
                                     CASE &HD ' SDx Note Delay
                                         __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
                                         __Pattern(i, row, chan).operand = &HD0 + (__Pattern(i, row, chan).operand AND &HF) ' SDx
 
                                     CASE &HE ' SEx Pattern Delay
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        __Pattern(i, row, chan).effect = &HE ' 14: Extended Effects
+                                        __Pattern(i, row, chan).operand = &HE0 + (__Pattern(i, row, chan).operand AND &HF) ' SEx
 
                                         'CASE ELSE
-                                        ' Trap for unhandled stuff
-                                        '_ECHO "Uhandled special effect:" + STR$(__Pattern(i, row, chan).operand) + " |" + STR$(_SHR(__Pattern(i, row, chan).operand, 4))
+                                        '    ' Trap for unhandled stuff
+                                        '    _ECHO "Uhandled special effect:" + STR$(__Pattern(i, row, chan).operand) + " |" + STR$(_SHR(__Pattern(i, row, chan).operand, 4))
                                 END SELECT
 
                             CASE &H14 ' Txx Tempo
@@ -690,8 +692,8 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 ERROR ERROR_FEATURE_UNAVAILABLE
 
                                 'CASE ELSE
-                                ' Trap for unhandled stuff
-                                '_ECHO "Uhandled effect:" + STR$(__Pattern(i, row, chan).effect)
+                                '    ' Trap for unhandled stuff
+                                '    _ECHO "Uhandled effect:" + STR$(__Pattern(i, row, chan).effect)
                         END SELECT
                     END IF
                 END IF
@@ -1003,6 +1005,8 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     StringFile_Seek memFile, 0
     __Song.caption = String_MakePrintable(StringFile_ReadString(memFile, 20)) ' MOD song title is 20 bytes long
 
+    DIM isFLT8 AS _BYTE ' this will we set to true if we are dealing with a FLT8 MOD
+
     SELECT CASE __Song.subtype
         CASE "FEST", "FIST", "LARD", "M!K!", "M&K!", "M.K.", "N.T.", "NSMS", "PATT"
             __Song.channels = 4
@@ -1024,6 +1028,7 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
                 ' Check for FLTx, TDZx & EXOx types
                 __Song.channels = VAL(RIGHT$(__Song.subtype, 1))
                 __Song.instruments = 31
+                isFLT8 = (__Song.subtype = "FLT8")
             ELSEIF LEFT$(__Song.subtype, 2) = "CD" AND RIGHT$(__Song.subtype, 1) = "1" THEN
                 ' Check for CDx1 types
                 __Song.channels = VAL(MID$(__Song.subtype, 3, 1))
@@ -1137,6 +1142,9 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     ' Load the pattern table, and find the highest pattern to load
     FOR i = 0 TO __MOD_MTM_ORDER_MAX ' MODs always have a 128 byte long order table
         __Order(i) = StringFile_ReadByte(memFile)
+
+        IF isFLT8 THEN __Order(i) = _SHR(__Order(i), 1) ' special FLT8 handling
+
         IF __Order(i) > __Song.patterns THEN __Song.patterns = __Order(i)
     NEXT
     __Song.patterns = __Song.patterns + 1 ' change to count
@@ -1159,36 +1167,30 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     ' | Byte 0   | Byte 1    | Byte 2   | Byte 3    |
     ' | aaaaBBBB | CCCCCCCCC | DDDDeeee | FFFFFFFFF |
     ' +----------+-----------+----------+-----------+
-    ' TODO: special handling for FLT8
     FOR i = 0 TO __Song.patterns - 1
-        FOR a = 0 TO __Song.rows - 1
-            FOR b = 0 TO __Song.channels - 1
-                byte1 = StringFile_ReadByte(memFile)
-                byte2 = StringFile_ReadByte(memFile)
-                byte3 = StringFile_ReadByte(memFile)
-                byte4 = StringFile_ReadByte(memFile)
+        IF isFLT8 THEN
+            ' Special handling for FLT8
 
-                __Pattern(i, a, b).instrument = (byte1 AND &HF0) OR _SHR(byte3, 4)
+            FOR a = 0 TO __Song.rows - 1
+                FOR b = 0 TO 3
+                    GOSUB load_mod_pattern
+                NEXT b
+            NEXT a
 
-                period = _SHL(byte1 AND &HF, 8) OR byte2
+            FOR a = 0 TO __Song.rows - 1
+                FOR b = 4 TO 7
+                    GOSUB load_mod_pattern
+                NEXT b
+            NEXT a
+        ELSE
+            ' Regular MOD pattern
 
-                ' Do the look up in the table against what is read in and store note
-                __Pattern(i, a, b).note = __NOTE_NONE
-                FOR c = 0 TO 107
-                    IF period >= __PeriodTable(c + 24) THEN
-                        __Pattern(i, a, b).note = c
-                        EXIT FOR
-                    END IF
-                NEXT
-
-                __Pattern(i, a, b).volume = __NOTE_NO_VOLUME ' MODs don't have any volume field in the pattern
-                __Pattern(i, a, b).effect = byte3 AND &HF
-                __Pattern(i, a, b).operand = byte4
-
-                ' Some sanity check
-                IF __Pattern(i, a, b).instrument > __Song.instruments THEN __Pattern(i, a, b).instrument = 0 ' instrument 0 means no instrument. So valid sample are 1-15/31
-            NEXT
-        NEXT
+            FOR a = 0 TO __Song.rows - 1
+                FOR b = 0 TO __Song.channels - 1
+                    GOSUB load_mod_pattern
+                NEXT b
+            NEXT a
+        END IF
     NEXT
 
     ' Load the instruments
@@ -1227,6 +1229,38 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     END IF
 
     __MODPlayer_LoadMOD = TRUE
+    EXIT FUNCTION
+
+    ' This part loads a single channel worth of pattern data
+    ' It is here so that we do not duplicate this multiple times
+    load_mod_pattern:
+
+    byte1 = StringFile_ReadByte(memFile)
+    byte2 = StringFile_ReadByte(memFile)
+    byte3 = StringFile_ReadByte(memFile)
+    byte4 = StringFile_ReadByte(memFile)
+
+    __Pattern(i, a, b).instrument = (byte1 AND &HF0) OR _SHR(byte3, 4)
+
+    period = _SHL(byte1 AND &HF, 8) OR byte2
+
+    ' Do the look up in the table against what is read in and store note
+    __Pattern(i, a, b).note = __NOTE_NONE
+    FOR c = 0 TO 107
+        IF period >= __PeriodTable(c + 24) THEN
+            __Pattern(i, a, b).note = c
+            EXIT FOR
+        END IF
+    NEXT
+
+    __Pattern(i, a, b).volume = __NOTE_NO_VOLUME ' MODs don't have any volume field in the pattern
+    __Pattern(i, a, b).effect = byte3 AND &HF
+    __Pattern(i, a, b).operand = byte4
+
+    ' Some sanity check
+    IF __Pattern(i, a, b).instrument > __Song.instruments THEN __Pattern(i, a, b).instrument = 0 ' instrument 0 means no instrument. So valid sample are 1-15/31
+
+    RETURN
 END FUNCTION
 
 
