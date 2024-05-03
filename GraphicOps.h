@@ -8,9 +8,11 @@
 #define TOOLBOX64_DEBUG 0
 #include "Debug.h"
 #include "Common.h"
+#include <cstdlib>
 #include <cmath>
 #include <cstring>
 #include <algorithm>
+#include <unordered_map>
 
 #ifndef INC_COMMON_CPP
 // This stuff is from QB64-PE common.h and is only here for debugging purposes
@@ -57,6 +59,11 @@ struct img_struct
     uint8_t apm_p2;
     // END apm
 };
+
+extern int32_t func__red32(uint32_t col);
+extern int32_t func__green32(uint32_t col);
+extern int32_t func__blue32(uint32_t col);
+
 #else
 struct img_struct;
 #endif
@@ -1148,6 +1155,204 @@ void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx
                     }
                 }
             }
+        }
+    }
+}
+
+/// @brief Finds the closest color index in the palette.
+/// @param color The 32-bit color to find.
+/// @param palette The palette to search (an array of 32-bit colors).
+/// @param paletteColors The number of colors in the palette.
+/// @return The index of the closest color in the palette.
+uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const void *palette, uint32_t paletteColors)
+{
+    auto minDistance = std::numeric_limits<int>::max();
+    auto closestIndex = 0u;
+    auto pal = reinterpret_cast<const uint32_t *>(palette);
+
+    for (auto i = 0u; i < paletteColors; i++)
+    {
+        auto c = *pal++;
+        auto distance = abs((int)r - (int)((c >> 16) & 0xFF)) + abs((int)g - (int)((c >> 8) & 0xFF)) + abs((int)b - (int)(c & 0xFF));
+
+        if (distance < minDistance)
+        {
+            if (!distance)
+                return i; // perfect match
+
+            minDistance = distance;
+            closestIndex = i;
+        }
+    }
+
+    return closestIndex;
+}
+
+/// @brief Renders ASCII art of an image to a destination text mode image.
+/// @param src The source graphics image.
+/// @param dst The destination text mode image.
+void Graphics_RenderASCIIArt(int32_t src, int32_t dst)
+{
+    // 8-bit intensity gradient
+    const static uint8_t intensityGradient[] = {
+        0x20, 0xFF, 0x00, 0xFA, 0xF9, 0x2E, 0x27, 0x2C, 0x60, 0x2D, 0xC4, 0x3A, 0x5F, 0x3B, 0xAA, 0x7E,
+        0xA9, 0xBF, 0xDA, 0x07, 0x22, 0xAD, 0x3D, 0x5E, 0x7C, 0xC0, 0xD9, 0xFD, 0x2F, 0x1C, 0x5C, 0xF8,
+        0x3E, 0x2B, 0x29, 0x28, 0xF6, 0x3C, 0xC2, 0x69, 0x1A, 0x1B, 0xCD, 0x8D, 0xBE, 0xB3, 0xB0, 0xC1,
+        0xF2, 0x3F, 0xF3, 0xA8, 0xD4, 0x21, 0xA1, 0xFE, 0x7D, 0x87, 0x6C, 0x8B, 0x74, 0x7B, 0xD6, 0xB8,
+        0x16, 0x49, 0x76, 0x73, 0x63, 0x5B, 0xE7, 0x5D, 0xF0, 0xD5, 0xE2, 0xB4, 0x78, 0xA2, 0x95, 0xA7,
+        0xEE, 0xC3, 0x31, 0xB7, 0x25, 0x6F, 0x1D, 0x65, 0xD2, 0x6A, 0xFC, 0x94, 0x09, 0xF1, 0xF7, 0x7A,
+        0x72, 0x19, 0x18, 0xCF, 0x37, 0xAF, 0xAE, 0x61, 0x97, 0x6E, 0x75, 0xE5, 0xC8, 0x66, 0xA3, 0xF4,
+        0xF5, 0x81, 0xB5, 0x8F, 0x8C, 0x54, 0x24, 0xC6, 0xD3, 0xA4, 0xD1, 0xC5, 0x4A, 0x43, 0xBC, 0xA6,
+        0x8A, 0xE0, 0xBD, 0xCA, 0x90, 0x33, 0x82, 0x7F, 0x9F, 0xA0, 0x59, 0x9B, 0x98, 0x99, 0x9A, 0xEC,
+        0x4C, 0x2A, 0xD0, 0x39, 0xEB, 0x36, 0x13, 0x71, 0x93, 0x79, 0x89, 0x85, 0x70, 0x64, 0x67, 0x11,
+        0x53, 0xE6, 0x62, 0x86, 0x35, 0xC9, 0x10, 0x32, 0x04, 0x84, 0x4F, 0x80, 0xE4, 0x47, 0x46, 0xE1,
+        0xFB, 0x56, 0x96, 0x58, 0x6B, 0x91, 0xBB, 0x9C, 0x68, 0x77, 0xE3, 0x50, 0xCB, 0x6D, 0x34, 0x38,
+        0x41, 0x51, 0x1E, 0x1F, 0x12, 0xEF, 0xD8, 0xEA, 0xE9, 0x26, 0x0D, 0x0C, 0x06, 0x88, 0x48, 0x45,
+        0x4B, 0x9D, 0xA5, 0x5A, 0x55, 0x44, 0x8E, 0x83, 0x15, 0xDF, 0xED, 0xB1, 0x52, 0xE8, 0xDE, 0xBA,
+        0xCC, 0x01, 0xDD, 0xDC, 0x42, 0x40, 0xC7, 0x92, 0x0B, 0x57, 0xAB, 0x17, 0xCE, 0x23, 0xB9, 0x4E,
+        0xB6, 0x03, 0xD7, 0x30, 0x0F, 0xAC, 0x4D, 0x14, 0x05, 0x9E, 0x0E, 0x0A, 0xB2, 0x02, 0x08, 0xDB};
+
+    // Color -> Character + Attribute hash table
+    static std::unordered_map<uint32_t, uint16_t> g_ColorMap;
+
+    // The current destination image handle. We save this to clear the hash table when the destination image changes
+    static int32_t g_DestinationImage = 0;
+
+    img_struct *srcImage;
+
+    // Validate source image handle
+    if (src >= 0)
+    {
+        validatepage(src);
+        srcImage = &img[page[src]];
+    }
+    else
+    {
+        src = -src;
+        if (src >= nextimg)
+        {
+            error(QB_ERROR_INVALID_HANDLE);
+            return;
+        }
+        srcImage = &img[src];
+        if (!srcImage->valid)
+        {
+            error(QB_ERROR_INVALID_HANDLE);
+            return;
+        }
+    }
+
+    // Ensure source is a graphics image handle
+    if (srcImage->text)
+    {
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
+        return;
+    }
+
+    img_struct *dstImage;
+
+    // Validate destination image handle
+    if (dst >= 0)
+    {
+        validatepage(dst);
+        dstImage = &img[page[dst]];
+    }
+    else
+    {
+        dst = -dst;
+        if (dst >= nextimg)
+        {
+            error(QB_ERROR_INVALID_HANDLE);
+            return;
+        }
+        dstImage = &img[dst];
+        if (!dstImage->valid)
+        {
+            error(QB_ERROR_INVALID_HANDLE);
+            return;
+        }
+    }
+
+    // Ensure destination is a text mode handle and is the same size
+    if (!dstImage->text or srcImage->width != dstImage->width or srcImage->height != dstImage->height)
+    {
+        error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
+        return;
+    }
+
+    // Clear the color map only if the destination image has changed
+    if (dst != g_DestinationImage)
+    {
+        // Clear the color map
+        g_ColorMap.clear();
+
+        g_DestinationImage = dst;
+    }
+
+    auto dstData = reinterpret_cast<uint16_t *>(dstImage->offset); // destination data
+    size_t srcSize = srcImage->width * srcImage->height;
+    uint32_t colors = dstImage->text ? 16 : dstImage->mask + 1;
+
+    if (srcImage->bits_per_pixel == 32)
+    {
+        // 32bpp source
+        auto srcData = srcImage->offset32;
+
+        for (size_t i = 0; i < srcSize; i++)
+        {
+            // Check if the src color exists in the color table
+            if (g_ColorMap.count(*srcData) == 0)
+            {
+                auto r = func__red32(*srcData);
+                auto g = func__green32(*srcData);
+                auto b = func__blue32(*srcData);
+                auto c = Graphics_FindClosestColor(r, g, b, dstImage->pal, colors);
+
+                // Make the character + attribute pair using the nearest color and intensity
+                *dstData = (uint16_t)intensityGradient[(r + g + b) * (sizeof(intensityGradient) - 1) / 765] | (uint16_t)(c & 0x0F) << 8;
+
+                // Add the color to the table
+                g_ColorMap[*srcData] = *dstData;
+            }
+            else
+            {
+                // Simply copy the character + attribute pair from the color table
+                *dstData = g_ColorMap[*srcData];
+            }
+
+            ++dstData;
+            ++srcData;
+        }
+    }
+    else
+    {
+        // 8bpp, 4bpp, 2bpp source
+        auto srcData = srcImage->offset;
+
+        for (size_t i = 0; i < srcSize; i++)
+        {
+            // Check if the src color exists in the color table
+            if (g_ColorMap.count(*srcData) == 0)
+            {
+                auto r = func__red32(srcImage->pal[*srcData]);
+                auto g = func__green32(srcImage->pal[*srcData]);
+                auto b = func__blue32(srcImage->pal[*srcData]);
+                auto c = Graphics_FindClosestColor(r, g, b, dstImage->pal, colors);
+
+                // Make the character + attribute pair using the nearest color and intensity
+                *dstData = (uint16_t)intensityGradient[(r + g + b) * (sizeof(intensityGradient) - 1) / 765] | (uint16_t)(c & 0x0F) << 8;
+
+                // Add the color to the table
+                g_ColorMap[*srcData] = *dstData;
+            }
+            else
+            {
+                // Simply copy the character + attribute pair from the color table
+                *dstData = g_ColorMap[*srcData];
+            }
+
+            ++dstData;
+            ++srcData;
         }
     }
 }

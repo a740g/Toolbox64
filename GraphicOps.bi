@@ -324,4 +324,6 @@ DECLARE LIBRARY "GraphicOps"
     SUB Graphics_SetTextImageClearColor (BYVAL imageHandle AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
     SUB Graphics_PutTextImagePro ALIAS "Graphics_PutTextImage" (BYVAL imageHandle AS LONG, BYVAL x AS LONG, BYVAL y AS LONG, BYVAL lx AS LONG, BYVAL ty AS LONG, BYVAL rx AS LONG, BYVAL by AS LONG)
     SUB Graphics_PutTextImage (BYVAL imageHandle AS LONG, BYVAL x AS LONG, BYVAL y AS LONG)
+    SUB Graphics_RenderASCIIArt (BYVAL srcImage AS LONG, BYVAL dstImage AS LONG)
+    FUNCTION Graphics_FindClosestColor~& (BYVAL r AS _UNSIGNED _BYTE, BYVAL g AS _UNSIGNED _BYTE, BYVAL b AS _UNSIGNED _BYTE, BYVAL palettePtr AS _UNSIGNED _OFFSET, BYVAL paletteColors AS _UNSIGNED LONG)
 END DECLARE
