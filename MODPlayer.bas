@@ -239,13 +239,12 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
     ' Read the initial speed value
     __Song.defaultSpeed = StringFile_ReadByte(memFile)
-    IF __Song.defaultSpeed = 0 OR __Song.defaultSpeed = 255 THEN __Song.defaultSpeed = __SONG_SPEED_DEFAULT
     '_ECHO "Initial speed =" + STR$(__Song.defaultSpeed)
 
     ' Read the initial BPM
     __Song.defaultBPM = StringFile_ReadByte(memFile)
-    IF __Song.defaultBPM < 33 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT
     '_ECHO "Initial BPM =" + STR$(__Song.defaultBPM)
+    IF __Song.defaultBPM = 0 THEN __Song.defaultBPM = __SONG_BPM_DEFAULT ' avoid division by zero
 
     ' Read SoundBlaster master volume crap and check if the stereo frag is set
     byte1 = StringFile_ReadByte(memFile)
@@ -663,7 +662,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 END SELECT
 
                             CASE &H14 ' Txx Tempo
-                                __Pattern(i, row, chan).effect = &HF
+                                __Pattern(i, row, chan).effect = &H1B
 
                             CASE &H15 ' Uxy Fine Vibrato
                                 __Pattern(i, row, chan).effect = &H18
@@ -941,7 +940,7 @@ FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
 
             IF j >= __Song.channels THEN _CONTINUE ' ignore excess channel information
 
-            IF w > 0 THEN
+            IF w THEN
                 FOR k = 0 TO __Song.rows - 1
                     __Pattern(i, k, j) = mtmTrack(w - 1, k)
                 NEXT k
@@ -1292,7 +1291,7 @@ SUB MODPlayer_Play
     SHARED __Song AS __SongType
 
     ' Initialize some important stuff
-    __Song.tempoTimerValue = (SoftSynth_GetSampleRate * __Song.defaultBPM) \ 50
+    __Song.tempoTimerValue = (SoftSynth_GetSampleRate * __SONG_BPM_DEFAULT) \ 50
     __Song.orderPosition = NULL
     __Song.patternRow = NULL
     __Song.speed = __Song.defaultSpeed
@@ -1434,7 +1433,7 @@ SUB __MODPlayer_UpdateRow
 
         ' Set volume. We never play if sample number is zero. Our sample array is 1 based
         ' ONLY RESET VOLUME IF THERE IS A SAMPLE NUMBER
-        IF nInstrument > 0 THEN
+        IF nInstrument THEN
             __Channel(nChannel).instrument = nInstrument - 1
             __Channel(nChannel).startPosition = 0 ' reset sample offset if sample changes
             ' Don't get the volume if delay note, set it when the delay note actually happens
@@ -1467,7 +1466,7 @@ SUB __MODPlayer_UpdateRow
         ' Process tick 0 effects
         SELECT CASE nEffect
             CASE &H3 ' 3: Porta To Note
-                IF nOperand > 0 THEN __Channel(nChannel).portamentoSpeed = nOperand
+                IF nOperand THEN __Channel(nChannel).portamentoSpeed = nOperand
                 __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
                 __Channel(nChannel).restart = FALSE
 
@@ -1476,12 +1475,12 @@ SUB __MODPlayer_UpdateRow
                 __Channel(nChannel).restart = FALSE
 
             CASE &H4 ' 4: Vibrato
-                IF nOpX > 0 THEN __Channel(nChannel).vibratoSpeed = nOpX
-                IF nOpY > 0 THEN __Channel(nChannel).vibratoDepth = nOpY
+                IF nOpX THEN __Channel(nChannel).vibratoSpeed = nOpX
+                IF nOpY THEN __Channel(nChannel).vibratoDepth = nOpY
 
             CASE &H7 ' 7: Tremolo
-                IF nOpX > 0 THEN __Channel(nChannel).tremoloSpeed = nOpX
-                IF nOpY > 0 THEN __Channel(nChannel).tremoloDepth = nOpY
+                IF nOpX THEN __Channel(nChannel).tremoloSpeed = nOpX
+                IF nOpY THEN __Channel(nChannel).tremoloDepth = nOpY
 
             CASE &H8 ' 8: Set Panning Position
                 ' Don't care about DMP panning BS. We are doing this Fasttracker style
@@ -1542,7 +1541,7 @@ SUB __MODPlayer_UpdateRow
                             ELSE
                                 __Channel(nChannel).patternLoopRowCounter = __Channel(nChannel).patternLoopRowCounter - 1
                             END IF
-                            IF __Channel(nChannel).patternLoopRowCounter > 0 THEN
+                            IF __Channel(nChannel).patternLoopRowCounter THEN
                                 __Song.patternRow = __Channel(nChannel).patternLoopRow - 1
                             END IF
                         END IF
@@ -1582,10 +1581,10 @@ SUB __MODPlayer_UpdateRow
                 END IF
 
             CASE &H10 ' Axx Set Speed
-                IF nOperand > 0 THEN __Song.speed = nOperand
+                IF nOperand THEN __Song.speed = nOperand
 
             CASE &H11 ' Dxy Volume Slide or Fine Volume Slide
-                IF nOperand > 0 THEN __Channel(nChannel).lastVolumeSlide = nOperand
+                IF nOperand THEN __Channel(nChannel).lastVolumeSlide = nOperand
                 ' DFF is classed as a slide up so it gets priority
                 IF nOpY = &HF THEN
                     __Channel(nChannel).volume = __Channel(nChannel).volume + nOpX
@@ -1601,7 +1600,7 @@ SUB __MODPlayer_UpdateRow
                 IF __Channel(nChannel).volume < 0 THEN __Channel(nChannel).volume = 0
 
             CASE &H12 ' Exx Portamento Down or Fine Portamento Down or Extra Fine Portamento Down
-                IF nOperand > 0 THEN __Channel(nChannel).lastPortamento = nOperand
+                IF nOperand THEN __Channel(nChannel).lastPortamento = nOperand
                 IF nOpX = &HF THEN
                     __Channel(nChannel).period = __Channel(nChannel).period + _SHL(nOpY, 2)
                 ELSEIF nOpX = &HE THEN
@@ -1609,7 +1608,7 @@ SUB __MODPlayer_UpdateRow
                 END IF
 
             CASE &H13 ' Fxx Portamento Up or Fine Portamento Up or Extra Fine Portamento Up
-                IF nOperand > 0 THEN __Channel(nChannel).lastPortamento = nOperand
+                IF nOperand THEN __Channel(nChannel).lastPortamento = nOperand
                 IF nOpX = &HF THEN
                     __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOpY, 2)
                 ELSEIF nOpX = &HE THEN
@@ -1617,25 +1616,25 @@ SUB __MODPlayer_UpdateRow
                 END IF
 
             CASE &H14 ' Ixy Tremor
-                IF nOperand > 0 THEN __Channel(nChannel).tremorParameters = (_SHL(nOpX, 4) + 1) + (nOpY + 1)
+                IF nOperand THEN __Channel(nChannel).tremorParameters = (_SHL(nOpX, 4) + 1) + (nOpY + 1)
                 __MODPlayer_DoS3MTremor nChannel
 
             CASE &H15 ' Kxy Volume Slide + Vibrato
-                IF nOperand > 0 THEN __Channel(nChannel).lastVolumeSlide = nOperand
+                IF nOperand THEN __Channel(nChannel).lastVolumeSlide = nOperand
                 noFrequency = TRUE
 
             CASE &H16 ' Lxy Volume Slide + Tone Portamento
                 ERROR ERROR_FEATURE_UNAVAILABLE
 
             CASE &H17 ' Qxy Retrigger + Volume Slide
-                IF nOperand > 0 THEN
+                IF nOperand THEN
                     __Channel(nChannel).retriggerVolumeSlide = nOpX
                     __Channel(nChannel).retriggerTickCount = nOpY
                 END IF
 
             CASE &H18 ' Uxy Fine Vibrato
-                IF nOpX > 0 THEN __Channel(nChannel).vibratoSpeed = nOpX
-                IF nOpY > 0 THEN __Channel(nChannel).vibratoDepth = nOpY
+                IF nOpX THEN __Channel(nChannel).vibratoSpeed = nOpX
+                IF nOpY THEN __Channel(nChannel).vibratoDepth = nOpY
 
             CASE &H19 ' Vxx Set Global Volume
                 IF nOperand > __S3M_GLOBAL_VOLUME_MAX THEN
@@ -1646,6 +1645,9 @@ SUB __MODPlayer_UpdateRow
 
             CASE &H1A ' TODO: FIX ME!
                 ERROR ERROR_FEATURE_UNAVAILABLE
+
+            CASE &H1B ' Txx Tempo
+                IF nOperand THEN __MODPlayer_SetBPM nOperand
 
         END SELECT
 
@@ -1696,7 +1698,7 @@ SUB __MODPlayer_UpdateTick
 
             SELECT CASE nEffect
                 CASE &H0 ' 0: Arpeggio
-                    IF (nOperand > 0) THEN
+                    IF nOperand THEN
                         SELECT CASE __Song.tick MOD 3
                             CASE 0
                                 SoftSynth_SetVoiceFrequency nChannel, __MODPlayer_GetFrequencyFromPeriod(__Channel(nChannel).period)
@@ -1783,9 +1785,9 @@ SUB __MODPlayer_UpdateTick
                     ERROR ERROR_FEATURE_UNAVAILABLE
 
                 CASE &H17 ' Qxy Retrigger + Volume Slide
-                    IF __Channel(nChannel).retriggerTickCount > 0 THEN
+                    IF __Channel(nChannel).retriggerTickCount THEN
                         IF __Song.tick MOD __Channel(nChannel).retriggerTickCount = 0 THEN
-                            IF __Channel(nChannel).retriggerVolumeSlide > 0 THEN
+                            IF __Channel(nChannel).retriggerVolumeSlide THEN
                                 'Parameter  Effect              Parameter   Effect
                                 '0          No volume change    8           No volume change
                                 '1          Volume - 1          9           Volume + 1
