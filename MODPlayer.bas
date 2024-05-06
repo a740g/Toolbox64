@@ -1637,17 +1637,17 @@ SUB __MODPlayer_UpdateRow
                 IF nOpY THEN __Channel(nChannel).vibratoDepth = nOpY
 
             CASE &H19 ' Vxx Set Global Volume
-                IF nOperand > __S3M_GLOBAL_VOLUME_MAX THEN
-                    SoftSynth_SetGlobalVolume SOFTSYNTH_GLOBAL_VOLUME_MAX
-                ELSE
-                    SoftSynth_SetGlobalVolume nOperand / __S3M_GLOBAL_VOLUME_MAX
-                END IF
+                ' ST3 ignore out-of-range values
+                IF nOperand <= __S3M_GLOBAL_VOLUME_MAX THEN SoftSynth_SetGlobalVolume nOperand / __S3M_GLOBAL_VOLUME_MAX
 
             CASE &H1A ' TODO: FIX ME!
                 ERROR ERROR_FEATURE_UNAVAILABLE
 
             CASE &H1B ' Txx Tempo
                 IF nOperand THEN __MODPlayer_SetBPM nOperand
+
+            CASE &H1C ' Mxx Set Channel Volume
+                IF nOperand <= __S3M_GLOBAL_VOLUME_MAX THEN __Channel(nChannel).volume = nOperand
 
         END SELECT
 
