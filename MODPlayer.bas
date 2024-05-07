@@ -586,7 +586,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 __Pattern(i, row, chan).effect = &H16
 
                             CASE &HD ' Mxx Set Channel Volume
-                                ERROR ERROR_FEATURE_UNAVAILABLE
+                                __Pattern(i, row, chan).effect = &H1C
 
                             CASE &HE ' Nxy Channel Volume Slide
                                 ERROR ERROR_FEATURE_UNAVAILABLE
@@ -1637,7 +1637,7 @@ SUB __MODPlayer_UpdateRow
                 IF nOpY THEN __Channel(nChannel).vibratoDepth = nOpY
 
             CASE &H19 ' Vxx Set Global Volume
-                ' ST3 ignore out-of-range values
+                ' ST3 ignores out-of-range values
                 IF nOperand <= __S3M_GLOBAL_VOLUME_MAX THEN SoftSynth_SetGlobalVolume nOperand / __S3M_GLOBAL_VOLUME_MAX
 
             CASE &H1A ' TODO: FIX ME!
