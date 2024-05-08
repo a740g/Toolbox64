@@ -622,22 +622,23 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                         __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_TREMOLO_WAVEFORM, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H5 ' S5x Set Panbrello Waveform
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        __Pattern(i, row, chan).effect = __MOD_FX_PANBRELLO_WAVEFORM
+                                        __Pattern(i, row, chan).operand = __Pattern(i, row, chan).operand AND &HF
 
                                     CASE &H6 ' S6x Fine Pattern Delay
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        __Pattern(i, row, chan).effect = __MOD_FX_PATTERN_FINE_DELAY
+                                        __Pattern(i, row, chan).operand = __Pattern(i, row, chan).operand AND &HF
 
                                     CASE &H8 ' S8x Set Panning
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
                                         __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_PANNING_4, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H9 ' S9x Sound Control
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        __Pattern(i, row, chan).effect = __MOD_FX_SOUND_CONTROL
+                                        __Pattern(i, row, chan).operand = __Pattern(i, row, chan).operand AND &HF
 
                                     CASE &HA ' SAx High Offset
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
-                                        ' TODO: This is wrong!
-                                        __Pattern(i, row, chan).effect = &H1A
+                                        __Pattern(i, row, chan).effect = __MOD_FX_HIGH_OFFSET
                                         __Pattern(i, row, chan).operand = __Pattern(i, row, chan).operand AND &HF
 
                                     CASE &HB ' SB0 Pattern Loop Start
@@ -671,7 +672,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 __Pattern(i, row, chan).effect = __MOD_FX_GLOBAL_VOLUME
 
                             CASE &H17 ' Wxy Global Volume Slide
-                                ERROR ERROR_FEATURE_UNAVAILABLE
+                                __Pattern(i, row, chan).effect = __MOD_FX_GLOBAL_VOLUME_SLIDE
 
                             CASE &H18 ' Xxx Set Panning
                                 IF __Pattern(i, row, chan).operand <= 128 THEN
@@ -685,10 +686,10 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 END IF
 
                             CASE &H19 ' Yxy Panbrello
-                                ERROR ERROR_FEATURE_UNAVAILABLE
+                                __Pattern(i, row, chan).effect = __MOD_FX_PANBRELLO
 
                             CASE &H20 ' Zxx MIDI Macro
-                                ERROR ERROR_FEATURE_UNAVAILABLE
+                                __Pattern(i, row, chan).effect = __MOD_FX_MIDI_MACRO
 
                                 'CASE ELSE
                                 '    ' Trap for unhandled stuff
