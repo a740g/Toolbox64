@@ -583,7 +583,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 __Pattern(i, row, chan).effect = __MOD_FX_VIBRATO_VOLUME_FINE_SLIDE
 
                             CASE &HC ' Lxy Volume Slide + Tone Portamento
-                                __Pattern(i, row, chan).effect = __MOD_FX_PORTAMETO_VOLUME_FINE_SLIDE
+                                __Pattern(i, row, chan).effect = __MOD_FX_PORTAMENTO_VOLUME_FINE_SLIDE
 
                             CASE &HD ' Mxx Set Channel Volume
                                 __Pattern(i, row, chan).effect = __MOD_FX_CHANNEL_VOLUME
@@ -1454,7 +1454,7 @@ SUB __MODPlayer_UpdateRow
             IF _SHR(__Channel(nChannel).waveControl, 4) < 4 THEN __Channel(nChannel).tremoloPosition = 0
 
             ' ONLY RESET FREQUENCY IF THERE IS A NOTE VALUE AND PORTA NOT SET
-            IF nEffect <> __MOD_FX_PORTAMENTO AND nEffect <> __MOD_FX_PORTAMETO_VOLUME_SLIDE AND nEffect <> &H16 THEN
+            IF nEffect <> __MOD_FX_PORTAMENTO _ANDALSO nEffect <> __MOD_FX_PORTAMENTO_VOLUME_SLIDE _ANDALSO nEffect <> __MOD_FX_PORTAMENTO_VOLUME_FINE_SLIDE THEN
                 __Channel(nChannel).period = __Channel(nChannel).lastPeriod
             END IF
         ELSE
@@ -1471,7 +1471,7 @@ SUB __MODPlayer_UpdateRow
                 __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
                 __Channel(nChannel).restart = FALSE
 
-            CASE __MOD_FX_PORTAMETO_VOLUME_SLIDE
+            CASE __MOD_FX_PORTAMENTO_VOLUME_SLIDE
                 __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
                 __Channel(nChannel).restart = FALSE
 
@@ -1624,7 +1624,7 @@ SUB __MODPlayer_UpdateRow
                 IF nOperand THEN __Channel(nChannel).lastVolumeSlide = nOperand
                 noFrequency = TRUE
 
-            CASE __MOD_FX_PORTAMETO_VOLUME_FINE_SLIDE
+            CASE __MOD_FX_PORTAMENTO_VOLUME_FINE_SLIDE
                 ERROR ERROR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_CHANNEL_VOLUME
@@ -1676,7 +1676,7 @@ SUB __MODPlayer_UpdateRow
 
         END SELECT
 
-        __MODPlayer_DoInvertLoop nChannel ' called every tick
+        __MODPlayer_DoInvertLoop nChannel ' called every row
 
         IF NOT noFrequency THEN
             IF nEffect <> __MOD_FX_TREMOLO THEN
@@ -1749,7 +1749,7 @@ SUB __MODPlayer_UpdateTick
                 CASE __MOD_FX_VIBRATO
                     __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
 
-                CASE __MOD_FX_PORTAMETO_VOLUME_SLIDE
+                CASE __MOD_FX_PORTAMENTO_VOLUME_SLIDE
                     __MODPlayer_DoPortamento nChannel
                     __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
 
@@ -1806,7 +1806,7 @@ SUB __MODPlayer_UpdateTick
                     __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
                     __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, FALSE ' false here means fine volume slide
 
-                CASE __MOD_FX_PORTAMETO_VOLUME_FINE_SLIDE
+                CASE __MOD_FX_PORTAMENTO_VOLUME_FINE_SLIDE
                     ERROR ERROR_FEATURE_UNAVAILABLE
 
                 CASE __MOD_FX_NOTE_RETRIGGER_VOLUME_SLIDE
