@@ -1437,8 +1437,9 @@ SUB __MODPlayer_UpdateRow
         IF nInstrument THEN
             __Channel(nChannel).instrument = nInstrument - 1
             __Channel(nChannel).startPosition = 0 ' reset sample offset if sample changes
+
             ' Don't get the volume if delay note, set it when the delay note actually happens
-            IF NOT (nEffect = __MOD_FX_EXTENDED AND nOpX = __MOD_FX_EXTENDED_NOTE_DELAY) THEN
+            IF nEffect <> __MOD_FX_EXTENDED _ORELSE nOpX <> __MOD_FX_EXTENDED_NOTE_DELAY THEN
                 __Channel(nChannel).volume = __Instrument(__Channel(nChannel).instrument).volume
             END IF
         END IF
