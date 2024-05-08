@@ -589,13 +589,13 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 __Pattern(i, row, chan).effect = __MOD_FX_CHANNEL_VOLUME
 
                             CASE &HE ' Nxy Channel Volume Slide
-                                ERROR ERROR_FEATURE_UNAVAILABLE
+                                __Pattern(i, row, chan).effect = __MOD_FX_CHANNEL_VOLUME_SLIDE
 
                             CASE &HF ' Oxx Sample Offset
                                 __Pattern(i, row, chan).effect = __MOD_FX_SAMPLE_OFFSET
 
                             CASE &H10 ' Pxy Panning Slide or Fine Panning Slide
-                                ERROR ERROR_FEATURE_UNAVAILABLE
+                                __Pattern(i, row, chan).effect = __MOD_FX_PANNING_FINE_SLIDE
 
                             CASE &H11 ' Qxy Retrigger + Volume Slide
                                 __Pattern(i, row, chan).effect = __MOD_FX_NOTE_RETRIGGER_VOLUME_SLIDE
@@ -607,19 +607,19 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                                 SELECT CASE _SHR(__Pattern(i, row, chan).operand, 4)
                                     CASE &H1 ' S1x Glissando Control
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &H30 + (__Pattern(i, row, chan).operand AND &HF)
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_GLISSANDO_CONTROL, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H2 ' S2x Set Finetune
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &H50 + (__Pattern(i, row, chan).operand AND &HF)
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_FINETUNE, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H3 ' S3x Set Vibrato Waveform
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &H40 + (__Pattern(i, row, chan).operand AND &HF)
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_VIBRATO_WAVEFORM, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H4 ' S4x Set Tremolo Waveform
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &H70 + (__Pattern(i, row, chan).operand AND &HF)
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_TREMOLO_WAVEFORM, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H5 ' S5x Set Panbrello Waveform
                                         ERROR ERROR_FEATURE_UNAVAILABLE
@@ -629,7 +629,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
                                     CASE &H8 ' S8x Set Panning
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &H80 + (__Pattern(i, row, chan).operand AND &HF)
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_PANNING_4, 4) OR (__Pattern(i, row, chan).operand AND &HF)
 
                                     CASE &H9 ' S9x Sound Control
                                         ERROR ERROR_FEATURE_UNAVAILABLE
@@ -642,19 +642,19 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
                                     CASE &HB ' SB0 Pattern Loop Start
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &H60 + (__Pattern(i, row, chan).operand AND &HF) ' SBx
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_PATTERN_LOOP, 4) OR (__Pattern(i, row, chan).operand AND &HF) ' SBx
 
                                     CASE &HC ' SCx Note Cut
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &HC0 + (__Pattern(i, row, chan).operand AND &HF) ' SCx
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_NOTE_CUT, 4) OR (__Pattern(i, row, chan).operand AND &HF) ' SCx
 
                                     CASE &HD ' SDx Note Delay
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &HD0 + (__Pattern(i, row, chan).operand AND &HF) ' SDx
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_NOTE_DELAY, 4) OR (__Pattern(i, row, chan).operand AND &HF) ' SDx
 
                                     CASE &HE ' SEx Pattern Delay
                                         __Pattern(i, row, chan).effect = __MOD_FX_EXTENDED
-                                        __Pattern(i, row, chan).operand = &HE0 + (__Pattern(i, row, chan).operand AND &HF) ' SEx
+                                        __Pattern(i, row, chan).operand = _SHL(__MOD_FX_EXTENDED_PATTERN_DELAY, 4) OR (__Pattern(i, row, chan).operand AND &HF) ' SEx
 
                                         'CASE ELSE
                                         '    ' Trap for unhandled stuff
