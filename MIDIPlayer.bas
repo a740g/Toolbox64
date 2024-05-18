@@ -19,7 +19,7 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 '$DEBUG
 '$CONSOLE
-'IF MIDI_Initialize(FALSE) THEN
+'IF MIDI_Initialize(TRUE) THEN
 '    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
 '        MIDI_Play
 '        MIDI_Loop TRUE

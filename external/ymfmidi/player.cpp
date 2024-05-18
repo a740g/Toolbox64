@@ -1,4 +1,4 @@
-#include "ymf_player.h"
+#include "player.h"
 
 #include <cmath>
 #include <cstring>

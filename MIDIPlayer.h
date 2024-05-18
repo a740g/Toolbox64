@@ -25,9 +25,8 @@
 #include "external/ymfm/ymfm_adpcm.cpp"
 #include "external/ymfm/ymfm_pcm.cpp"
 #include "external/ymfm/ymfm_opl.cpp"
-#include "external/ymfmidi/patchnames.cpp"
 #include "external/ymfmidi/patches.cpp"
-#include "external/ymfmidi/ymf_player.cpp"
+#include "external/ymfmidi/player.cpp"
 #include "MIDIFMBank.h"
 #include <cstdint>
 #include <string>
