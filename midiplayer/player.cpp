@@ -19,7 +19,6 @@ OPLPlayer::OPLPlayer(int numChips, int frequency)
     m_sampleFIFO.resize(m_numChips);
 
     m_sampleRate = frequency;
-    setGain(1.0f);
 
     reset();
 }
@@ -29,12 +28,6 @@ OPLPlayer::~OPLPlayer()
 {
     for (auto &opl : m_opl3)
         delete opl;
-}
-
-// ----------------------------------------------------------------------------
-void OPLPlayer::setGain(float gain)
-{
-    m_sampleGain = gain;
 }
 
 // ----------------------------------------------------------------------------
@@ -64,8 +57,8 @@ void OPLPlayer::generate(float *data, unsigned numSamples)
     {
         updateMIDI();
 
-        data[samp] = m_output.first / 32768.0f;
-        data[samp + 1] = m_output.second / 32768.0f;
+        data[samp] = (float)m_output.first / 32768.0f;
+        data[samp + 1] = (float)m_output.second / 32768.0f;
 
         samp += 2;
     }
@@ -117,9 +110,9 @@ void OPLPlayer::updateMIDI()
         sample.second += output.second;
     }
 
-    // Apply gain
-    m_output.first = clampS16(sample.first * m_sampleGain);
-    m_output.second = clampS16(sample.second * m_sampleGain);
+    // Clamp and update
+    m_output.first = clamp(sample.first, -32768, 32767);
+    m_output.second = clamp(sample.second, -32768, 32767);
 }
 
 // ----------------------------------------------------------------------------

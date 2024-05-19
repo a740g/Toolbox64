@@ -118,6 +118,28 @@ FUNCTION MIDI_IsPaused%%
 END FUNCTION
 
 
+' Gets the global volume
+FUNCTION MIDI_GetVolume!
+    $CHECKING:OFF
+    SHARED __MIDI_Player AS __MIDI_PlayerType
+
+    MIDI_GetVolume = __MIDI_Player.globalVolume
+    $CHECKING:ON
+END FUNCTION
+
+
+' Sets the global volume
+SUB MIDI_SetVolume (volume AS SINGLE)
+    $CHECKING:OFF
+    SHARED __MIDI_Player AS __MIDI_PlayerType
+
+    __MIDI_Player.globalVolume = Math_ClampSingle(volume, 0!, 1!)
+
+    _SNDVOL __MIDI_Player.soundHandle, __MIDI_Player.globalVolume
+    $CHECKING:ON
+END SUB
+
+
 ' This handles playback and keeps track of the render buffer
 ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
 SUB MIDI_Update (bufferTimeSecs AS SINGLE)

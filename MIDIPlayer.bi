@@ -32,6 +32,7 @@ TYPE __MIDI_PlayerType
     soundBufferSamples AS _UNSIGNED LONG ' size of the rendered buffer in samples
     soundBufferBytes AS _UNSIGNED LONG ' size of the render buffer in bytes
     soundHandle AS LONG ' the sound pipe that we wll use to play the rendered samples
+    globalVolume AS SINGLE ' this is the global volume (0.0 - 1.0)
 END TYPE
 
 ' Anything with a '__' prefix is not supposed to be called directly
@@ -47,8 +48,6 @@ DECLARE LIBRARY "MIDIPlayer"
     FUNCTION MIDI_IsPlaying%%
     SUB MIDI_Loop (BYVAL isLooping AS _BYTE)
     FUNCTION MIDI_IsLooping%%
-    FUNCTION MIDI_GetVolume!
-    SUB MIDI_SetVolume (BYVAL volume AS SINGLE)
     FUNCTION MIDI_GetTotalTime#
     FUNCTION MIDI_GetCurrentTime#
     FUNCTION MIDI_GetActiveVoices~&

@@ -63,8 +63,6 @@ public:
     OPLPlayer(int numChips = 1, int frequency = 44100);
     virtual ~OPLPlayer();
 
-    void setGain(float gain);
-
     // load instrument patches from the specified path
     bool loadPatches(const char *path);
     // load instrument patches from an already opened file,
@@ -162,28 +160,10 @@ private:
     template <class T>
     static inline constexpr T clamp(T x, T lo, T hi) { return std::max(std::min(x, hi), lo); }
 
-    static inline constexpr int16_t clampS16(int v)
-    {
-        if ((unsigned int)(v + 32768) > 65535)
-        {
-            if (v < -32768)
-            {
-                return -32768;
-            }
-            if (v > 32767)
-            {
-                return 32767;
-            }
-        }
-
-        return v;
-    }
-
     std::vector<Opal *> m_opl3;
     unsigned m_numChips;
 
-    int m_sampleRate;   // output sample rate (default 44.1k)
-    float m_sampleGain; // gain of output sample
+    int m_sampleRate; // output sample rate (default 44.1k)
 
     std::pair<int16_t, int16_t> m_output; // output sample data
     // if we need to clock one of the OPLs between register writes, save the resulting sample

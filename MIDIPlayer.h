@@ -34,7 +34,6 @@ static tml_message *tinyMIDIMessage = nullptr; // next message to be played (thi
 static uint32_t totalMsec = 0;                 // total duration of the MIDI song
 static double currentMsec = 0;                 // current playback time
 static uint32_t sampleRate = 0;                // the mixing sample rate (should be same as SndRate in QB64)
-static float globalVolume = 1.0f;              // this is the global volume (0.0 - 1.0)
 static qb_bool isLooping = QB_FALSE;           // flag to indicate if we should loop a song
 static qb_bool isOPL3Active = QB_FALSE;        // flag to indicate if we are using TSF or ymfm
 static std::string g_SongName;
@@ -81,29 +80,6 @@ void MIDI_Loop(int8_t looping)
         isLooping = TO_QB_BOOL(looping); // Save the looping flag
 }
 
-/// @brief Sets the playback volume when a file is loaded
-/// @param volume 0.0 = none, 1.0 = full
-void MIDI_SetVolume(float volume)
-{
-    if (volume < 0.0f)
-        volume = 0.0f; // safety clamp. We do not want -ve values
-
-    if (contextTSFymfm && tinyMIDILoader)
-    {
-        if (isOPL3Active)
-            reinterpret_cast<OPLPlayer *>(contextTSFymfm)->setGain(globalVolume = volume); // save and apply the volume
-        else
-            tsf_set_volume(reinterpret_cast<tsf *>(contextTSFymfm), globalVolume = volume); // save and apply the volume
-    }
-}
-
-/// @brief Returns the current playback volume
-/// @return 0.0 = none, 1.0 = full
-inline float MIDI_GetVolume()
-{
-    return globalVolume;
-}
-
 /// @brief Returns the total playback times in msecs
 /// @return time in msecs
 inline double MIDI_GetTotalTime()
@@ -133,11 +109,6 @@ void MIDI_Play()
     {
         tinyMIDIMessage = tinyMIDILoader; // Set up the global MidiMessage pointer to the first MIDI message
         currentMsec = 0.0;                // Reset playback time
-
-        if (isOPL3Active)
-            reinterpret_cast<OPLPlayer *>(contextTSFymfm)->setGain(globalVolume);
-        else
-            tsf_set_volume(reinterpret_cast<tsf *>(contextTSFymfm), globalVolume);
     }
 }
 
