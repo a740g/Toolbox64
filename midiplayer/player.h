@@ -95,7 +95,7 @@ public:
     // misc. informational stuff
     int sampleRate() const { return m_sampleRate; }
     const std::string &patchName(uint8_t num) { return m_patches[num].name; }
-    int voiceCount() const { return (int)m_voices.size(); }
+    int activeVoiceCount() const;
 
 private:
     static const unsigned masterClock = 14318181;

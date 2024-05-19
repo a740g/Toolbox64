@@ -99,7 +99,7 @@ inline double MIDI_GetCurrentTime()
 inline uint32_t MIDI_GetActiveVoices()
 {
     // 18 if we are in OPL3 mode else whatever TSF returns
-    return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? reinterpret_cast<OPLPlayer *>(contextTSFymfm)->voiceCount() : tsf_active_voice_count(reinterpret_cast<tsf *>(contextTSFymfm))) : 0;
+    return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? reinterpret_cast<OPLPlayer *>(contextTSFymfm)->activeVoiceCount() : tsf_active_voice_count(reinterpret_cast<tsf *>(contextTSFymfm))) : 0;
 }
 
 /// @brief Kickstarts playback if library is initalized and MIDI file is loaded

@@ -718,3 +718,16 @@ double OPLPlayer::midiCalcBend(double semitones)
 {
     return pow(2, semitones / 12.0);
 }
+
+int OPLPlayer::activeVoiceCount() const
+{
+    int totalVoices = 0;
+
+    for (auto &voice : m_voices)
+    {
+        if (voice.channel && (voice.on || voice.justChanged))
+            totalVoices++;
+    }
+
+    return totalVoices;
+}
