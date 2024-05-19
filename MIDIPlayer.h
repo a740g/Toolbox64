@@ -20,14 +20,11 @@
 #include "external/tinysoundfont/tsf.h"
 #define TML_IMPLEMENTATION
 #include "external/tinysoundfont/tml.h"
-#include "MIDISoundFont.h"
+#include "midiplayer/soundfont.h"
 #undef STB_VORBIS_HEADER_ONLY
-#include "external/ymfm/ymfm_adpcm.cpp"
-#include "external/ymfm/ymfm_pcm.cpp"
-#include "external/ymfm/ymfm_opl.cpp"
-#include "external/ymfmidi/patches.cpp"
-#include "external/ymfmidi/player.cpp"
-#include "MIDIFMBank.h"
+#include "midiplayer/patches.cpp"
+#include "midiplayer/player.cpp"
+#include "midiplayer/fmbank.h"
 #include <cstdint>
 #include <string>
 
@@ -126,7 +123,7 @@ inline double MIDI_GetCurrentTime()
 inline uint32_t MIDI_GetActiveVoices()
 {
     // 18 if we are in OPL3 mode else whatever TSF returns
-    return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? 18 : tsf_active_voice_count(reinterpret_cast<tsf *>(contextTSFymfm))) : 0;
+    return contextTSFymfm && tinyMIDIMessage ? (isOPL3Active ? reinterpret_cast<OPLPlayer *>(contextTSFymfm)->voiceCount() : tsf_active_voice_count(reinterpret_cast<tsf *>(contextTSFymfm))) : 0;
 }
 
 /// @brief Kickstarts playback if library is initalized and MIDI file is loaded
@@ -225,7 +222,7 @@ inline qb_bool __MIDI_Initialize(uint32_t sampleRateQB64, int8_t useOPL3)
 
     if (useOPL3)
     {
-        contextTSFymfm = new OPLPlayer(sampleRate); // use OPL3 FM synth
+        contextTSFymfm = new OPLPlayer(4, sampleRateQB64); // use 4 x OPL3 FM synth chips
         if (!contextTSFymfm)
             return QB_FALSE;
 
