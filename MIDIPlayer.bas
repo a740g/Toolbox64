@@ -68,6 +68,8 @@ FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
     __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferSamples * __MIDI_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
     REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
 
+    __MIDI_Player.globalVolume = 1!
+
     MIDI_Initialize = TRUE
 END FUNCTION
 
