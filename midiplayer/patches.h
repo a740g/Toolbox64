@@ -1,7 +1,7 @@
 #ifndef __PATCHES_H
 #define __PATCHES_H
 
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 #include <cstdint>

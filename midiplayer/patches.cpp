@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "patches.h"
-#include "player.h"
+#include "OPLPlayer.h"
 
 const char *OPLPatch::names[256] =
     {

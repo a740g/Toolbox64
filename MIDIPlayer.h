@@ -23,7 +23,7 @@
 #include "midiplayer/soundfont.h"
 #undef STB_VORBIS_HEADER_ONLY
 #include "midiplayer/patches.cpp"
-#include "midiplayer/player.cpp"
+#include "midiplayer/OPLPlayer.cpp"
 #include "midiplayer/fmbank.h"
 #include <cstdint>
 #include <string>
