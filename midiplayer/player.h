@@ -174,6 +174,9 @@ private:
     MIDIType m_midiType;
 
     OPLPatchSet m_patches;
+
+    static const unsigned voice_num[18];
+    static const unsigned oper_num[18];
 };
 
 #endif // __PLAYER_H

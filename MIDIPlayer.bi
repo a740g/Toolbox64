@@ -18,12 +18,12 @@ $INCLUDEONCE
 '$INCLUDE:'FileOps.bi'
 '$INCLUDE:'PointerOps.bi'
 
-CONST __MIDI_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)
-CONST __MIDI_SOUND_BUFFER_SAMPLE_SIZE = 4 ' 4 bytes (32-bits floating point)
-CONST __MIDI_SOUND_BUFFER_FRAME_SIZE = __MIDI_SOUND_BUFFER_SAMPLE_SIZE * __MIDI_SOUND_BUFFER_CHANNELS
-CONST MIDI_SOUND_BUFFER_TIME_DEFAULT = 0.2 ' we will check that we have this amount of time left in the QB64 sound pipe
-CONST MIDI_VOLUME_MAX = 1! ' max volume
-CONST MIDI_VOLUME_MIN = 0! ' min volume
+CONST __MIDI_SOUND_BUFFER_CHANNELS& = 2& ' 2 channels (stereo)
+CONST __MIDI_SOUND_BUFFER_SAMPLE_SIZE& = 4& ' 4 bytes (32-bits floating point)
+CONST __MIDI_SOUND_BUFFER_FRAME_SIZE& = __MIDI_SOUND_BUFFER_SAMPLE_SIZE * __MIDI_SOUND_BUFFER_CHANNELS
+CONST MIDI_SOUND_BUFFER_TIME_DEFAULT! = 0.08! ' we will check that we have this amount of time left in the QB64 sound pipe
+CONST MIDI_VOLUME_MAX! = 1! ' max volume
+CONST MIDI_VOLUME_MIN! = 0! ' min volume
 
 ' QB64 specific stuff
 TYPE __MIDI_PlayerType
@@ -31,6 +31,7 @@ TYPE __MIDI_PlayerType
     soundBufferFrames AS _UNSIGNED LONG ' size of the render buffer in frames
     soundBufferSamples AS _UNSIGNED LONG ' size of the rendered buffer in samples
     soundBufferBytes AS _UNSIGNED LONG ' size of the render buffer in bytes
+    soundBufferTime AS SINGLE ' the amount of time (seconds) our buffer really plays
     soundHandle AS LONG ' the sound pipe that we wll use to play the rendered samples
     globalVolume AS SINGLE ' this is the global volume (0.0 - 1.0)
 END TYPE

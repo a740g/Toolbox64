@@ -3,11 +3,11 @@
 #include <cmath>
 #include <cstring>
 
-static const unsigned voice_num[18] = {
+const unsigned OPLPlayer::voice_num[18] = {
     0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8,
     0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108};
 
-static const unsigned oper_num[18] = {
+const unsigned OPLPlayer::oper_num[18] = {
     0x0, 0x1, 0x2, 0x8, 0x9, 0xA, 0x10, 0x11, 0x12,
     0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112};
 
@@ -420,7 +420,7 @@ void OPLPlayer::updatePatch(OPLVoice &voice, const OPLPatch *newPatch, uint8_t n
 void OPLPlayer::updateVolume(OPLVoice &voice)
 {
     // lookup table shamelessly stolen from Nuke.YKT
-    static const uint8_t opl_volume_map[32] =
+    static constexpr uint8_t opl_volume_map[32] =
         {
             80, 63, 40, 36, 32, 28, 23, 21,
             19, 17, 15, 14, 13, 12, 11, 10,

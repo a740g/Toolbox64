@@ -22,10 +22,10 @@ $INCLUDEONCE
 'IF MIDI_Initialize(TRUE) THEN
 '    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
 '        MIDI_Play
-'        MIDI_Loop TRUE
+'        MIDI_Loop FALSE
 '        PRINT "Playing "; MIDI_GetSongName
 '        DO
-'            MIDI_Update MIDI_SOUND_BUFFER_TIME_DEFAULT
+'            MIDI_Update
 '            SELECT CASE _KEYHIT
 '                CASE 27
 '                    EXIT DO
@@ -61,9 +61,9 @@ FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
         EXIT FUNCTION
     END IF
 
-    ' Allocate a 40 ms mixer buffer and ensure we round down to power of 2
     ' Power of 2 above is required by most FFT functions
-    __MIDI_Player.soundBufferFrames = Math_RoundDownLongToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
+    __MIDI_Player.soundBufferFrames = Math_RoundDownLongToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT) ' buffer frames
+    __MIDI_Player.soundBufferTime = __MIDI_Player.soundBufferFrames / _SNDRATE ' this is how much time we are really buffering
     __MIDI_Player.soundBufferSamples = __MIDI_Player.soundBufferFrames * __MIDI_SOUND_BUFFER_CHANNELS ' buffer samples
     __MIDI_Player.soundBufferBytes = __MIDI_Player.soundBufferSamples * __MIDI_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
     REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
@@ -144,13 +144,16 @@ END SUB
 
 ' This handles playback and keeps track of the render buffer
 ' You can call this as frequenctly as you want. The routine will simply exit if nothing is to be done
-SUB MIDI_Update (bufferTimeSecs AS SINGLE)
+SUB MIDI_Update
     $CHECKING:OFF
     SHARED __MIDI_Player AS __MIDI_PlayerType
     SHARED __MIDI_SoundBuffer() AS SINGLE
 
-    ' Only render more samples if song is playing, not paused and we do not have enough samples with the sound device
-    IF MIDI_IsPlaying AND NOT __MIDI_Player.isPaused AND _SNDRAWLEN(__MIDI_Player.soundHandle) < bufferTimeSecs THEN
+    ' If we are not initialized or song is done or we are paused, then exit
+    IF _NEGATE MIDI_IsPlaying _ORELSE __MIDI_Player.isPaused THEN EXIT SUB
+
+    ' Loop and fill the buffer until we have soundBufferTime worth of samples frames to play
+    WHILE _SNDRAWLEN(__MIDI_Player.soundHandle) < __MIDI_Player.soundBufferTime
         ' Clear the render buffer
         SetMemoryByte _OFFSET(__MIDI_SoundBuffer(0)), NULL, __MIDI_Player.soundBufferBytes
 
@@ -158,12 +161,12 @@ SUB MIDI_Update (bufferTimeSecs AS SINGLE)
         __MIDI_Render __MIDI_SoundBuffer(0), __MIDI_Player.soundBufferBytes
 
         ' Push the samples to the sound pipe
-        DIM i AS _UNSIGNED LONG
+        DIM i AS _UNSIGNED LONG: i = 0
         DO WHILE i < __MIDI_Player.soundBufferSamples
             _SNDRAW __MIDI_SoundBuffer(i), __MIDI_SoundBuffer(i + 1), __MIDI_Player.soundHandle
             i = i + __MIDI_SOUND_BUFFER_CHANNELS
         LOOP
-    END IF
+    WEND
     $CHECKING:ON
 END SUB
 
