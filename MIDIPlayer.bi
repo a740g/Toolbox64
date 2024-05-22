@@ -21,7 +21,8 @@ $INCLUDEONCE
 CONST __MIDI_SOUND_BUFFER_CHANNELS& = 2& ' 2 channels (stereo)
 CONST __MIDI_SOUND_BUFFER_SAMPLE_SIZE& = 4& ' 4 bytes (32-bits floating point)
 CONST __MIDI_SOUND_BUFFER_FRAME_SIZE& = __MIDI_SOUND_BUFFER_SAMPLE_SIZE * __MIDI_SOUND_BUFFER_CHANNELS
-CONST MIDI_SOUND_BUFFER_TIME_DEFAULT! = 0.1! ' we will check that we have this amount of time left in the QB64 sound pipe
+CONST __MIDI_SOUND_BUFFER_CHUNKS = 2 ' chunks per buffer (should be power of 2)
+CONST MIDI_SOUND_BUFFER_TIME_DEFAULT! = 0.08! ' we will check that we have this amount of time left in the QB64 sound pipe
 CONST MIDI_VOLUME_MAX! = 1! ' max volume
 CONST MIDI_VOLUME_MIN! = 0! ' min volume
 
