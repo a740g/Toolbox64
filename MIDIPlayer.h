@@ -17,13 +17,13 @@
 #define STB_VORBIS_HEADER_ONLY
 #include "external/stb/stb_vorbis.c"
 #define TSF_IMPLEMENTATION
-#include "external/tinysoundfont/tsf.h"
+#include "midiplayer/tsf.h"
 #define TML_IMPLEMENTATION
-#include "external/tinysoundfont/tml.h"
+#include "midiplayer/tml.h"
 #include "midiplayer/soundfont.h"
 #undef STB_VORBIS_HEADER_ONLY
-#include "midiplayer/patches.cpp"
-#include "midiplayer/OPLPlayer.cpp"
+#include "midiplayer/OPLPatch.cpp"
+#include "midiplayer/OpalMIDI.cpp"
 #include "midiplayer/fmbank.h"
 #include <cstdint>
 #include <string>
