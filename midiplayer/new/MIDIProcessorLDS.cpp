@@ -3,7 +3,7 @@
 
 #include "MIDIProcessor.h"
 
-#include <string.h>
+#include <cstring>
 
 #define ENABLE_WHEEL
 // #define ENABLE_VIB

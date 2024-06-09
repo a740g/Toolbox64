@@ -3,7 +3,7 @@
 
 #include "MIDIProcessor.h"
 
-#include <string.h>
+#include <cstring>
 
 typedef uint32_t FOURCC;
 

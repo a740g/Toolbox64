@@ -3,8 +3,6 @@
 
 #include "MIDIProcessor.h"
 
-#include <windows.h>
-
 bool MIDIProcessor::IsRCP(std::vector<uint8_t> const &data, const char *fileExtension)
 {
     if (fileExtension == nullptr)
@@ -89,11 +87,7 @@ bool MIDIProcessor::ProcessRCP(std::vector<uint8_t> const &data, MIDIContainer &
     if (playBias < -36 || playBias > 36)
         playBias = 0;
 
-    char fileNameCM6[MAX_PATH];
-    ::memcpy(fileNameCM6, Data + 0x01C6, 12);
     // Reserved (4 bytes)
-    char fileNameGSD[MAX_PATH];
-    ::memcpy(fileNameGSD, Data + 0x01D6, 12);
     // Reserved (4 bytes)
 
     int trackNum = (int)Data[0x01E6];
@@ -130,9 +124,6 @@ bool MIDIProcessor::ProcessRCP(std::vector<uint8_t> const &data, MIDIContainer &
 
     container.Initialize((uint32_t)1, (uint32_t)timeBase);
 
-    // Read the tracks
-    WCHAR Text[256];
-
     Offset = 0x0586;
 
     for (size_t i = 0; (i < maxTracks) && (Offset + HEADER_LENGTH < data.size()); ++i)
@@ -153,9 +144,6 @@ bool MIDIProcessor::ProcessRCP(std::vector<uint8_t> const &data, MIDIContainer &
 
             if (Size < HEADER_LENGTH || Offset + Size > data.size())
                 break; // Invalid track size;
-
-            ::swprintf_s(Text, _countof(Text), L"%08X: Track %2d/%2d, %5d bytes\n", Offset, i + 1, maxTracks, (int)Size);
-            ::OutputDebugStringW(Text);
 
             uint8_t trackNo = Data[2]; // Track Number
                                        //      Data[3] // Rhythm
@@ -205,12 +193,6 @@ bool MIDIProcessor::ProcessRCP(std::vector<uint8_t> const &data, MIDIContainer &
             char memo[37];
             ::memcpy(memo, Data + 8, 36);
             memo[36] = '\0';
-
-            for (size_t j = HEADER_LENGTH; j < Size; j += EVENT_LENGTH)
-            {
-                ::swprintf_s(Text, _countof(Text), L"%08X: %02X %02X %02X %02X\n", j, Data[j], Data[j + 1], Data[j + 2], Data[j + 3]);
-                ::OutputDebugStringW(Text);
-            }
 
             Offset += Size;
         }

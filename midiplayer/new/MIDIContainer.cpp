@@ -3,7 +3,7 @@
 
 #include "MIDIContainer.h"
 
-#include <string.h>
+#include <cstring>
 
 #pragma warning(disable : 4242)
 #include <algorithm>

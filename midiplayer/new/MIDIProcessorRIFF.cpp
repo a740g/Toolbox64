@@ -3,7 +3,7 @@
 
 #include "MIDIProcessor.h"
 
-#include <string.h>
+#include <cstring>
 
 static inline uint32_t toInt32LE(const uint8_t *data)
 {
