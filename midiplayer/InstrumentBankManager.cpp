@@ -25,7 +25,7 @@ void InstrumentBankManager::SetPath(const std::string_view &path)
             data.clear();
             fileName = path;
         }
-#ifdef WINDOWS
+#ifdef QB64_WINDOWS
         else if (HasFileExtension(path, ".dll"))
         {
             type = Type::VSTi;
