@@ -36,7 +36,6 @@
 static MIDIPlayer *MIDI_Sequencer = nullptr;
 static MIDIContainer *MIDI_Container = nullptr;
 static uint32_t totalMsec = 0;
-static double currentMsec = 0;
 static qb_bool isLooping = QB_FALSE;
 static qb_bool isPlaying = QB_FALSE;
 static qb_bool useOPL3 = QB_FALSE;
@@ -66,16 +65,16 @@ void MIDI_Loop(qb_bool looping)
 
 /// @brief Returns the total playback times in msecs
 /// @return time in msecs
-inline double MIDI_GetTotalTime()
+inline uint32_t MIDI_GetTotalTime()
 {
-    return MIDI_Sequencer && MIDI_Container ? totalMsec : 0.0;
+    return MIDI_Sequencer && MIDI_Container ? totalMsec : 0;
 }
 
 /// @brief Returns the current playback time in msec
 /// @return Times in msecs
-inline double MIDI_GetCurrentTime()
+inline uint32_t MIDI_GetCurrentTime()
 {
-    return MIDI_Sequencer && MIDI_Container ? currentMsec : 0.0;
+    return MIDI_Sequencer && MIDI_Container ? MIDI_Sequencer->GetPosition() : 0;
 }
 
 /// @brief Returns the total number of voice that are playing
@@ -99,7 +98,6 @@ void MIDI_Play()
     if (MIDI_Sequencer && MIDI_Container)
     {
         MIDI_Sequencer->Load(*MIDI_Container, 0, isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
-        currentMsec = 0.0; // Reset playback time
         isPlaying = QB_TRUE;
     }
 }
@@ -115,7 +113,6 @@ void MIDI_Stop()
         delete MIDI_Container;
         MIDI_Container = nullptr;
 
-        currentMsec = 0.0;
         totalMsec = 0;
         isPlaying = QB_FALSE;
 

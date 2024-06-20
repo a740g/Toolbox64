@@ -97,7 +97,7 @@ public:
 
     void Configure(MIDIFlavor midiFlavor, bool filterEffects);
 
-    virtual uint32_t GetChannelCount() const noexcept { return 2; }
+    uint32_t GetPosition() const noexcept { return uint32_t((uint64_t(_Position) * 1000ul) / uint64_t(_SampleRate)); }
 
     virtual uint32_t GetActiveVoiceCount() const { return 0; }
 

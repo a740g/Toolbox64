@@ -3,11 +3,12 @@
 ' Copyright (c) 2024 Samuel Gomes
 '
 ' This uses:
-' TinySoundFont from https://github.com/schellingb/TinySoundFont/blob/master/tsf.h
-' TinyMidiLoader from https://github.com/schellingb/TinySoundFont/blob/master/tml.h
-' ymfm from https://github.com/aaronsgiles/ymfm
-' ymfmidi from https://github.com/devinacker/ymfmidi
-' stb_vorbis.c from https://github.com/nothings/stb/blob/master/stb_vorbis.c
+' foo_midi (heavily modified) from https://github.com/stuerp/foo_midi (MIT license)
+' Opal (refactored) from https://www.3eality.com/productions/reality-adlib-tracker (Public Domain)
+' primesynth (heavily modified) from https://github.com/mosmeh/primesynth (MIT license)
+' stb_vorbis.c from https://github.com/nothings/stb (Public Domain)
+' TinySoundFont from https://github.com/schellingb/TinySoundFont (MIT license)
+' ymfmidi (heavily modified) from https://github.com/devinacker/ymfmidi (BSD-3-Clause license)
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
@@ -47,8 +48,8 @@ DECLARE LIBRARY "MIDIPlayer"
     FUNCTION MIDI_IsPlaying%%
     SUB MIDI_Loop (BYVAL isLooping AS _BYTE)
     FUNCTION MIDI_IsLooping%%
-    FUNCTION MIDI_GetTotalTime#
-    FUNCTION MIDI_GetCurrentTime#
+    FUNCTION MIDI_GetTotalTime~&
+    FUNCTION MIDI_GetCurrentTime~&
     FUNCTION MIDI_GetActiveVoices~&
     FUNCTION MIDI_IsFMSynthesis%%
     FUNCTION MIDI_GetSongName$
