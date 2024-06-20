@@ -39,7 +39,7 @@ static uint32_t totalMsec = 0;
 static qb_bool isLooping = QB_FALSE;
 static qb_bool isPlaying = QB_FALSE;
 static qb_bool useOPL3 = QB_FALSE;
-static std::string g_SongName = "Untitled";
+static std::string g_SongName;
 
 /// @brief Check if a MIDI file is playing
 /// @return Returns QB64 TRUE if we are playing a MIDI file
