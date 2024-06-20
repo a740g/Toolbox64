@@ -48,18 +48,13 @@ FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
     SHARED __MIDI_SoundBuffer() AS SINGLE
 
     ' Exit if we are already initialized
-    IF MIDI_IsInitialized THEN
+    IF __MIDI_Player.soundHandle > 0 THEN
         MIDI_Initialize = TRUE
         EXIT FUNCTION
     END IF
 
     __MIDI_Player.soundHandle = _SNDOPENRAW ' allocate a sound pipe
     IF __MIDI_Player.soundHandle < 1 THEN EXIT FUNCTION
-
-    IF NOT __MIDI_Initialize(_SNDRATE, useOPL3) THEN
-        _SNDCLOSE __MIDI_Player.soundHandle
-        EXIT FUNCTION
-    END IF
 
     ' Power of 2 above is required by most FFT functions
     __MIDI_Player.soundBufferFrames = Math_RoundDownLongToPowerOf2(_SNDRATE * MIDI_SOUND_BUFFER_TIME_DEFAULT) \ Math_RoundDownLongToPowerOf2(__MIDI_SOUND_BUFFER_CHUNKS) ' buffer frames
@@ -69,6 +64,7 @@ FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
     REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
 
     __MIDI_Player.globalVolume = 1!
+    __MIDI_Player.useFM = useOPL3
 
     MIDI_Initialize = TRUE
 END FUNCTION
@@ -78,10 +74,11 @@ END FUNCTION
 SUB MIDI_Finalize
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    IF MIDI_IsInitialized THEN
+    IF __MIDI_Player.soundHandle > 0 THEN
         _SNDRAWDONE __MIDI_Player.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
         _SNDCLOSE __MIDI_Player.soundHandle ' close and free the QB64 sound pipe
-        __MIDI_Finalize ' call the C side finalizer
+        __MIDI_Player.soundHandle = 0 ' reset sound handle
+        MIDI_Stop ' close stuff on the C side finalizer
     END IF
 END SUB
 
@@ -94,7 +91,9 @@ END FUNCTION
 
 ' Loads a MIDI file for playback from memory
 FUNCTION MIDI_LoadTuneFromMemory%% (buffer AS STRING)
-    MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer))
+    SHARED __MIDI_Player AS __MIDI_PlayerType
+
+    MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer), _SNDRATE, __MIDI_Player.useFM)
 END FUNCTION
 
 
@@ -102,7 +101,7 @@ END FUNCTION
 SUB MIDI_Pause (state AS _BYTE)
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    IF MIDI_IsTuneLoaded THEN
+    IF MIDI_IsPlaying THEN
         __MIDI_Player.isPaused = state
     END IF
 END SUB
@@ -113,7 +112,7 @@ FUNCTION MIDI_IsPaused%%
     $CHECKING:OFF
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    IF MIDI_IsTuneLoaded THEN
+    IF MIDI_IsPlaying THEN
         MIDI_IsPaused = __MIDI_Player.isPaused
     END IF
     $CHECKING:ON

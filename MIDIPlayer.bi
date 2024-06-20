@@ -35,16 +35,13 @@ TYPE __MIDI_PlayerType
     soundBufferTime AS SINGLE ' the amount of time (seconds) our buffer really plays
     soundHandle AS LONG ' the sound pipe that we wll use to play the rendered samples
     globalVolume AS SINGLE ' this is the global volume (0.0 - 1.0)
+    useFM AS _BYTE ' use FM syhthesis?
 END TYPE
 
 ' Anything with a '__' prefix is not supposed to be called directly
 ' There are QB64 wrappers for these functions
 DECLARE LIBRARY "MIDIPlayer"
-    FUNCTION __MIDI_Initialize%% (BYVAL sampleRate AS _UNSIGNED LONG, BYVAL useOPL3 AS _BYTE)
-    FUNCTION MIDI_IsInitialized%%
-    SUB __MIDI_Finalize
-    FUNCTION __MIDI_LoadTuneFromMemory%% (buffer AS STRING, BYVAL size AS _UNSIGNED LONG)
-    FUNCTION MIDI_IsTuneLoaded%%
+    FUNCTION __MIDI_LoadTuneFromMemory%% (buffer AS STRING, BYVAL size AS _UNSIGNED LONG, BYVAL sampleRate AS _UNSIGNED LONG, BYVAL useOPL3 AS _BYTE)
     SUB MIDI_Play
     SUB MIDI_Stop
     FUNCTION MIDI_IsPlaying%%
