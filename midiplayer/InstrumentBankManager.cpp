@@ -4,21 +4,21 @@ void InstrumentBankManager::SetPath(const std::string_view &path)
 {
     if (!path.empty())
     {
-        if (HasFileExtension(".wopl") || HasFileExtension(".op2") || HasFileExtension(".tmb") || HasFileExtension(".bnk") || HasFileExtension(".ad") || HasFileExtension(".opl"))
+        if (HasFileExtension(path, ".wopl") || HasFileExtension(path, ".op2") || HasFileExtension(path, ".tmb") || HasFileExtension(path, ".bnk") || HasFileExtension(path, ".ad") || HasFileExtension(path, ".opl"))
         {
             type = Type::Opal;
             location = Location::File;
             data.clear();
             fileName = path;
         }
-        else if (HasFileExtension(".sf2"))
+        else if (HasFileExtension(path, ".sf2"))
         {
             type = Type::Primesynth;
             location = Location::File;
             data.clear();
             fileName = path;
         }
-        else if (HasFileExtension(".sf3") || HasFileExtension(".sfo") || HasFileExtension(".sfogg"))
+        else if (HasFileExtension(path, ".sf3") || HasFileExtension(path, ".sfo") || HasFileExtension(path, ".sfogg"))
         {
             type = Type::TinySoundFont;
             location = Location::File;
@@ -26,7 +26,7 @@ void InstrumentBankManager::SetPath(const std::string_view &path)
             fileName = path;
         }
 #ifdef WINDOWS
-        else if (HasFileExtension(".dll"))
+        else if (HasFileExtension(path, ".dll"))
         {
             type = Type::VSTi;
             location = Location::File;
@@ -48,19 +48,19 @@ void InstrumentBankManager::SetData(const uint8_t *data, size_t size, Type type)
     }
 }
 
-bool InstrumentBankManager::HasFileExtension(const std::string_view &extension)
+bool InstrumentBankManager::HasFileExtension(const std::string_view &name, const std::string_view &extension)
 {
     if (!extension.empty())
     {
         // Convert both file name and extension to lowercase for case-insensitive search
-        std::string fileNameLower = fileName;
-        std::transform(fileNameLower.begin(), fileNameLower.end(), fileNameLower.begin(), ::tolower);
+        std::string nameLower(name);
+        std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
 
         std::string extensionLower(extension);
         std::transform(extensionLower.begin(), extensionLower.end(), extensionLower.begin(), ::tolower);
 
         // Check if the file name ends with the specified extension
-        return fileNameLower.rfind(extensionLower) == (fileNameLower.length() - extensionLower.length());
+        return nameLower.rfind(extensionLower) == (nameLower.length() - extensionLower.length());
     }
 
     return false;

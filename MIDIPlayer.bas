@@ -21,10 +21,11 @@ $INCLUDEONCE
 '$DEBUG
 '$CONSOLE
 'IF MIDI_Initialize THEN
+'    MIDI_SetSynth "soundfont.sf3", NULL
 '    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
 '        MIDI_Play
 '        MIDI_Loop FALSE
-'        PRINT "Playing "; MIDI_GetSongName
+'        PRINT "Synth:"; MIDI_GetSynthType; "Playing: "; MIDI_GetSongName
 '        DO
 '            MIDI_Update
 '            SELECT CASE _KEYHIT
@@ -100,7 +101,7 @@ END FUNCTION
 ' Set the synth instrument bank, thereby sets the type as well
 SUB MIDI_SetSynth (fileNameOrBuffer AS STRING, synthType AS _UNSIGNED LONG)
     IF _FILEEXISTS(fileNameOrBuffer) THEN
-        __MIDI_SetSynth String_ToCStr(fileNameOrBuffer), NULL, synthType
+        __MIDI_SetSynth String_ToCStr(fileNameOrBuffer), NULL, NULL
     ELSE
         __MIDI_SetSynth fileNameOrBuffer, LEN(fileNameOrBuffer), synthType
     END IF

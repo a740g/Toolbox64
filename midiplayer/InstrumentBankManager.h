@@ -40,5 +40,5 @@ private:
     std::string fileName;
     std::vector<uint8_t> data;
 
-    bool HasFileExtension(const std::string_view &extension);
+    static bool HasFileExtension(const std::string_view &name, const std::string_view &extension);
 };
