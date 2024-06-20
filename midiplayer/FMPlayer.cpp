@@ -1,10 +1,7 @@
 #include "FMPlayer.h"
-#include "FMBank.h"
 
-FMPlayer::FMPlayer() : MIDIPlayer()
+FMPlayer::FMPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
 {
-    synth = nullptr;
-
     Startup();
 }
 
@@ -18,17 +15,38 @@ bool FMPlayer::Startup()
     if (_IsInitialized)
         return true;
 
+    if (!instrumentBankManager || instrumentBankManager->GetType() != InstrumentBankManager::Type::Opal)
+        return false;
+
     synth = new OPLPlayer(chipCount, _SampleRate);
     if (synth)
     {
-        if (synth->loadPatches(defaultBank, sizeof(defaultBank)))
+        if (instrumentBankManager->GetLocation() == InstrumentBankManager::Location::File)
         {
-            _MIDIFlavor = MIDIFlavor::None;
-            _FilterEffects = false;
-            _IsInitialized = true;
+            if (!synth->loadPatches(instrumentBankManager->GetPath()))
+            {
+                delete synth;
+                synth = nullptr;
 
-            return true;
+                return false;
+            }
         }
+        else
+        {
+            if (!synth->loadPatches(instrumentBankManager->GetData(), instrumentBankManager->GetDataSize()))
+            {
+                delete synth;
+                synth = nullptr;
+
+                return false;
+            }
+        }
+
+        _MIDIFlavor = MIDIFlavor::None;
+        _FilterEffects = false;
+        _IsInitialized = true;
+
+        return true;
     }
 
     return false;

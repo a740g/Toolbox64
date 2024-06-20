@@ -32,49 +32,57 @@
 #include "midiplayer/MIDIProcessorXMI.cpp"
 #include "midiplayer/OPLPatch.cpp"
 #include "midiplayer/OpalMIDI.cpp"
+#include "midiplayer/InstrumentBankManager.cpp"
 
-static MIDIPlayer *MIDI_Sequencer = nullptr;
-static MIDIContainer *MIDI_Container = nullptr;
-static uint32_t totalMsec = 0;
-static qb_bool isLooping = QB_FALSE;
-static qb_bool isPlaying = QB_FALSE;
-static qb_bool useOPL3 = QB_FALSE;
-static std::string g_SongName;
+struct MIDIManager
+{
+    MIDIPlayer *sequencer;
+    MIDIContainer *container;
+    InstrumentBankManager instrumentBankManager;
+    std::string songName;
+    uint32_t totalTime;
+    qb_bool isLooping;
+    qb_bool isPlaying;
+
+    MIDIManager() : sequencer(nullptr), container(nullptr), totalTime(0), isLooping(QB_FALSE), isPlaying(QB_FALSE) {}
+};
+
+static MIDIManager g_MIDIManager;
 
 /// @brief Check if a MIDI file is playing
 /// @return Returns QB64 TRUE if we are playing a MIDI file
 inline qb_bool MIDI_IsPlaying()
 {
-    return MIDI_Sequencer && MIDI_Container ? isPlaying : QB_FALSE;
+    return g_MIDIManager.sequencer && g_MIDIManager.container ? g_MIDIManager.isPlaying : QB_FALSE;
 }
 
 /// @brief Checks the MIDI file is set to loop
 /// @return Returns QB64 TRUE if a file is set to loop
 inline qb_bool MIDI_IsLooping()
 {
-    return MIDI_Sequencer && MIDI_Container ? isLooping : QB_FALSE;
+    return g_MIDIManager.sequencer && g_MIDIManager.container ? g_MIDIManager.isLooping : QB_FALSE;
 }
 
 /// @brief Sets the MIDI to until unit it is stopped
 /// @param looping QB64 TRUE or FALSE
 void MIDI_Loop(qb_bool looping)
 {
-    if (MIDI_Sequencer && MIDI_Container)
-        isLooping = TO_QB_BOOL(looping); // Save the looping flag
+    if (g_MIDIManager.sequencer && g_MIDIManager.container)
+        g_MIDIManager.isLooping = TO_QB_BOOL(looping); // save the looping flag
 }
 
 /// @brief Returns the total playback times in msecs
 /// @return time in msecs
 inline uint32_t MIDI_GetTotalTime()
 {
-    return MIDI_Sequencer && MIDI_Container ? totalMsec : 0;
+    return g_MIDIManager.sequencer && g_MIDIManager.container ? g_MIDIManager.totalTime : 0;
 }
 
 /// @brief Returns the current playback time in msec
 /// @return Times in msecs
 inline uint32_t MIDI_GetCurrentTime()
 {
-    return MIDI_Sequencer && MIDI_Container ? MIDI_Sequencer->GetPosition() : 0;
+    return g_MIDIManager.sequencer && g_MIDIManager.container ? g_MIDIManager.sequencer->GetPosition() : 0;
 }
 
 /// @brief Returns the total number of voice that are playing
@@ -82,41 +90,53 @@ inline uint32_t MIDI_GetCurrentTime()
 inline uint32_t MIDI_GetActiveVoices()
 {
     // 18 if we are in OPL3 mode else whatever TSF returns
-    return MIDI_Sequencer && MIDI_Container ? MIDI_Sequencer->GetActiveVoiceCount() : 0;
+    return g_MIDIManager.sequencer && g_MIDIManager.container ? g_MIDIManager.sequencer->GetActiveVoiceCount() : 0;
 }
 
-/// @brief Check what kind of MIDI renderer is being used
-/// @return Return QB64 TRUE if using FM synthesis. Sample synthesis otherwise
-inline qb_bool MIDI_IsFMSynthesis()
+/// @brief Returns the identifier of the MIDI renderer is use
+/// @return A
+inline uint32_t MIDI_GetSynthType()
 {
-    return useOPL3;
+    return uint32_t(g_MIDIManager.instrumentBankManager.GetType());
+}
+
+/// @brief Sets the MIDI renderer
+/// @param fileNameOrBuffer The name or buffer of the MIDI instrument
+/// @param bufferSize The size of the buffer in BYTES! If zero, fileNameOrBuffer is assumed to be a file name
+/// @param synthType The MIDI renderer to use. This is ignored if fileNameOrBuffer is a file name
+inline void __MIDI_SetSynth(const char *fileNameOrBuffer, size_t bufferSize, uint32_t synthType)
+{
+    if (bufferSize)
+        g_MIDIManager.instrumentBankManager.SetData(reinterpret_cast<uint8_t const *>(fileNameOrBuffer), bufferSize, (InstrumentBankManager::Type)synthType);
+    else
+        g_MIDIManager.instrumentBankManager.SetPath(fileNameOrBuffer);
 }
 
 /// @brief Kickstarts playback if library is initalized and MIDI file is loaded
 void MIDI_Play()
 {
-    if (MIDI_Sequencer && MIDI_Container)
+    if (g_MIDIManager.sequencer && g_MIDIManager.container)
     {
-        MIDI_Sequencer->Load(*MIDI_Container, 0, isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
-        isPlaying = QB_TRUE;
+        g_MIDIManager.sequencer->Load(*g_MIDIManager.container, 0, g_MIDIManager.isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
+        g_MIDIManager.isPlaying = QB_TRUE;
     }
 }
 
 /// @brief Stops playback and unloads the MIDI file from memory
 void MIDI_Stop()
 {
-    if (MIDI_Sequencer || MIDI_Container)
+    if (g_MIDIManager.sequencer || g_MIDIManager.container)
     {
-        delete MIDI_Sequencer;
-        MIDI_Sequencer = nullptr;
+        delete g_MIDIManager.sequencer;
+        g_MIDIManager.sequencer = nullptr;
 
-        delete MIDI_Container;
-        MIDI_Container = nullptr;
+        delete g_MIDIManager.container;
+        g_MIDIManager.container = nullptr;
 
-        totalMsec = 0;
-        isPlaying = QB_FALSE;
+        g_MIDIManager.totalTime = 0;
+        g_MIDIManager.isPlaying = QB_FALSE;
 
-        g_SongName.clear();
+        g_MIDIManager.songName.clear();
     }
 }
 
@@ -124,14 +144,15 @@ void MIDI_Stop()
 /// @return A string containing the name (and other information)
 const char *MIDI_GetSongName()
 {
-    return g_SongName.c_str();
+    return g_MIDIManager.songName.c_str();
 }
 
 /// @brief This frees resources (if a file was previously loaded) and then loads a MIDI file from memory for playback
 /// @param buffer The memory buffer containing the full file
 /// @param bufferSize The size of the memory buffer
+/// @param sampleRate The sample rate to use
 /// @return Returns QB64 TRUE if the operation was successful
-inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize, uint32_t sampleRate, qb_bool useOPL3QB64)
+inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize, uint32_t sampleRate)
 {
     MIDI_Stop();
 
@@ -141,30 +162,38 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
     std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(buffer), reinterpret_cast<const uint8_t *>(buffer) + bufferSize);
     MIDIProcessor MIDI_Processor;
 
-    useOPL3 = TO_QB_BOOL(useOPL3QB64);
-
-    if (useOPL3)
-        MIDI_Sequencer = new FMPlayer();
-    else
-        MIDI_Sequencer = new TSFPlayer();
-
-    if (MIDI_Sequencer)
+    switch (g_MIDIManager.instrumentBankManager.GetType())
     {
-        MIDI_Sequencer->SetSampleRate(sampleRate);
+    case InstrumentBankManager::Type::Opal:
+        g_MIDIManager.sequencer = new FMPlayer(&g_MIDIManager.instrumentBankManager);
+        break;
 
-        MIDI_Container = new MIDIContainer();
-        if (MIDI_Container)
+    case InstrumentBankManager::Type::TinySoundFont:
+        g_MIDIManager.sequencer = new TSFPlayer(&g_MIDIManager.instrumentBankManager);
+        break;
+
+    default:
+        error(QB_ERROR_FEATURE_UNAVAILABLE);
+        return QB_FALSE;
+    }
+
+    if (g_MIDIManager.sequencer)
+    {
+        g_MIDIManager.sequencer->SetSampleRate(sampleRate);
+
+        g_MIDIManager.container = new MIDIContainer();
+        if (g_MIDIManager.container)
         {
-            if (MIDI_Processor.Process(buf, "", *MIDI_Container))
+            if (MIDI_Processor.Process(buf, "", *g_MIDIManager.container))
             {
-                totalMsec = MIDI_Container->GetDuration(0, true);
+                g_MIDIManager.totalTime = g_MIDIManager.container->GetDuration(0, true);
 
                 // Get the song name
                 MIDIMetaData metaData;
-                MIDI_Container->GetMetaData(0, metaData);
+                g_MIDIManager.container->GetMetaData(0, metaData);
                 MIDIMetaDataItem metaDataItem;
                 if (metaData.GetItem("track_name_00", metaDataItem))
-                    g_SongName = metaDataItem.Value;
+                    g_MIDIManager.songName = metaDataItem.Value;
 
                 return QB_TRUE;
             }
@@ -181,5 +210,5 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
 /// @param bufferSize The size of the buffer in BYTES!
 inline void __MIDI_Render(float *buffer, uint32_t bufferSize)
 {
-    isPlaying = TO_QB_BOOL(MIDI_Sequencer->Play(buffer, bufferSize >> 3));
+    g_MIDIManager.isPlaying = TO_QB_BOOL(g_MIDIManager.sequencer->Play(buffer, bufferSize >> 3));
 }

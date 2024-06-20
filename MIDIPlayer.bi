@@ -26,6 +26,13 @@ CONST __MIDI_SOUND_BUFFER_CHUNKS = 2 ' chunks per buffer (should be power of 2)
 CONST MIDI_SOUND_BUFFER_TIME_DEFAULT! = 0.08! ' we will check that we have this amount of time left in the QB64 sound pipe
 CONST MIDI_VOLUME_MAX! = 1! ' max volume
 CONST MIDI_VOLUME_MIN! = 0! ' min volume
+' Various synth types
+CONST MIDI_SYNTH_OPAL& = 0&
+CONST MIDI_SYNTH_PRIMESYNTH& = 1&
+CONST MIDI_SYNTH_TINYSOUNDFONT& = 2&
+$IF WINDOWS THEN
+    CONST MIDI_SYNTH_VSTI& = 3&
+$END IF
 
 ' QB64 specific stuff
 TYPE __MIDI_PlayerType
@@ -36,13 +43,12 @@ TYPE __MIDI_PlayerType
     soundBufferTime AS SINGLE ' the amount of time (seconds) our buffer really plays
     soundHandle AS LONG ' the sound pipe that we wll use to play the rendered samples
     globalVolume AS SINGLE ' this is the global volume (0.0 - 1.0)
-    useFM AS _BYTE ' use FM syhthesis?
 END TYPE
 
 ' Anything with a '__' prefix is not supposed to be called directly
 ' There are QB64 wrappers for these functions
 DECLARE LIBRARY "MIDIPlayer"
-    FUNCTION __MIDI_LoadTuneFromMemory%% (buffer AS STRING, BYVAL size AS _UNSIGNED LONG, BYVAL sampleRate AS _UNSIGNED LONG, BYVAL useOPL3 AS _BYTE)
+    FUNCTION __MIDI_LoadTuneFromMemory%% (buffer AS STRING, BYVAL size AS _UNSIGNED LONG, BYVAL sampleRate AS _UNSIGNED LONG)
     SUB MIDI_Play
     SUB MIDI_Stop
     FUNCTION MIDI_IsPlaying%%
@@ -51,7 +57,8 @@ DECLARE LIBRARY "MIDIPlayer"
     FUNCTION MIDI_GetTotalTime~&
     FUNCTION MIDI_GetCurrentTime~&
     FUNCTION MIDI_GetActiveVoices~&
-    FUNCTION MIDI_IsFMSynthesis%%
+    FUNCTION MIDI_GetSynthType~&
+    SUB __MIDI_SetSynth (fileNameOrBuffer AS STRING, BYVAL bufferSize AS _UNSIGNED _OFFSET, BYVAL synthType AS _UNSIGNED LONG)
     FUNCTION MIDI_GetSongName$
     SUB __MIDI_Render (buffer AS SINGLE, BYVAL size AS _UNSIGNED LONG)
 END DECLARE

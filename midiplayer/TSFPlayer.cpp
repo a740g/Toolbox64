@@ -3,12 +3,9 @@
 #include "../external/stb/stb_vorbis.c"
 #define TSF_IMPLEMENTATION
 #include "tsf.h"
-#include "SoundFont.h"
 
-TSFPlayer::TSFPlayer() : MIDIPlayer()
+TSFPlayer::TSFPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
 {
-    synth = nullptr;
-
     Startup();
 }
 
@@ -22,7 +19,13 @@ bool TSFPlayer::Startup()
     if (_IsInitialized)
         return true;
 
-    synth = tsf_load_memory(defaultSoundFont, sizeof(defaultSoundFont)); // attempt to load the soundfont from memory
+    if (!instrumentBankManager || instrumentBankManager->GetType() != InstrumentBankManager::Type::TinySoundFont)
+        return false;
+
+    if (instrumentBankManager->GetLocation() == InstrumentBankManager::Location::File)
+        synth = tsf_load_filename(instrumentBankManager->GetPath());
+    else
+        synth = tsf_load_memory(instrumentBankManager->GetData(), instrumentBankManager->GetDataSize());
 
     if (synth)
     {

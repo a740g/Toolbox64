@@ -20,7 +20,7 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 '$DEBUG
 '$CONSOLE
-'IF MIDI_Initialize(TRUE) THEN
+'IF MIDI_Initialize THEN
 '    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
 '        MIDI_Play
 '        MIDI_Loop FALSE
@@ -44,7 +44,7 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 
 ' This basically allocate stuff on the QB64 side and initializes the underlying C library
-FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
+FUNCTION MIDI_Initialize%%
     SHARED __MIDI_Player AS __MIDI_PlayerType
     SHARED __MIDI_SoundBuffer() AS SINGLE
 
@@ -65,7 +65,6 @@ FUNCTION MIDI_Initialize%% (useOPL3 AS _BYTE)
     REDIM __MIDI_SoundBuffer(0 TO __MIDI_Player.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
 
     __MIDI_Player.globalVolume = 1!
-    __MIDI_Player.useFM = useOPL3
 
     MIDI_Initialize = TRUE
 END FUNCTION
@@ -94,8 +93,18 @@ END FUNCTION
 FUNCTION MIDI_LoadTuneFromMemory%% (buffer AS STRING)
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer), _SNDRATE, __MIDI_Player.useFM)
+    MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer), _SNDRATE)
 END FUNCTION
+
+
+' Set the synth instrument bank, thereby sets the type as well
+SUB MIDI_SetSynth (fileNameOrBuffer AS STRING, synthType AS _UNSIGNED LONG)
+    IF _FILEEXISTS(fileNameOrBuffer) THEN
+        __MIDI_SetSynth String_ToCStr(fileNameOrBuffer), NULL, synthType
+    ELSE
+        __MIDI_SetSynth fileNameOrBuffer, LEN(fileNameOrBuffer), synthType
+    END IF
+END SUB
 
 
 ' Pause any MIDI playback
