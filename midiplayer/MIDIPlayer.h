@@ -99,6 +99,8 @@ public:
 
     virtual uint32_t GetChannelCount() const noexcept { return 2; }
 
+    virtual uint32_t GetActiveVoiceCount() const { return 0; }
+
     virtual bool GetErrorMessage(std::string &) { return false; }
 
 protected:

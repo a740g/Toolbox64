@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorRIFF.cpp (2023.08.14) **/
 
 #include "MIDIProcessor.h"

@@ -3,11 +3,12 @@
 // Copyright (c) 2024 Samuel Gomes
 //
 // This uses:
-// TinySoundFont from https://github.com/schellingb/TinySoundFont/blob/master/tsf.h
-// TinyMidiLoader from https://github.com/schellingb/TinySoundFont/blob/master/tml.h
-// ymfm from https://github.com/aaronsgiles/ymfm
-// ymfmidi from https://github.com/devinacker/ymfmidi
-// stb_vorbis.c from https://github.com/nothings/stb/blob/master/stb_vorbis.c
+// foo_midi (heavily modified) from https://github.com/stuerp/foo_midi (MIT license)
+// Opal (refactored) from https://www.3eality.com/productions/reality-adlib-tracker (Public Domain)
+// primesynth (heavily modified) from https://github.com/mosmeh/primesynth (MIT license)
+// stb_vorbis.c from https://github.com/nothings/stb (Public Domain)
+// TinySoundFont from https://github.com/schellingb/TinySoundFont (MIT license)
+// ymfmidi (heavily modified) from https://github.com/devinacker/ymfmidi (BSD-3-Clause license)
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -15,7 +16,7 @@
 #include "Types.h"
 #include "Debug.h"
 #include "midiplayer/FMPlayer.cpp"
-// #include "midiplayer/TSFPlayer.cpp"
+#include "midiplayer/TSFPlayer.cpp"
 #include "midiplayer/MIDIPlayer.cpp"
 #include "midiplayer/MIDIContainer.cpp"
 #include "midiplayer/MIDIProcessor.cpp"
@@ -32,8 +33,7 @@
 #include "midiplayer/OPLPatch.cpp"
 #include "midiplayer/OpalMIDI.cpp"
 
-static FMPlayer *MIDI_Sequencer = nullptr;
-// static TSFPlayer *MIDI_Sequencer = nullptr;
+static MIDIPlayer *MIDI_Sequencer = nullptr;
 static MIDIContainer *MIDI_Container = nullptr;
 static uint32_t totalMsec = 0;
 static double currentMsec = 0;
@@ -115,7 +115,8 @@ void MIDI_Stop()
         delete MIDI_Container;
         MIDI_Container = nullptr;
 
-        currentMsec = totalMsec = 0.0; // reset times
+        currentMsec = 0.0;
+        totalMsec = 0;
         isPlaying = QB_FALSE;
 
         g_SongName.clear();
@@ -145,8 +146,10 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
 
     useOPL3 = TO_QB_BOOL(useOPL3QB64);
 
-    MIDI_Sequencer = new FMPlayer();
-    // MIDI_Sequencer = new TSFPlayer();
+    if (useOPL3)
+        MIDI_Sequencer = new FMPlayer();
+    else
+        MIDI_Sequencer = new TSFPlayer();
 
     if (MIDI_Sequencer)
     {
@@ -156,7 +159,18 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
         if (MIDI_Container)
         {
             if (MIDI_Processor.Process(buf, "", *MIDI_Container))
+            {
+                totalMsec = MIDI_Container->GetDuration(0, true);
+
+                // Get the song name
+                MIDIMetaData metaData;
+                MIDI_Container->GetMetaData(0, metaData);
+                MIDIMetaDataItem metaDataItem;
+                if (metaData.GetItem("track_name_00", metaDataItem))
+                    g_SongName = metaDataItem.Value;
+
                 return QB_TRUE;
+            }
         }
     }
 

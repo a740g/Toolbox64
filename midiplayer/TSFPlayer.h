@@ -9,7 +9,7 @@ public:
     TSFPlayer();
     virtual ~TSFPlayer();
 
-    uint32_t GetActiveVoiceCount() const noexcept;
+    uint32_t GetActiveVoiceCount() const override;
 
 protected:
     virtual bool Startup() override;

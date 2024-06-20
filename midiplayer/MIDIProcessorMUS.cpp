@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorMUS.cpp (2023.08.14) Created by Paul Radek for his DMX audio library. Used by id Software for Doom and several other games. (https://moddingwiki.shikadi.net/wiki/MUS_Format) **/
 
 #include "MIDIProcessor.h"

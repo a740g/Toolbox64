@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorHMI.cpp (2023.08.14) Human Machine Interface (http://www.vgmpf.com/Wiki/index.php?title=HMI) **/
 
 #include "MIDIProcessor.h"

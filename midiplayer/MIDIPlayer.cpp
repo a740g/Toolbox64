@@ -1,4 +1,3 @@
-
 /** $VER: MIDIPlayer.cpp (2023.12.24) **/
 
 #include "MIDIPlayer.h"

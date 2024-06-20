@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorLDS.cpp (2023.08.14) Loudness Sound System (http://www.vgmpf.com/Wiki/index.php?title=LDS) **/
 
 #include "MIDIProcessor.h"

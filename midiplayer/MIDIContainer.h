@@ -1,4 +1,3 @@
-
 /** $VER: MIDIContainer.h (2024.05.07) **/
 
 #pragma once

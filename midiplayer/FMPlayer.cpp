@@ -41,7 +41,7 @@ void FMPlayer::Shutdown()
     _IsInitialized = false;
 }
 
-uint32_t FMPlayer::GetActiveVoiceCount() const noexcept
+uint32_t FMPlayer::GetActiveVoiceCount() const
 {
     return synth->activeVoiceCount();
 }
@@ -52,7 +52,7 @@ void FMPlayer::Render(audio_sample *buffer, uint32_t frames)
 
     while (frames != 0)
     {
-        auto todo = (frames > FMPlayer::renderEffectsSampleBlock) ? FMPlayer::renderEffectsSampleBlock : frames;
+        auto todo = (frames > FMPlayer::renderEffectsFrameSize) ? FMPlayer::renderEffectsFrameSize : frames;
 
         synth->generate(data, todo);
 

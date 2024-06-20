@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorXMI.cpp (2023.08.14) Extended Multiple Instrument Digital Interface (http://www.vgmpf.com/Wiki/index.php?title=XMI) **/
 
 #include "MIDIProcessor.h"

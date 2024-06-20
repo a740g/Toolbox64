@@ -1,4 +1,3 @@
-
 /** $VER: MIDIContainer.cpp (2023.12.24) **/
 
 #include "MIDIContainer.h"

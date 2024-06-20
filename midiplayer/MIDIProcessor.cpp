@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessor.cpp (2024.05.06) **/
 
 #include "MIDIProcessor.h"

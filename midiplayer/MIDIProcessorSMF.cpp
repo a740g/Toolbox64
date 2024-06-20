@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorSMF.cpp (2023.11.01) Standard MIDI File **/
 
 #include "MIDIProcessor.h"

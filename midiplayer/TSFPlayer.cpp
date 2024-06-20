@@ -46,7 +46,7 @@ void TSFPlayer::Shutdown()
     _IsInitialized = false;
 }
 
-uint32_t TSFPlayer::GetActiveVoiceCount() const noexcept
+uint32_t TSFPlayer::GetActiveVoiceCount() const
 {
     return tsf_active_voice_count(synth);
 }

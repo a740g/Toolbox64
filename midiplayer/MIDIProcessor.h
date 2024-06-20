@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessor.h (2024.05.05) **/
 
 #pragma once

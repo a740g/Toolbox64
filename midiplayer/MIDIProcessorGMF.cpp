@@ -1,4 +1,3 @@
-
 /** $VER: MIDIProcessorGMF.cpp (2023.08.14) Game Music Format (http://www.vgmpf.com/Wiki/index.php?title=GMF) **/
 
 #include "MIDIProcessor.h"
