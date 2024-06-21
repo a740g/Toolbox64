@@ -66,17 +66,7 @@ uint32_t OpalPlayer::GetActiveVoiceCount() const
 
 void OpalPlayer::Render(audio_sample *buffer, uint32_t frames)
 {
-    auto data = buffer;
-
-    while (frames != 0)
-    {
-        auto todo = (frames > OpalPlayer::renderEffectsFrameSize) ? OpalPlayer::renderEffectsFrameSize : frames;
-
-        synth->generate(data, todo);
-
-        data += (todo << 1);
-        frames -= todo;
-    }
+    synth->generate(buffer, frames);
 }
 
 void OpalPlayer::SendEvent(uint32_t data)

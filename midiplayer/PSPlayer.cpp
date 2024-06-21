@@ -74,23 +74,13 @@ void PSPlayer::Shutdown()
 
 void PSPlayer::Render(audio_sample *buffer, uint32_t frames)
 {
-    auto data = buffer;
-
-    while (frames != 0)
+    try
     {
-        auto todo = frames > PSPlayer::renderEffectsFrameSize ? PSPlayer::renderEffectsFrameSize : frames;
-
-        try
-        {
-            synth->render_float(data, todo << 1);
-        }
-        catch (...)
-        {
-            return;
-        }
-
-        data += (todo << 1);
-        frames -= todo;
+        synth->render_float(buffer, frames << 1);
+    }
+    catch (...)
+    {
+        return;
     }
 }
 

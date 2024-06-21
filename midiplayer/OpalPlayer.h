@@ -27,8 +27,7 @@ protected:
     virtual void SendSysEx(const uint8_t *event, size_t size, uint32_t portNumber) override;
 
 private:
-    static constexpr unsigned chipCount = 4;               // each OPL3 chip has 18 voices
-    static constexpr unsigned renderEffectsFrameSize = 64; // the lower this block size, the more accurate the effects are
+    static constexpr unsigned chipCount = 4; // each OPL3 chip has 18 voices, so this gives us a total of 72 voices
 
     InstrumentBankManager *instrumentBankManager;
     OPLPlayer *synth;

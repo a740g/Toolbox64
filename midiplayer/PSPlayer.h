@@ -27,8 +27,6 @@ protected:
     virtual void SendSysEx(const uint8_t *event, size_t size, uint32_t portNumber) override;
 
 private:
-    static constexpr unsigned renderEffectsFrameSize = 64; // the lower this block size, the more accurate the effects are
-
     InstrumentBankManager *instrumentBankManager;
     primesynth::Synthesizer *synth;
 };

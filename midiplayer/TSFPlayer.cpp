@@ -31,7 +31,6 @@ bool TSFPlayer::Startup()
     {
         tsf_channel_set_bank_preset(synth, 9, 128, 0);              // initialize preset on special 10th MIDI channel to use percussion sound bank (128) if available
         tsf_set_output(synth, TSF_STEREO_INTERLEAVED, _SampleRate); // set the rendering output mode to stereo interleaved
-        tsf_set_volume(synth, 0.99999976f);                         // set the gain to something less than but close to 100% to avoid clipping
 
         _MIDIFlavor = MIDIFlavor::None;
         _FilterEffects = false;
@@ -59,6 +58,8 @@ void TSFPlayer::Render(audio_sample *buffer, uint32_t frames)
 {
     auto data = buffer;
 
+    // We need to render in small blocks because the lower the block size is the more accurate the effects are
+    // Sadly, that's how tsf_render_float() works
     while (frames != 0)
     {
         auto todo = frames > TSF_RENDER_EFFECTSAMPLEBLOCK ? TSF_RENDER_EFFECTSAMPLEBLOCK : frames;
