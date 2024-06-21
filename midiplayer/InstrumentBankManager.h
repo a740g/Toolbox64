@@ -8,7 +8,7 @@
 class InstrumentBankManager
 {
 public:
-    enum class Type
+    enum class Type : uint32_t
     {
         Opal,
         Primesynth,
@@ -16,7 +16,7 @@ public:
         VSTi
     };
 
-    enum class Location
+    enum class Location : uint32_t
     {
         Memory,
         File

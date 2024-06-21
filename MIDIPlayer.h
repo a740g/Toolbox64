@@ -15,7 +15,8 @@
 
 #include "Types.h"
 #include "Debug.h"
-#include "midiplayer/FMPlayer.cpp"
+#include "midiplayer/OpalPlayer.cpp"
+#include "midiplayer/PSPlayer.cpp"
 #include "midiplayer/TSFPlayer.cpp"
 #include "midiplayer/MIDIPlayer.cpp"
 #include "midiplayer/MIDIContainer.cpp"
@@ -32,6 +33,7 @@
 #include "midiplayer/MIDIProcessorXMI.cpp"
 #include "midiplayer/OPLPatch.cpp"
 #include "midiplayer/OpalMIDI.cpp"
+#include "midiplayer/primesynth.cpp"
 #include "midiplayer/InstrumentBankManager.cpp"
 
 struct MIDIManager
@@ -154,10 +156,10 @@ const char *MIDI_GetSongName()
 /// @return Returns QB64 TRUE if the operation was successful
 inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize, uint32_t sampleRate)
 {
-    MIDI_Stop();
-
     if (!buffer || !bufferSize || !sampleRate)
         return QB_FALSE;
+
+    MIDI_Stop();
 
     std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(buffer), reinterpret_cast<const uint8_t *>(buffer) + bufferSize);
     MIDIProcessor MIDI_Processor;
@@ -166,6 +168,10 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
     {
     case InstrumentBankManager::Type::Opal:
         g_MIDIManager.sequencer = new FMPlayer(&g_MIDIManager.instrumentBankManager);
+        break;
+
+    case InstrumentBankManager::Type::Primesynth:
+        g_MIDIManager.sequencer = new PSPlayer(&g_MIDIManager.instrumentBankManager);
         break;
 
     case InstrumentBankManager::Type::TinySoundFont:

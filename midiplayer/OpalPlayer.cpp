@@ -1,16 +1,16 @@
-#include "FMPlayer.h"
+#include "OpalPlayer.h"
 
-FMPlayer::FMPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
+OpalPlayer::OpalPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
 {
     Startup();
 }
 
-FMPlayer::~FMPlayer()
+OpalPlayer::~OpalPlayer()
 {
     Shutdown();
 }
 
-bool FMPlayer::Startup()
+bool OpalPlayer::Startup()
 {
     if (_IsInitialized)
         return true;
@@ -52,25 +52,25 @@ bool FMPlayer::Startup()
     return false;
 }
 
-void FMPlayer::Shutdown()
+void OpalPlayer::Shutdown()
 {
     delete synth;
     synth = nullptr;
     _IsInitialized = false;
 }
 
-uint32_t FMPlayer::GetActiveVoiceCount() const
+uint32_t OpalPlayer::GetActiveVoiceCount() const
 {
     return synth->activeVoiceCount();
 }
 
-void FMPlayer::Render(audio_sample *buffer, uint32_t frames)
+void OpalPlayer::Render(audio_sample *buffer, uint32_t frames)
 {
     auto data = buffer;
 
     while (frames != 0)
     {
-        auto todo = (frames > FMPlayer::renderEffectsFrameSize) ? FMPlayer::renderEffectsFrameSize : frames;
+        auto todo = (frames > OpalPlayer::renderEffectsFrameSize) ? OpalPlayer::renderEffectsFrameSize : frames;
 
         synth->generate(data, todo);
 
@@ -79,12 +79,12 @@ void FMPlayer::Render(audio_sample *buffer, uint32_t frames)
     }
 }
 
-void FMPlayer::SendEvent(uint32_t message)
+void OpalPlayer::SendEvent(uint32_t data)
 {
-    auto channel = uint8_t(message & 0x0F);
-    auto command = uint8_t(message & 0xF0);
-    auto param1 = uint8_t((message >> 8) & 0xFF);
-    auto param2 = uint8_t((message >> 16) & 0xFF);
+    auto channel = uint8_t(data & 0x0F);
+    auto command = uint8_t(data & 0xF0);
+    auto param1 = uint8_t((data >> 8) & 0xFF);
+    auto param2 = uint8_t((data >> 16) & 0xFF);
 
     if (param1 > 0x7F)
         param1 = 0x7F;
@@ -116,7 +116,7 @@ void FMPlayer::SendEvent(uint32_t message)
     }
 }
 
-void FMPlayer::SendSysEx(const uint8_t *event, size_t size, uint32_t portNumber)
+void OpalPlayer::SendSysEx(const uint8_t *event, size_t size, uint32_t portNumber)
 {
     synth->midiSysEx(event, size);
 }

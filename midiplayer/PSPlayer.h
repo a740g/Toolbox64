@@ -1,20 +1,20 @@
 #pragma once
 
 #include "MIDIPlayer.h"
-#include "OpalMIDI.h"
+#include "primesynth.h"
 #include "InstrumentBankManager.h"
 
-class FMPlayer : public MIDIPlayer
+class PSPlayer : public MIDIPlayer
 {
 public:
-    FMPlayer() = delete;
-    FMPlayer(const FMPlayer &) = delete;
-    FMPlayer(FMPlayer &&) = delete;
-    FMPlayer &operator=(const FMPlayer &) = delete;
-    FMPlayer &operator=(FMPlayer &&) = delete;
+    PSPlayer() = delete;
+    PSPlayer(const PSPlayer &) = delete;
+    PSPlayer(PSPlayer &&) = delete;
+    PSPlayer &operator=(const PSPlayer &) = delete;
+    PSPlayer &operator=(PSPlayer &&) = delete;
 
-    FMPlayer(InstrumentBankManager *ibm);
-    virtual ~FMPlayer();
+    PSPlayer(InstrumentBankManager *ibm);
+    virtual ~PSPlayer();
 
     uint32_t GetActiveVoiceCount() const override;
 
@@ -27,9 +27,8 @@ protected:
     virtual void SendSysEx(const uint8_t *event, size_t size, uint32_t portNumber) override;
 
 private:
-    static constexpr unsigned chipCount = 4;               // each OPL3 chip has 18 voices
     static constexpr unsigned renderEffectsFrameSize = 64; // the lower this block size, the more accurate the effects are
 
     InstrumentBankManager *instrumentBankManager;
-    OPLPlayer *synth;
+    primesynth::Synthesizer *synth;
 };
