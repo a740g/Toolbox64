@@ -2137,4 +2137,21 @@ namespace primesynth
             channels_.at(chan)->controlChange(120, 0); // AllSoundOff
         }
     }
+
+    uint32_t Synthesizer::getActiveVoiceCount() const
+    {
+        uint32_t totalVoices = 0;
+
+        for (auto &chan : channels_)
+        {
+            // if (voice.channel && (voice.on || voice.justChanged))
+            for (auto &voice : chan->voices_)
+            {
+                if (voice->getStatus() != Voice::State::Finished)
+                    ++totalVoices;
+            }
+        }
+
+        return totalVoices;
+    }
 }

@@ -12,6 +12,15 @@ PSPlayer::~PSPlayer()
 
 uint32_t PSPlayer::GetActiveVoiceCount() const
 {
+    try
+    {
+        return synth->getActiveVoiceCount();
+    }
+    catch (...)
+    {
+        return 0;
+    }
+
     return 0;
 }
 

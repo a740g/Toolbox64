@@ -651,6 +651,8 @@ namespace primesynth
 
     class Channel
     {
+        friend class Synthesizer;
+
     public:
         explicit Channel(double outputRate);
 
@@ -707,6 +709,7 @@ namespace primesynth
         void processChannelMessage(midi::MessageStatus event, std::uint8_t chan, std::uint8_t param1 = 0, std::uint8_t param2 = 0);
         void pause(void);
         void stop(void);
+        uint32_t getActiveVoiceCount(void) const;
 
     private:
         midi::Standard midiStd_, defaultMIDIStd_;

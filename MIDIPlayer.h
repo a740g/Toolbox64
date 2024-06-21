@@ -167,7 +167,7 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
     switch (g_MIDIManager.instrumentBankManager.GetType())
     {
     case InstrumentBankManager::Type::Opal:
-        g_MIDIManager.sequencer = new FMPlayer(&g_MIDIManager.instrumentBankManager);
+        g_MIDIManager.sequencer = new OpalPlayer(&g_MIDIManager.instrumentBankManager);
         break;
 
     case InstrumentBankManager::Type::Primesynth:
