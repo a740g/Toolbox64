@@ -4,6 +4,7 @@
 //
 // This is a heavily modified and amalgamated version of the Google Zopfli library
 // Only the zlib and deflate capabilities are kept (so that QB64-PE's _INFLATE can be used to decompress the data)
+// Last update from commit 831773b
 // https://github.com/google/zopfli
 //
 // Copyright 2011 Google Inc.
@@ -12,6 +13,8 @@
 
 #pragma once
 
+// #define TOOLBOX64_DEBUG 1
+#include "Debug.h"
 #include <cstdint>
 #include <algorithm>
 #include <cassert>
@@ -3722,13 +3725,22 @@ static void ZopfliZlibCompress(const ZopfliOptions *options, const unsigned char
 /// @param output_size The size of the compressed buffer
 inline void __Zopfli_Compress(uint16_t iterations, const char *input_buffer, size_t input_size, uintptr_t *output_buffer, size_t *output_size)
 {
-    ZopfliOptions options;
-    ZopfliInitOptions(&options); // intialize options
+    // Safety
+    *output_buffer = 0;
+    *output_size = 0;
 
-    // Set iterations only if it is > 0
-    if (iterations)
-        options.numiterations = iterations;
+    if (input_size)
+    {
+        ZopfliOptions options;
+        ZopfliInitOptions(&options); // initialize options
 
-    // Finally call ZopfliZlibCompress (the caller should free output_buffer)
-    ZopfliZlibCompress(&options, (const unsigned char *)input_buffer, input_size, (unsigned char **)output_buffer, output_size);
+        // Set iterations only if it is > 0
+        if (iterations)
+            options.numiterations = iterations;
+
+        // Finally call ZopfliZlibCompress (the caller should free output_buffer)
+        ZopfliZlibCompress(&options, reinterpret_cast<const unsigned char *>(input_buffer), input_size, reinterpret_cast<unsigned char **>(output_buffer), output_size);
+
+        TOOLBOX64_DEBUG_PRINT("Original size: %llu, Compressed size: %llu", input_size, *output_size);
+    }
 }

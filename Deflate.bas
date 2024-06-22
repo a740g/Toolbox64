@@ -10,6 +10,7 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
+'$CONSOLE:ONLY
 'DIM a AS STRING: a = "The quick brown fox jumps over the lazy dog. "
 'PRINT "Original string (a): "; a
 'DIM i AS LONG: FOR i = 1 TO 15
@@ -18,13 +19,27 @@ $INCLUDEONCE
 
 'PRINT "After concatenating it into itself several times, LEN(a) ="; LEN(a)
 
-'DIM b AS STRING: b = DeflatePro(a, 1)
-'PRINT "After using _DEFLATE$ to compress it, LEN(b) ="; LEN(b)
+'DIM AS DOUBLE t: t = TIMER(.001)
+'PRINT "_INFLATE + _DEFLATE:"
+'DIM b AS STRING: b = _DEFLATE$(a)
+'PRINT "After using _DEFLATE with default compression level to compress it, LEN(b) ="; LEN(b)
 'PRINT USING "(compressed size is #.###% of the original)"; ((LEN(b) * 100) / LEN(a))
 'DIM c AS STRING: c = _INFLATE$(b, LEN(a))
+'PRINT "After using _INFLATE to decompress it, LEN(c) ="; LEN(c)
+'IF a = c THEN PRINT "Passed!" ELSE PRINT "Failed!"
+'PRINT USING "Time taken: ########.####"; TIMER(.001) - t
+'PRINT
+
+'t = TIMER(.001)
+'PRINT "DeflateZopfli + _DEFLATE:"
+'b = DeflatePro(a, 0)
+'PRINT "After using DeflateZopfli with default compression level to compress it, LEN(b) ="; LEN(b)
+'PRINT USING "(compressed size is #.###% of the original)"; ((LEN(b) * 100) / LEN(a))
+'c = _INFLATE$(b, LEN(a))
 'PRINT "After using _INFLATE$ to decompress it, LEN(c) ="; LEN(c)
-'SLEEP
-'PRINT c
+'IF a = c THEN PRINT "Passed!" ELSE PRINT "Failed!"
+'PRINT USING "Time taken: ########.####"; TIMER(.001) - t
+'PRINT
 
 'END
 '-----------------------------------------------------------------------------------------------------------------------
