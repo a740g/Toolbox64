@@ -28,7 +28,6 @@ DECLARE LIBRARY "OPL3"
     SUB __OPL3_Finalize
     FUNCTION OPL3_IsInitialized%%
     SUB OPL3_Reset
-    SUB OPL3_SetGain (BYVAL gain AS SINGLE)
     SUB OPL3_WriteRegister (BYVAL address AS _UNSIGNED INTEGER, BYVAL value AS _UNSIGNED _BYTE)
     SUB __OPL3_GenerateSamples (buffer AS SINGLE, BYVAL frames AS _UNSIGNED LONG)
 END DECLARE

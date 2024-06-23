@@ -10,35 +10,35 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' Test code for debugging the library
 '-----------------------------------------------------------------------------------------------------------------------
-'IF OPL3_Initialize THEN
-'    OPL3_WriteRegister 1, 0
-'    OPL3_WriteRegister &H23, &H21
-'    OPL3_WriteRegister &H43, 0
-'    OPL3_WriteRegister &H63, &HFF
-'    OPL3_WriteRegister &H83, &H05
-'    OPL3_WriteRegister &H20, &H20
-'    OPL3_WriteRegister &H40, &H3F
-'    OPL3_WriteRegister &H60, &H44
-'    OPL3_WriteRegister &H80, &H5
-'    OPL3_WriteRegister &HA0, &H41
-'    OPL3_WriteRegister &HB0, &H32
+IF OPL3_Initialize THEN
+    OPL3_WriteRegister 1, 0
+    OPL3_WriteRegister &H23, &H21
+    OPL3_WriteRegister &H43, 0
+    OPL3_WriteRegister &H63, &HFF
+    OPL3_WriteRegister &H83, &H05
+    OPL3_WriteRegister &H20, &H20
+    OPL3_WriteRegister &H40, &H3F
+    OPL3_WriteRegister &H60, &H44
+    OPL3_WriteRegister &H80, &H5
+    OPL3_WriteRegister &HA0, &H41
+    OPL3_WriteRegister &HB0, &H32
 
-'    PRINT "Playing sine wave @ 440Hz"
+    PRINT "Playing sine wave @ 440Hz"
 
-'    DO
-'        OPL3_Update OPL3_SOUND_BUFFER_TIME_DEFAULT
-'        _LIMIT 60
-'    LOOP UNTIL _KEYHIT = 27
+    DO
+        OPL3_Update OPL3_SOUND_BUFFER_TIME_DEFAULT
+        _LIMIT 60
+    LOOP UNTIL _KEYHIT = 27
 
-'    PRINT "Key off"
+    PRINT "Key off"
 
-'    OPL3_WriteRegister &HB0, &H12
-'    OPL3_Update OPL3_SOUND_BUFFER_TIME_DEFAULT
+    OPL3_WriteRegister &HB0, &H12
+    OPL3_Update OPL3_SOUND_BUFFER_TIME_DEFAULT
 
-'    OPL3_Finalize
-'END IF
+    OPL3_Finalize
+END IF
 
-'END
+END
 '-----------------------------------------------------------------------------------------------------------------------
 
 FUNCTION OPL3_Initialize%%
@@ -76,6 +76,15 @@ SUB OPL3_Finalize
         _SNDRAWDONE __OPL3.soundHandle ' sumbit whatever is remaining in the raw buffer for playback
         _SNDCLOSE __OPL3.soundHandle ' close and free the QB64 sound pipe
         __OPL3_Finalize ' call the C side finalizer
+    END IF
+END SUB
+
+
+SUB OPL3_SetVolume (volume AS SINGLE)
+    SHARED __OPL3 AS __OPL3Type
+
+    IF OPL3_IsInitialized THEN
+        _SNDVOL __OPL3.soundHandle, volume
     END IF
 END SUB
 

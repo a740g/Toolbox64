@@ -1,99 +1,70 @@
 //----------------------------------------------------------------------------------------------------------------------
-// OPL3 emulation for QB64-PE using ymfm
+// OPL3 emulation for QB64-PE using Opal
 // Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
 
 #include "Types.h"
-#include "external/ymfm/ymfm_adpcm.cpp"
-#include "external/ymfm/ymfm_pcm.cpp"
-#include "external/ymfm/ymfm_opl.cpp"
+#include "external/opal.h"
+#include <memory>
 
-class OPL3 : public ymfm::ymfm_interface
+class OPL3
 {
 private:
-    static const auto MASTER_CLOCK = 14318181;
-    static const auto RSM_FRAC = 10;
-
-    ymfm::ymf262 *chip;
-    uint32_t chipSampleRate;
+    std::unique_ptr<Opal> chip;
     uint32_t sampleRate;
-    int32_t rateRatio;
-    int32_t sampleCnt;
-    ymfm::ymf262::output_data outputFrame;
-    ymfm::ymf262::output_data oldOutputFrame;
-    float gain;
 
 public:
-    OPL3(uint32_t sampleRate) : ymfm::ymfm_interface()
+    OPL3(uint32_t sampleRate)
     {
-        chip = new ymfm::ymf262(*this);
-        chipSampleRate = chip->sample_rate(MASTER_CLOCK);
         this->sampleRate = sampleRate;
-        rateRatio = (sampleRate << RSM_FRAC) / chipSampleRate;
-        sampleCnt = 0;
-        outputFrame.clear();
-        oldOutputFrame.clear();
-        SetGain(1.0f);
         Reset();
     }
 
     ~OPL3()
     {
-        delete chip;
+        chip.reset();
     }
 
     void Reset()
     {
-        chip->reset();
+        chip.reset();
+        chip = std::make_unique<Opal>(sampleRate);
     }
 
-    void SetGain(float gain)
-    {
-        this->gain = gain;
-    }
+    uint32_t GetSampleRate() const { return sampleRate; }
 
     void WriteRegister(uint16_t address, uint8_t data)
     {
-        if (address < 0x100)
-            chip->write_address((uint8_t)address);
-        else
-            chip->write_address_hi((uint8_t)address);
-
-        chip->write_data(data);
+        chip->Port(address, data);
     }
 
     void GenerateSamples(float *buffer, uint32_t frames)
     {
-        for (uint32_t i = 0; i < frames; i++)
+        static constexpr float normalization_factor = 1.0f / 32768.0f;
+
+        std::pair<int16_t, int16_t> output;
+        uint32_t sample = 0;
+
+        while (sample < frames * 2)
         {
-            while (sampleCnt >= rateRatio)
-            {
-                oldOutputFrame.data[0] = outputFrame.data[0];
-                oldOutputFrame.data[1] = outputFrame.data[1];
-                oldOutputFrame.data[2] = outputFrame.data[2];
-                oldOutputFrame.data[3] = outputFrame.data[3];
+            chip->Sample(&output.first, &output.second);
+            buffer[sample] = output.first * normalization_factor;
+            buffer[sample + 1] = output.second * normalization_factor;
 
-                chip->generate(&outputFrame);
-
-                sampleCnt -= rateRatio;
-            }
-
-            auto buf0 = (int16_t)((oldOutputFrame.data[0] * (rateRatio - sampleCnt) + outputFrame.data[0] * sampleCnt) / rateRatio);
-            auto buf1 = (int16_t)((oldOutputFrame.data[1] * (rateRatio - sampleCnt) + outputFrame.data[1] * sampleCnt) / rateRatio);
-            auto buf2 = (int16_t)((oldOutputFrame.data[2] * (rateRatio - sampleCnt) + outputFrame.data[2] * sampleCnt) / rateRatio);
-            auto buf3 = (int16_t)((oldOutputFrame.data[3] * (rateRatio - sampleCnt) + outputFrame.data[3] * sampleCnt) / rateRatio);
-
-            *buffer++ = ((float)(buf0 + buf2) / 32768.0f) * gain;
-            *buffer++ = ((float)(buf1 + buf3) / 32768.0f) * gain;
-
-            sampleCnt += 1 << RSM_FRAC;
+            sample += 2;
         }
     }
+
+    OPL3() = delete;
+    OPL3(const OPL3 &) = delete;
+    OPL3(OPL3 &&) = delete;
+    OPL3 &operator=(const OPL3 &) = delete;
+    OPL3 &operator=(OPL3 &&) = delete;
 };
 
-static OPL3 *g_OPL3Chip = nullptr;
+static std::unique_ptr<OPL3> g_OPL3Chip;
 
 inline qb_bool __OPL3_Initialize(uint32_t sampleRate)
 {
@@ -103,7 +74,7 @@ inline qb_bool __OPL3_Initialize(uint32_t sampleRate)
     if (!sampleRate)
         return QB_FALSE;
 
-    g_OPL3Chip = new OPL3(sampleRate);
+    g_OPL3Chip = std::make_unique<OPL3>(sampleRate);
 
     return TO_QB_BOOL(g_OPL3Chip != nullptr);
 }
@@ -113,8 +84,7 @@ inline void __OPL3_Finalize()
     if (!g_OPL3Chip)
         return;
 
-    delete g_OPL3Chip;
-    g_OPL3Chip = nullptr;
+    g_OPL3Chip.reset();
 }
 
 inline qb_bool OPL3_IsInitialized()
@@ -128,14 +98,6 @@ inline void OPL3_Reset()
         return;
 
     g_OPL3Chip->Reset();
-}
-
-inline void OPL3_SetGain(float gain)
-{
-    if (!g_OPL3Chip)
-        return;
-
-    g_OPL3Chip->SetGain(gain);
 }
 
 inline void OPL3_WriteRegister(uint16_t address, uint8_t data)
