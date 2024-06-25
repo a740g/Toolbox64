@@ -21,8 +21,8 @@ $INCLUDEONCE
 '$DEBUG
 '$CONSOLE
 'IF MIDI_Initialize THEN
-'    MIDI_SetSynth "CT8MGM.SF2", NULL
-'    IF MIDI_LoadTuneFromFile(ENVIRON$("SYSTEMROOT") + "/Media/onestop.mid") THEN
+'    MIDI_SetSynth _OPENFILEDIALOG$("Select instrument bank"), NULL
+'    IF MIDI_LoadTuneFromFile(_OPENFILEDIALOG$("Select MIDI file")) THEN
 '        MIDI_Play
 '        MIDI_Loop FALSE
 '        PRINT "Synth:"; MIDI_GetSynthType; "Playing: "; MIDI_GetSongName

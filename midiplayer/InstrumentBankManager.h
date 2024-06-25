@@ -34,6 +34,7 @@ public:
 
 private:
     static const uint8_t defaultBank[];
+    static const size_t defaultBankSize = 212069;
 
     Type type;
     Location location;
