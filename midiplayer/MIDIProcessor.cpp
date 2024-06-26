@@ -1,19 +1,27 @@
-/** $VER: MIDIProcessor.cpp (2024.05.06) **/
+
+/** $VER: MIDIProcessor.cpp (2024.05.19) **/
+
+#include "framework.h"
 
 #include "MIDIProcessor.h"
+#include "Recomposer\Support.h"
 
-MIDIError MIDIProcessor::_ErrorCode;
+#include <filesystem>
 
-const uint8_t MIDIProcessor::MIDIEventEndOfTrack[2] = {StatusCodes::MetaData, MetaDataTypes::EndOfTrack};
-const uint8_t MIDIProcessor::LoopBeginMarker[11] = {StatusCodes::MetaData, MetaDataTypes::Marker, 'l', 'o', 'o', 'p', 'S', 't', 'a', 'r', 't'};
-const uint8_t MIDIProcessor::LoopEndMarker[9] = {StatusCodes::MetaData, MetaDataTypes::Marker, 'l', 'o', 'o', 'p', 'E', 'n', 'd'};
+midi_processor_options_t midi_processor_t::_Options;
+
+const uint8_t midi_processor_t::MIDIEventEndOfTrack[2] = {StatusCodes::MetaData, MetaDataTypes::EndOfTrack};
+const uint8_t midi_processor_t::LoopBeginMarker[11] = {StatusCodes::MetaData, MetaDataTypes::Marker, 'l', 'o', 'o', 'p', 'S', 't', 'a', 'r', 't'};
+const uint8_t midi_processor_t::LoopEndMarker[9] = {StatusCodes::MetaData, MetaDataTypes::Marker, 'l', 'o', 'o', 'p', 'E', 'n', 'd'};
 
 /// <summary>
 /// Processes a stream of bytes.
 /// </summary>
-bool MIDIProcessor::Process(std::vector<uint8_t> const &data, const char *fileExtension, MIDIContainer &container)
+bool midi_processor_t::Process(std::vector<uint8_t> const &data, const char *filePath, midi_container_t &container, const midi_processor_options_t &options)
 {
-    _ErrorCode = MIDIError::None;
+    _Options = options;
+
+    const char *FileExtension = (filePath != nullptr) ? GetFileExtension(filePath) : "";
 
     if (IsSMF(data))
         return ProcessSMF(data, container);
@@ -38,14 +46,14 @@ bool MIDIProcessor::Process(std::vector<uint8_t> const &data, const char *fileEx
     if (IsMUS(data))
         return ProcessMUS(data, container);
 
-    if (IsLDS(data, fileExtension))
+    if (IsLDS(data, FileExtension))
         return ProcessLDS(data, container);
 
     if (IsGMF(data))
         return ProcessGMF(data, container);
 
-    if (IsRCP(data, fileExtension))
-        return ProcessRCP(data, container);
+    if (IsRCP(data, FileExtension))
+        return ProcessRCP(data, filePath, container);
 
     if (IsSysEx(data))
         return ProcessSysEx(data, container);
@@ -56,7 +64,7 @@ bool MIDIProcessor::Process(std::vector<uint8_t> const &data, const char *fileEx
 /// <summary>
 /// Returns true if the data represents a SysEx message.
 /// </summary>
-bool MIDIProcessor::IsSysEx(std::vector<uint8_t> const &data)
+bool midi_processor_t::IsSysEx(std::vector<uint8_t> const &data)
 {
     if (data.size() < 2)
         return false;
@@ -70,7 +78,7 @@ bool MIDIProcessor::IsSysEx(std::vector<uint8_t> const &data)
 /// <summary>
 /// Processes a byte stream containing 1 or more SysEx messages.
 /// </summary>
-bool MIDIProcessor::ProcessSysEx(std::vector<uint8_t> const &data, MIDIContainer &container)
+bool midi_processor_t::ProcessSysEx(std::vector<uint8_t> const &data, midi_container_t &container)
 {
     const size_t Size = data.size();
 
@@ -78,7 +86,7 @@ bool MIDIProcessor::ProcessSysEx(std::vector<uint8_t> const &data, MIDIContainer
 
     container.Initialize(0, 1);
 
-    MIDITrack Track;
+    midi_track_t Track;
 
     while (Index < Size)
     {
@@ -90,7 +98,7 @@ bool MIDIProcessor::ProcessSysEx(std::vector<uint8_t> const &data, MIDIContainer
         while (data[Index + MessageLength++] != StatusCodes::SysExEnd)
             ;
 
-        Track.AddEvent(MIDIEvent(0, MIDIEvent::Extended, 0, &data[Index], MessageLength));
+        Track.AddEvent(midi_event_t(0, midi_event_t::Extended, 0, &data[Index], MessageLength));
 
         Index += MessageLength;
     }
@@ -101,68 +109,9 @@ bool MIDIProcessor::ProcessSysEx(std::vector<uint8_t> const &data, MIDIContainer
 }
 
 /// <summary>
-/// Gets the number of tracks in the MIDI stream.
-/// </summary>
-/*
-bool MIDIProcessor::GetTrackCount(std::vector<uint8_t> const & data, const char * fileExtension, size_t & trackCount)
-{
-    _ErrorCode = MIDIError::None;
-
-    trackCount = 0;
-
-    if (IsSMF(data))
-        return GetTrackCount(data, trackCount);
-
-    if (IsRIFF(data))
-        return GetTrackCountFromRIFF(data, trackCount);
-
-    if (is_hmp(data))
-    {
-        trackCount = 1;
-        return true;
-    }
-
-    if (is_hmi(data))
-    {
-        trackCount = 1;
-        return true;
-    }
-
-    if (IsXMI(data))
-        return GetTrackCountFromXMI(data, trackCount);
-
-    if (IsMUS(data))
-    {
-        trackCount = 1;
-        return true;
-    }
-
-    if (IsMIDS(data))
-    {
-        trackCount = 1;
-        return true;
-    }
-
-    if (is_lds(data, fileExtension))
-    {
-        trackCount = 1;
-        return true;
-    }
-
-    if (IsGMF(data))
-    {
-        trackCount = 1;
-        return true;
-    }
-
-    return false;
-}
-*/
-
-/// <summary>
 /// Decodes a variable-length quantity.
 /// </summary>
-int MIDIProcessor::DecodeVariableLengthQuantity(std::vector<uint8_t>::const_iterator &data, std::vector<uint8_t>::const_iterator tail) noexcept
+int midi_processor_t::DecodeVariableLengthQuantity(std::vector<uint8_t>::const_iterator &data, std::vector<uint8_t>::const_iterator tail) noexcept
 {
     int Quantity = 0;
 

@@ -1,8 +1,9 @@
+
 /** $VER: MIDIProcessorRIFF.cpp (2023.08.14) **/
 
-#include "MIDIProcessor.h"
+#include "framework.h"
 
-#include <cstring>
+#include "MIDIProcessor.h"
 
 static inline uint32_t toInt32LE(const uint8_t *data)
 {
@@ -14,7 +15,7 @@ static inline uint32_t toInt32LE(std::vector<uint8_t>::const_iterator data)
     return static_cast<uint32_t>(data[0]) | static_cast<uint32_t>(data[1] << 8) | static_cast<uint32_t>(data[2] << 16) | static_cast<uint32_t>(data[3] << 24);
 }
 
-bool MIDIProcessor::IsRIFF(std::vector<uint8_t> const &data)
+bool midi_processor_t::IsRIFF(std::vector<uint8_t> const &data)
 {
     if (data.size() < 20)
         return false;
@@ -107,7 +108,7 @@ static const char *riff_tag_mappings[][2] =
         {"ISRF", "source_form"},
         {"ITCH", "technician"}};
 
-bool MIDIProcessor::ProcessRIFF(std::vector<uint8_t> const &data, MIDIContainer &container)
+bool midi_processor_t::ProcessRIFF(std::vector<uint8_t> const &data, midi_container_t &container)
 {
     uint32_t Size = (uint32_t)(data[4] | (data[5] << 8) | (data[6] << 16) | (data[7] << 24));
 
@@ -118,7 +119,7 @@ bool MIDIProcessor::ProcessRIFF(std::vector<uint8_t> const &data, MIDIContainer 
     bool found_data = false;
     bool found_info = false;
 
-    MIDIMetaData MetaData;
+    midi_metadata_table_t MetaData;
 
     std::vector<uint8_t> extra_buffer;
 
@@ -159,7 +160,7 @@ bool MIDIProcessor::ProcessRIFF(std::vector<uint8_t> const &data, MIDIContainer 
                 extra_buffer.resize(chunk_size - 4 + 1);
                 std::copy(it + 12, it + 8 + (int)chunk_size, extra_buffer.begin());
                 extra_buffer[chunk_size - 4] = '\0';
-                MetaData.AddItem(MIDIMetaDataItem(0, "display_name", (const char *)&extra_buffer[0]));
+                MetaData.AddItem(midi_metadata_item_t(0, "display_name", (const char *)&extra_buffer[0]));
             }
 
             it += 8 + (int)chunk_size;
@@ -208,7 +209,7 @@ bool MIDIProcessor::ProcessRIFF(std::vector<uint8_t> const &data, MIDIContainer 
                     extra_buffer[field_size] = '\0';
 
                     it += 8 + (int)field_size;
-                    MetaData.AddItem(MIDIMetaDataItem(0, field.c_str(), (const char *)&extra_buffer[0]));
+                    MetaData.AddItem(midi_metadata_item_t(0, field.c_str(), (const char *)&extra_buffer[0]));
 
                     if (field_size & 1 && it != chunk_end)
                         ++it;

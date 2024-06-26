@@ -1,54 +1,41 @@
-/** $VER: MIDIProcessor.h (2024.05.05) **/
+
+/** $VER: MIDIProcessor.h (2024.05.19) **/
 
 #pragma once
 
+#include "framework.h"
+
 #include "MIDIContainer.h"
+#include "Exception.h"
+#include "IFF.h"
 
-enum MIDIError
+struct midi_processor_options_t
 {
-    None = 0,
+    // RCP
+    uint16_t _LoopExpansion = 0;
+    bool _WriteBarMarkers = false;
+    bool _WriteSysExNames = false;
+    bool _ExtendLoops = true;
+    bool _WolfteamLoopMode = false;
+    bool _KeepDummyChannels = false;
+    bool _IncludeControlData = true;
 
-    UnknownStatusCode, // Unknown MIDI status code
+    // HMI / HMP
+    uint16_t _DefaultTempo = 160; // in bpm
 
-    InsufficientData, // Insufficient data in the stream
-
-    InvalidSysExMessage,             // Invalid System Exclusive message
-    InvalidSysExMessageContinuation, // Invalid System Exclusive message
-    InvalidSysExEndMessage,          // Invalid System Exclusive End message
-
-    InvalidMetaDataMessage, // Invalid Meta Data message
-
-    // SMF
-    SMFBadHeaderChunkType,    // Bad SMF header chunk type
-    SMFBadHeaderChunkSize,    // Bad SMF header chunk size
-    SMFBadHeaderFormat,       // Bad SMF header format
-    SMFBadHeaderTrackCount,   // Bad SMF header track count
-    SMFBadHeaderTimeDivision, // Bad SMF header time division
-
-    SMFUnknownChunkType, // Unknown type specified in chunk
-
-    SMFBadFirstMessage, // Bad first message of a track
-
-    // XMI
-    XMIFORMXDIRNotFound,   // FORM XDIR chunk not found
-    XMICATXMIDNotFound,    // CAT XMID chunk not found
-    XMIFORMXMIDNotFound,   // FORM XMID chunk not found
-    XMIEVNTChunkNotFound,  // EVNT chunk not found
-    XMIInvalidNoteMessage, // Invalid note message
+    // a740g: constructor here for the const DefaultOptions below
+    midi_processor_options_t(uint16_t loopExpansion, bool writeBarMarkers, bool writeSysExNames) : _LoopExpansion(loopExpansion), _WriteBarMarkers(writeBarMarkers), _WriteSysExNames(writeSysExNames) {}
+    midi_processor_options_t() = default;
 };
 
-class MIDIProcessor
+const midi_processor_options_t DefaultOptions(0, false, 0); // a740g: not sure why this is needed
+
+class midi_processor_t
 {
 public:
-    static bool Process(std::vector<uint8_t> const &data, const char *fileExtension, MIDIContainer &container);
-
-    static MIDIError GetLastErrorCode() noexcept { return _ErrorCode; }
+    static bool Process(std::vector<uint8_t> const &data, const char *filePath, midi_container_t &container, const midi_processor_options_t &options = DefaultOptions);
 
 private:
-    static int DecodeVariableLengthQuantity(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept;
-    static uint32_t DecodeVariableLengthQuantityHMP(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept;
-    static uint32_t DecodeVariableLengthQuantityXMI(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept;
-
     static bool IsSMF(std::vector<uint8_t> const &data);
     static bool IsRIFF(std::vector<uint8_t> const &data);
     static bool IsHMP(std::vector<uint8_t> const &data);
@@ -61,44 +48,38 @@ private:
     static bool IsRCP(std::vector<uint8_t> const &data, const char *fileExtension);
     static bool IsSysEx(std::vector<uint8_t> const &data);
 
-    static bool ProcessSMF(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessRIFF(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessHMP(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessHMI(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessXMI(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessMUS(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessMDS(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessLDS(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessGMF(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessRCP(std::vector<uint8_t> const &data, MIDIContainer &container);
-    static bool ProcessSysEx(std::vector<uint8_t> const &data, MIDIContainer &container);
+    static bool ProcessSMF(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessRIFF(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessHMP(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessHMI(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessXMI(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessMUS(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessMDS(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessLDS(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessGMF(std::vector<uint8_t> const &data, midi_container_t &container);
+    static bool ProcessRCP(std::vector<uint8_t> const &data, const char *filePath, midi_container_t &container);
+    static bool ProcessSysEx(std::vector<uint8_t> const &data, midi_container_t &container);
 
-    //  static bool GetTrackCount(std::vector<uint8_t> const & data, const char * fileExtension, size_t & trackCount);
-    //  static bool GetTrackCountFromRIFF(std::vector<uint8_t> const & data, size_t & trackCount);
-    //  static bool GetTrackCountFromXMI(std::vector<uint8_t> const & data, size_t & trackCount);
+    static bool ProcessSMFTrack(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end, midi_container_t &container, bool needs_end_marker);
+    static int DecodeVariableLengthQuantity(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept;
 
-    static bool ProcessSMFTrack(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end, MIDIContainer &container, bool needs_end_marker);
+    static uint32_t DecodeVariableLengthQuantityHMP(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept;
 
-    static bool SetLastErrorCode(MIDIError errorCode) noexcept
-    {
-        _ErrorCode = errorCode;
-
-        return false;
-    }
+    static bool ReadStream(std::vector<uint8_t> const &data, iff_stream_t &stream);
+    static bool ReadChunk(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end, iff_chunk_t &chunk, bool isFirstChunk);
+    static uint32_t DecodeVariableLengthQuantityXMI(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept;
 
 private:
-    static MIDIError _ErrorCode;
-
     static const uint8_t MIDIEventEndOfTrack[2];
     static const uint8_t LoopBeginMarker[11];
     static const uint8_t LoopEndMarker[9];
 
     static const uint8_t DefaultTempoXMI[5];
 
-    static const uint8_t DefaultTempoHMP[5];
-
     static const uint8_t DefaultTempoMUS[5];
     static const uint8_t MusControllers[15];
 
     static const uint8_t DefaultTempoLDS[5];
+
+    static midi_processor_options_t _Options;
 };

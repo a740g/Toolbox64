@@ -73,34 +73,28 @@ void OpalPlayer::SendEvent(uint32_t data)
 {
     auto channel = uint8_t(data & 0x0F);
     auto command = uint8_t(data & 0xF0);
-    auto param1 = uint8_t((data >> 8) & 0xFF);
-    auto param2 = uint8_t((data >> 16) & 0xFF);
-
-    if (param1 > 0x7F)
-        param1 = 0x7F;
-
-    if (param2 > 0x7F)
-        param2 = 0x7F;
+    auto param1 = uint8_t((data >> 8) & 0x7F);
+    auto param2 = uint8_t((data >> 16) & 0x7F);
 
     switch (command)
     {
-    case MIDI_EVENT_NOTE_OFF:
+    case StatusCodes::NoteOff:
         synth->midiNoteOff(channel, param1);
         break;
 
-    case MIDI_EVENT_NOTE_ON:
+    case StatusCodes::NoteOn:
         synth->midiNoteOn(channel, param1, param2);
         break;
 
-    case MIDI_EVENT_CONTROLLER:
+    case StatusCodes::ControlChange:
         synth->midiControlChange(channel, param1, param2);
         break;
 
-    case MIDI_EVENT_PROGRAM_CHANGE:
+    case StatusCodes::ProgramChange:
         synth->midiProgramChange(channel, param1);
         break;
 
-    case MIDI_EVENT_PITCH_BEND:
+    case StatusCodes::PitchBendChange:
         synth->midiPitchControl(channel, double((int16_t)(param1 | (param2 << 7)) - 8192) / 8192.0);
         break;
     }

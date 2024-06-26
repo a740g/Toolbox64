@@ -23,13 +23,21 @@ public:
     };
 
     InstrumentBankManager() { SetDefaults(); };
+
     void SetDefaults();
+
     auto GetType() { return type; }
+
     auto GetLocation() { return location; }
+
     void SetPath(const std::string_view &path);
+
     auto GetPath() { return fileName.c_str(); }
+
     void SetData(const uint8_t *data, size_t size, Type type = Type::Opal);
+
     auto GetData() { return data.data(); }
+
     auto GetDataSize() { return data.size(); }
 
 private:

@@ -15,6 +15,13 @@
 
 #include "Types.h"
 #include "Debug.h"
+#include "midiplayer/Recomposer/CM6File.cpp"
+#include "midiplayer/Recomposer/GDSFile.cpp"
+#include "midiplayer/Recomposer/MIDIStream.cpp"
+#include "midiplayer/Recomposer/RCP.cpp"
+#include "midiplayer/Recomposer/RCPConverter.cpp"
+#include "midiplayer/Recomposer/RunningNotes.cpp"
+#include "midiplayer/Recomposer/Support.cpp"
 #include "midiplayer/OpalPlayer.cpp"
 #include "midiplayer/PSPlayer.cpp"
 #include "midiplayer/TSFPlayer.cpp"
@@ -39,7 +46,7 @@
 struct MIDIManager
 {
     MIDIPlayer *sequencer;
-    MIDIContainer *container;
+    midi_container_t *container;
     InstrumentBankManager instrumentBankManager;
     std::string songName;
     uint32_t totalTime;
@@ -162,7 +169,7 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
     MIDI_Stop();
 
     std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(buffer), reinterpret_cast<const uint8_t *>(buffer) + bufferSize);
-    MIDIProcessor MIDI_Processor;
+    midi_processor_t MIDI_Processor;
 
     switch (g_MIDIManager.instrumentBankManager.GetType())
     {
@@ -187,7 +194,7 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
     {
         g_MIDIManager.sequencer->SetSampleRate(sampleRate);
 
-        g_MIDIManager.container = new MIDIContainer();
+        g_MIDIManager.container = new midi_container_t();
         if (g_MIDIManager.container)
         {
             if (MIDI_Processor.Process(buf, "", *g_MIDIManager.container))
@@ -195,9 +202,9 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
                 g_MIDIManager.totalTime = g_MIDIManager.container->GetDuration(0, true);
 
                 // Get the song name
-                MIDIMetaData metaData;
+                midi_metadata_table_t metaData;
                 g_MIDIManager.container->GetMetaData(0, metaData);
-                MIDIMetaDataItem metaDataItem;
+                midi_metadata_item_t metaDataItem;
                 if (metaData.GetItem("track_name_00", metaDataItem))
                     g_MIDIManager.songName = metaDataItem.Value;
 

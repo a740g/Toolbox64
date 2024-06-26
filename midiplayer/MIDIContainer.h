@@ -1,123 +1,81 @@
-/** $VER: MIDIContainer.h (2024.05.07) **/
+
+/** $VER: MIDIContainer.h (2024.06.09) **/
 
 #pragma once
 
-#pragma warning(disable : 4514) // Unreferenced inline function has been removed
-#pragma warning(disable : 4820) // Padding added after data member
-#pragma warning(disable : 5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+#include "framework.h"
 
-#include <cstdint>
-
-#include <string>
-#include <vector>
-
+#include "MIDI.h"
 #include "Range.h"
 
-enum StatusCodes
+struct midi_event_t
 {
-    NoteOff = 0x80,
-    NoteOn = 0x90,
-
-    PolyphonicAftertouch = 0xA0,
-    ControlChange = 0xB0,
-    ProgramChange = 0xC0,
-    ChannelPressureAftertouch = 0xD0,
-    PitchBendChange = 0xE0,
-
-    SysEx = 0xF0,
-    MIDITimeCodeQtrFrame = 0xF1,
-    SongPositionPointer = 0xF2,
-    SongSelect = 0xF3,
-
-    TuneRequest = 0xF6,
-    SysExEnd = 0xF7,
-    TimingClock = 0xF8,
-
-    Start = 0xFA,
-    Continue = 0xFB,
-    Stop = 0xFC,
-
-    ActiveSensing = 0xFE,
-    MetaData = 0xFF
-};
-
-enum ControlChangeNumbers
-{
-    BankSelect = 0x00,
-
-    LSB = 0x20, // LSB for Control Changes 0 to 31
-};
-
-enum MetaDataTypes
-{
-    SequenceNumber = 0x00, // Sequence number in type 0 and 1 MIDI files; pattern number in type 2 MIDI files. (0..65535, default 0, occurs at delta time 0)
-    Text = 0x01,           // General "Text" Meta Message. Can be used for any text based data. (string)
-    Copyright = 0x02,      // Provides information about a MIDI file�s copyright. (string, occurs at delta time 0 in the first track)
-    TrackName = 0x03,      // Track name (string, occurs at delta time 0)
-    InstrumentName = 0x04, // Instrument name (string)
-    Lyrics = 0x05,         // Stores the lyrics of a song. Typically one syllable per Meta Message. (string)
-    Marker = 0x06,         // Marks a point of interest in a MIDI file. Can be used as the marker for the beginning of a verse, solo, etc. (string)
-    CueMarker = 0x07,      // Marks a cue. IE: �Cue performer 1�, etc (string)
-
-    DeviceName = 0x09, // Gives the name of the device. (string)
-
-    ChannelPrefix = 0x20, // Gives the prefix for the channel on which events are played. (0..255, default 0)
-    MIDIPort = 0x21,      // Gives the MIDI Port on which events are played. (0..255, default 0)
-
-    EndOfTrack = 0x2F, // An empty Meta Message that marks the end of a track. Occurs at the end of each track.
-
-    SetTempo = 0x51, // Tempo is in microseconds per beat (quarter note). (0..16777215, default 500000). Occurs anywhere but usually in the first track.
-
-    SMPTEOffset = 0x54, // SMPTE time to denote playback offset from the beginning. Occurs at the beginning of a track and in the first track of files with MIDI format type 1.
-
-    TimeSignature = 0x58, //
-    KeySignature = 0x59,  // Valid values: A A#m Ab Abm Am B Bb Bbm Bm C C# C#m Cb Cm D D#m Db Dm E Eb Ebm Em F F# F#m Fm G G#m Gb Gm
-
-    SequencerSpecific = 0x7F // An unprocessed sequencer specific message containing raw data.
-};
-
-struct MIDIEvent
-{
-    enum EventType
+    enum event_type_t
     {
-        NoteOff = 0,               // x080
-        NoteOn,                    // x090
-        PolyphonicAftertouch,      // x0A0
-        ControlChange,             // x0B0
-        ProgramChange,             // x0C0
-        ChannelPressureAftertouch, // x0D0
-        PitchBendChange,           // x0E0
-        Extended                   // x0F0
+        NoteOff = 0,     // x080
+        NoteOn,          // x090
+        KeyPressure,     // x0A0
+        ControlChange,   // x0B0
+        ProgramChange,   // x0C0
+        ChannelPressure, // x0D0
+        PitchBendChange, // x0E0
+        Extended         // x0F0
     };
 
-    uint32_t Timestamp;
-    EventType Type;
+    uint32_t Time; // Absolute time
+    event_type_t Type;
     uint32_t ChannelNumber;
     std::vector<uint8_t> Data;
 
-    MIDIEvent() noexcept : Timestamp(0), Type(EventType::NoteOff), ChannelNumber(0) {}
-    MIDIEvent(const MIDIEvent &midiEvent);
-    MIDIEvent(uint32_t timestamp, EventType eventType, uint32_t channel, const uint8_t *data, size_t size);
+    midi_event_t() noexcept : Time(), Type(event_type_t::NoteOff), ChannelNumber()
+    {
+    }
+
+    midi_event_t(const midi_event_t &other) noexcept
+    {
+        Time = other.Time;
+        Type = other.Type;
+        ChannelNumber = other.ChannelNumber;
+        Data = other.Data;
+    }
+
+    midi_event_t &operator=(const midi_event_t &other) noexcept
+    {
+        Time = other.Time;
+        Type = other.Type;
+        ChannelNumber = other.ChannelNumber;
+        Data = other.Data;
+
+        return *this;
+    }
+
+    midi_event_t(uint32_t time, event_type_t eventType, uint32_t channelNumber, const uint8_t *data, size_t size) noexcept
+    {
+        Time = time;
+        Type = eventType;
+        ChannelNumber = channelNumber;
+        Data.assign(data, data + size);
+    }
 };
 
-class MIDITrack
+class midi_track_t
 {
 public:
-    MIDITrack() noexcept {}
+    midi_track_t() noexcept {}
 
-    MIDITrack(const MIDITrack &track) noexcept
+    midi_track_t(const midi_track_t &track) noexcept
     {
         _Events = track._Events;
     }
 
-    MIDITrack &operator=(const MIDITrack &track)
+    midi_track_t &operator=(const midi_track_t &track)
     {
         _Events = track._Events;
 
         return *this;
     }
 
-    void AddEvent(const MIDIEvent &event);
+    void AddEvent(const midi_event_t &event);
     void RemoveEvent(size_t index);
 
     size_t GetLength() const noexcept
@@ -125,46 +83,51 @@ public:
         return _Events.size();
     }
 
-    const MIDIEvent &operator[](size_t index) const noexcept
+    const midi_event_t &operator[](size_t index) const noexcept
     {
         return _Events[index];
     }
 
-    MIDIEvent &operator[](std::size_t index) noexcept
+    midi_event_t &operator[](std::size_t index) noexcept
     {
         return _Events[index];
     }
 
 public:
-    using midievents_t = std::vector<MIDIEvent>;
-    using iterator = midievents_t::iterator;
-    using const_iterator = midievents_t::const_iterator;
+    using midi_events_t = std::vector<midi_event_t>;
+
+    using iterator = midi_events_t::iterator;
+    using const_iterator = midi_events_t::const_iterator;
 
     iterator begin() { return _Events.begin(); }
     iterator end() { return _Events.end(); }
 
     const_iterator begin() const { return _Events.begin(); }
     const_iterator end() const { return _Events.end(); }
+
     const_iterator cbegin() const { return _Events.cbegin(); }
     const_iterator cend() const { return _Events.cend(); }
 
+    const midi_event_t &front() const noexcept { return _Events.front(); }
+    const midi_event_t &back() const noexcept { return _Events.back(); }
+
 private:
-    std::vector<MIDIEvent> _Events;
+    std::vector<midi_event_t> _Events;
 };
 
-struct TempoItem
+struct tempo_item_t
 {
-    uint32_t Timestamp;
+    uint32_t Time;
     uint32_t Tempo;
 
-    TempoItem() noexcept : Timestamp(0), Tempo(0)
+    tempo_item_t() noexcept : Time(0), Tempo(0)
     {
     }
 
-    TempoItem(uint32_t timestamp, uint32_t tempo);
+    tempo_item_t(uint32_t timestamp, uint32_t tempo);
 };
 
-class TempoMap
+class tempo_map_t
 {
 public:
     void Add(uint32_t tempo, uint32_t timestamp);
@@ -175,32 +138,32 @@ public:
         return _Items.size();
     }
 
-    const TempoItem &operator[](std::size_t p_index) const
+    const tempo_item_t &operator[](std::size_t p_index) const
     {
         return _Items[p_index];
     }
 
-    TempoItem &operator[](size_t index)
+    tempo_item_t &operator[](size_t index)
     {
         return _Items[index];
     }
 
 private:
-    std::vector<TempoItem> _Items;
+    std::vector<tempo_item_t> _Items;
 };
 
-struct SysExItem
+struct sysex_item_t
 {
     size_t Offset;
     size_t Size;
     uint8_t PortNumber;
 
-    SysExItem() noexcept : Offset(0), Size(0), PortNumber(0) {}
-    SysExItem(const SysExItem &src);
-    SysExItem(uint8_t portNumber, std::size_t offset, std::size_t size);
+    sysex_item_t() noexcept : Offset(0), Size(0), PortNumber(0) {}
+    sysex_item_t(const sysex_item_t &other);
+    sysex_item_t(uint8_t portNumber, std::size_t offset, std::size_t size);
 };
 
-class SysExTable
+class sysex_table_t
 {
 public:
     size_t AddItem(const uint8_t *data, std::size_t size, uint8_t portNumber);
@@ -212,36 +175,20 @@ public:
     }
 
 private:
-    std::vector<SysExItem> _Items;
+    std::vector<sysex_item_t> _Items;
     std::vector<uint8_t> _Data;
 };
 
-struct MIDIStreamEvent
-{
-    uint32_t Timestamp; // in ms
-    uint32_t Data;
-
-    MIDIStreamEvent() noexcept : Timestamp(0), Data(0)
-    {
-    }
-
-    MIDIStreamEvent(uint32_t timestamp, uint32_t data)
-    {
-        Timestamp = timestamp;
-        Data = data;
-    }
-};
-
-struct MIDIMetaDataItem
+struct midi_metadata_item_t
 {
     uint32_t Timestamp;
     std::string Name;
     std::string Value;
 
-    MIDIMetaDataItem() noexcept : Timestamp(0) {}
+    midi_metadata_item_t() noexcept : Timestamp(0) {}
 
-    MIDIMetaDataItem(const MIDIMetaDataItem &item) noexcept { operator=(item); };
-    MIDIMetaDataItem &operator=(const MIDIMetaDataItem &other) noexcept
+    midi_metadata_item_t(const midi_metadata_item_t &item) noexcept { operator=(item); };
+    midi_metadata_item_t &operator=(const midi_metadata_item_t &other) noexcept
     {
         Timestamp = other.Timestamp;
         Name = other.Name;
@@ -250,8 +197,8 @@ struct MIDIMetaDataItem
         return *this;
     }
 
-    MIDIMetaDataItem(MIDIMetaDataItem &&item) { operator=(item); }
-    MIDIMetaDataItem &operator=(MIDIMetaDataItem &&other)
+    midi_metadata_item_t(midi_metadata_item_t &&item) { operator=(item); }
+    midi_metadata_item_t &operator=(midi_metadata_item_t &&other)
     {
         Timestamp = other.Timestamp;
         Name = std::move(Name);
@@ -260,9 +207,9 @@ struct MIDIMetaDataItem
         return *this;
     }
 
-    virtual ~MIDIMetaDataItem() {}
+    virtual ~midi_metadata_item_t() {}
 
-    MIDIMetaDataItem(uint32_t timestamp, const char *name, const char *value) noexcept
+    midi_metadata_item_t(uint32_t timestamp, const char *name, const char *value) noexcept
     {
         Timestamp = timestamp;
         Name = name;
@@ -270,46 +217,72 @@ struct MIDIMetaDataItem
     }
 };
 
-class MIDIMetaData
+class midi_metadata_table_t
 {
 public:
-    MIDIMetaData() noexcept {}
+    midi_metadata_table_t() noexcept {}
 
-    void AddItem(const MIDIMetaDataItem &item);
-    void Append(const MIDIMetaData &data);
-    bool GetItem(const char *name, MIDIMetaDataItem &item) const;
+    void AddItem(const midi_metadata_item_t &item);
+    void Append(const midi_metadata_table_t &data);
+    bool GetItem(const char *name, midi_metadata_item_t &item) const;
     bool GetBitmap(std::vector<uint8_t> &bitmap) const;
     void AssignBitmap(std::vector<uint8_t>::const_iterator const &begin, std::vector<uint8_t>::const_iterator const &end);
     std::size_t GetCount() const;
 
-    const MIDIMetaDataItem &operator[](size_t index) const;
+    const midi_metadata_item_t &operator[](size_t index) const;
+
+    using midi_metadata_items_t = std::vector<midi_metadata_item_t>;
+
+    using iterator = midi_metadata_items_t::iterator;
+    using const_iterator = midi_metadata_items_t::const_iterator;
+
+    iterator begin() { return _Items.begin(); }
+    iterator end() { return _Items.end(); }
+
+    const_iterator begin() const { return _Items.begin(); }
+    const_iterator end() const { return _Items.end(); }
+
+    const_iterator cbegin() const { return _Items.cbegin(); }
+    const_iterator cend() const { return _Items.cend(); }
+
+    const midi_metadata_item_t &front() const noexcept { return _Items.front(); }
+    const midi_metadata_item_t &back() const noexcept { return _Items.back(); }
 
 private:
-    std::vector<MIDIMetaDataItem> _Items;
+    std::vector<midi_metadata_item_t> _Items;
     std::vector<uint8_t> _Bitmap;
 };
 
-class MIDIContainer
+struct midi_item_t
+{
+    uint32_t Time; // in ms
+    uint32_t Data;
+
+    midi_item_t() noexcept : Time(0), Data(0) {}
+    midi_item_t(uint32_t time, uint32_t data) noexcept : Time(time), Data(data) {}
+};
+
+class midi_container_t
 {
 public:
-    MIDIContainer() : _Format(0), _TimeDivision(0), _ExtraPercussionChannel(~0u)
+    midi_container_t() : _Format(), _TimeDivision(), _ExtraPercussionChannel(~0u)
     {
         _DeviceNames.resize(16);
     }
 
     void Initialize(uint32_t format, uint32_t division);
 
-    void AddTrack(const MIDITrack &track);
-    void AddEventToTrack(size_t trackIndex, const MIDIEvent &event);
+    void AddTrack(const midi_track_t &track);
+    void AddEventToTrack(size_t trackIndex, const midi_event_t &event);
 
     // These functions are really only designed to merge and later remove System Exclusive message dumps.
-    void MergeTracks(const MIDIContainer &source);
+    void MergeTracks(const midi_container_t &source);
     void SetTrackCount(uint32_t count);
-    void SetExtraMetaData(const MIDIMetaData &data);
+    void SetExtraMetaData(const midi_metadata_table_t &data);
 
     void ApplyHack(uint32_t hack);
 
-    void SerializeAsStream(size_t subSongIndex, std::vector<MIDIStreamEvent> &stream, SysExTable &sysExTable, uint32_t &loopBegin, uint32_t &loopEnd, uint32_t cleanFlags) const;
+    void SerializeAsStream(size_t subSongIndex, std::vector<midi_item_t> &stream, sysex_table_t &sysExTable, uint32_t &loopBegin, uint32_t &loopEnd, uint32_t cleanFlags) const;
     void SerializeAsSMF(std::vector<uint8_t> &data) const;
 
     void PromoteToType1();
@@ -332,19 +305,19 @@ public:
     uint32_t GetLoopBeginTimestamp(size_t subSongIndex, bool ms = false) const;
     uint32_t GetLoopEndTimestamp(size_t subSongIndex, bool ms = false) const;
 
-    std::vector<MIDITrack> &GetTracks() { return _Tracks; }
+    std::vector<midi_track_t> &GetTracks() { return _Tracks; }
 
-    void GetMetaData(size_t subSongIndex, MIDIMetaData &data);
+    void GetMetaData(size_t subSongIndex, midi_metadata_table_t &data);
 
     void SetExtraPercussionChannel(uint32_t channelNumber) noexcept { _ExtraPercussionChannel = channelNumber; }
     uint32_t GetExtraPercussionChannel() const noexcept { return _ExtraPercussionChannel; }
 
-    void DetectLoops(bool detectXMILoops, bool detectMarkerLoops, bool detectRPGMakerLoops, bool detectTouhouLoops);
+    void DetectLoops(bool detectXMILoops, bool detectMarkerLoops, bool detectRPGMakerLoops, bool detectTouhouLoops, bool detectLeapFrogLoops);
 
     static void EncodeVariableLengthQuantity(std::vector<uint8_t> &data, uint32_t delta);
 
 public:
-    using miditracks_t = std::vector<MIDITrack>;
+    using miditracks_t = std::vector<midi_track_t>;
     using iterator = miditracks_t::iterator;
     using const_iterator = miditracks_t::const_iterator;
 
@@ -416,16 +389,16 @@ private:
     uint32_t _ExtraPercussionChannel;
 
     std::vector<uint64_t> _ChannelMask;
-    std::vector<TempoMap> _TempoMaps;
-    std::vector<MIDITrack> _Tracks;
+    std::vector<tempo_map_t> _TempoMaps;
+    std::vector<midi_track_t> _Tracks;
 
     std::vector<uint8_t> _PortNumbers;
 
     std::vector<std::vector<std::string>> _DeviceNames;
 
-    MIDIMetaData _ExtraMetaData;
+    midi_metadata_table_t _ExtraMetaData;
 
     std::vector<uint32_t> _EndTimestamps;
 
-    std::vector<Range> _Loop;
+    std::vector<range_t> _Loop;
 };

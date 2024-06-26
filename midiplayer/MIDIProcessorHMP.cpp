@@ -1,61 +1,87 @@
-/** $VER: MIDIProcessorHMP.cpp (2023.08.14) Human Machine Interfaces MIDI P (http://www.vgmpf.com/Wiki/index.php?title=HMP) **/
+
+/** $VER: MIDIProcessorHMP.cpp (2024.05.19) Human Machine Interfaces MIDI P/R (http://www.vgmpf.com/Wiki/index.php?title=HMP) **/
+
+#include "framework.h"
 
 #include "MIDIProcessor.h"
 
-bool MIDIProcessor::IsHMP(std::vector<uint8_t> const &data)
+/// <summary>
+/// Returns true if data points to an HMP sequence.
+/// </summary>
+bool midi_processor_t::IsHMP(std::vector<uint8_t> const &data)
 {
     if (data.size() < 8)
         return false;
 
-    if (data[0] != 'H' || data[1] != 'M' || data[2] != 'I' || data[3] != 'M' || data[4] != 'I' || data[5] != 'D' || data[6] != 'I' || (data[7] != 'P' && data[7] != 'R'))
-        return false;
+    const char Id[] = {'H', 'M', 'I', 'M', 'I', 'D', 'I'};
 
-    return true;
+    return ((::memcmp(data.data(), Id, _countof(Id)) == 0) && (data[7] == 'P' || data[7] == 'R'));
 }
 
-bool MIDIProcessor::ProcessHMP(std::vector<uint8_t> const &data, MIDIContainer &container)
+/// <summary>
+/// Processes the sequence data.
+/// </summary>
+bool midi_processor_t::ProcessHMP(std::vector<uint8_t> const &data, midi_container_t &container)
 {
-    bool IsFunky = data[7] == 'R';
-
-    uint8_t track_count_8;
-    uint16_t dtx = 0xC0;
+    const bool IsFunky = (data[7] == 'R');
 
     uint32_t Offset = (uint32_t)(IsFunky ? 0x1A : 0x30);
 
-    if (Offset >= data.size())
-        return false;
+    if ((Offset == 0) || (Offset >= data.size()))
+        throw MIDIException("Insufficient data");
 
     auto it = data.begin() + (int)Offset;
     auto end = data.end();
 
-    track_count_8 = *it;
+    uint8_t track_count_8 = *it;
 
-    if (IsFunky)
     {
-        if (data.size() <= 0x4D)
-            return false;
+        uint16_t TimeDivision = 0xC0;
 
-        dtx = (uint16_t)((data[0x4C] << 16) | data[0x4D]);
+        if (IsFunky)
+        {
+            if (data.size() <= 0x4D)
+                throw MIDIException("Insufficient data");
 
-        if (dtx == 0) // dtx == 0, will cause division by zero on tempo calculations
-            return false;
+            TimeDivision = (uint16_t)((data[0x4C] << 16) | data[0x4D]);
+
+            if (TimeDivision == 0) // Will cause division by zero on tempo calculations.
+                throw MIDIException("Invalid time division");
+        }
+
+        container.Initialize(1, TimeDivision);
     }
 
-    container.Initialize(1, dtx);
-
+    // Add a conductor track.
     {
-        MIDITrack Track;
+        midi_track_t Track;
 
-        Track.AddEvent(MIDIEvent(0, MIDIEvent::Extended, 0, DefaultTempoHMP, _countof(DefaultTempoHMP)));
-        Track.AddEvent(MIDIEvent(0, MIDIEvent::Extended, 0, MIDIEventEndOfTrack, _countof(MIDIEventEndOfTrack)));
+        uint8_t Data[] = {StatusCodes::MetaData, MetaDataTypes::SetTempo, 0, 0, 0};
+
+        {
+            uint32_t us = (uint32_t)(60 * 1000 * 1000) / _Options._DefaultTempo; // Convert from bpm to �s / quarter note.
+
+            Data[4] = us & 0x7F;
+            us >>= 7;
+
+            if (us != 0)
+            {
+                Data[3] = 0x80 | (us & 0x7F);
+                us >>= 7;
+            }
+            if (us != 0)
+            {
+                Data[2] = us & 0x7F;
+            }
+        }
+
+        Track.AddEvent(midi_event_t(0, midi_event_t::Extended, 0, Data, _countof(Data)));
+        Track.AddEvent(midi_event_t(0, midi_event_t::Extended, 0, MIDIEventEndOfTrack, _countof(MIDIEventEndOfTrack)));
 
         container.AddTrack(Track);
     }
 
     uint8_t Data[4] = {};
-
-    if (it == end)
-        return false;
 
     Data[0] = *it++;
 
@@ -83,7 +109,7 @@ bool MIDIProcessor::ProcessHMP(std::vector<uint8_t> const &data, MIDIContainer &
     Offset = (uint32_t)(IsFunky ? 3 : 5);
 
     if ((unsigned long)(end - it) < Offset)
-        return false;
+        throw MIDIException("Insufficient data");
 
     it += (int)Offset;
 
@@ -125,78 +151,80 @@ bool MIDIProcessor::ProcessHMP(std::vector<uint8_t> const &data, MIDIContainer &
             it += 4;
         }
 
-        MIDITrack track;
+        midi_track_t track;
 
-        uint32_t Timestamp = 0;
+        uint32_t RunningTime = 0;
 
-        std::vector<uint8_t> Temp(3);
-
-        auto TrackDataEnd = it + (int)track_size_32;
-
-        while (it != TrackDataEnd)
         {
-            uint32_t delta = DecodeVariableLengthQuantityHMP(it, TrackDataEnd);
+            std::vector<uint8_t> Temp(3);
 
-            Timestamp += delta;
+            auto TrackDataEnd = it + (int)track_size_32;
 
-            if (it == TrackDataEnd)
-                return false;
-
-            Temp[0] = *it++;
-
-            if (Temp[0] == 0xFF)
+            while (it != TrackDataEnd)
             {
+                uint32_t DeltaTime = DecodeVariableLengthQuantityHMP(it, TrackDataEnd);
+
+                RunningTime += DeltaTime;
+
                 if (it == TrackDataEnd)
-                    return false;
+                    throw MIDIException("Insufficient data");
 
-                Temp[1] = *it++;
+                Temp[0] = *it++;
 
-                int MetadataSize = DecodeVariableLengthQuantity(it, TrackDataEnd);
-
-                if (MetadataSize < 0)
-                    return false; /*throw exception_io_data( "Invalid HMP meta message" );*/
-
-                if (TrackDataEnd - it < MetadataSize)
-                    return false;
-
-                Temp.resize((size_t)(MetadataSize + 2));
-                std::copy(it, it + MetadataSize, Temp.begin() + 2);
-                it += MetadataSize;
-
-                track.AddEvent(MIDIEvent(Timestamp, MIDIEvent::Extended, 0, &Temp[0], (size_t)(MetadataSize + 2)));
-
-                if (Temp[1] == 0x2F)
-                    break;
-            }
-            else if (Temp[0] >= 0x80 && Temp[0] <= 0xEF)
-            {
-                unsigned bytes_read = 2;
-
-                switch (Temp[0] & 0xF0)
+                if (Temp[0] == 0xFF)
                 {
-                case 0xC0:
-                case 0xD0:
-                    bytes_read = 1;
+                    if (it == TrackDataEnd)
+                        throw MIDIException("Insufficient data");
+
+                    Temp[1] = *it++;
+
+                    int MetadataSize = DecodeVariableLengthQuantity(it, TrackDataEnd);
+
+                    if (MetadataSize < 0)
+                        throw MIDIException("Invalid meta data event");
+
+                    if (TrackDataEnd - it < MetadataSize)
+                        throw MIDIException("Insufficient data");
+
+                    Temp.resize((size_t)(MetadataSize + 2));
+                    std::copy(it, it + MetadataSize, Temp.begin() + 2);
+                    it += MetadataSize;
+
+                    track.AddEvent(midi_event_t(RunningTime, midi_event_t::Extended, 0, &Temp[0], (size_t)(MetadataSize + 2)));
+
+                    if (Temp[1] == 0x2F)
+                        break;
                 }
+                else if (Temp[0] >= StatusCodes::NoteOff && Temp[0] < StatusCodes::SysEx)
+                {
+                    int BytesRead = 2;
 
-                if ((unsigned long)(TrackDataEnd - it) < bytes_read)
-                    return false;
+                    switch (Temp[0] & 0xF0)
+                    {
+                    case StatusCodes::ProgramChange:
+                    case StatusCodes::ChannelPressure:
+                        BytesRead = 1;
+                    }
 
-                std::copy(it, it + (int)bytes_read, Temp.begin() + 1);
-                it += bytes_read;
+                    if (TrackDataEnd - it < BytesRead)
+                        throw MIDIException("Insufficient data");
 
-                track.AddEvent(MIDIEvent(Timestamp, (MIDIEvent::EventType)((Temp[0] >> 4) - 8), (uint32_t)(Temp[0] & 0x0F), &Temp[1], bytes_read));
+                    std::copy(it, it + BytesRead, Temp.begin() + 1);
+                    it += BytesRead;
+
+                    track.AddEvent(midi_event_t(RunningTime, (midi_event_t::event_type_t)((Temp[0] >> 4) - 8), (uint32_t)(Temp[0] & 0x0F), &Temp[1], (size_t)BytesRead));
+                }
+                else
+                    throw MIDIException("Invalid status code");
             }
-            else
-                return false; /*throw exception_io_data( "Unexpected status code in HMP track" );*/
+
+            Offset = (uint32_t)(IsFunky ? 0 : 4);
+
+            if (end - it < (int)Offset)
+                throw MIDIException("Insufficient data");
+
+            it = TrackDataEnd + (int)Offset;
         }
-
-        Offset = (uint32_t)(IsFunky ? 0 : 4);
-
-        if (end - it < (int)Offset)
-            return false;
-
-        it = TrackDataEnd + (int)Offset;
 
         container.AddTrack(track);
     }
@@ -207,7 +235,7 @@ bool MIDIProcessor::ProcessHMP(std::vector<uint8_t> const &data, MIDIContainer &
 /// <summary>
 /// Decodes a variable length quantity.
 /// </summary>
-uint32_t MIDIProcessor::DecodeVariableLengthQuantityHMP(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept
+uint32_t midi_processor_t::DecodeVariableLengthQuantityHMP(std::vector<uint8_t>::const_iterator &it, std::vector<uint8_t>::const_iterator end) noexcept
 {
     uint32_t Quantity = 0;
 
@@ -226,5 +254,3 @@ uint32_t MIDIProcessor::DecodeVariableLengthQuantityHMP(std::vector<uint8_t>::co
 
     return Quantity;
 }
-
-const uint8_t MIDIProcessor::DefaultTempoHMP[5] = {StatusCodes::MetaData, MetaDataTypes::SetTempo, 0x18, 0x80, 0x00};

@@ -2,7 +2,7 @@
 // primesynth: SoundFont-powered MIDI synthesizer
 // Copyright (c) 2018 mosm
 //
-// Modified and adapted from https://github.com/mosmeh/primesynth (MIT license)
+// Modified and adapted by a740g from https://github.com/mosmeh/primesynth (MIT license)
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once

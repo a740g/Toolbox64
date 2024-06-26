@@ -93,4 +93,5 @@ DECLARE LIBRARY "MathOps"
     FUNCTION Math_Log2Double# ALIAS "log2" (BYVAL n AS DOUBLE)
     FUNCTION Math_CubeRootSingle! ALIAS "cbrtf" (BYVAL n AS SINGLE)
     FUNCTION Math_CubeRootDouble# ALIAS "cbrt" (BYVAL n AS DOUBLE)
+    FUNCTION Math_MulDiv (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
 END DECLARE

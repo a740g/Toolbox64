@@ -370,3 +370,8 @@ inline float Math_FastInverseSquareRoot(float x)
     x = x * (1.5f - xhalf * x * x);
     return x;
 }
+
+inline constexpr int32_t Math_MulDiv(int32_t val, int32_t mul, int32_t div)
+{
+    return int32_t((int64_t(val) * mul + (div >> 1)) / div);
+}

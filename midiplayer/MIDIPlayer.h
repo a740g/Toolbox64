@@ -1,20 +1,9 @@
+
+/** $VER: MIDIPlayer.h (2024.05.11) **/
+
 #pragma once
 
 #include "MIDIContainer.h"
-
-#define MIDI_EVENT_NOTE_OFF 0x80
-#define MIDI_EVENT_NOTE_ON 0x90
-#define MIDI_EVENT_NOTE_AFTERTOUCH 0xa0
-#define MIDI_EVENT_CONTROLLER 0xb0
-#define MIDI_EVENT_PROGRAM_CHANGE 0xc0
-#define MIDI_EVENT_CHAN_AFTERTOUCH 0xd0
-#define MIDI_EVENT_PITCH_BEND 0xe0
-#define MIDI_EVENT_SYSEX 0xf0
-#define MIDI_CONTROLLER_MAIN_VOLUME 0x7
-#define MIDI_CONTROLLER_PAN 0xa
-#define MIDI_CONTROLLER_ALL_NOTES_OFF 0x7b
-
-typedef float audio_sample;
 
 enum class MIDIFlavor
 {
@@ -45,7 +34,7 @@ enum
     DefaultSampleRate = 44100,
     DefaultPlaybackLoopType = 0,
     DefaultOtherLoopType = 0,
-    DefaultDecayTime = 1000,
+    CfgDecayTime = 1000,
 
     default_cfg_thloopz = 1,
     default_cfg_rpgmloopz = 1,
@@ -89,7 +78,7 @@ public:
         Forced = 0x02
     };
 
-    bool Load(const MIDIContainer &midiContainer, uint32_t subsongIndex, LoopType loopMode, uint32_t cleanFlags);
+    bool Load(const midi_container_t &midiContainer, uint32_t subsongIndex, LoopType loopMode, uint32_t cleanFlags);
     uint32_t Play(audio_sample *samples, uint32_t samplesSize) noexcept;
     void Seek(uint32_t seekTime);
 
@@ -126,7 +115,7 @@ protected:
 protected:
     bool _IsInitialized;
     uint32_t _SampleRate;
-    SysExTable _SysExMap;
+    sysex_table_t _SysExMap;
 
     MIDIFlavor _MIDIFlavor;
     bool _FilterEffects;
@@ -141,13 +130,13 @@ private:
     void SendSysExSetToneMapNumber(uint8_t portNumber, uint32_t time);
     void SendSysExGS(uint8_t *data, size_t size, uint8_t portNumber, uint32_t time);
 
-    static inline constexpr int MulDiv(int v1, int v2, int v3)
+    static inline constexpr int32_t MulDiv(int32_t val, int32_t mul, int32_t div)
     {
-        return lround((double)v1 * (double)v2 / (double)v3);
+        return int32_t((int64_t(val) * mul + (div >> 1)) / div);
     }
 
 private:
-    std::vector<MIDIStreamEvent> _Stream;
+    std::vector<midi_item_t> _Stream;
     size_t _StreamPosition; // Current position in the event stream
 
     uint32_t _Position;  // Current position in the sample stream

@@ -22,7 +22,7 @@ $INCLUDEONCE
 '$CONSOLE
 'IF MIDI_Initialize THEN
 '    MIDI_SetSynth _OPENFILEDIALOG$("Select instrument bank"), NULL
-'    IF MIDI_LoadTuneFromFile(_OPENFILEDIALOG$("Select MIDI file")) THEN
+'    WHILE MIDI_LoadTuneFromFile(_OPENFILEDIALOG$("Select MIDI file"))
 '        MIDI_Play
 '        MIDI_Loop FALSE
 '        PRINT "Synth:"; MIDI_GetSynthType; "Playing: "; MIDI_GetSongName
@@ -38,7 +38,8 @@ $INCLUDEONCE
 '            _LIMIT 60
 '        LOOP WHILE MIDI_IsPlaying
 '        MIDI_Stop
-'    END IF
+'        PRINT
+'    WEND
 '    MIDI_Finalize
 'END IF
 'END
