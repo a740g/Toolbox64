@@ -20,6 +20,7 @@
 #include "foo_midi/OpalPlayer.cpp"
 #include "foo_midi/PSPlayer.cpp"
 #include "foo_midi/TSFPlayer.cpp"
+#include "foo_midi/VSTiPlayer.cpp"
 #include "libmidi/MIDIContainer.cpp"
 #include "libmidi/MIDIProcessor.cpp"
 #include "libmidi/MIDIProcessorGMF.cpp"
@@ -186,6 +187,10 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
         g_MIDIManager.sequencer = new TSFPlayer(&g_MIDIManager.instrumentBankManager);
         break;
 
+    case InstrumentBankManager::Type::VSTi:
+        g_MIDIManager.sequencer = new VSTiPlayer(&g_MIDIManager.instrumentBankManager);
+        break;
+        
     default:
         error(QB_ERROR_FEATURE_UNAVAILABLE);
         return QB_FALSE;

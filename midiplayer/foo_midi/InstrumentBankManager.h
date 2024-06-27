@@ -2,8 +2,10 @@
 
 #include <cstdint>
 #include <string>
-#include <string_view>
 #include <vector>
+
+// Replace this with "filepath.h" once integration is complete
+extern bool filepath_has_extension(const char *path, const char *extension);
 
 class InstrumentBankManager
 {
@@ -48,6 +50,4 @@ private:
     Location location;
     std::string fileName;
     std::vector<uint8_t> data;
-
-    static bool HasFileExtension(const std::string_view &name, const std::string_view &extension);
 };

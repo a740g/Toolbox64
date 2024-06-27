@@ -1,5 +1,7 @@
 #include "VSTiPlayer.h"
 #include <windows.h>
+#include <combaseapi.h>
+#include <sstream>
 
 VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm)
 {
@@ -142,11 +144,20 @@ void VSTiPlayer::DisplayEditorModal()
 
 bool VSTiPlayer::Startup()
 {
-    if (IsHostRunning())
+    if (IsHostRunning() && _IsInitialized)
         return true;
 
-    if (!LoadVST(_FilePath.c_str()))
+    StopHost();
+
+    if (!instrumentBankManager || instrumentBankManager->GetType() != InstrumentBankManager::Type::VSTi || instrumentBankManager->GetLocation() == InstrumentBankManager::Location::Memory)
+    {
         return false;
+    }
+
+    if (!LoadVST(instrumentBankManager->GetPath()))
+    {
+        return false;
+    }
 
     if (_Chunk.size() != 0)
         SetChunk(_Chunk.data(), _Chunk.size());
@@ -333,10 +344,10 @@ bool VSTiPlayer::StartHost()
             TRUE,
         };
 
-    pfc::string8 InPipeName, OutPipeName;
+    std::string InPipeName, OutPipeName;
 
     {
-        if (!CreatePipeName(InPipeName) || !CreatePipeName(OutPipeName))
+        if (!__CreatePipeName(InPipeName) || !__CreatePipeName(OutPipeName))
         {
             StopHost();
 
@@ -344,10 +355,8 @@ bool VSTiPlayer::StartHost()
         }
     }
 
-    pfc::stringcvt::string_os_from_utf8 InPipeNameOS(InPipeName), OutPipeNameOS(OutPipeName);
-
     {
-        HANDLE hPipe = ::CreateNamedPipe(InPipeNameOS, PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
+        HANDLE hPipe = ::CreateNamedPipeA(InPipeName.c_str(), PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
 
         if (hPipe == INVALID_HANDLE_VALUE)
         {
@@ -356,7 +365,7 @@ bool VSTiPlayer::StartHost()
             return false;
         }
 
-        _hPipeInRead = ::CreateFile(InPipeNameOS, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
+        _hPipeInRead = ::CreateFileA(InPipeName.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
 
         ::DuplicateHandle(::GetCurrentProcess(), hPipe, ::GetCurrentProcess(), &_hPipeInWrite, 0, FALSE, DUPLICATE_SAME_ACCESS);
 
@@ -364,7 +373,7 @@ bool VSTiPlayer::StartHost()
     }
 
     {
-        HANDLE hPipe = ::CreateNamedPipe(OutPipeNameOS, PIPE_ACCESS_INBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
+        HANDLE hPipe = ::CreateNamedPipeA(OutPipeName.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
 
         if (hPipe == INVALID_HANDLE_VALUE)
         {
@@ -373,7 +382,7 @@ bool VSTiPlayer::StartHost()
             return false;
         }
 
-        _hPipeOutWrite = ::CreateFile(OutPipeNameOS, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
+        _hPipeOutWrite = ::CreateFileA(OutPipeName.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0, NULL);
 
         ::DuplicateHandle(::GetCurrentProcess(), hPipe, ::GetCurrentProcess(), &_hPipeOutRead, 0, FALSE, DUPLICATE_SAME_ACCESS);
 
@@ -383,36 +392,35 @@ bool VSTiPlayer::StartHost()
     std::string CommandLine = "\"";
 
     {
-        CommandLine += core_api::get_my_full_path();
+        std::string fPath, fName;
+        filepath_split(_FilePath, fPath, fName);
 
-        const size_t SlashPosition = CommandLine.find_last_of('\\');
-
-        if (SlashPosition != std::string::npos)
-            CommandLine.erase(CommandLine.begin() + (const __int64)(SlashPosition + 1), CommandLine.end());
+        CommandLine += fPath;
 
         CommandLine += (_ProcessorArchitecture == 64) ? "vsthost64.exe" : "vsthost32.exe";
         CommandLine += "\" \"";
         CommandLine += _FilePath;
         CommandLine += "\" ";
 
-        uint32_t Sum = 0;
-
         {
-            pfc::stringcvt::string_os_from_utf8 plugin_os(_FilePath.c_str());
+            uint32_t Sum = 0;
 
-            const TCHAR *ch = plugin_os.get_ptr();
+            auto ch = _FilePath.c_str();
 
             while (*ch)
             {
-                Sum += (TCHAR)(*ch++ * 820109);
+                Sum += *ch++ * 820109;
             }
-        }
 
-        CommandLine += pfc::format_int(Sum, 0, 16);
+            std::stringstream sumHex;
+            sumHex << std::hex << Sum;
+
+            CommandLine += sumHex.str();
+        }
     }
 
     {
-        STARTUPINFO si = {sizeof(si)};
+        STARTUPINFOA si = {sizeof(si)};
 
         si.hStdInput = _hPipeInRead;
         si.hStdOutput = _hPipeOutWrite;
@@ -422,7 +430,7 @@ bool VSTiPlayer::StartHost()
 
         PROCESS_INFORMATION pi;
 
-        if (!::CreateProcess(NULL, (LPTSTR)(LPCTSTR)pfc::stringcvt::string_os_from_utf8(CommandLine.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
+        if (!::CreateProcessA(NULL, (LPSTR)(CommandLine.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
         {
             StopHost();
 
@@ -439,12 +447,8 @@ bool VSTiPlayer::StartHost()
         _hProcess = pi.hProcess;
         _hThread = pi.hThread;
 
-#ifdef _DEBUG
-        FB2K_console_print("Starting host... (hProcess = 0x", pfc::format_hex_lowercase((t_uint64)(size_t)_hProcess, 8), ", hThread = 0x", pfc::format_hex_lowercase((t_uint64)(size_t)_hThread, 8), ")");
-#else
         ::SetPriorityClass(_hProcess, ::GetPriorityClass(::GetCurrentProcess()));
         ::SetThreadPriority(_hThread, ::GetThreadPriority(::GetCurrentThread()));
-#endif
     }
 
     // Get the startup information.
@@ -453,6 +457,7 @@ bool VSTiPlayer::StartHost()
     if (Code != 0)
     {
         StopHost();
+
         return false;
     }
 
@@ -496,10 +501,6 @@ void VSTiPlayer::StopHost() noexcept
         return;
 
     _IsTerminating = true;
-
-#ifdef _DEBUG
-    FB2K_console_print("Stopping host... (hProcess = 0x", pfc::format_hex_lowercase((t_uint64)(size_t)_hProcess, 8), ", hThread = 0x", pfc::format_hex_lowercase((t_uint64)(size_t)_hThread, 8), ")");
-#endif
 
     if (_hProcess)
     {
@@ -602,6 +603,7 @@ void VSTiPlayer::ReadBytes(void *data, uint32_t size) noexcept
             if (BytesRead == 0)
             {
                 ::memset(data, 0xFF, size);
+                fprintf(stderr, "ReadBytesOverlapped failed: read 0 bytes\n");
                 break;
             }
 
@@ -609,7 +611,9 @@ void VSTiPlayer::ReadBytes(void *data, uint32_t size) noexcept
         }
     }
     else
+    {
         ::memset(data, 0xFF, size);
+    }
 }
 
 uint32_t VSTiPlayer::ReadBytesOverlapped(void *data, uint32_t size) noexcept

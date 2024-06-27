@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#if defined(TOOLBOX64_DEBUG) && TOOLBOX64_DEBUG > 0
+#if (defined(_DEBUG) && !defined(NDEBUG)) || (defined(TOOLBOX64_DEBUG) && TOOLBOX64_DEBUG > 0)
 #define TOOLBOX64_DEBUG_PRINT(_fmt_, _args_...) fprintf(stderr, "\e[1;37mDEBUG: %s:%d:%s(): \e[1;33m" _fmt_ "\e[1;37m\n", __FILE__, __LINE__, __func__, ##_args_)
 #define TOOLBOX64_DEBUG_CHECK(_exp_) \
     if (!(_exp_))                    \

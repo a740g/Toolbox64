@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define TOOLBOX64_DEBUG 0
+// #define TOOLBOX64_DEBUG 1
 #include "Debug.h"
 #include "Common.h"
 #include <cstdlib>

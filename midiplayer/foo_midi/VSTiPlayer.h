@@ -3,6 +3,10 @@
 #include "MIDIPlayer.h"
 #include "InstrumentBankManager.h"
 
+// Replace this with "filepath.h" once integration is complete
+extern void filepath_split(const std::string &filePath, std::string &directory, std::string &fileName);
+extern void filepath_join(std::string &filePath, const std::string &directory, const std::string &fileName);
+
 class VSTiPlayer : public MIDIPlayer
 {
 public:
@@ -15,7 +19,7 @@ public:
     VSTiPlayer(InstrumentBankManager *ibm);
     virtual ~VSTiPlayer();
 
-    uint32_t GetActiveVoiceCount() const override;
+    uint32_t GetActiveVoiceCount() const override { return 128; };
 
     bool LoadVST(const char *path);
 
