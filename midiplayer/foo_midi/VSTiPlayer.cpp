@@ -1,26 +1,7 @@
-
-/** $VER: VSTiPlayer.cpp (2023.08.19) **/
-
-#include "framework.h"
-
 #include "VSTiPlayer.h"
+#include <windows.h>
 
-#define NOMINMAX
-
-// #define LOG_EXCHANGE
-
-template <class T>
-void SafeDelete(T &x) noexcept
-{
-    if (x)
-    {
-        delete[] x;
-        x = nullptr;
-    }
-}
-
-#pragma region("Public")
-VSTiPlayer::VSTiPlayer() noexcept : MIDIPlayer()
+VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm)
 {
     _IsCOMInitialized = false;
     _IsTerminating = false;
@@ -43,11 +24,13 @@ VSTiPlayer::VSTiPlayer() noexcept : MIDIPlayer()
     _ProcessorArchitecture = 0;
     _UniqueId = 0;
     _VendorVersion = 0;
+
+    Startup();
 }
 
 VSTiPlayer::~VSTiPlayer()
 {
-    StopHost();
+    Shutdown();
 
     SafeDelete(_Name);
     SafeDelete(_VendorName);
@@ -70,12 +53,12 @@ bool VSTiPlayer::LoadVST(const char *pathName)
     return StartHost();
 }
 
-void VSTiPlayer::GetVendorName(pfc::string8 &vendorName) const
+void VSTiPlayer::GetVendorName(std::string &vendorName) const
 {
     vendorName = _VendorName;
 }
 
-void VSTiPlayer::GetProductName(pfc::string8 &productName) const
+void VSTiPlayer::GetProductName(std::string &productName) const
 {
     productName = _ProductName;
 }
@@ -156,9 +139,7 @@ void VSTiPlayer::DisplayEditorModal()
     if (Code != 0)
         StopHost();
 }
-#pragma endregion
 
-#pragma region("Protected")
 bool VSTiPlayer::Startup()
 {
     if (IsHostRunning())
@@ -276,10 +257,49 @@ void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber
     if (code != 0)
         StopHost();
 }
-#pragma endregion
 
-#pragma region("Private")
-static bool CreatePipeName(pfc::string_base &pipeName)
+static char __PrintHexDigit(unsigned val)
+{
+    static constexpr char table[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    return table[val & 0xF];
+}
+
+static void __PrintHex(unsigned val, char *&out, unsigned bytes)
+{
+    unsigned n;
+    for (n = 0; n < bytes; n++)
+    {
+        unsigned char c = (unsigned char)((val >> ((bytes - 1 - n) << 3)) & 0xFF);
+        *(out++) = __PrintHexDigit(c >> 4);
+        *(out++) = __PrintHexDigit(c & 0xF);
+    }
+    *out = 0;
+}
+
+static std::string __PrintGUID(const GUID &p_guid)
+{
+    char data[64];
+    char *out = data;
+    __PrintHex(p_guid.Data1, out, 4);
+    *(out++) = '-';
+    __PrintHex(p_guid.Data2, out, 2);
+    *(out++) = '-';
+    __PrintHex(p_guid.Data3, out, 2);
+    *(out++) = '-';
+    __PrintHex(p_guid.Data4[0], out, 1);
+    __PrintHex(p_guid.Data4[1], out, 1);
+    *(out++) = '-';
+    __PrintHex(p_guid.Data4[2], out, 1);
+    __PrintHex(p_guid.Data4[3], out, 1);
+    __PrintHex(p_guid.Data4[4], out, 1);
+    __PrintHex(p_guid.Data4[5], out, 1);
+    __PrintHex(p_guid.Data4[6], out, 1);
+    __PrintHex(p_guid.Data4[7], out, 1);
+    *out = 0;
+    return data;
+}
+
+bool __CreatePipeName(std::string &pipeName)
 {
     GUID guid;
 
@@ -287,7 +307,7 @@ static bool CreatePipeName(pfc::string_base &pipeName)
         return false;
 
     pipeName = "\\\\.\\pipe\\";
-    pipeName += pfc::print_guid(guid);
+    pipeName += __PrintGUID(guid);
 
     return true;
 }
@@ -544,10 +564,6 @@ bool VSTiPlayer::IsHostRunning() noexcept
     return false;
 }
 
-#ifdef LOG_EXCHANGE
-unsigned exchange_count = 0;
-#endif
-
 #ifdef MESSAGE_PUMP
 static void ProcessPendingMessages()
 {
@@ -656,4 +672,3 @@ void VSTiPlayer::WriteBytesOverlapped(const void *data, uint32_t size) noexcept
     if (!::WriteFile(_hPipeInWrite, data, size, &BytesWritten, nullptr) || (BytesWritten < size))
         StopHost();
 }
-#pragma endregion

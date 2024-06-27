@@ -1,23 +1,26 @@
-
-/** $VER: VSTiPlayer.h (2024.05.20) **/
-
 #pragma once
 
 #include "MIDIPlayer.h"
+#include "InstrumentBankManager.h"
 
-typedef void *HANDLE;
-
-#pragma warning(disable : 4820) // x bytes padding added after data member
 class VSTiPlayer : public MIDIPlayer
 {
 public:
-    VSTiPlayer() noexcept;
+    VSTiPlayer() = delete;
+    VSTiPlayer(const VSTiPlayer &) = delete;
+    VSTiPlayer(VSTiPlayer &&) = delete;
+    VSTiPlayer &operator=(const VSTiPlayer &) = delete;
+    VSTiPlayer &operator=(VSTiPlayer &&) = delete;
+
+    VSTiPlayer(InstrumentBankManager *ibm);
     virtual ~VSTiPlayer();
+
+    uint32_t GetActiveVoiceCount() const override;
 
     bool LoadVST(const char *path);
 
-    void GetVendorName(pfc::string8 &out) const;
-    void GetProductName(pfc::string8 &out) const;
+    void GetVendorName(std::string &out) const;
+    void GetProductName(std::string &out) const;
     uint32_t GetVendorVersion() const noexcept;
     uint32_t GetUniqueID() const noexcept;
 
@@ -29,13 +32,12 @@ public:
     bool HasEditor();
     void DisplayEditorModal();
 
-    // Setup
-    virtual uint32_t GetChannelCount() const noexcept override { return _ChannelCount; }
+    typedef void *HANDLE;
 
 protected:
     virtual bool Startup() override;
     virtual void Shutdown() override;
-    virtual void Render(audio_sample *, uint32_t) override;
+    virtual void Render(audio_sample *buffer, uint32_t frames) override;
 
     virtual uint32_t GetSampleBlockSize() const noexcept override { return 4096; }
 
@@ -58,7 +60,19 @@ private:
     void WriteBytes(uint32_t code) noexcept;
     void WriteBytesOverlapped(const void *data, uint32_t size) noexcept;
 
+    template <class T>
+    static void SafeDelete(T &x) noexcept
+    {
+        if (x)
+        {
+            delete[] x;
+            x = nullptr;
+        }
+    }
+
 private:
+    InstrumentBankManager *instrumentBankManager;
+
     uint32_t _ProcessorArchitecture;
     bool _IsCOMInitialized;
 
@@ -86,4 +100,3 @@ private:
 
     bool _IsTerminating;
 };
-#pragma warning(default : 4820) // x bytes padding added after data member
