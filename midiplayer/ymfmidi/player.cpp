@@ -1,4 +1,4 @@
-#include "OpalMIDI.h"
+#include "player.h"
 
 #include <cmath>
 #include <cstring>

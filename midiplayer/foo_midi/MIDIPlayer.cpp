@@ -1,7 +1,7 @@
 
 /** $VER: MIDIPlayer.cpp (2023.12.24) **/
 
-#include "framework.h"
+#include "../libmidi/framework.h"
 
 #include "MIDIPlayer.h"
 
@@ -812,7 +812,7 @@ static bool IsSysExEqual(const uint8_t *a, const uint8_t *b)
 #pragma endregion
 
 #pragma region Private
-
+#ifdef _WIN32
 static uint16_t GetWord(const uint8_t *data) noexcept
 {
     return (uint16_t)(data[0] | (((uint16_t)data[1]) << 8));
@@ -890,5 +890,5 @@ uint32_t MIDIPlayer::GetProcessorArchitecture(const std::string &filePath) const
 
     return 0;
 }
-
+#endif
 #pragma endregion

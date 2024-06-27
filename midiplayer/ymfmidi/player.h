@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../external/opal.h"
+#include "../../external/opal.h"
 #include <climits>
 #include <queue>
 #include <vector>
-#include "OPLPatch.h"
+#include "patches.h"
 
 struct MIDIChannel
 {

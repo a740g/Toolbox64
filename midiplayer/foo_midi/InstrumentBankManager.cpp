@@ -1,5 +1,5 @@
 #include "InstrumentBankManager.h"
-#include "../external/miniz.h"
+#include "../../external/miniz.h"
 
 void InstrumentBankManager::SetPath(const std::string_view &path)
 {
@@ -26,7 +26,7 @@ void InstrumentBankManager::SetPath(const std::string_view &path)
             data.clear();
             fileName = path;
         }
-#ifdef QB64_WINDOWS
+#ifdef _WIN32
         else if (HasFileExtension(path, ".dll"))
         {
             type = Type::VSTi;

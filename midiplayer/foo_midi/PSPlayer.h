@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MIDIPlayer.h"
-#include "primesynth.h"
+#include "../primesynth/primesynth.h"
 #include "InstrumentBankManager.h"
 
 class PSPlayer : public MIDIPlayer

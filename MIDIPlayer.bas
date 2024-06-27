@@ -18,31 +18,31 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' Small test code for debugging the library
 '-----------------------------------------------------------------------------------------------------------------------
-'$DEBUG
-'$CONSOLE
-'IF MIDI_Initialize THEN
-'    MIDI_SetSynth _OPENFILEDIALOG$("Select instrument bank"), NULL
-'    WHILE MIDI_LoadTuneFromFile(_OPENFILEDIALOG$("Select MIDI file"))
-'        MIDI_Play
-'        MIDI_Loop FALSE
-'        PRINT "Synth:"; MIDI_GetSynthType; "Playing: "; MIDI_GetSongName
-'        DO
-'            MIDI_Update
-'            SELECT CASE _KEYHIT
-'                CASE 27
-'                    EXIT DO
-'                CASE 32
-'                    MIDI_Pause NOT MIDI_IsPaused
-'            END SELECT
-'            LOCATE , 1: PRINT USING "Time: ########## / ##########   Voices: ####"; MIDI_GetCurrentTime; MIDI_GetTotalTime; MIDI_GetActiveVoices;
-'            _LIMIT 60
-'        LOOP WHILE MIDI_IsPlaying
-'        MIDI_Stop
-'        PRINT
-'    WEND
-'    MIDI_Finalize
-'END IF
-'END
+$DEBUG
+$CONSOLE
+IF MIDI_Initialize THEN
+    MIDI_SetSynth _OPENFILEDIALOG$("Select instrument bank"), NULL
+    WHILE MIDI_LoadTuneFromFile(_OPENFILEDIALOG$("Select MIDI file"))
+        MIDI_Play
+        MIDI_Loop FALSE
+        PRINT "Synth:"; MIDI_GetSynthType; "Playing: "; MIDI_GetSongName
+        DO
+            MIDI_Update
+            SELECT CASE _KEYHIT
+                CASE 27
+                    EXIT DO
+                CASE 32
+                    MIDI_Pause NOT MIDI_IsPaused
+            END SELECT
+            LOCATE , 1: PRINT USING "Time: ########## / ##########   Voices: ####"; MIDI_GetCurrentTime; MIDI_GetTotalTime; MIDI_GetActiveVoices;
+            _LIMIT 60
+        LOOP WHILE MIDI_IsPlaying
+        MIDI_Stop
+        PRINT
+    WEND
+    MIDI_Finalize
+END IF
+SYSTEM
 '-----------------------------------------------------------------------------------------------------------------------
 
 ' This basically allocate stuff on the QB64 side and initializes the underlying C library

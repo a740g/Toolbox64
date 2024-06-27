@@ -1,8 +1,4 @@
 #include "TSFPlayer.h"
-#define STB_VORBIS_HEADER_ONLY
-#include "../external/stb/stb_vorbis.c"
-#define TSF_IMPLEMENTATION
-#include "tsf.h"
 
 TSFPlayer::TSFPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
 {
@@ -62,7 +58,7 @@ void TSFPlayer::Render(audio_sample *buffer, uint32_t frames)
     // Sadly, that's how tsf_render_float() works
     while (frames != 0)
     {
-        auto todo = frames > TSF_RENDER_EFFECTSAMPLEBLOCK ? TSF_RENDER_EFFECTSAMPLEBLOCK : frames;
+        auto todo = frames > renderFrames ? renderFrames : frames;
 
         tsf_render_float(synth, data, todo, true);
 

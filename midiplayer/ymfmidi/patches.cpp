@@ -1,8 +1,8 @@
 #include <cstring>
 #include <vector>
 
-#include "OPLPatch.h"
-#include "OpalMIDI.h"
+#include "patches.h"
+#include "player.h"
 
 const char *OPLPatch::names[256] =
     {

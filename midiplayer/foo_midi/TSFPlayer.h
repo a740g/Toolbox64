@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MIDIPlayer.h"
-#include "tsf.h"
+#include "../TinySoundFont/tsf.h"
 #include "InstrumentBankManager.h"
 
 class TSFPlayer : public MIDIPlayer
@@ -26,6 +26,8 @@ protected:
     virtual void SendEvent(uint32_t data) override;
 
 private:
+    static const uint32_t renderFrames = 64;
+
     InstrumentBankManager *instrumentBankManager;
     tsf *synth;
 };

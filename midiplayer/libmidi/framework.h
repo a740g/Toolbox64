@@ -29,7 +29,7 @@
 #define mmioFOURCC(char1, char2, char3, char4) (static_cast<uint32_t>(char1) | (static_cast<uint32_t>(char2) << 8) | (static_cast<uint32_t>(char3) << 16) | (static_cast<uint32_t>(char4) << 24))
 #endif
 
-#ifndef QB64_WINDOWS
+#ifndef _WIN32
 typedef uint32_t FOURCC;
 #endif
 

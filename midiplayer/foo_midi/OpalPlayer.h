@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MIDIPlayer.h"
-#include "OpalMIDI.h"
+#include "../ymfmidi/player.h"
 #include "InstrumentBankManager.h"
 
 class OpalPlayer : public MIDIPlayer

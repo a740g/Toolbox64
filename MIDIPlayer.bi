@@ -47,7 +47,7 @@ END TYPE
 
 ' Anything with a '__' prefix is not supposed to be called directly
 ' There are QB64 wrappers for these functions
-DECLARE LIBRARY "MIDIPlayer"
+DECLARE LIBRARY "midiplayer/MIDIPlayer"
     FUNCTION __MIDI_LoadTuneFromMemory%% (buffer AS STRING, BYVAL size AS _UNSIGNED LONG, BYVAL sampleRate AS _UNSIGNED LONG)
     SUB MIDI_Play
     SUB MIDI_Stop
