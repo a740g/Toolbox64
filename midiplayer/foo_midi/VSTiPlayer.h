@@ -19,7 +19,11 @@ public:
     VSTiPlayer(InstrumentBankManager *ibm);
     virtual ~VSTiPlayer();
 
-    uint32_t GetActiveVoiceCount() const override { return 128; };
+    uint32_t GetActiveVoiceCount() const override
+    {
+        // FIXME: Check if we can get the info from the VSTi
+        return 128;
+    };
 
     bool LoadVST(const char *path);
 
@@ -43,7 +47,7 @@ protected:
     virtual void Shutdown() override;
     virtual void Render(audio_sample *buffer, uint32_t frames) override;
 
-    virtual uint32_t GetSampleBlockSize() const noexcept override { return 4096; }
+    virtual uint32_t GetSampleBlockSize() const noexcept override { return renderFrames; }
 
     virtual void SendEvent(uint32_t data) override;
     virtual void SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber) override;
@@ -64,17 +68,9 @@ private:
     void WriteBytes(uint32_t code) noexcept;
     void WriteBytesOverlapped(const void *data, uint32_t size) noexcept;
 
-    template <class T>
-    static void SafeDelete(T &x) noexcept
-    {
-        if (x)
-        {
-            delete[] x;
-            x = nullptr;
-        }
-    }
-
 private:
+    static const uint32_t renderFrames = 4096u;
+
     InstrumentBankManager *instrumentBankManager;
 
     uint32_t _ProcessorArchitecture;
@@ -90,9 +86,9 @@ private:
     HANDLE _hProcess;
     HANDLE _hThread;
 
-    char *_Name;
-    char *_VendorName;
-    char *_ProductName;
+    std::string _Name;
+    std::string _VendorName;
+    std::string _ProductName;
 
     uint32_t _VendorVersion;
     uint32_t _UniqueId;
@@ -100,7 +96,7 @@ private:
     uint32_t _ChannelCount;
 
     std::vector<uint8_t> _Chunk;
-    float *_Samples;
+    std::vector<float> _Samples;
 
     bool _IsTerminating;
 };

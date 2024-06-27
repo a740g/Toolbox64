@@ -16,12 +16,7 @@ VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBan
     _hProcess = NULL;
     _hThread = NULL;
 
-    _Name = nullptr;
-    _VendorName = nullptr;
-    _ProductName = nullptr;
-
     _ChannelCount = 0;
-    _Samples = nullptr;
 
     _ProcessorArchitecture = 0;
     _UniqueId = 0;
@@ -33,12 +28,6 @@ VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBan
 VSTiPlayer::~VSTiPlayer()
 {
     Shutdown();
-
-    SafeDelete(_Name);
-    SafeDelete(_VendorName);
-    SafeDelete(_ProductName);
-
-    SafeDelete(_Samples);
 }
 
 bool VSTiPlayer::LoadVST(const char *pathName)
@@ -199,18 +188,18 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
         return;
     }
 
-    if (_Samples == nullptr)
+    if (!_Samples.size())
         return;
 
     while (sampleCount != 0)
     {
-        unsigned long ToDo = (sampleCount > 4096) ? 4096 : sampleCount;
+        unsigned long ToDo = (sampleCount > renderFrames) ? renderFrames : sampleCount;
 
-        ReadBytes(_Samples, (uint32_t)(ToDo * _ChannelCount * sizeof(float)));
+        ReadBytes(&_Samples[0], (uint32_t)(ToDo * _ChannelCount * sizeof(float)));
 
         // Convert the format of the rendered output.
         for (size_t i = 0; i < ToDo * _ChannelCount; ++i)
-            sampleData[i] = (audio_sample)_Samples[i];
+            sampleData[i] = _Samples[i];
 
         sampleData += ToDo * _ChannelCount;
         sampleCount -= ToDo;
@@ -472,23 +461,17 @@ bool VSTiPlayer::StartHost()
 
         {
             // VST always uses float samples.
-            SafeDelete(_Samples);
-            _Samples = new float[4096 * _ChannelCount];
+            _Samples.clear();
+            _Samples.resize(renderFrames * _ChannelCount);
 
-            SafeDelete(_Name);
-            _Name = new char[NameLength + 1];
-            ReadBytes(_Name, NameLength);
-            _Name[NameLength] = 0;
+            _Name.resize(NameLength);
+            ReadBytes(&_Name[0], NameLength);
 
-            SafeDelete(_VendorName);
-            _VendorName = new char[VendorNameLength + 1];
-            ReadBytes(_VendorName, VendorNameLength);
-            _VendorName[VendorNameLength] = 0;
+            _VendorName.resize(VendorNameLength);
+            ReadBytes(&_VendorName[0], VendorNameLength);
 
-            SafeDelete(_ProductName);
-            _ProductName = new char[ProductNameLength + 1];
-            ReadBytes(_ProductName, ProductNameLength);
-            _ProductName[ProductNameLength] = 0;
+            _ProductName.resize(ProductNameLength);
+            ReadBytes(&_ProductName[0], ProductNameLength);
         }
     }
 
