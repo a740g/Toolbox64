@@ -9,6 +9,22 @@ extern void filepath_join(std::string &filePath, const std::string &directory, c
 
 class VSTiPlayer : public MIDIPlayer
 {
+    enum class VSTHostCommand : uint32_t
+    {
+        Exit = 0,
+        GetChunk,
+        SetChunk,
+        HasEditor,
+        DisplayEditorModal,
+        SetSampleRate,
+        Reset,
+        SendMIDIEvent,
+        SendSysexEvent,
+        RenderSamples,
+        SendMIDIEventWithTimestamp,
+        SendSysexEventWithTimestamp,
+    };
+
 public:
     VSTiPlayer() = delete;
     VSTiPlayer(const VSTiPlayer &) = delete;

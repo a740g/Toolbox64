@@ -66,7 +66,7 @@ uint32_t VSTiPlayer::GetUniqueID() const noexcept
 
 void VSTiPlayer::GetChunk(std::vector<uint8_t> &chunk)
 {
-    WriteBytes(1);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::GetChunk));
 
     const uint32_t Code = ReadCode();
 
@@ -94,7 +94,7 @@ void VSTiPlayer::SetChunk(const void *data, size_t size)
             ::memcpy(_Chunk.data(), data, size);
     }
 
-    WriteBytes(2);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SetChunk));
     WriteBytes((uint32_t)size);
     WriteBytesOverlapped(data, (uint32_t)size);
 
@@ -106,7 +106,7 @@ void VSTiPlayer::SetChunk(const void *data, size_t size)
 
 bool VSTiPlayer::HasEditor()
 {
-    WriteBytes(3);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::HasEditor));
 
     uint32_t Code = ReadCode();
 
@@ -123,7 +123,7 @@ bool VSTiPlayer::HasEditor()
 
 void VSTiPlayer::DisplayEditorModal()
 {
-    WriteBytes(4);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::DisplayEditorModal));
 
     const uint32_t Code = ReadCode();
 
@@ -151,7 +151,7 @@ bool VSTiPlayer::Startup()
     if (_Chunk.size() != 0)
         SetChunk(_Chunk.data(), _Chunk.size());
 
-    WriteBytes(5);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SetSampleRate));
     WriteBytes(sizeof(uint32_t));
     WriteBytes(_SampleRate);
 
@@ -180,7 +180,7 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
 {
     fprintf(stderr, "VSTiPlayer::Render\n");
 
-    WriteBytes(9);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::RenderSamples));
     WriteBytes(sampleCount);
 
     const uint32_t Code = ReadCode();
@@ -224,7 +224,7 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
 
 void VSTiPlayer::SendEvent(uint32_t b)
 {
-    WriteBytes(7);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendMIDIEvent));
     WriteBytes(b);
 
     const uint32_t code = ReadCode();
@@ -237,7 +237,7 @@ void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber
 {
     const uint32_t SizeAndPort = ((uint32_t)size & 0xFFFFFF) | (portNumber << 24);
 
-    WriteBytes(8);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendSysexEvent));
     WriteBytes(SizeAndPort);
     WriteBytesOverlapped(data, (uint32_t)size);
 
@@ -249,7 +249,7 @@ void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber
 
 void VSTiPlayer::SendEvent(uint32_t data, uint32_t time)
 {
-    WriteBytes(10);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendMIDIEventWithTimestamp));
     WriteBytes(data);
     WriteBytes(time);
 
@@ -263,7 +263,7 @@ void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber
 {
     const uint32_t SizeAndPort = ((uint32_t)size & 0xFFFFFF) | (portNumber << 24);
 
-    WriteBytes(11);
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendSysexEventWithTimestamp));
     WriteBytes(SizeAndPort);
     WriteBytes(time);
     WriteBytesOverlapped(data, (uint32_t)size);
@@ -503,7 +503,7 @@ void VSTiPlayer::StopHost() noexcept
 
     if (_hProcess)
     {
-        WriteBytes(0);
+        WriteBytes(static_cast<uint32_t>(VSTHostCommand::Exit));
 
         ::WaitForSingleObject(_hProcess, 5000);
         ::TerminateProcess(_hProcess, 0);

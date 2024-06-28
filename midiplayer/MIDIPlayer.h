@@ -231,7 +231,7 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
             }
             catch (std::exception &e)
             {
-                TOOLBOX64_DEBUG_PRINT("MIDIException: %s\n", e.what());
+                TOOLBOX64_DEBUG_PRINT("Exception: %s", e.what());
             }
 
             if (success)
@@ -261,19 +261,19 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
                         {
                             // Get the song name
                             midi_metadata_table_t metaData;
-                            g_MIDIManager.container->GetMetaData(0, metaData);
+                            g_MIDIManager.container->GetMetaData(g_MIDIManager.trackNumber, metaData);
                             midi_metadata_item_t metaDataItem;
                             if (metaData.GetItem("track_name_00", metaDataItem))
                                 g_MIDIManager.songName = metaDataItem.Value;
-
-                            g_MIDIManager.container->DetectLoops(true, true, true, true, true);
-
-                            return QB_TRUE; // the only success exit point
                         }
                         catch (std::exception &e)
                         {
-                            TOOLBOX64_DEBUG_PRINT("MIDIException: %s\n", e.what());
+                            TOOLBOX64_DEBUG_PRINT("Exception: %s", e.what());
                         }
+
+                        g_MIDIManager.container->DetectLoops(true, true, true, true, true);
+
+                        return QB_TRUE; // the only success exit point
                     }
                 }
             }
