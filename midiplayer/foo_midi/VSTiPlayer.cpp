@@ -164,16 +164,22 @@ bool VSTiPlayer::Startup()
 
     Configure(_MIDIFlavor, _FilterEffects);
 
+    fprintf(stderr, "VSTiPlayer::Startup\n");
+
     return true;
 }
 
 void VSTiPlayer::Shutdown()
 {
     StopHost();
+
+    fprintf(stderr, "VSTiPlayer::Shutdown\n");
 }
 
 void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
 {
+    fprintf(stderr, "VSTiPlayer::Render\n");
+
     WriteBytes(9);
     WriteBytes(sampleCount);
 
@@ -188,8 +194,16 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
         return;
     }
 
+    fprintf(stderr, "VSTiPlayer::Render passed step 2\n");
+
     if (!_Samples.size())
+    {
+        fprintf(stderr, "VSTiPlayer::Render buffer size not set\n");
+
         return;
+    }
+
+    fprintf(stderr, "VSTiPlayer::Rendering %u frames\n", sampleCount);
 
     while (sampleCount != 0)
     {
@@ -204,6 +218,8 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
         sampleData += ToDo * _ChannelCount;
         sampleCount -= ToDo;
     }
+
+    fprintf(stderr, "VSTiPlayer::Render exiting\n");
 }
 
 void VSTiPlayer::SendEvent(uint32_t b)

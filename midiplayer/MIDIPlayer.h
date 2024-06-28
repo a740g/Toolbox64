@@ -13,6 +13,7 @@
 
 #pragma once
 
+// #define TOOLBOX64_DEBUG 1
 #include "../Debug.h"
 #include "../Types.h"
 #include "foo_midi/InstrumentBankManager.cpp"
@@ -20,7 +21,9 @@
 #include "foo_midi/OpalPlayer.cpp"
 #include "foo_midi/PSPlayer.cpp"
 #include "foo_midi/TSFPlayer.cpp"
+#ifdef _WIN32
 #include "foo_midi/VSTiPlayer.cpp"
+#endif
 #include "libmidi/MIDIContainer.cpp"
 #include "libmidi/MIDIProcessor.cpp"
 #include "libmidi/MIDIProcessorGMF.cpp"
@@ -54,8 +57,9 @@ struct MIDIManager
     uint32_t totalTime;
     qb_bool isLooping;
     qb_bool isPlaying;
+    uint32_t trackNumber;
 
-    MIDIManager() : sequencer(nullptr), container(nullptr), totalTime(0), isLooping(QB_FALSE), isPlaying(QB_FALSE) {}
+    MIDIManager() : sequencer(nullptr), container(nullptr), totalTime(0), isLooping(QB_FALSE), isPlaying(QB_FALSE), trackNumber(0) {}
 };
 
 static MIDIManager g_MIDIManager;
@@ -128,7 +132,7 @@ void MIDI_Play()
 {
     if (g_MIDIManager.sequencer && g_MIDIManager.container)
     {
-        g_MIDIManager.sequencer->Load(*g_MIDIManager.container, 0, g_MIDIManager.isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
+        g_MIDIManager.sequencer->Load(*g_MIDIManager.container, g_MIDIManager.trackNumber, g_MIDIManager.isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
         g_MIDIManager.isPlaying = QB_TRUE;
     }
 }
@@ -148,6 +152,8 @@ void MIDI_Stop()
         g_MIDIManager.isPlaying = QB_FALSE;
 
         g_MIDIManager.songName.clear();
+
+        TOOLBOX64_DEBUG_PRINT("MIDI stopped");
     }
 }
 
@@ -165,33 +171,45 @@ const char *MIDI_GetSongName()
 /// @return Returns QB64 TRUE if the operation was successful
 inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize, uint32_t sampleRate)
 {
+    TOOLBOX64_DEBUG_PRINT("Loading tune from memory");
+
     if (!buffer || !bufferSize || !sampleRate)
+    {
+        TOOLBOX64_DEBUG_PRINT("Invalid parameters");
+
         return QB_FALSE;
+    }
 
     MIDI_Stop();
 
     std::vector<uint8_t> buf(reinterpret_cast<const uint8_t *>(buffer), reinterpret_cast<const uint8_t *>(buffer) + bufferSize);
-    midi_processor_t MIDI_Processor;
 
     switch (g_MIDIManager.instrumentBankManager.GetType())
     {
     case InstrumentBankManager::Type::Opal:
         g_MIDIManager.sequencer = new OpalPlayer(&g_MIDIManager.instrumentBankManager);
+        TOOLBOX64_DEBUG_PRINT("Using OpalPlayer");
         break;
 
     case InstrumentBankManager::Type::Primesynth:
         g_MIDIManager.sequencer = new PSPlayer(&g_MIDIManager.instrumentBankManager);
+        TOOLBOX64_DEBUG_PRINT("Using PSPlayer");
         break;
 
     case InstrumentBankManager::Type::TinySoundFont:
         g_MIDIManager.sequencer = new TSFPlayer(&g_MIDIManager.instrumentBankManager);
+        TOOLBOX64_DEBUG_PRINT("Using TSFPlayer");
         break;
 
+#ifdef _WIN32
     case InstrumentBankManager::Type::VSTi:
         g_MIDIManager.sequencer = new VSTiPlayer(&g_MIDIManager.instrumentBankManager);
+        TOOLBOX64_DEBUG_PRINT("Using VSTiPlayer");
         break;
-        
+#endif
+
     default:
+        TOOLBOX64_DEBUG_PRINT("Unknown synth type");
         error(QB_ERROR_FEATURE_UNAVAILABLE);
         return QB_FALSE;
     }
@@ -199,26 +217,70 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
     if (g_MIDIManager.sequencer)
     {
         g_MIDIManager.sequencer->SetSampleRate(sampleRate);
+        TOOLBOX64_DEBUG_PRINT("Sample rate set to %u", sampleRate);
 
         g_MIDIManager.container = new midi_container_t();
         if (g_MIDIManager.container)
         {
-            if (MIDI_Processor.Process(buf, "", *g_MIDIManager.container))
+            bool success = false;
+
+            try
             {
-                g_MIDIManager.totalTime = g_MIDIManager.container->GetDuration(0, true);
+                success = midi_processor_t::Process(buf, "", *g_MIDIManager.container);
+                TOOLBOX64_DEBUG_CHECK(success == true);
+            }
+            catch (std::exception &e)
+            {
+                TOOLBOX64_DEBUG_PRINT("MIDIException: %s\n", e.what());
+            }
 
-                // Get the song name
-                midi_metadata_table_t metaData;
-                g_MIDIManager.container->GetMetaData(0, metaData);
-                midi_metadata_item_t metaDataItem;
-                if (metaData.GetItem("track_name_00", metaDataItem))
-                    g_MIDIManager.songName = metaDataItem.Value;
+            if (success)
+            {
+                auto trackCount = g_MIDIManager.container->GetTrackCount();
+                if (trackCount != 0)
+                {
+                    bool hasDuration = false;
+                    g_MIDIManager.trackNumber = 0;
 
-                return QB_TRUE;
+                    for (uint32_t i = 0; i < trackCount; ++i)
+                    {
+                        g_MIDIManager.totalTime = g_MIDIManager.container->GetDuration(i, true);
+                        TOOLBOX64_DEBUG_PRINT("MIDI track %u, duration: %u", i, g_MIDIManager.totalTime);
+
+                        if (g_MIDIManager.totalTime != 0)
+                        {
+                            hasDuration = true;
+                            g_MIDIManager.trackNumber = i;
+                            break;
+                        }
+                    }
+
+                    if (hasDuration)
+                    {
+                        try
+                        {
+                            // Get the song name
+                            midi_metadata_table_t metaData;
+                            g_MIDIManager.container->GetMetaData(0, metaData);
+                            midi_metadata_item_t metaDataItem;
+                            if (metaData.GetItem("track_name_00", metaDataItem))
+                                g_MIDIManager.songName = metaDataItem.Value;
+
+                            g_MIDIManager.container->DetectLoops(true, true, true, true, true);
+
+                            return QB_TRUE; // the only success exit point
+                        }
+                        catch (std::exception &e)
+                        {
+                            TOOLBOX64_DEBUG_PRINT("MIDIException: %s\n", e.what());
+                        }
+                    }
+                }
             }
         }
     }
 
+    // Anything that is allocated and falls here will be cleaned up
     MIDI_Stop();
 
     return QB_FALSE;
