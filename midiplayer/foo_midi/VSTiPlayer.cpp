@@ -1,7 +1,4 @@
 #include "VSTiPlayer.h"
-#include <windows.h>
-#include <combaseapi.h>
-#include <sstream>
 
 VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm)
 {
@@ -28,40 +25,6 @@ VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBan
 VSTiPlayer::~VSTiPlayer()
 {
     Shutdown();
-}
-
-bool VSTiPlayer::LoadVST(const char *pathName)
-{
-    if ((pathName == nullptr) || (pathName[0] == '\0'))
-        return false;
-
-    _FilePath = pathName;
-    _ProcessorArchitecture = GetProcessorArchitecture(_FilePath);
-
-    if (_ProcessorArchitecture == 0)
-        return false;
-
-    return StartHost();
-}
-
-void VSTiPlayer::GetVendorName(std::string &vendorName) const
-{
-    vendorName = _VendorName;
-}
-
-void VSTiPlayer::GetProductName(std::string &productName) const
-{
-    productName = _ProductName;
-}
-
-uint32_t VSTiPlayer::GetVendorVersion() const noexcept
-{
-    return _VendorVersion;
-}
-
-uint32_t VSTiPlayer::GetUniqueID() const noexcept
-{
-    return _UniqueId;
 }
 
 void VSTiPlayer::GetChunk(std::vector<uint8_t> &chunk)
@@ -133,20 +96,21 @@ void VSTiPlayer::DisplayEditorModal()
 
 bool VSTiPlayer::Startup()
 {
-    if (IsHostRunning() && _IsInitialized)
+    if (_IsInitialized)
         return true;
-
-    StopHost();
 
     if (!instrumentBankManager || instrumentBankManager->GetType() != InstrumentBankManager::Type::VSTi || instrumentBankManager->GetLocation() == InstrumentBankManager::Location::Memory)
     {
         return false;
     }
 
-    if (!LoadVST(instrumentBankManager->GetPath()))
-    {
+    _FilePath = instrumentBankManager->GetPath();
+    _ProcessorArchitecture = GetProcessorArchitecture(_FilePath);
+
+    if (_ProcessorArchitecture == 0)
         return false;
-    }
+
+    StartHost();
 
     if (_Chunk.size() != 0)
         SetChunk(_Chunk.data(), _Chunk.size());
@@ -160,13 +124,13 @@ bool VSTiPlayer::Startup()
     if (code != 0)
         StopHost();
 
-    _IsInitialized = true;
+    _IsInitialized = IsHostRunning();
 
-    Configure(_MIDIFlavor, _FilterEffects);
+    Configure(MIDIFlavor::None, false);
 
-    fprintf(stderr, "VSTiPlayer::Startup\n");
+    fprintf(stderr, "VSTiPlayer::Startup: _IsInitialized = %s\n", _IsInitialized ? "true" : "false");
 
-    return true;
+    return _IsInitialized;
 }
 
 void VSTiPlayer::Shutdown()
@@ -178,7 +142,7 @@ void VSTiPlayer::Shutdown()
 
 void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
 {
-    fprintf(stderr, "VSTiPlayer::Render\n");
+    fprintf(stderr, "VSTiPlayer::Render entered\n");
 
     WriteBytes(static_cast<uint32_t>(VSTHostCommand::RenderSamples));
     WriteBytes(sampleCount);
@@ -198,12 +162,12 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
 
     if (!_Samples.size())
     {
-        fprintf(stderr, "VSTiPlayer::Render buffer size not set\n");
+        fprintf(stderr, "Render buffer size not set\n");
 
         return;
     }
 
-    fprintf(stderr, "VSTiPlayer::Rendering %u frames\n", sampleCount);
+    fprintf(stderr, "Rendering %u frames\n", sampleCount);
 
     while (sampleCount != 0)
     {
@@ -338,6 +302,8 @@ bool VSTiPlayer::StartHost()
         _IsCOMInitialized = true;
     }
 
+    fprintf(stderr, "COM initialized\n");
+
     {
         _hReadEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
     }
@@ -360,6 +326,8 @@ bool VSTiPlayer::StartHost()
         }
     }
 
+    fprintf(stderr, "Pipes names created: %s, %s\n", InPipeName.c_str(), OutPipeName.c_str());
+
     {
         HANDLE hPipe = ::CreateNamedPipeA(InPipeName.c_str(), PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
 
@@ -377,6 +345,8 @@ bool VSTiPlayer::StartHost()
         ::CloseHandle(hPipe);
     }
 
+    fprintf(stderr, "Input pipe created\n");
+
     {
         HANDLE hPipe = ::CreateNamedPipeA(OutPipeName.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
 
@@ -393,6 +363,8 @@ bool VSTiPlayer::StartHost()
 
         ::CloseHandle(hPipe);
     }
+
+    fprintf(stderr, "Output pipe created\n");
 
     std::string CommandLine = "\"";
 
@@ -424,18 +396,24 @@ bool VSTiPlayer::StartHost()
         }
     }
 
-    {
-        STARTUPINFOA si = {sizeof(si)};
+    fprintf(stderr, "Command line: %s\n", CommandLine.c_str());
 
+    {
+        STARTUPINFOA si = {};
+
+        si.cb = sizeof(si);
         si.hStdInput = _hPipeInRead;
         si.hStdOutput = _hPipeOutWrite;
         si.hStdError = ::GetStdHandle(STD_ERROR_HANDLE);
         //  si.wShowWindow = SW_HIDE;
         si.dwFlags |= STARTF_USESTDHANDLES; // | STARTF_USESHOWWINDOW;
 
-        PROCESS_INFORMATION pi;
+        PROCESS_INFORMATION pi = {};
 
-        if (!::CreateProcessA(NULL, (LPSTR)(CommandLine.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
+        std::vector<CHAR> cmdLineBuffer(CommandLine.size() + 1, 0);
+        std::copy(CommandLine.begin(), CommandLine.end(), cmdLineBuffer.begin());
+
+        if (!::CreateProcessA(NULL, cmdLineBuffer.data(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
         {
             StopHost();
 
@@ -456,6 +434,8 @@ bool VSTiPlayer::StartHost()
         ::SetThreadPriority(_hThread, ::GetThreadPriority(::GetCurrentThread()));
     }
 
+    fprintf(stderr, "Process started\n");
+
     // Get the startup information.
     const uint32_t Code = ReadCode();
 
@@ -465,6 +445,8 @@ bool VSTiPlayer::StartHost()
 
         return false;
     }
+
+    fprintf(stderr, "Startup information read\n");
 
     {
         uint32_t NameLength = ReadCode();
@@ -490,6 +472,8 @@ bool VSTiPlayer::StartHost()
             ReadBytes(&_ProductName[0], ProductNameLength);
         }
     }
+
+    fprintf(stderr, "Host started\n");
 
     return true;
 }
@@ -564,18 +548,6 @@ bool VSTiPlayer::IsHostRunning() noexcept
     return false;
 }
 
-#ifdef MESSAGE_PUMP
-static void ProcessPendingMessages()
-{
-    MSG msg = {};
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-}
-#endif
-
 uint32_t VSTiPlayer::ReadCode() noexcept
 {
     uint32_t Code;
@@ -602,7 +574,6 @@ void VSTiPlayer::ReadBytes(void *data, uint32_t size) noexcept
             if (BytesRead == 0)
             {
                 ::memset(data, 0xFF, size);
-                fprintf(stderr, "ReadBytesOverlapped failed: read 0 bytes\n");
                 break;
             }
 
@@ -622,7 +593,7 @@ uint32_t VSTiPlayer::ReadBytesOverlapped(void *data, uint32_t size) noexcept
     ::SetLastError(NO_ERROR);
 
     DWORD BytesRead;
-    OVERLAPPED ol = {0};
+    OVERLAPPED ol = {};
 
     ol.hEvent = _hReadEvent;
 
@@ -630,32 +601,25 @@ uint32_t VSTiPlayer::ReadBytesOverlapped(void *data, uint32_t size) noexcept
         return BytesRead;
 
     if (::GetLastError() != ERROR_IO_PENDING)
+    {
+        fprintf(stderr, "ReadFile failed: %d\n", ::GetLastError());
         return 0;
+    }
 
     const HANDLE handles[1] = {_hReadEvent};
 
     ::SetLastError(NO_ERROR);
 
-    DWORD state;
+    DWORD state = ::WaitForMultipleObjects(_countof(handles), &handles[0], FALSE, INFINITE);
 
-#ifdef MESSAGE_PUMP
-    for (;;)
-    {
-        state = ::MsgWaitForMultipleObjects(_countof(handles), handles, FALSE, INFINITE, QS_ALLEVENTS);
-
-        if (state == WAIT_OBJECT_0 + _countof(handles))
-            ProcessPendingMessages();
-        else
-            break;
-    }
-#else
-    state = ::WaitForMultipleObjects(_countof(handles), &handles[0], FALSE, INFINITE);
-#endif
+    fprintf(stderr, "WaitForMultipleObjects: %d\n", state);
 
     if (state == WAIT_OBJECT_0 && ::GetOverlappedResult(_hPipeOutRead, &ol, &BytesRead, TRUE))
         return BytesRead;
 
     ::CancelIoEx(_hPipeOutRead, &ol);
+
+    fprintf(stderr, "WaitForMultipleObjects failed: %d\n", ::GetLastError());
 
     return 0;
 }
