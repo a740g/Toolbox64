@@ -4,7 +4,7 @@
 #include "framework.h"
 
 #include "MIDIProcessor.h"
-#include "Recomposer\Support.h"
+#include "Recomposer/Support.h"
 
 #include <filesystem>
 
