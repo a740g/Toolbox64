@@ -102,7 +102,7 @@ public:
                 return; // no data available
         }
 
-        auto toCopy = std::min(frames, blocks[index].size() - cursor);
+        auto toCopy = std::min(frames, blocks[index].size() - cursor); // clip to block size
         std::memcpy(data, blocks[index].data() + cursor, toCopy * sizeof(Frame));
         cursor += toCopy;
 
@@ -115,7 +115,7 @@ public:
             if (blocks[index].empty())
                 return; // partial data copied
 
-            auto remaining = frames - toCopy;
+            auto remaining = std::min(frames - toCopy, blocks[index].size()); // clip to block size
             std::memcpy(data + toCopy * 2, blocks[index].data(), remaining * sizeof(Frame));
             cursor += remaining;
         }
