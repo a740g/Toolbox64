@@ -33,7 +33,7 @@ void VSTiPlayer::GetChunk(std::vector<uint8_t> &chunk)
 
     if (Code != 0)
     {
-        StopHost();
+        Shutdown();
         return;
     }
 
@@ -62,7 +62,7 @@ void VSTiPlayer::SetChunk(const void *data, size_t size)
     const uint32_t Code = ReadCode();
 
     if (Code != 0)
-        StopHost();
+        Shutdown();
 }
 
 bool VSTiPlayer::HasEditor()
@@ -73,7 +73,7 @@ bool VSTiPlayer::HasEditor()
 
     if (Code != 0)
     {
-        StopHost();
+        Shutdown();
         return false;
     }
 
@@ -89,137 +89,7 @@ void VSTiPlayer::DisplayEditorModal()
     const uint32_t Code = ReadCode();
 
     if (Code != 0)
-        StopHost();
-}
-
-bool VSTiPlayer::Startup()
-{
-    if (_IsInitialized)
-        return true;
-
-    if (!instrumentBankManager || instrumentBankManager->GetType() != InstrumentBankManager::Type::VSTi || instrumentBankManager->GetLocation() == InstrumentBankManager::Location::Memory)
-    {
-        return false;
-    }
-
-    _FilePath = instrumentBankManager->GetPath();
-    _ProcessorArchitecture = GetProcessorArchitecture(_FilePath);
-
-    if (_ProcessorArchitecture == 0)
-        return false;
-
-    StartHost();
-
-    if (_Chunk.size() != 0)
-        SetChunk(_Chunk.data(), _Chunk.size());
-
-    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SetSampleRate));
-    WriteBytes(sizeof(uint32_t));
-    WriteBytes(_SampleRate);
-
-    const uint32_t code = ReadCode();
-
-    if (code != 0)
-        StopHost();
-
-    _IsInitialized = IsHostRunning();
-
-    Configure(MIDIFlavor::None, false);
-
-    return _IsInitialized;
-}
-
-void VSTiPlayer::Shutdown()
-{
-    StopHost();
-}
-
-void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
-{
-    WriteBytes(static_cast<uint32_t>(VSTHostCommand::RenderSamples));
-    WriteBytes(sampleCount);
-
-    const uint32_t Code = ReadCode();
-
-    if (Code != 0)
-    {
-        StopHost();
-
-        ::memset(sampleData, 0, (size_t)sampleCount * _ChannelCount * sizeof(audio_sample));
-
-        return;
-    }
-
-    if (!_Samples.size())
-    {
-        return;
-    }
-
-    while (sampleCount != 0)
-    {
-        unsigned long ToDo = (sampleCount > renderFrames) ? renderFrames : sampleCount;
-
-        ReadBytes(&_Samples[0], (uint32_t)(ToDo * _ChannelCount * sizeof(float)));
-
-        // Convert the format of the rendered output.
-        for (size_t i = 0; i < ToDo * _ChannelCount; ++i)
-            sampleData[i] = _Samples[i];
-
-        sampleData += ToDo * _ChannelCount;
-        sampleCount -= ToDo;
-    }
-}
-
-void VSTiPlayer::SendEvent(uint32_t b)
-{
-    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendMIDIEvent));
-    WriteBytes(b);
-
-    const uint32_t code = ReadCode();
-
-    if (code != 0)
-        StopHost();
-}
-
-void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber)
-{
-    const uint32_t SizeAndPort = ((uint32_t)size & 0xFFFFFF) | (portNumber << 24);
-
-    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendSysexEvent));
-    WriteBytes(SizeAndPort);
-    WriteBytesOverlapped(data, (uint32_t)size);
-
-    const uint32_t code = ReadCode();
-
-    if (code != 0)
-        StopHost();
-}
-
-void VSTiPlayer::SendEvent(uint32_t data, uint32_t time)
-{
-    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendMIDIEventWithTimestamp));
-    WriteBytes(data);
-    WriteBytes(time);
-
-    const uint32_t code = ReadCode();
-
-    if (code != 0)
-        StopHost();
-}
-
-void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber, uint32_t time)
-{
-    const uint32_t SizeAndPort = ((uint32_t)size & 0xFFFFFF) | (portNumber << 24);
-
-    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendSysexEventWithTimestamp));
-    WriteBytes(SizeAndPort);
-    WriteBytes(time);
-    WriteBytesOverlapped(data, (uint32_t)size);
-
-    const uint32_t code = ReadCode();
-
-    if (code != 0)
-        StopHost();
+        Shutdown();
 }
 
 static char __PrintHexDigit(unsigned val)
@@ -263,7 +133,7 @@ static std::string __PrintGUID(const GUID &p_guid)
     return data;
 }
 
-bool __CreatePipeName(std::string &pipeName)
+static bool __CreatePipeName(std::string &pipeName)
 {
     GUID guid;
 
@@ -276,8 +146,21 @@ bool __CreatePipeName(std::string &pipeName)
     return true;
 }
 
-bool VSTiPlayer::StartHost()
+bool VSTiPlayer::Startup()
 {
+    if (_IsInitialized)
+        return true;
+
+    if (!instrumentBankManager || instrumentBankManager->GetType() != InstrumentBankManager::Type::VSTi || instrumentBankManager->GetLocation() == InstrumentBankManager::Location::Memory)
+    {
+        return false;
+    }
+
+    _ProcessorArchitecture = GetProcessorArchitecture(instrumentBankManager->GetPath());
+
+    if (_ProcessorArchitecture == 0)
+        return false;
+
     if (!_IsCOMInitialized)
     {
         if (FAILED(::CoInitialize(NULL)))
@@ -302,7 +185,7 @@ bool VSTiPlayer::StartHost()
     {
         if (!__CreatePipeName(InPipeName) || !__CreatePipeName(OutPipeName))
         {
-            StopHost();
+            Shutdown();
 
             return false;
         }
@@ -313,7 +196,7 @@ bool VSTiPlayer::StartHost()
 
         if (hPipe == INVALID_HANDLE_VALUE)
         {
-            StopHost();
+            Shutdown();
 
             return false;
         }
@@ -330,7 +213,7 @@ bool VSTiPlayer::StartHost()
 
         if (hPipe == INVALID_HANDLE_VALUE)
         {
-            StopHost();
+            Shutdown();
 
             return false;
         }
@@ -346,19 +229,19 @@ bool VSTiPlayer::StartHost()
 
     {
         std::string fPath, fName;
-        filepath_split(_FilePath, fPath, fName);
+        filepath_split(instrumentBankManager->GetPath(), fPath, fName);
 
         CommandLine += fPath;
 
         CommandLine += (_ProcessorArchitecture == 64) ? "vsthost64.exe" : "vsthost32.exe";
         CommandLine += "\" \"";
-        CommandLine += _FilePath;
+        CommandLine += instrumentBankManager->GetPath();
         CommandLine += "\" ";
 
         {
             uint32_t Sum = 0;
 
-            auto ch = _FilePath.c_str();
+            auto ch = instrumentBankManager->GetPath();
 
             while (*ch)
             {
@@ -389,7 +272,7 @@ bool VSTiPlayer::StartHost()
 
         if (!::CreateProcessA(NULL, cmdLineBuffer.data(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
         {
-            StopHost();
+            Shutdown();
 
             return false;
         }
@@ -413,7 +296,7 @@ bool VSTiPlayer::StartHost()
 
     if (Code != 0)
     {
-        StopHost();
+        Shutdown();
 
         return false;
     }
@@ -443,10 +326,26 @@ bool VSTiPlayer::StartHost()
         }
     }
 
-    return true;
+    if (_Chunk.size() != 0)
+        SetChunk(_Chunk.data(), _Chunk.size());
+
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SetSampleRate));
+    WriteBytes(sizeof(uint32_t));
+    WriteBytes(_SampleRate);
+
+    const uint32_t code = ReadCode();
+
+    if (code != 0)
+        Shutdown();
+
+    _IsInitialized = IsHostRunning();
+
+    Configure(MIDIFlavor::None, false);
+
+    return _IsInitialized;
 }
 
-void VSTiPlayer::StopHost() noexcept
+void VSTiPlayer::Shutdown()
 {
     if (_IsTerminating)
         return;
@@ -506,6 +405,94 @@ void VSTiPlayer::StopHost() noexcept
     _IsTerminating = false;
 
     _IsInitialized = false;
+}
+
+void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
+{
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::RenderSamples));
+    WriteBytes(sampleCount);
+
+    const uint32_t Code = ReadCode();
+
+    if (Code != 0)
+    {
+        Shutdown();
+
+        ::memset(sampleData, 0, (size_t)sampleCount * _ChannelCount * sizeof(audio_sample));
+
+        return;
+    }
+
+    if (!_Samples.size())
+    {
+        return;
+    }
+
+    while (sampleCount != 0)
+    {
+        unsigned long ToDo = (sampleCount > renderFrames) ? renderFrames : sampleCount;
+
+        ReadBytes(&_Samples[0], (uint32_t)(ToDo * _ChannelCount * sizeof(float)));
+
+        // Convert the format of the rendered output.
+        for (size_t i = 0; i < ToDo * _ChannelCount; ++i)
+            sampleData[i] = _Samples[i];
+
+        sampleData += ToDo * _ChannelCount;
+        sampleCount -= ToDo;
+    }
+}
+
+void VSTiPlayer::SendEvent(uint32_t b)
+{
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendMIDIEvent));
+    WriteBytes(b);
+
+    const uint32_t code = ReadCode();
+
+    if (code != 0)
+        Shutdown();
+}
+
+void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber)
+{
+    const uint32_t SizeAndPort = ((uint32_t)size & 0xFFFFFF) | (portNumber << 24);
+
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendSysexEvent));
+    WriteBytes(SizeAndPort);
+    WriteBytesOverlapped(data, (uint32_t)size);
+
+    const uint32_t code = ReadCode();
+
+    if (code != 0)
+        Shutdown();
+}
+
+void VSTiPlayer::SendEvent(uint32_t data, uint32_t time)
+{
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendMIDIEventWithTimestamp));
+    WriteBytes(data);
+    WriteBytes(time);
+
+    const uint32_t code = ReadCode();
+
+    if (code != 0)
+        Shutdown();
+}
+
+void VSTiPlayer::SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber, uint32_t time)
+{
+    const uint32_t SizeAndPort = ((uint32_t)size & 0xFFFFFF) | (portNumber << 24);
+
+    WriteBytes(static_cast<uint32_t>(VSTHostCommand::SendSysexEventWithTimestamp));
+    WriteBytes(SizeAndPort);
+    WriteBytes(time);
+    WriteBytesOverlapped(data, (uint32_t)size);
+
+    const uint32_t code = ReadCode();
+
+    if (code != 0)
+        Shutdown();
 }
 
 bool VSTiPlayer::IsHostRunning() noexcept
@@ -600,5 +587,5 @@ void VSTiPlayer::WriteBytesOverlapped(const void *data, uint32_t size) noexcept
     DWORD BytesWritten;
 
     if (!::WriteFile(_hPipeInWrite, data, size, &BytesWritten, nullptr) || (BytesWritten < size))
-        StopHost();
+        Shutdown();
 }

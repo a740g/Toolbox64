@@ -69,8 +69,6 @@ private:
     uint32_t _ProcessorArchitecture;
     bool _IsCOMInitialized;
 
-    std::string _FilePath;
-
     HANDLE _hReadEvent;
     HANDLE _hPipeInRead;
     HANDLE _hPipeInWrite;
@@ -93,8 +91,6 @@ private:
 
     bool _IsTerminating;
 
-    bool StartHost();
-    void StopHost() noexcept;
     bool IsHostRunning() noexcept;
 
     uint32_t ReadCode() noexcept;
