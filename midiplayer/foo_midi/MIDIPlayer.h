@@ -88,6 +88,9 @@ public:
 
     uint32_t GetPosition() const noexcept { return uint32_t((uint64_t(_Position) * 1000ul) / uint64_t(_SampleRate)); }
 
+    // Should return the block size that the player expects, otherwise 0.
+    virtual uint32_t GetSampleBlockSize() const noexcept { return 0; }
+
     virtual uint32_t GetActiveVoiceCount() const { return 0; }
 
     virtual bool GetErrorMessage(std::string &) { return false; }
@@ -97,9 +100,6 @@ protected:
     virtual void Shutdown() {};
     virtual void Render(audio_sample *, uint32_t) {}
     virtual bool Reset() { return false; }
-
-    // Should return the block size that the player expects, otherwise 0.
-    virtual uint32_t GetSampleBlockSize() const noexcept { return 0; }
 
     virtual void SendEvent(uint32_t) {}
     virtual void SendSysEx(const uint8_t *, size_t, uint32_t) {};

@@ -16,7 +16,7 @@ public:
     TSFPlayer(InstrumentBankManager *ibm);
     virtual ~TSFPlayer();
 
-    uint32_t GetActiveVoiceCount() const override;
+    virtual uint32_t GetActiveVoiceCount() const override;
 
 protected:
     virtual bool Startup() override;

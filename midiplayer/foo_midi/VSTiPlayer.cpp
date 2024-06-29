@@ -128,22 +128,16 @@ bool VSTiPlayer::Startup()
 
     Configure(MIDIFlavor::None, false);
 
-    fprintf(stderr, "VSTiPlayer::Startup: _IsInitialized = %s\n", _IsInitialized ? "true" : "false");
-
     return _IsInitialized;
 }
 
 void VSTiPlayer::Shutdown()
 {
     StopHost();
-
-    fprintf(stderr, "VSTiPlayer::Shutdown\n");
 }
 
 void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
 {
-    fprintf(stderr, "VSTiPlayer::Render entered\n");
-
     WriteBytes(static_cast<uint32_t>(VSTHostCommand::RenderSamples));
     WriteBytes(sampleCount);
 
@@ -158,16 +152,10 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
         return;
     }
 
-    fprintf(stderr, "VSTiPlayer::Render passed step 2\n");
-
     if (!_Samples.size())
     {
-        fprintf(stderr, "Render buffer size not set\n");
-
         return;
     }
-
-    fprintf(stderr, "Rendering %u frames\n", sampleCount);
 
     while (sampleCount != 0)
     {
@@ -182,8 +170,6 @@ void VSTiPlayer::Render(audio_sample *sampleData, uint32_t sampleCount)
         sampleData += ToDo * _ChannelCount;
         sampleCount -= ToDo;
     }
-
-    fprintf(stderr, "VSTiPlayer::Render exiting\n");
 }
 
 void VSTiPlayer::SendEvent(uint32_t b)
@@ -302,8 +288,6 @@ bool VSTiPlayer::StartHost()
         _IsCOMInitialized = true;
     }
 
-    fprintf(stderr, "COM initialized\n");
-
     {
         _hReadEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
     }
@@ -326,8 +310,6 @@ bool VSTiPlayer::StartHost()
         }
     }
 
-    fprintf(stderr, "Pipes names created: %s, %s\n", InPipeName.c_str(), OutPipeName.c_str());
-
     {
         HANDLE hPipe = ::CreateNamedPipeA(InPipeName.c_str(), PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
 
@@ -345,8 +327,6 @@ bool VSTiPlayer::StartHost()
         ::CloseHandle(hPipe);
     }
 
-    fprintf(stderr, "Input pipe created\n");
-
     {
         HANDLE hPipe = ::CreateNamedPipeA(OutPipeName.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE, 1, 65536, 65536, 0, &sa);
 
@@ -363,8 +343,6 @@ bool VSTiPlayer::StartHost()
 
         ::CloseHandle(hPipe);
     }
-
-    fprintf(stderr, "Output pipe created\n");
 
     std::string CommandLine = "\"";
 
@@ -395,8 +373,6 @@ bool VSTiPlayer::StartHost()
             CommandLine += sumHex.str();
         }
     }
-
-    fprintf(stderr, "Command line: %s\n", CommandLine.c_str());
 
     {
         STARTUPINFOA si = {};
@@ -434,8 +410,6 @@ bool VSTiPlayer::StartHost()
         ::SetThreadPriority(_hThread, ::GetThreadPriority(::GetCurrentThread()));
     }
 
-    fprintf(stderr, "Process started\n");
-
     // Get the startup information.
     const uint32_t Code = ReadCode();
 
@@ -445,8 +419,6 @@ bool VSTiPlayer::StartHost()
 
         return false;
     }
-
-    fprintf(stderr, "Startup information read\n");
 
     {
         uint32_t NameLength = ReadCode();
@@ -472,8 +444,6 @@ bool VSTiPlayer::StartHost()
             ReadBytes(&_ProductName[0], ProductNameLength);
         }
     }
-
-    fprintf(stderr, "Host started\n");
 
     return true;
 }
@@ -602,7 +572,6 @@ uint32_t VSTiPlayer::ReadBytesOverlapped(void *data, uint32_t size) noexcept
 
     if (::GetLastError() != ERROR_IO_PENDING)
     {
-        fprintf(stderr, "ReadFile failed: %d\n", ::GetLastError());
         return 0;
     }
 
@@ -612,14 +581,10 @@ uint32_t VSTiPlayer::ReadBytesOverlapped(void *data, uint32_t size) noexcept
 
     DWORD state = ::WaitForMultipleObjects(_countof(handles), &handles[0], FALSE, INFINITE);
 
-    fprintf(stderr, "WaitForMultipleObjects: %d\n", state);
-
     if (state == WAIT_OBJECT_0 && ::GetOverlappedResult(_hPipeOutRead, &ol, &BytesRead, TRUE))
         return BytesRead;
 
     ::CancelIoEx(_hPipeOutRead, &ol);
-
-    fprintf(stderr, "WaitForMultipleObjects failed: %d\n", ::GetLastError());
 
     return 0;
 }

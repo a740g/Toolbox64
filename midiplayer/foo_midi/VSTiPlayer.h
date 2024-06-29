@@ -22,7 +22,9 @@ public:
     VSTiPlayer(InstrumentBankManager *ibm);
     virtual ~VSTiPlayer();
 
-    uint32_t GetActiveVoiceCount() const override { return 128; };
+    virtual uint32_t GetActiveVoiceCount() const override { return 128; };
+
+    virtual uint32_t GetSampleBlockSize() const noexcept override { return renderFrames; }
 
     // Configuration
     void GetChunk(std::vector<uint8_t> &data);
@@ -36,8 +38,6 @@ protected:
     virtual bool Startup() override;
     virtual void Shutdown() override;
     virtual void Render(audio_sample *buffer, uint32_t frames) override;
-
-    virtual uint32_t GetSampleBlockSize() const noexcept override { return renderFrames; }
 
     virtual void SendEvent(uint32_t data) override;
     virtual void SendSysEx(const uint8_t *data, size_t size, uint32_t portNumber) override;

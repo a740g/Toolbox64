@@ -48,6 +48,78 @@
 #include "ymfmidi/player.cpp"
 #include "ymfmidi/patches.cpp"
 
+class DoubleBufferFrameBlock
+{
+    struct Frame
+    {
+        float l;
+        float r;
+    };
+
+    std::vector<Frame> blocks[2];
+    size_t index = 0;  // current reading block index
+    size_t cursor = 0; // cursor in the active block
+
+public:
+    DoubleBufferFrameBlock() = default;
+    DoubleBufferFrameBlock(const DoubleBufferFrameBlock &) = delete;
+    DoubleBufferFrameBlock(DoubleBufferFrameBlock &&) = delete;
+    DoubleBufferFrameBlock &operator=(const DoubleBufferFrameBlock &) = delete;
+    DoubleBufferFrameBlock &operator=(DoubleBufferFrameBlock &&) = delete;
+
+    bool IsEmpty() const { return blocks[0].empty() && blocks[1].empty(); }
+
+    float *Put(size_t frames)
+    {
+        auto writeIndex = 1 - index;
+
+        if (blocks[writeIndex].empty())
+        {
+            blocks[writeIndex].resize(frames);
+            return reinterpret_cast<float *>(blocks[writeIndex].data());
+        }
+
+        return nullptr;
+    }
+
+    void Get(float *data, size_t frames)
+    {
+        if (blocks[index].empty())
+        {
+            index = 1 - index;
+            cursor = 0;
+
+            if (blocks[index].empty())
+                return; // no data available
+        }
+
+        auto toCopy = std::min(frames, blocks[index].size() - cursor);
+        std::memcpy(data, blocks[index].data() + cursor, toCopy * sizeof(Frame));
+        cursor += toCopy;
+
+        if (toCopy < frames)
+        {
+            blocks[index].clear();
+            index = 1 - index;
+            cursor = 0;
+
+            if (blocks[index].empty())
+                return; // partial data copied
+
+            auto remaining = frames - toCopy;
+            std::memcpy(data + toCopy * 2, blocks[index].data(), remaining * sizeof(Frame));
+            cursor += remaining;
+        }
+
+        if (cursor >= blocks[index].size())
+        {
+            blocks[index].clear();
+            index = 1 - index;
+            cursor = 0;
+        }
+    }
+};
+
 struct MIDIManager
 {
     MIDIPlayer *sequencer;
@@ -58,8 +130,10 @@ struct MIDIManager
     qb_bool isLooping;
     qb_bool isPlaying;
     uint32_t trackNumber;
+    DoubleBufferFrameBlock frameBlock; // only needed when a player cannot do variable frame rendering (e.g. VSTiPlayer)
+    bool isReallyPlaying;              // again, only needed when a player cannot do variable frame rendering
 
-    MIDIManager() : sequencer(nullptr), container(nullptr), totalTime(0), isLooping(QB_FALSE), isPlaying(QB_FALSE), trackNumber(0) {}
+    MIDIManager() : sequencer(nullptr), container(nullptr), totalTime(0), isLooping(QB_FALSE), isPlaying(QB_FALSE), trackNumber(0), isReallyPlaying(false) {}
 };
 
 static MIDIManager g_MIDIManager;
@@ -134,6 +208,7 @@ void MIDI_Play()
     {
         g_MIDIManager.sequencer->Load(*g_MIDIManager.container, g_MIDIManager.trackNumber, g_MIDIManager.isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
         g_MIDIManager.isPlaying = QB_TRUE;
+        g_MIDIManager.isReallyPlaying = true;
     }
 }
 
@@ -150,6 +225,7 @@ void MIDI_Stop()
 
         g_MIDIManager.totalTime = 0;
         g_MIDIManager.isPlaying = QB_FALSE;
+        g_MIDIManager.isReallyPlaying = false;
 
         g_MIDIManager.songName.clear();
 
@@ -291,5 +367,26 @@ inline qb_bool __MIDI_LoadTuneFromMemory(const void *buffer, uint32_t bufferSize
 /// @param bufferSize The size of the buffer in BYTES!
 inline void __MIDI_Render(float *buffer, uint32_t bufferSize)
 {
-    g_MIDIManager.isPlaying = TO_QB_BOOL(g_MIDIManager.sequencer->Play(buffer, bufferSize >> 3));
+    const auto fixedFrames = g_MIDIManager.sequencer->GetSampleBlockSize();
+
+    if (fixedFrames)
+    {
+        // Only attempt to render if we are actually playing
+        if (g_MIDIManager.isReallyPlaying)
+        {
+            auto dest = g_MIDIManager.frameBlock.Put(fixedFrames);
+            if (dest)
+                g_MIDIManager.isReallyPlaying = g_MIDIManager.sequencer->Play(dest, fixedFrames) > 0;
+        }
+
+        // Get partial data from the frame block
+        g_MIDIManager.frameBlock.Get(buffer, bufferSize >> 3);
+
+        // Set the isPlaying flag to true if we still have some data in the buffers
+        g_MIDIManager.isPlaying = TO_QB_BOOL(!g_MIDIManager.frameBlock.IsEmpty());
+    }
+    else
+    {
+        g_MIDIManager.isPlaying = TO_QB_BOOL(g_MIDIManager.sequencer->Play(buffer, bufferSize >> 3));
+    }
 }
