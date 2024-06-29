@@ -18,8 +18,6 @@ VSTiPlayer::VSTiPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBan
     _ProcessorArchitecture = 0;
     _UniqueId = 0;
     _VendorVersion = 0;
-
-    Startup();
 }
 
 VSTiPlayer::~VSTiPlayer()

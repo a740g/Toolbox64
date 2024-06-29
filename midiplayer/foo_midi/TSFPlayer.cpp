@@ -1,9 +1,6 @@
 #include "TSFPlayer.h"
 
-TSFPlayer::TSFPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
-{
-    Startup();
-}
+TSFPlayer::TSFPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr) {}
 
 TSFPlayer::~TSFPlayer()
 {

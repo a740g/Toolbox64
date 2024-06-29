@@ -1,9 +1,6 @@
 #include "PSPlayer.h"
 
-PSPlayer::PSPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
-{
-    Startup();
-}
+PSPlayer::PSPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr) {}
 
 PSPlayer::~PSPlayer()
 {

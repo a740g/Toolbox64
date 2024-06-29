@@ -1,9 +1,6 @@
 #include "OpalPlayer.h"
 
-OpalPlayer::OpalPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr)
-{
-    Startup();
-}
+OpalPlayer::OpalPlayer(InstrumentBankManager *ibm) : MIDIPlayer(), instrumentBankManager(ibm), synth(nullptr) {}
 
 OpalPlayer::~OpalPlayer()
 {
