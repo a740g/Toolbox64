@@ -9,8 +9,6 @@
 
 #define SYXOPT_DELAY 0x01
 
-#pragma warning(disable : 4820) // x bytes padding added after data member 'y'
-
 class midi_stream_t
 {
 public:

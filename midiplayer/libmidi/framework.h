@@ -32,5 +32,3 @@
 #ifndef _WIN32
 typedef uint32_t FOURCC;
 #endif
-
-typedef float audio_sample;

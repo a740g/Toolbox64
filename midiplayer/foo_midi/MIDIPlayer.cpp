@@ -39,7 +39,7 @@ bool MIDIPlayer::Load(const midi_container_t &midiContainer, uint32_t subsongInd
     _Length = midiContainer.GetDuration(subsongIndex, true);
 
     if (_LoopType == LoopType::NeverLoopAddDecayTime)
-        _Length += (uint32_t)CfgDecayTime;
+        _Length += DecayTime;
     else if (_LoopType >= LoopType::LoopAndFadeWhenDetected)
     {
         _LoopBegin = midiContainer.GetLoopBeginTimestamp(subsongIndex, true);
@@ -559,8 +559,6 @@ void MIDIPlayer::SendEventFiltered(uint32_t data, uint32_t time)
     }
 }
 
-#pragma region SysEx
-
 static const uint8_t SysExResetGM[] = {0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7};
 static const uint8_t SysExResetGM2[] = {0xF0, 0x7E, 0x7F, 0x09, 0x03, 0xF7};
 static const uint8_t SysExResetGS[] = {0xF0, 0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7F, 0x00, 0x41, 0xF7};
@@ -809,9 +807,6 @@ static bool IsSysExEqual(const uint8_t *a, const uint8_t *b)
     return (*a == *b);
 }
 
-#pragma endregion
-
-#pragma region Private
 #ifdef _WIN32
 static uint16_t GetWord(const uint8_t *data) noexcept
 {
@@ -891,4 +886,3 @@ uint32_t MIDIPlayer::GetProcessorArchitecture(const std::string &filePath) const
     return 0;
 }
 #endif
-#pragma endregion

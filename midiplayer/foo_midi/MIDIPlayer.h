@@ -5,6 +5,8 @@
 
 #include "../libmidi/MIDIContainer.h"
 
+typedef float audio_sample;
+
 enum class MIDIFlavor
 {
     None = 0,
@@ -27,42 +29,6 @@ enum class LoopType
 
     PlayIndefinitelyWhenDetected = 4, // Play indefinitely when detected
     PlayIndefinitely = 5,             // Play indefinitely
-};
-
-enum
-{
-    DefaultSampleRate = 44100,
-    DefaultPlaybackLoopType = 0,
-    DefaultOtherLoopType = 0,
-    CfgDecayTime = 1000,
-
-    default_cfg_thloopz = 1,
-    default_cfg_rpgmloopz = 1,
-    default_cfg_xmiloopz = 1,
-    default_cfg_ff7loopz = 1,
-
-    DefaultMIDIFlavor = (int)MIDIFlavor::None,
-    DefaultUseMIDIEffects = 1,
-    DefaultUseSuperMuntWithMT32 = 1,
-    DefaultUseSecretSauceWithXG = 0,
-
-    DefaultEmuDeMIDIExclusion = 1,
-    DefaultFilterInstruments = 0,
-    DefaultFilterBanks = 0,
-
-    DefaultBASSMIDIInterpolationMode = 1,
-
-    DefaultGMSet = 0,
-
-    // Munt
-    DefaultNukeSynth = 0,
-    DefaultNukeBank = 2,
-    DefaultNukePanning = 0,
-
-    DefaultADLBank = 72,
-    DefaultADLChipCount = 10,
-    DefaultADLPanning = 1,
-    //  DefaultADL4Op = 14,
 };
 
 class MIDIPlayer
@@ -138,6 +104,8 @@ private:
     }
 
 private:
+    static const uint32_t DecayTime = 1000;
+
     std::vector<midi_item_t> _Stream;
     size_t _StreamPosition; // Current position in the event stream
 

@@ -345,13 +345,11 @@ static void PlaySound(uint8_t currentInstrument[], std::vector<SoundPatch> const
 
 bool midi_processor_t::ProcessLDS(std::vector<uint8_t> const &data, midi_container_t &container)
 {
-#pragma warning(disable : 4820)
     struct position_data
     {
         uint16_t pattern_number;
         uint8_t transpose;
     };
-#pragma warning(default : 4820)
 
     //  uint16_t speed;
     //  uint8_t register_bd;

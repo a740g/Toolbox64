@@ -343,7 +343,6 @@ private:
 
     uint32_t TimestampToMS(uint32_t timestamp, size_t subsongIndex) const;
 
-#pragma warning(disable : 4267)
     // Normalize port numbers properly
     template <typename T>
     void LimitPortNumber(T &number)
@@ -376,7 +375,6 @@ private:
             }
         }
     }
-#pragma warning(default : 4267)
 
     void AssignString(const char *src, size_t srcLength, std::string &dst) const
     {

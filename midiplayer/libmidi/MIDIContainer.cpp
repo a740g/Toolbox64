@@ -6,8 +6,6 @@
 #include "MIDIContainer.h"
 #include "Support.h"
 
-#pragma region MIDI Track
-
 void midi_track_t::AddEvent(const midi_event_t &newEvent)
 {
     auto it = _Events.end();
@@ -40,10 +38,6 @@ void midi_track_t::RemoveEvent(size_t index)
 {
     _Events.erase(_Events.begin() + (int)index);
 }
-
-#pragma endregion
-
-#pragma region Tempo Map
 
 tempo_item_t::tempo_item_t(uint32_t time, uint32_t tempo)
 {
@@ -100,10 +94,6 @@ uint32_t tempo_map_t::TimestampToMS(uint32_t time, uint32_t division) const
     return TimestampInMS;
 }
 
-#pragma endregion
-
-#pragma region System Exclusive Table
-
 sysex_item_t::sysex_item_t(const sysex_item_t &src)
 {
     Offset = src.Offset;
@@ -149,10 +139,6 @@ bool sysex_table_t::GetItem(size_t index, const uint8_t *&data, std::size_t &siz
 
     return true;
 }
-
-#pragma endregion
-
-#pragma region MIDI Meta Data
 
 void midi_metadata_table_t::AddItem(const midi_metadata_item_t &item)
 {
@@ -202,10 +188,6 @@ const midi_metadata_item_t &midi_metadata_table_t::operator[](std::size_t p_inde
 {
     return _Items[p_index];
 }
-
-#pragma endregion
-
-#pragma region MIDI Container
 
 void midi_container_t::Initialize(uint32_t format, uint32_t timeDivision)
 {
@@ -1635,5 +1617,3 @@ uint32_t midi_container_t::TimestampToMS(uint32_t timestamp, size_t subSongIndex
 
     return TimestampInMS;
 }
-
-#pragma endregion
