@@ -4,6 +4,7 @@
 //
 // This uses:
 // foo_midi (heavily modified) from https://github.com/stuerp/foo_midi (MIT license)
+// libmidi (modified) https://github.com/stuerp/libmidi (MIT license)
 // Opal (refactored) from https://www.3eality.com/productions/reality-adlib-tracker (Public Domain)
 // primesynth (heavily modified) from https://github.com/mosmeh/primesynth (MIT license)
 // stb_vorbis.c from https://github.com/nothings/stb (Public Domain)
@@ -400,13 +401,13 @@ inline void __MIDI_Render(float *buffer, uint32_t bufferSize)
         }
 
         // Get partial data from the frame block
-        g_MIDIManager.frameBlock.Get(buffer, bufferSize >> 3);
+        g_MIDIManager.frameBlock.Get(buffer, bufferSize >> 3); // >> 3 = `/ channels * sizeof(float)`
 
         // Set the isPlaying flag to true if we still have some data in the buffers
         g_MIDIManager.isPlaying = TO_QB_BOOL(!g_MIDIManager.frameBlock.IsEmpty());
     }
     else
     {
-        g_MIDIManager.isPlaying = TO_QB_BOOL(g_MIDIManager.sequencer->Play(buffer, bufferSize >> 3));
+        g_MIDIManager.isPlaying = TO_QB_BOOL(g_MIDIManager.sequencer->Play(buffer, bufferSize >> 3)); // >> 3 = `/ channels * sizeof(float)`
     }
 }

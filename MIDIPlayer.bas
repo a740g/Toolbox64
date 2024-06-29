@@ -4,6 +4,7 @@
 '
 ' This uses:
 ' foo_midi (heavily modified) from https://github.com/stuerp/foo_midi (MIT license)
+' libmidi (modified) https://github.com/stuerp/libmidi
 ' Opal (refactored) from https://www.3eality.com/productions/reality-adlib-tracker (Public Domain)
 ' primesynth (heavily modified) from https://github.com/mosmeh/primesynth (MIT license)
 ' stb_vorbis.c from https://github.com/nothings/stb (Public Domain)
@@ -95,7 +96,9 @@ END FUNCTION
 FUNCTION MIDI_LoadTuneFromMemory%% (buffer AS STRING)
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer), _SNDRATE)
+    IF __MIDI_Player.soundHandle > 0 THEN
+        MIDI_LoadTuneFromMemory = __MIDI_LoadTuneFromMemory(buffer, LEN(buffer), _SNDRATE)
+    END IF
 END FUNCTION
 
 
@@ -136,7 +139,9 @@ FUNCTION MIDI_GetVolume!
     $CHECKING:OFF
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    MIDI_GetVolume = __MIDI_Player.globalVolume
+    IF __MIDI_Player.soundHandle > 0 THEN
+        MIDI_GetVolume = __MIDI_Player.globalVolume
+    END IF
     $CHECKING:ON
 END FUNCTION
 
@@ -146,9 +151,10 @@ SUB MIDI_SetVolume (volume AS SINGLE)
     $CHECKING:OFF
     SHARED __MIDI_Player AS __MIDI_PlayerType
 
-    __MIDI_Player.globalVolume = Math_ClampSingle(volume, 0!, 1!)
-
-    _SNDVOL __MIDI_Player.soundHandle, __MIDI_Player.globalVolume
+    IF __MIDI_Player.soundHandle > 0 THEN
+        __MIDI_Player.globalVolume = Math_ClampSingle(volume, 0!, 1!)
+        _SNDVOL __MIDI_Player.soundHandle, __MIDI_Player.globalVolume
+    END IF
     $CHECKING:ON
 END SUB
 

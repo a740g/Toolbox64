@@ -160,10 +160,7 @@ END FUNCTION
 ' Loads a whole file from disk into memory
 FUNCTION LoadFileFromDisk$ (path AS STRING)
     IF _FILEEXISTS(path) THEN
-        DIM AS LONG fh: fh = FREEFILE
-        OPEN path FOR BINARY ACCESS READ AS fh
-        LoadFileFromDisk = INPUT$(LOF(fh), fh)
-        CLOSE fh
+        LoadFileFromDisk = _READFILE$(path)
     END IF
 END FUNCTION
 
@@ -211,12 +208,7 @@ END SUB
 ' Save a buffer to a file
 FUNCTION SaveFile%% (buffer AS STRING, fileName AS STRING, overwrite AS _BYTE)
     IF _FILEEXISTS(fileName) AND NOT overwrite THEN EXIT FUNCTION
-
-    DIM fh AS LONG: fh = FREEFILE
-    OPEN fileName FOR OUTPUT AS fh ' open file in text mode to wipe out the file if it exists
-    PRINT #fh, buffer; ' write the buffer to the file (works regardless of the file being opened in text mode)
-    CLOSE fh
-
+    _WRITEFILE fileName, buffer
     SaveFile = TRUE
 END FUNCTION
 

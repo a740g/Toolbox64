@@ -4,6 +4,7 @@
 '
 ' This uses:
 ' foo_midi (heavily modified) from https://github.com/stuerp/foo_midi (MIT license)
+' libmidi (modified) https://github.com/stuerp/libmidi
 ' Opal (refactored) from https://www.3eality.com/productions/reality-adlib-tracker (Public Domain)
 ' primesynth (heavily modified) from https://github.com/mosmeh/primesynth (MIT license)
 ' stb_vorbis.c from https://github.com/nothings/stb (Public Domain)
@@ -64,4 +65,4 @@ DECLARE LIBRARY "midiplayer/MIDIPlayer"
 END DECLARE
 
 DIM __MIDI_Player AS __MIDI_PlayerType ' this is used to track the library state as such
-REDIM __MIDI_SoundBuffer(0 TO 0) AS SINGLE ' this is the buffer that holds the rendered samples from the library
+REDIM __MIDI_SoundBuffer(0) AS SINGLE ' this is the buffer that holds the rendered samples from the library
