@@ -61,11 +61,20 @@ class DoubleBufferFrameBlock
     size_t cursor = 0; // cursor in the active block
 
 public:
-    DoubleBufferFrameBlock() = default;
     DoubleBufferFrameBlock(const DoubleBufferFrameBlock &) = delete;
     DoubleBufferFrameBlock(DoubleBufferFrameBlock &&) = delete;
     DoubleBufferFrameBlock &operator=(const DoubleBufferFrameBlock &) = delete;
     DoubleBufferFrameBlock &operator=(DoubleBufferFrameBlock &&) = delete;
+
+    DoubleBufferFrameBlock() { Reset(); }
+
+    void Reset()
+    {
+        blocks[0].clear();
+        blocks[1].clear();
+        index = 0;
+        cursor = 0;
+    }
 
     bool IsEmpty() const { return blocks[0].empty() && blocks[1].empty(); }
 
@@ -206,9 +215,19 @@ void MIDI_Play()
 {
     if (g_MIDIManager.sequencer && g_MIDIManager.container)
     {
-        g_MIDIManager.sequencer->Load(*g_MIDIManager.container, g_MIDIManager.trackNumber, g_MIDIManager.isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0);
-        g_MIDIManager.isPlaying = QB_TRUE;
-        g_MIDIManager.isReallyPlaying = true;
+        try
+        {
+            if (g_MIDIManager.sequencer->Load(*g_MIDIManager.container, g_MIDIManager.trackNumber, g_MIDIManager.isLooping ? LoopType::PlayIndefinitely : LoopType::NeverLoop, 0))
+            {
+                g_MIDIManager.isPlaying = QB_TRUE;
+                g_MIDIManager.isReallyPlaying = true;
+                g_MIDIManager.frameBlock.Reset();
+            }
+        }
+        catch (std::exception &e)
+        {
+            TOOLBOX64_DEBUG_PRINT("Exception: %s", e.what());
+        }
     }
 }
 
@@ -224,6 +243,7 @@ void MIDI_Stop()
         g_MIDIManager.container = nullptr;
 
         g_MIDIManager.totalTime = 0;
+        g_MIDIManager.trackNumber = 0;
         g_MIDIManager.isPlaying = QB_FALSE;
         g_MIDIManager.isReallyPlaying = false;
 
