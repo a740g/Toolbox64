@@ -25,20 +25,17 @@
 #undef _RCP_VERBOSE
 #endif
 
-#ifndef mmioFOURCC
-#define mmioFOURCC(char1, char2, char3, char4) (static_cast<uint32_t>(char1) | (static_cast<uint32_t>(char2) << 8) | (static_cast<uint32_t>(char3) << 16) | (static_cast<uint32_t>(char4) << 24))
-#endif
-
 #ifndef _countof
-template <typename T, size_t N>
-static inline constexpr size_t _countof(T const (&)[N])
+#ifndef __cplusplus
+#define _countof(_Array) (sizeof(_Array) / sizeof(_Array[0]))
+#else
+extern "C++"
 {
-    return std::extent<T[N]>::value;
+    template <typename _CountofType, size_t _SizeOfArray>
+    char (*__countof_helper(UNALIGNED _CountofType (&_Array)[_SizeOfArray]))[_SizeOfArray];
+#define _countof(_Array) sizeof(*__countof_helper(_Array))
 }
 #endif
-
-#ifndef _WIN32
-typedef uint32_t FOURCC;
 #endif
 
 static inline auto strcat_safe(char *dest, size_t destsz, const char *src)

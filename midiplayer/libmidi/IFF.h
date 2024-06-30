@@ -5,17 +5,21 @@
 
 #include "framework.h"
 
-const FOURCC FOURCC_FORM = mmioFOURCC('F', 'O', 'R', 'M');
-const FOURCC FOURCC_CAT = mmioFOURCC('C', 'A', 'T', ' ');
-const FOURCC FOURCC_EVNT = mmioFOURCC('E', 'V', 'N', 'T');
+typedef uint32_t fourcc_t;
 
-const FOURCC FOURCC_XDIR = mmioFOURCC('X', 'D', 'I', 'R');
-const FOURCC FOURCC_XMID = mmioFOURCC('X', 'M', 'I', 'D');
+#define MAKE_FOURCC(char1, char2, char3, char4) (static_cast<uint32_t>(char1) | (static_cast<uint32_t>(char2) << 8) | (static_cast<uint32_t>(char3) << 16) | (static_cast<uint32_t>(char4) << 24))
+
+const fourcc_t FOURCC_FORM = MAKE_FOURCC('F', 'O', 'R', 'M');
+const fourcc_t FOURCC_CAT = MAKE_FOURCC('C', 'A', 'T', ' ');
+const fourcc_t FOURCC_EVNT = MAKE_FOURCC('E', 'V', 'N', 'T');
+
+const fourcc_t FOURCC_XDIR = MAKE_FOURCC('X', 'D', 'I', 'R');
+const fourcc_t FOURCC_XMID = MAKE_FOURCC('X', 'M', 'I', 'D');
 
 struct iff_chunk_t
 {
-    FOURCC Id;
-    FOURCC Type;
+    fourcc_t Id;
+    fourcc_t Type;
     std::vector<uint8_t> _Data;
     std::vector<iff_chunk_t> _Chunks;
 
@@ -44,7 +48,7 @@ struct iff_chunk_t
     /// <summary>
     /// Gets the n-th chunk with the specified id.
     /// </summary>
-    const iff_chunk_t &FindChunk(FOURCC id, uint32_t n = 0) const
+    const iff_chunk_t &FindChunk(fourcc_t id, uint32_t n = 0) const
     {
         for (const auto &Chunk : _Chunks)
         {
@@ -64,7 +68,7 @@ struct iff_chunk_t
     /// <summary>
     /// Gets the number of chunks with the specified id.
     /// </summary>
-    uint32_t GetChunkCount(FOURCC id) const
+    uint32_t GetChunkCount(fourcc_t id) const
     {
         uint32_t ChunkCount = 0;
 
@@ -87,7 +91,7 @@ struct iff_stream_t
     /// <summary>
     /// Finds the first chunk with the specified id.
     /// </summary>
-    const iff_chunk_t &FindChunk(FOURCC id) const
+    const iff_chunk_t &FindChunk(fourcc_t id) const
     {
         for (const auto &Chunk : _Chunks)
         {
