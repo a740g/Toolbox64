@@ -412,8 +412,8 @@ void midi_container_t::SerializeAsStream(size_t subSongIndex, std::vector<midi_i
     uint32_t LoopBeginTimestamp = GetLoopBeginTimestamp(subSongIndex);
     uint32_t LoopEndTimestamp = GetLoopEndTimestamp(subSongIndex);
 
-    size_t LoopBegin = ~0UL;
-    size_t LoopEnd = ~0UL;
+    size_t LoopBegin = std::numeric_limits<decltype(LoopBegin)>::max();
+    size_t LoopEnd = std::numeric_limits<decltype(LoopEnd)>::max();
 
     size_t TrackCount = _Tracks.size();
 
@@ -467,7 +467,7 @@ void midi_container_t::SerializeAsStream(size_t subSongIndex, std::vector<midi_i
 
         // Select which track can provide the next event.
         {
-            uint32_t NextTimestamp = ~0UL;
+            uint32_t NextTimestamp = std::numeric_limits<decltype(NextTimestamp)>::max();
 
             for (size_t i = 0; i < TrackCount; ++i)
             {
@@ -481,7 +481,7 @@ void midi_container_t::SerializeAsStream(size_t subSongIndex, std::vector<midi_i
                 }
             }
 
-            if (NextTimestamp == ~0UL)
+            if (NextTimestamp == std::numeric_limits<decltype(NextTimestamp)>::max())
                 break;
         }
 
@@ -499,10 +499,10 @@ void midi_container_t::SerializeAsStream(size_t subSongIndex, std::vector<midi_i
 
         if (!IsEventFiltered)
         {
-            if ((LoopBegin == ~0UL) && (Event.Time >= LoopBeginTimestamp))
+            if ((LoopBegin == std::numeric_limits<decltype(LoopBegin)>::max()) && (Event.Time >= LoopBeginTimestamp))
                 LoopBegin = midiStream.size();
 
-            if ((LoopEnd == ~0UL) && (Event.Time > LoopEndTimestamp))
+            if ((LoopEnd == std::numeric_limits<decltype(LoopEnd)>::max()) && (Event.Time > LoopEndTimestamp))
                 LoopEnd = midiStream.size();
 
             uint32_t TempoTrackIndex = ((_Format == 2) && (subSongIndex > 0)) ? (uint32_t)subSongIndex : 0;
@@ -857,10 +857,10 @@ uint32_t midi_container_t::GetLoopBeginTimestamp(size_t subSongIndex, bool ms /*
     if (!ms)
         return Timestamp;
 
-    if (Timestamp != ~0UL)
+    if (Timestamp != std::numeric_limits<decltype(Timestamp)>::max())
         return TimestampToMS(Timestamp, TrackIndex);
 
-    return ~0UL;
+    return std::numeric_limits<decltype(Timestamp)>::max();
 }
 
 uint32_t midi_container_t::GetLoopEndTimestamp(size_t subSongIndex, bool ms /* = false */) const
@@ -878,10 +878,10 @@ uint32_t midi_container_t::GetLoopEndTimestamp(size_t subSongIndex, bool ms /* =
     if (!ms)
         return Timestamp;
 
-    if (Timestamp != ~0UL)
+    if (Timestamp != std::numeric_limits<decltype(Timestamp)>::max())
         return TimestampToMS(Timestamp, TrackIndex);
 
-    return ~0UL;
+    return std::numeric_limits<decltype(Timestamp)>::max();
 }
 
 void midi_container_t::GetMetaData(size_t subSongIndex, midi_metadata_table_t &metaData)
@@ -1159,7 +1159,7 @@ void midi_container_t::TrimStart()
 
 void midi_container_t::TrimRange(size_t start, size_t end)
 {
-    uint32_t timestamp_first_note = ~0UL;
+    uint32_t timestamp_first_note = std::numeric_limits<decltype(timestamp_first_note)>::max();
 
     for (size_t i = start; i <= end; ++i)
     {
@@ -1182,7 +1182,7 @@ void midi_container_t::TrimRange(size_t start, size_t end)
         }
     }
 
-    if (timestamp_first_note < ~0UL && timestamp_first_note > 0)
+    if (timestamp_first_note < std::numeric_limits<decltype(timestamp_first_note)>::max() && timestamp_first_note > 0)
     {
         for (size_t i = start; i <= end; ++i)
         {

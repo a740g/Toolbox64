@@ -11,6 +11,7 @@
 #include <cstdarg>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <cassert>
 #include <vector>
 #include <stdexcept>

@@ -44,12 +44,12 @@ bool MIDIPlayer::Load(const midi_container_t &midiContainer, uint32_t subsongInd
     {
         _LoopBegin = midiContainer.GetLoopBeginTimestamp(subsongIndex, true);
 
-        if (_LoopBegin == ~0UL)
+        if (_LoopBegin == std::numeric_limits<decltype(_LoopBegin)>::max())
             _LoopBegin = 0;
 
         uint32_t LoopEnd = midiContainer.GetLoopEndTimestamp(subsongIndex, true);
 
-        if (LoopEnd == ~0UL)
+        if (LoopEnd == std::numeric_limits<decltype(LoopEnd)>::max())
             LoopEnd = _Length;
 
         // FIXME: I don't have a clue what this does.
