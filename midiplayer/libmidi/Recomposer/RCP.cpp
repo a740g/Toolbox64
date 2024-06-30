@@ -1126,7 +1126,7 @@ void rcp_file_t::ConvertTrack(const uint8_t *data, uint32_t size, uint32_t *offs
 
                         if (_Options._WriteBarMarkers)
                         {
-                            int Length = ::sprintf_s((char *)Temp, _countof(Temp), "Loop %u End (%u/%u)", 1 + LoopCount, LoopCounter[LoopCount], CmdP0);
+                            int Length = ::sprintf_safe((char *)Temp, _countof(Temp), "Loop %u End (%u/%u)", 1 + LoopCount, LoopCounter[LoopCount], CmdP0);
 
                             midiStream.WriteMetaEvent(MetaDataTypes::CueMarker, Temp, (uint32_t)Length);
                         }
@@ -1157,7 +1157,7 @@ void rcp_file_t::ConvertTrack(const uint8_t *data, uint32_t size, uint32_t *offs
                 {
                     if (_Options._WriteBarMarkers)
                     {
-                        int Length = ::sprintf_s((char *)Temp, _countof(Temp), "Loop %u Start", LoopCount + 1);
+                        int Length = ::sprintf_safe((char *)Temp, _countof(Temp), "Loop %u Start", LoopCount + 1);
 
                         midiStream.WriteMetaEvent(MetaDataTypes::CueMarker, Temp, (uint32_t)Length);
                     }
@@ -1232,7 +1232,7 @@ void rcp_file_t::ConvertTrack(const uint8_t *data, uint32_t size, uint32_t *offs
 
                             if (_Options._WriteBarMarkers)
                             {
-                                int Length = ::sprintf_s((char *)Temp, _countof(Temp), "Repeat Bar %u", 1 + BarID);
+                                int Length = ::sprintf_safe((char *)Temp, _countof(Temp), "Repeat Bar %u", 1 + BarID);
 
                                 midiStream.WriteMetaEvent(MetaDataTypes::CueMarker, Temp, (uint32_t)Length);
                             }
@@ -1300,7 +1300,7 @@ void rcp_file_t::ConvertTrack(const uint8_t *data, uint32_t size, uint32_t *offs
 
                     if (_Options._WriteBarMarkers)
                     {
-                        int Length = ::sprintf_s((char *)Temp, _countof(Temp), "Bar %u", 1 + BarCount);
+                        int Length = ::sprintf_safe((char *)Temp, _countof(Temp), "Bar %u", 1 + BarCount);
 
                         midiStream.WriteMetaEvent(MetaDataTypes::CueMarker, Temp, (uint32_t)Length);
                     }

@@ -68,7 +68,7 @@ struct buffer_t
     {
         FILE *fp = nullptr;
 
-        if (::fopen_s(&fp, filePath, "rb") != 0)
+        if (::fopen_safe(&fp, filePath, "rb") != 0)
             throw std::runtime_error("Failed to open " + std::string(filePath) + " for reading: error " + std::to_string(errno));
 
         if (fp != nullptr)
@@ -92,7 +92,7 @@ struct buffer_t
     {
         FILE *fp = nullptr;
 
-        if (::fopen_s(&fp, filePath, "wb") != 0)
+        if (::fopen_safe(&fp, filePath, "wb") != 0)
             throw std::runtime_error("Failed to open " + std::string(filePath) + " for writing: error " + std::to_string(errno));
 
         if (fp != nullptr)

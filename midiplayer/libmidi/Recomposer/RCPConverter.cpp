@@ -173,7 +173,8 @@ void rcp_converter_t::ConvertSequence(const buffer_t &rcpData, buffer_t &midData
     {
         char FilePath[260];
 
-        ::strcpy_s(FilePath, _countof(FilePath), _FilePath.c_str());
+        ::strncpy(FilePath, _FilePath.c_str(), _countof(FilePath) - 1);
+        FilePath[_countof(FilePath) - 1] = '\0';
 
         char *FileName = (char *)GetFileName(FilePath);
         *FileName = '\0';
@@ -185,7 +186,7 @@ void rcp_converter_t::ConvertSequence(const buffer_t &rcpData, buffer_t &midData
         {
             ::memcpy(FileNameA, RCPFile._CM6FileName.Data, RCPFile._CM6FileName.Len), FileNameA[RCPFile._CM6FileName.Len] = '\0';
 
-            ::strcat_s(FilePath, _countof(FilePath), FileNameA);
+            ::strcat_safe(FilePath, _countof(FilePath), FileNameA);
 
             buffer_t CM6Data;
 
@@ -211,7 +212,7 @@ void rcp_converter_t::ConvertSequence(const buffer_t &rcpData, buffer_t &midData
         {
             ::memcpy(FileNameA, RCPFile._GSD1FileName.Data, RCPFile._GSD1FileName.Len), FileNameA[RCPFile._GSD1FileName.Len] = '\0';
 
-            ::strcat_s(FilePath, _countof(FilePath), FileNameA);
+            ::strcat_safe(FilePath, _countof(FilePath), FileNameA);
 
             buffer_t GSDData;
 
@@ -237,7 +238,7 @@ void rcp_converter_t::ConvertSequence(const buffer_t &rcpData, buffer_t &midData
         {
             ::memcpy(FileName, RCPFile._GSD2FileName.Data, RCPFile._GSD2FileName.Len), FileName[RCPFile._GSD2FileName.Len] = '\0';
 
-            ::strcat_s(FilePath, _countof(FilePath), FileNameA);
+            ::strcat_safe(FilePath, _countof(FilePath), FileNameA);
 
             buffer_t GSDData;
 

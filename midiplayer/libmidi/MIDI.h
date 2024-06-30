@@ -46,7 +46,7 @@ enum MetaDataTypes
     TrackName = 0x03,      // Track name (string, occurs at delta time 0)
     InstrumentName = 0x04, // Instrument name (string)
     Lyrics = 0x05,         // Stores the lyrics of a song. Typically one syllable per Meta Message. (string)
-    Marker = 0x06,         // Marks a point of interest in a MIDI file. Can be used as the marker for the beginning of a verse, solo, etc. (string)
+    POIMarker = 0x06,      // Marks a point of interest in a MIDI file. Can be used as the marker for the beginning of a verse, solo, etc. (string)
     CueMarker = 0x07,      // Marks a cue. IE: �Cue performer 1�, etc (string)
 
     DeviceName = 0x09, // Gives the name of the device. (string)

@@ -11,8 +11,8 @@
 midi_processor_options_t midi_processor_t::_Options;
 
 const uint8_t midi_processor_t::MIDIEventEndOfTrack[2] = {StatusCodes::MetaData, MetaDataTypes::EndOfTrack};
-const uint8_t midi_processor_t::LoopBeginMarker[11] = {StatusCodes::MetaData, MetaDataTypes::Marker, 'l', 'o', 'o', 'p', 'S', 't', 'a', 'r', 't'};
-const uint8_t midi_processor_t::LoopEndMarker[9] = {StatusCodes::MetaData, MetaDataTypes::Marker, 'l', 'o', 'o', 'p', 'E', 'n', 'd'};
+const uint8_t midi_processor_t::LoopBeginMarker[11] = {StatusCodes::MetaData, MetaDataTypes::POIMarker, 'l', 'o', 'o', 'p', 'S', 't', 'a', 'r', 't'};
+const uint8_t midi_processor_t::LoopEndMarker[9] = {StatusCodes::MetaData, MetaDataTypes::POIMarker, 'l', 'o', 'o', 'p', 'E', 'n', 'd'};
 
 /// <summary>
 /// Processes a stream of bytes.

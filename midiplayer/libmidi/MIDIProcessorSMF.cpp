@@ -294,7 +294,7 @@ bool midi_processor_t::ProcessSMFTrack(std::vector<uint8_t>::const_iterator &dat
 
                 for (int n = Size; n > 3; --n, p++)
                 {
-                    if (::_strnicmp(p, "drum", 4) == 0)
+                    if (::strncasecmp(p, "drum", 4) == 0)
                     {
                         DetectedPercussionText = true;
                         break;
