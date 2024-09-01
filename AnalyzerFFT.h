@@ -20,8 +20,8 @@ private:
     static const auto SAMPLES2 = 1 << (POW - 1);
     static const auto SAMPLES2Q = 1 << (POW - 2);
     static const auto SCALE_FACTOR = 1 << 28;
-    static const auto S16_TO_F32_MUL = 1.0f / 32768.0f;
-    static const auto F32_TO_S16_MUL = 32767.0f;
+    static constexpr auto S16_TO_F32_MUL = 1.0f / 32768.0f;
+    static constexpr auto F32_TO_S16_MUL = 32767.0f;
 
     static uint16_t fft_permtab[SAMPLES];
     static int32_t fft_x86[SAMPLES][2];

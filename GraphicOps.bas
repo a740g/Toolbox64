@@ -21,7 +21,17 @@ $INCLUDEONCE
 
 'SCREEN 0: WIDTH 160, 90: _FONT 8: _BLINK OFF
 
-'_DISPLAY
+'PRINT HEX$(Graphics_InterpolateColor(BGRA_WHITE, BGRA_BLACK, 0.5!))
+'PRINT Graphics_GetRGBDistance(BGRA_WHITE, BGRA_BLACK)
+'PRINT Graphics_GetRGBDelta(BGRA_WHITE, BGRA_BLACK)
+
+'DIM pal(0 TO 5) AS _UNSIGNED LONG
+'pal(0) = BGRA_BLACK
+'pal(1) = BGRA_WHITE
+'pal(2) = BGRA_RED
+'pal(3) = BGRA_GREEN
+'pal(4) = BGRA_BLUE
+'PRINT Graphics_FindClosestColor(BGRA_ORANGERED, pal(0), 5)
 
 'COLOR 17, 6
 'Graphics_SetForegroundColor 1
@@ -33,27 +43,29 @@ $INCLUDEONCE
 'PRINT Graphics_MakeTextColorAttribute(56, 1, 14)
 'PRINT Graphics_MakeDefaultTextColorAttribute(56)
 
-'DIM i AS _UNSIGNED LONG: i = HexToRGB32("090502")
+'DIM i AS _UNSIGNED LONG
+
+'i = Graphics_GetBGRAFromWebColor("090502")
 'PRINT HEX$(i)
-'i = ToBGRA(9, 5, 2, 255)
+'i = Graphics_MakeBGRA(9, 5, 2, 255)
 'PRINT HEX$(i)
-'i = ToRGBA(9, 5, 2, 255)
+'i = Graphics_MakeRGBA(9, 5, 2, 255)
 'PRINT HEX$(i)
-'PRINT HEX$(GetRedFromRGBA(i))
-'PRINT HEX$(GetGreenFromRGBA(i))
-'PRINT HEX$(GetBlueFromRGBA(i))
-'PRINT HEX$(GetRGB(i))
-'PRINT HEX$(SwapRedBlue(i))
+'PRINT HEX$(Graphics_GetRedFromRGBA(i))
+'PRINT HEX$(Graphics_GetGreenFromRGBA(i))
+'PRINT HEX$(Graphics_GetBlueFromRGBA(i))
+'PRINT HEX$(Graphics_GetRGB(i))
+'PRINT HEX$(Graphics_SwapRedBlue(i))
 
 'DIM t AS DOUBLE: t = TIMER
 
-'DIM i AS LONG: FOR i = 1 TO 100000
+'FOR i = 1 TO 100000
 'COLOR 17, 6: _PRINTSTRING (11, 11), "8"
-'Graphics_SetPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
+'Graphics_DrawPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
 'PSET (30, 30), 14
-'Graphics_SetPixel 30, 30, 14
+'Graphics_DrawPixel 30, 30, 14
 'PSET (30, 30), _RGB32(166, 22, 183)
-'Graphics_SetPixel 30, 30, _RGB32(166, 22, 183)
+'Graphics_DrawPixel 30, 30, _RGB32(166, 22, 183)
 
 'Graphics_DrawHorizontalLine 0, 45, 159, Graphics_MakeTextColorAttribute(56, 1, 14)
 'LINE (0, 240)-(639, 240), 14
