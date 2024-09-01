@@ -933,7 +933,7 @@ inline auto Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB)
 /// @param colorA The first color.
 /// @param colorB The second color.
 /// @return The delta between the two colors.
-inline constexpr auto Graphics_GetRGBDelta(uint32_t colorA, uint32_t colorB)
+inline auto Graphics_GetRGBDelta(uint32_t colorA, uint32_t colorB)
 {
     return image_get_color_delta(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB), image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
 }
