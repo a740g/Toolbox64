@@ -14,6 +14,13 @@
 #include <cstdint>
 #include <cstdlib>
 
+static const auto AUDIOCONV_S8_TO_F32_MUL = 1.0f / 128.0f;
+static const auto AUDIOCONV_S16_TO_F32_MUL = 1.0f / 32768.0f;
+static const auto AUDIOCONV_S32_TO_F32_MUL = 1.0f / 2147483648.0f;
+static const auto AUDIOCONV_F32_TO_S8_MUL = 127.0f;
+static const auto AUDIOCONV_F32_TO_S16_MUL = 32767.0f;
+static const auto AUDIOCONV_F32_TO_S32_MUL = 2147483647.0f;
+
 /// @brief Converts unsigned 8-bit audio samples to signed 8-bit inplace.
 /// @param source The input unsigned 8-bit sample frame buffer.
 /// @param samples The number of samples in the sample frame buffer, where samples = frames * channels.
@@ -56,7 +63,7 @@ inline void __AudioConv_ConvertS8ToF32(const void *src, uint32_t samples, void *
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < samples; i++)
-        dstBuffer[i] = (float)srcBuffer[i] / 128.0f;
+        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S8_TO_F32_MUL;
 }
 
 /// @brief Converts signed 8-bit audio samples to signed 16-bit.
@@ -89,7 +96,7 @@ inline void __AudioConv_ConvertS16ToF32(const void *src, uint32_t samples, void 
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < samples; i++)
-        dstBuffer[i] = (float)srcBuffer[i] / 32768.0f;
+        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S16_TO_F32_MUL;
 }
 
 /// @brief Decodes an 8-bit unsigned integer using the A-Law.
@@ -147,7 +154,7 @@ void __AudioConv_ConvertALawToF32(const void *src, uint32_t frames, void *dst)
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < frames; i++)
-        dstBuffer[i] = (float)__AudioConv_DecodeALawSample(srcBuffer[i]) / 32768.0f;
+        dstBuffer[i] = (float)__AudioConv_DecodeALawSample(srcBuffer[i]) * AUDIOCONV_S16_TO_F32_MUL;
 }
 
 /// @brief Decodes an 8-bit unsigned integer using the mu-Law.
@@ -202,7 +209,7 @@ void __AudioConv_ConvertMuLawToF32(const void *src, uint32_t samples, void *dst)
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < samples; i++)
-        dstBuffer[i] = (float)__AudioConv_DecodeMuLawSample(srcBuffer[i]) / 32768.0f;
+        dstBuffer[i] = (float)__AudioConv_DecodeMuLawSample(srcBuffer[i]) * AUDIOCONV_S16_TO_F32_MUL;
 }
 
 /// @brief Converts 4-bit ADPCM compressed audio samples to 8-bit signed samples.
@@ -357,14 +364,13 @@ uint64_t AudioConv_ResampleAndConvertS8ToF32(const int8_t *input, float *output,
     const double normFixed = (1.0 / (1LL << 32));
     auto step = ((uint64_t)(stepDist * fixedFraction + 0.5));
     uint64_t curOffset = 0;
-    float sampleFP1, sampleFP2;
 
     for (uint32_t i = 0; i < outputSize; i += 1)
     {
         for (uint32_t c = 0; c < channels; c += 1)
         {
-            sampleFP1 = (float)input[c] / 128.0f;
-            sampleFP2 = (float)input[c + channels] / 128.0f;
+            auto sampleFP1 = (float)input[c] * AUDIOCONV_S8_TO_F32_MUL;
+            auto sampleFP2 = (float)input[c + channels] * AUDIOCONV_S8_TO_F32_MUL;
             *output++ = (float)(sampleFP1 + (sampleFP2 - sampleFP1) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
         }
         curOffset += step;
@@ -399,14 +405,13 @@ uint64_t AudioConv_ResampleAndConvertS16ToF32(const int16_t *input, float *outpu
     const double normFixed = (1.0 / (1LL << 32));
     auto step = ((uint64_t)(stepDist * fixedFraction + 0.5));
     uint64_t curOffset = 0;
-    float sampleFP1, sampleFP2;
 
     for (uint32_t i = 0; i < outputSize; i += 1)
     {
         for (uint32_t c = 0; c < channels; c += 1)
         {
-            sampleFP1 = (float)input[c] / 32768.0f;
-            sampleFP2 = (float)input[c + channels] / 32768.0f;
+            auto sampleFP1 = (float)input[c] * AUDIOCONV_S16_TO_F32_MUL;
+            auto sampleFP2 = (float)input[c + channels] * AUDIOCONV_S16_TO_F32_MUL;
             *output++ = (float)(sampleFP1 + (sampleFP2 - sampleFP1) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
         }
         curOffset += step;

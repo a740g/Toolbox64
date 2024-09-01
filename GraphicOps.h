@@ -60,6 +60,23 @@ struct img_struct
     // END apm
 };
 
+extern uint8_t image_get_bgra_red(uint32_t c);
+extern uint8_t image_get_bgra_green(uint32_t c);
+extern uint8_t image_get_bgra_blue(uint32_t c);
+extern uint8_t image_get_bgra_alpha(uint32_t c);
+extern uint32_t image_get_bgra_bgr(uint32_t c);
+extern uint32_t image_set_bgra_alpha(uint32_t c, uint8_t a = 0xFFu);
+extern uint32_t image_make_bgra(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFFu);
+extern uint32_t image_swap_red_blue(uint32_t clr);
+extern uint8_t image_clamp_color_component(int n);
+extern float image_calculate_rgb_distance(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8_t b2);
+extern uint32_t image_get_color_delta(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8_t b2);
+extern uint32_t func__rgb32(int32_t r, int32_t g, int32_t b, int32_t a);
+extern uint32_t func__rgb32(int32_t r, int32_t g, int32_t b);
+extern uint32_t func__rgb32(int32_t i, int32_t a);
+extern uint32_t func__rgb32(int32_t i);
+extern uint32_t func__rgba32(int32_t r, int32_t g, int32_t b, int32_t a);
+extern int32_t func__alpha32(uint32_t col);
 extern int32_t func__red32(uint32_t col);
 extern int32_t func__green32(uint32_t col);
 extern int32_t func__blue32(uint32_t col);
@@ -845,18 +862,6 @@ void Graphics_DrawFilledTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
     }
 }
 
-/// @brief Makes a BGRA color from RGBA components.
-/// This is multiple times faster than QB64's built-in _RGB32
-/// @param r Red (0 - 255)
-/// @param g Green (0 - 255)
-/// @param b Blue (0 - 255)
-/// @param a Alpha (0 - 255)
-/// @return Returns an RGBA color
-inline constexpr uint32_t Graphics_MakeBGRA(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-    return ((static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b));
-}
-
 /// @brief Makes a RGBA color from RGBA components
 /// @param r Red (0 - 255)
 /// @param g Green (0 - 255)
@@ -892,28 +897,45 @@ inline constexpr uint8_t Graphics_GetBlueFromRGBA(uint32_t rgba)
     return static_cast<uint8_t>(rgba >> 16);
 }
 
-/// @brief Returns the Alpha value
-/// @param rgba An RGBA color
-/// @return Alpha
+/// @brief Returns the Alpha value.
+/// @param rgba An RGBA color.
+/// @return Alpha.
 inline constexpr uint8_t Graphics_GetAlphaFromRGBA(uint32_t rgba)
 {
     return static_cast<uint8_t>(rgba >> 24);
 }
 
-/// @brief Gets the RGB or BGR value without the alpha
-/// @param rgba An RGBA or BGRA color
-/// @return RGB or BGR value
-inline constexpr uint32_t Graphics_GetRGB(uint32_t clr)
+/// @brief Interpolates between two colors.
+/// @param colorA The first color.
+/// @param colorB The second color.
+/// @param factor The interpolation factor.
+/// @return The interpolated color.
+inline constexpr auto Graphics_InterpolateColor(uint32_t colorA, uint32_t colorB, float factor)
 {
-    return clr & 0xFFFFFFu;
+    auto a = func__alpha32(colorA);
+    auto r = func__red32(colorA);
+    auto g = func__green32(colorA);
+    auto b = func__blue32(colorA);
+
+    return func__rgba32(r + int32_t((func__red32(colorB) - r) * factor), g + int32_t((func__green32(colorB) - g) * factor), b + int32_t((func__blue32(colorB) - b) * factor), a + int32_t((func__alpha32(colorB) - a) * factor));
 }
 
-/// @brief Helps convert a BGRA color to an RGBA color and back
-/// @param bgra A BGRA color or an RGBA color
-/// @return An RGBA color or a BGRA color
-inline constexpr uint32_t Graphics_SwapRedBlue(uint32_t clr)
+/// @brief Calculates the distance between two colors.
+/// @param colorA The first color.
+/// @param colorB The second color.
+/// @return The distance between the two colors.
+inline constexpr auto Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB)
 {
-    return ((clr & 0xFF00FF00u) | ((clr & 0x00FF0000u) >> 16) | ((clr & 0x000000FFu) << 16));
+    return image_calculate_rgb_distance(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB), image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
+}
+
+/// @brief Calculates the delta between two colors.
+/// @param colorA The first color.
+/// @param colorB The second color.
+/// @return The delta between the two colors.
+inline constexpr auto Graphics_GetRGBDelta(uint32_t colorA, uint32_t colorB)
+{
+    return image_get_color_delta(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB), image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
 }
 
 /// @brief Set the text image's transparent "color" that will be used by Graphics_PutTextImage()
@@ -1160,20 +1182,21 @@ void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx
 }
 
 /// @brief Finds the closest color index in the palette.
-/// @param color The 32-bit color to find.
+/// @param r The red color component.
+/// @param g The green color component.
+/// @param b The blue color component.
 /// @param palette The palette to search (an array of 32-bit colors).
 /// @param paletteColors The number of colors in the palette.
-/// @return The index of the closest color in the palette.
-uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const void *palette, uint32_t paletteColors)
+/// @return The index of the closest color in the palette (zero based).
+uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const uint32_t *palette, uint32_t paletteColors)
 {
-    auto minDistance = std::numeric_limits<int>::max();
+    auto minDistance = std::numeric_limits<uint32_t>::max();
     auto closestIndex = 0u;
-    auto pal = reinterpret_cast<const uint32_t *>(palette);
 
     for (auto i = 0u; i < paletteColors; i++)
     {
-        auto c = *pal++;
-        auto distance = abs((int)r - (int)((c >> 16) & 0xFF)) + abs((int)g - (int)((c >> 8) & 0xFF)) + abs((int)b - (int)(c & 0xFF));
+        auto c = *palette++;
+        auto distance = image_get_color_delta(r, g, b, (c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
 
         if (distance < minDistance)
         {
@@ -1188,11 +1211,22 @@ uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const void *
     return closestIndex;
 }
 
+/// @brief Finds the closest color index in the palette.
+/// @param c The 32-bit color to find.
+/// @param palette The palette to search (an array of 32-bit colors).
+/// @param paletteColors The number of colors in the palette.
+/// @return The index of the closest color in the palette (zero based).
+inline auto Graphics_FindClosestColor(uint32_t c, const uint32_t *palette, uint32_t paletteColors)
+{
+    return Graphics_FindClosestColor(image_get_bgra_red(c), image_get_bgra_green(c), image_get_bgra_blue(c), palette, paletteColors);
+}
+
 /// @brief Renders ASCII art of an image to a destination text mode image.
 /// @param src The source graphics image.
 /// @param dst The destination text mode image.
 void Graphics_RenderASCIIArt(int32_t src, int32_t dst)
 {
+    // TODO: Generate this from the selected font
     // 8-bit intensity gradient
     const static uint8_t intensityGradient[] = {
         0x20, 0xFF, 0x00, 0xFA, 0xF9, 0x2E, 0x27, 0x2C, 0x60, 0x2D, 0xC4, 0x3A, 0x5F, 0x3B, 0xAA, 0x7E,
