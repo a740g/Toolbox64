@@ -23,9 +23,9 @@ private:
     static constexpr auto S16_TO_F32_MUL = 1.0f / 32768.0f;
     static constexpr auto F32_TO_S16_MUL = 32767.0f;
 
-    static uint16_t fft_permtab[SAMPLES];
-    static int32_t fft_x86[SAMPLES][2];
-    static int32_t fft_cossintab86[SAMPLES2][2];
+    static uint16_t permtab[SAMPLES];
+    static int32_t x86[SAMPLES][2];
+    static int32_t cossintab86[SAMPLES2][2];
 
     static constexpr auto IMul29(int32_t a, int32_t b)
     {
@@ -57,8 +57,8 @@ private:
 
             for (auto j = 0; j < s2dk; ++j)
             {
-                curcossin[0] = fft_cossintab86[j << i][0];
-                curcossin[1] = fft_cossintab86[j << i][1];
+                curcossin[0] = AnalyzerFFT::cossintab86[j << i][0];
+                curcossin[1] = AnalyzerFFT::cossintab86[j << i][1];
 
                 for (xi = x[j]; xi < xe; xi += 2 * d2)
                     Calc(xi, curcossin, d2);
@@ -72,15 +72,15 @@ public:
         for (auto i = 0; i < SAMPLES2Q; i++)
         {
             double angle = (2.0 * M_PI * i) / (4.0 * SAMPLES2Q);
-            fft_cossintab86[i][0] = int32_t(std::cos(angle) * SCALE_FACTOR);
-            fft_cossintab86[i][1] = int32_t(std::sin(angle) * SCALE_FACTOR);
+            AnalyzerFFT::cossintab86[i][0] = int32_t(std::cos(angle) * SCALE_FACTOR);
+            AnalyzerFFT::cossintab86[i][1] = int32_t(std::sin(angle) * SCALE_FACTOR);
         }
 
         auto j = 0, k = 0;
 
         for (auto i = 0; i < SAMPLES; ++i)
         {
-            fft_permtab[i] = j;
+            AnalyzerFFT::permtab[i] = j;
             for (k = SAMPLES2; k && (k <= j); k >>= 1)
                 j -= k;
             j += k;
@@ -88,14 +88,14 @@ public:
 
         for (auto i = SAMPLES2 / 4 + 1; i <= SAMPLES2 / 2; ++i)
         {
-            fft_cossintab86[i][0] = fft_cossintab86[SAMPLES2 / 2 - i][1];
-            fft_cossintab86[i][1] = fft_cossintab86[SAMPLES2 / 2 - i][0];
+            AnalyzerFFT::cossintab86[i][0] = AnalyzerFFT::cossintab86[SAMPLES2 / 2 - i][1];
+            AnalyzerFFT::cossintab86[i][1] = AnalyzerFFT::cossintab86[SAMPLES2 / 2 - i][0];
         }
 
         for (auto i = SAMPLES2 / 2 + 1; i < SAMPLES2; ++i)
         {
-            fft_cossintab86[i][0] = -fft_cossintab86[SAMPLES2 - i][0];
-            fft_cossintab86[i][1] = fft_cossintab86[SAMPLES2 - i][1];
+            AnalyzerFFT::cossintab86[i][0] = -AnalyzerFFT::cossintab86[SAMPLES2 - i][0];
+            AnalyzerFFT::cossintab86[i][1] = AnalyzerFFT::cossintab86[SAMPLES2 - i][1];
         }
     }
 
@@ -115,19 +115,19 @@ public:
         for (auto i = 0; i < full; ++i)
         {
             auto sample = float(*samp) * S16_TO_F32_MUL;
-            fft_x86[i][0] = *samp << 12;
+            AnalyzerFFT::x86[i][0] = *samp << 12;
             intensity = intensity + sample * sample;
             samp += inc;
-            fft_x86[i][1] = 0;
+            AnalyzerFFT::x86[i][1] = 0;
         }
         intensity = (float)inc * intensity / (float)full;
 
-        Do86(fft_x86, bits);
+        Do86(AnalyzerFFT::x86, bits);
 
         for (auto i = 1; i <= half; ++i)
         {
-            auto xr0 = fft_x86[fft_permtab[i] >> (POW - bits)][0] >> 12;
-            auto xr1 = fft_x86[fft_permtab[i] >> (POW - bits)][1] >> 12;
+            auto xr0 = AnalyzerFFT::x86[AnalyzerFFT::permtab[i] >> (POW - bits)][0] >> 12;
+            auto xr1 = AnalyzerFFT::x86[AnalyzerFFT::permtab[i] >> (POW - bits)][1] >> 12;
             ana[i - 1] = std::sqrt((xr0 * xr0 + xr1 * xr1) * i);
         }
 
@@ -151,19 +151,19 @@ public:
         for (auto i = 0; i < full; ++i)
         {
             auto sample = *samp;
-            fft_x86[i][0] = (int32_t)(fmaxf(fminf(sample, 1.0f), -1.0f) * F32_TO_S16_MUL) << 12;
+            AnalyzerFFT::x86[i][0] = (int32_t)(fmaxf(fminf(sample, 1.0f), -1.0f) * F32_TO_S16_MUL) << 12;
             intensity = intensity + sample * sample;
             samp += inc;
-            fft_x86[i][1] = 0;
+            AnalyzerFFT::x86[i][1] = 0;
         }
         intensity = (float)inc * intensity / (float)full;
 
-        Do86(fft_x86, bits);
+        Do86(AnalyzerFFT::x86, bits);
 
         for (auto i = 1; i <= half; ++i)
         {
-            auto xr0 = fft_x86[fft_permtab[i] >> (POW - bits)][0] >> 12;
-            auto xr1 = fft_x86[fft_permtab[i] >> (POW - bits)][1] >> 12;
+            auto xr0 = AnalyzerFFT::x86[AnalyzerFFT::permtab[i] >> (POW - bits)][0] >> 12;
+            auto xr1 = AnalyzerFFT::x86[AnalyzerFFT::permtab[i] >> (POW - bits)][1] >> 12;
             ana[i - 1] = std::sqrt((xr0 * xr0 + xr1 * xr1) * i);
         }
 
