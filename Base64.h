@@ -101,7 +101,9 @@
  */
 #define modp_b64_encode_strlen(A) (((A) + 2) / 3 * 4)
 
-#define MODP_B64_ERROR ((size_t)-1)
+#define MODP_B64_ERROR ((size_t) - 1)
+
+#define modp_b64_error() MODP_B64_ERROR
 
 #define MODP_B64_CHARPAD '='
 
@@ -533,48 +535,4 @@ static inline size_t modp_b64_decode(char *dest, const char *src, size_t len)
         return MODP_B64_ERROR;
 
     return 3 * chunks + (6 * leftover) / 8;
-}
-
-/// @brief Encodes a binary string to a base 64 string. The required memory is allocated and the caller should free it
-/// @param src A pointer to the binary data to be encoded
-/// @param src_size The size of the binary data
-/// @param dst_size The size of the base64 data (this cannot be NULL)
-/// @return A valid pointer if successful else NULL
-inline uintptr_t __MODP_B64_Encode(const char *src, size_t srcSize, size_t *dstSize)
-{
-    auto dst = reinterpret_cast<char *>(malloc(modp_b64_encode_len(srcSize)));
-    if (!dst)
-        return reinterpret_cast<uintptr_t>(nullptr);
-
-    auto outSize = modp_b64_encode(dst, src, srcSize);
-    if (outSize == MODP_B64_ERROR)
-    {
-        free(dst);
-        return reinterpret_cast<uintptr_t>(nullptr);
-    }
-
-    *dstSize = outSize;
-    return reinterpret_cast<uintptr_t>(dst);
-}
-
-/// @brief Decodes a base64 string to a binary string. The required memory is allocated and the caller should free it
-/// @param src A pointer to the base64 data to be decoded
-/// @param src_size The size of the base64 data
-/// @param dst_size The size of the binary data (this cannot be NULL)
-/// @return A valid pointer if successful else NULL
-inline uintptr_t __MODP_B64_Decode(const char *src, size_t srcSize, size_t *dstSize)
-{
-    auto dst = reinterpret_cast<char *>(malloc(modp_b64_decode_len(srcSize)));
-    if (!dst)
-        return reinterpret_cast<uintptr_t>(nullptr);
-
-    auto outSize = modp_b64_decode(dst, src, srcSize);
-    if (outSize == MODP_B64_ERROR)
-    {
-        free(dst);
-        return reinterpret_cast<uintptr_t>(nullptr);
-    }
-
-    *dstSize = outSize;
-    return reinterpret_cast<uintptr_t>(dst);
 }

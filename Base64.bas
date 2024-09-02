@@ -10,7 +10,7 @@ $INCLUDEONCE
 '-------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-------------------------------------------------------------------------------------------------------------------
-'CONST ITERATIONS = 1000000
+'CONST ITERATIONS = 10000000
 'CONST LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut " + _
 '    "labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip " + _
 '    "ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat " + _
@@ -20,7 +20,7 @@ $INCLUDEONCE
 
 'PRINT ITERATIONS; "iterations,"; LEN(LOREM_IPSUM); "bytes."
 
-'PRINT "Base64 encode..."
+'PRINT "Base64 encode...";
 
 't = TIMER
 'FOR i = 1 TO ITERATIONS
@@ -28,7 +28,7 @@ $INCLUDEONCE
 'NEXT
 'PRINT USING "#####.##### seconds"; TIMER - t
 
-'PRINT "Base64 decode..."
+'PRINT "Base64 decode...";
 
 't = TIMER
 'FOR i = 1 TO ITERATIONS
@@ -36,49 +36,161 @@ $INCLUDEONCE
 'NEXT
 'PRINT USING "#####.##### seconds"; TIMER - t
 
+'PRINT "Round trip test: ";
 'IF _STRCMP(decTxt, LOREM_IPSUM) = 0 THEN
-'    PRINT "Passed"
+'    PRINT "passed"
 'ELSE
-'    PRINT "Failed"
+'    PRINT "failed"
+'END IF
+
+'PRINT
+'PRINT "Base64 text: "; encTxt
+
+'PRINT
+'PRINT "Null terminator check:"
+'PRINT "Encoded text null terminator:"; ASC(RIGHT$(encTxt, 1)) = 0
+'PRINT "Decoded text null terminator:"; ASC(RIGHT$(encTxt, 1)) = 0
+
+'PRINT
+'PRINT "Test with encode reference implementation: ";
+'IF encTxt = Base64_EncodeTest(LOREM_IPSUM) THEN
+'    PRINT "passed"
+'ELSE
+'    PRINT "failed"
+'END IF
+
+'PRINT "Test with decode reference implementation: ";
+'IF decTxt = Base64_DecodeTest(encTxt) THEN
+'    PRINT "passed"
+'ELSE
+'    PRINT "failed"
 'END IF
 
 'END
+
+'FUNCTION Base64_EncodeTest$ (s AS STRING)
+'    CONST BASE64_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+'    DIM srcSize AS _UNSIGNED LONG: srcSize = LEN(s)
+'    DIM srcSize3rem AS _UNSIGNED LONG: srcSize3rem = srcSize MOD 3
+'    DIM srcSize3mul AS _UNSIGNED LONG: srcSize3mul = srcSize - srcSize3rem
+'    DIM buffer AS STRING: buffer = SPACE$(((srcSize + 2) \ 3) * 4) ' preallocate complete buffer
+'    DIM j AS _UNSIGNED LONG: j = 1
+
+'    DIM i AS _UNSIGNED LONG: FOR i = 1 TO srcSize3mul STEP 3
+'        DIM char1 AS _UNSIGNED _BYTE: char1 = ASC(s, i)
+'        DIM char2 AS _UNSIGNED _BYTE: char2 = ASC(s, i + 1)
+'        DIM char3 AS _UNSIGNED _BYTE: char3 = ASC(s, i + 2)
+
+'        ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHR(char1, 2)))
+'        j = j + 1
+'        ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHL((char1 AND 3), 4) OR _SHR(char2, 4)))
+'        j = j + 1
+'        ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHL((char2 AND 15), 2) OR _SHR(char3, 6)))
+'        j = j + 1
+'        ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (char3 AND 63))
+'        j = j + 1
+'    NEXT i
+
+'    IF srcSize3rem > 0 THEN
+'        char1 = ASC(s, i)
+
+'        ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHR(char1, 2)))
+'        j = j + 1
+
+'        IF srcSize3rem = 1 THEN
+'            ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHL(char1 AND 3, 4)))
+'            j = j + 1
+'            ASC(buffer, j) = 61 ' "="
+'            j = j + 1
+'            ASC(buffer, j) = 61 ' "="
+'        ELSE ' srcSize3rem = 2
+'            char2 = ASC(s, i + 1)
+
+'            ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHL((char1 AND 3), 4) OR _SHR(char2, 4)))
+'            j = j + 1
+'            ASC(buffer, j) = ASC(BASE64_CHARACTERS, 1 + (_SHL(char2 AND 15, 2)))
+'            j = j + 1
+'            ASC(buffer, j) = 61 ' "="
+'        END IF
+'    END IF
+
+'    Base64_EncodeTest = buffer
+'END FUNCTION
+
+'FUNCTION Base64_DecodeTest$ (s AS STRING)
+'    DIM srcSize AS _UNSIGNED LONG: srcSize = LEN(s)
+'    DIM buffer AS STRING: buffer = SPACE$((srcSize \ 4) * 3) ' preallocate complete buffer
+'    DIM j AS _UNSIGNED LONG: j = 1
+'    DIM AS _UNSIGNED _BYTE index, char1, char2, char3, char4
+
+'    DIM i AS _UNSIGNED LONG: FOR i = 1 TO srcSize STEP 4
+'        index = ASC(s, i): GOSUB find_index: char1 = index
+'        index = ASC(s, i + 1): GOSUB find_index: char2 = index
+'        index = ASC(s, i + 2): GOSUB find_index: char3 = index
+'        index = ASC(s, i + 3): GOSUB find_index: char4 = index
+
+'        ASC(buffer, j) = _SHL(char1, 2) OR _SHR(char2, 4)
+'        j = j + 1
+'        ASC(buffer, j) = _SHL(char2 AND 15, 4) OR _SHR(char3, 2)
+'        j = j + 1
+'        ASC(buffer, j) = _SHL(char3 AND 3, 6) OR char4
+'        j = j + 1
+'    NEXT i
+
+'    IF RIGHT$(s, 2) = "==" THEN
+'        buffer = LEFT$(buffer, LEN(buffer) - 2)
+'    ELSEIF RIGHT$(s, 1) = "=" THEN
+'        buffer = LEFT$(buffer, LEN(buffer) - 1)
+'    END IF
+
+'    Base64_DecodeTest = buffer
+'    EXIT FUNCTION
+
+'    find_index:
+'    IF index >= 65 AND index <= 90 THEN
+'        index = index - 65
+'    ELSEIF index >= 97 AND index <= 122 THEN
+'        index = index - 97 + 26
+'    ELSEIF index >= 48 AND index <= 57 THEN
+'        index = index - 48 + 52
+'    ELSEIF index = 43 THEN
+'        index = 62
+'    ELSEIF index = 47 THEN
+'        index = 63
+'    END IF
+'    RETURN
+'END FUNCTION
 '-------------------------------------------------------------------------------------------------------------------
 
 ' Convert a normal string to a base64 string
 FUNCTION Base64_Encode$ (s AS STRING)
-    DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
+    DIM sLen AS _UNSIGNED _OFFSET: sLen = LEN(s)
 
-    outputPtr = __MODP_B64_Encode(s, LEN(s), outputSize)
+    IF sLen THEN
+        DIM outputSize AS _UNSIGNED _OFFSET: outputSize = __MODP_B64_Encode_Length(sLen)
+        DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
 
-    IF outputPtr <> NULL THEN
-        IF outputSize > 0 THEN
-            DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
-            CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
-        END IF
+        outputSize = __MODP_B64_Encode(outputBuffer, s, sLen)
+        IF outputSize = __MODP_B64_Error THEN EXIT FUNCTION
 
-        FreeMemory outputPtr
-
-        Base64_Encode = outputBuffer
+        Base64_Encode = LEFT$(outputBuffer, outputSize)
     END IF
 END FUNCTION
 
 
 ' Convert a base64 string to a normal string
 FUNCTION Base64_Decode$ (s AS STRING)
-    DIM AS _UNSIGNED _OFFSET outputPtr, outputSize
+    DIM sLen AS _UNSIGNED _OFFSET: sLen = LEN(s)
 
-    outputPtr = __MODP_B64_Decode(s, LEN(s), outputSize)
+    IF sLen THEN
+        DIM outputSize AS _UNSIGNED _OFFSET: outputSize = __MODP_B64_Decode_Length(sLen)
+        DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
 
-    IF outputPtr <> NULL THEN
-        IF outputSize > 0 THEN
-            DIM outputBuffer AS STRING: outputBuffer = STRING$(outputSize, NULL)
-            CopyMemory _OFFSET(outputBuffer), outputPtr, outputSize
-        END IF
+        outputSize = __MODP_B64_Decode(outputBuffer, s, sLen)
+        IF outputSize = __MODP_B64_Error THEN EXIT FUNCTION
 
-        FreeMemory outputPtr
-
-        Base64_Decode = outputBuffer
+        Base64_Decode = LEFT$(outputBuffer, outputSize)
     END IF
 END FUNCTION
 
