@@ -6,7 +6,7 @@
 $INCLUDEONCE
 
 ' Check QB64-PE compiler version and complain if it does not meet minimum version requirement.
-$IF VERSION < 3.13.1 THEN
+$IF VERSION < 3.14.1 THEN
     $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
 $END IF
 
