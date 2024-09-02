@@ -1,5 +1,5 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' FFT routines for spectrum analyzers
+' FFT routines for audio spectrum analyzers
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
@@ -8,8 +8,8 @@ $INCLUDEONCE
 '$INCLUDE:'Common.bi'
 
 DECLARE LIBRARY "AnalyzerFFT"
-    FUNCTION AnalyzerFFTInteger! (ana AS _UNSIGNED INTEGER, samp AS INTEGER, BYVAL inc AS LONG, BYVAL bits AS LONG)
-    FUNCTION AnalyzerFFTSingle! (ana AS _UNSIGNED INTEGER, samp AS SINGLE, BYVAL inc AS LONG, BYVAL bits AS LONG)
+    FUNCTION AudioAnalyzerFFT_DoInteger! (amplitudeArray AS _UNSIGNED INTEGER, sampleDataArray AS INTEGER, BYVAL sampleIncrement AS LONG, BYVAL bitDepth AS LONG)
+    FUNCTION AudioAnalyzerFFT_DoSingle! (amplitudeArray AS _UNSIGNED INTEGER, sampleDataArray AS SINGLE, BYVAL sampleIncrement AS LONG, BYVAL bitDepth AS LONG)
 END DECLARE
 
 '-----------------------------------------------------------------------------------------------------------------------
@@ -21,12 +21,14 @@ END DECLARE
 
 'RANDOMIZE TIMER
 
-'DIM i AS LONG
-'FOR i = 0 TO 1023
-'    buffer(i) = RND * 65536 - 32768
-'NEXT i
+'DO
+'    DIM i AS LONG
+'    FOR i = 0 TO 1023
+'        buffer(i) = RND * 65536 - 32768
+'    NEXT i
 
-'PRINT AnalyzerFFTInteger(outp(0), buffer(0), 1, 10)
+'    PRINT USING "#####.#####"; AudioAnalyzerFFT_DoInteger(outp(0), buffer(0), 1, 10)
+'LOOP UNTIL _KEYHIT = 27
 
 'END
 '-----------------------------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------------------------------------
-// FFT routines for spectrum analyzers
+// FFT routines for audio spectrum analyzers
 // Copyright (c) 2024 Samuel Gomes
 // Copyright (c) 2004-2022 Stian Skjelstad
 // Copyright (c) 1994-2005 Niklas Beisert
@@ -12,177 +12,177 @@
 #include <cmath>
 #include <cstdlib>
 
-class AnalyzerFFT
+class AudioAnalyzerFFT
 {
 private:
-    static const auto POW = 11;
-    static const auto SAMPLES = 1 << POW;
-    static const auto SAMPLES2 = 1 << (POW - 1);
-    static const auto SAMPLES2Q = 1 << (POW - 2);
+    static const auto FFT_POWER = 11;
+    static const auto NUM_SAMPLES = 1 << FFT_POWER;
+    static const auto HALF_SAMPLES = NUM_SAMPLES >> 1;
+    static const auto QUARTER_SAMPLES = HALF_SAMPLES >> 1;
     static const auto SCALE_FACTOR = 1 << 28;
-    static constexpr auto S16_TO_F32_MUL = 1.0f / 32768.0f;
-    static constexpr auto F32_TO_S16_MUL = 32767.0f;
+    static constexpr auto S16_TO_F32_MULTIPLIER = 1.0f / 32768.0f;
+    static constexpr auto F32_TO_S16_MULTIPLIER = 32767.0f;
 
-    static uint16_t permtab[SAMPLES];
-    static int32_t cossintab86[SAMPLES2][2];
+    static uint16_t bitReversalTable[NUM_SAMPLES];
+    static int32_t sinCosTable[HALF_SAMPLES][2];
 
-    int32_t x86[SAMPLES][2];
+    int32_t fftBuffer[NUM_SAMPLES][2];
 
-    static constexpr auto IMul29(int32_t a, int32_t b)
+    constexpr auto MultiplyShift29(int32_t a, int32_t b)
     {
         return int32_t((int64_t(a) * int64_t(b)) >> 29);
     }
 
-    static void Calc(int32_t *xi, int32_t *curcossin, uint32_t d2)
+    void CalculateFFT(int32_t *currentSample, int32_t *currentSinCos, uint32_t distance)
     {
-        auto xd0 = xi[0] - xi[d2 + 0];
-        xi[0] = (xi[0] + xi[d2 + 0]) >> 1;
+        auto realPart = currentSample[0] - currentSample[distance + 0];
+        currentSample[0] = (currentSample[0] + currentSample[distance + 0]) >> 1;
 
-        auto xd1 = xi[1] - xi[d2 + 1];
-        xi[1] = (xi[1] + xi[d2 + 1]) >> 1;
+        auto imagPart = currentSample[1] - currentSample[distance + 1];
+        currentSample[1] = (currentSample[1] + currentSample[distance + 1]) >> 1;
 
-        xi[d2 + 0] = IMul29(xd0, curcossin[0]) - IMul29(xd1, curcossin[1]);
-        xi[d2 + 1] = IMul29(xd0, curcossin[1]) + IMul29(xd1, curcossin[0]);
+        currentSample[distance + 0] = MultiplyShift29(realPart, currentSinCos[0]) - MultiplyShift29(imagPart, currentSinCos[1]);
+        currentSample[distance + 1] = MultiplyShift29(realPart, currentSinCos[1]) + MultiplyShift29(imagPart, currentSinCos[0]);
     }
 
-    static void Do86(int32_t (*x)[2], int n)
+    void PerformButterflyOperation(int32_t (*data)[2], int stage)
     {
-        auto xe = x[1 << n];
-        int32_t curcossin[2];
-        int32_t *xi;
+        auto lastStageData = data[1 << stage];
+        int32_t currentSinCos[2];
+        int32_t *currentSample;
 
-        for (auto i = POW - n; i < POW; ++i)
+        for (auto i = FFT_POWER - stage; i < FFT_POWER; ++i)
         {
-            const auto s2dk = SAMPLES2 >> i;
-            const auto d2 = 2 * s2dk;
+            const auto stepSize = HALF_SAMPLES >> i;
+            const auto distance = 2 * stepSize;
 
-            for (auto j = 0; j < s2dk; ++j)
+            for (auto j = 0; j < stepSize; ++j)
             {
-                curcossin[0] = cossintab86[j << i][0];
-                curcossin[1] = cossintab86[j << i][1];
+                currentSinCos[0] = sinCosTable[j << i][0];
+                currentSinCos[1] = sinCosTable[j << i][1];
 
-                for (xi = x[j]; xi < xe; xi += 2 * d2)
-                    Calc(xi, curcossin, d2);
+                for (currentSample = data[j]; currentSample < lastStageData; currentSample += 2 * distance)
+                    CalculateFFT(currentSample, currentSinCos, distance);
             }
         }
     }
 
 public:
-    AnalyzerFFT()
+    AudioAnalyzerFFT()
     {
-        for (auto i = 0; i < SAMPLES2Q; i++)
+        for (auto i = 0; i < QUARTER_SAMPLES; i++)
         {
-            auto angle = (2.0 * M_PI * i) / (4.0 * SAMPLES2Q);
-            cossintab86[i][0] = int32_t(std::cos(angle) * SCALE_FACTOR);
-            cossintab86[i][1] = int32_t(std::sin(angle) * SCALE_FACTOR);
+            auto angle = (2.0 * M_PI * i) / (4.0 * QUARTER_SAMPLES);
+            sinCosTable[i][0] = int32_t(std::cos(angle) * SCALE_FACTOR);
+            sinCosTable[i][1] = int32_t(std::sin(angle) * SCALE_FACTOR);
         }
 
-        auto j = 0, k = 0;
+        auto reversedIndex = 0;
+        auto step = 0;
 
-        for (auto i = 0; i < SAMPLES; ++i)
+        for (auto i = 0; i < NUM_SAMPLES; ++i)
         {
-            permtab[i] = j;
-            for (k = SAMPLES2; k && (k <= j); k >>= 1)
-                j -= k;
-            j += k;
+            bitReversalTable[i] = reversedIndex;
+            for (step = HALF_SAMPLES; step && (step <= reversedIndex); step >>= 1)
+                reversedIndex -= step;
+            reversedIndex += step;
         }
 
-        for (auto i = SAMPLES2 / 4 + 1; i <= SAMPLES2 / 2; ++i)
+        for (auto i = HALF_SAMPLES / 4 + 1; i <= HALF_SAMPLES / 2; ++i)
         {
-            cossintab86[i][0] = cossintab86[SAMPLES2 / 2 - i][1];
-            cossintab86[i][1] = cossintab86[SAMPLES2 / 2 - i][0];
+            sinCosTable[i][0] = sinCosTable[HALF_SAMPLES / 2 - i][1];
+            sinCosTable[i][1] = sinCosTable[HALF_SAMPLES / 2 - i][0];
         }
 
-        for (auto i = SAMPLES2 / 2 + 1; i < SAMPLES2; ++i)
+        for (auto i = HALF_SAMPLES / 2 + 1; i < HALF_SAMPLES; ++i)
         {
-            cossintab86[i][0] = -cossintab86[SAMPLES2 - i][0];
-            cossintab86[i][1] = cossintab86[SAMPLES2 - i][1];
+            sinCosTable[i][0] = -sinCosTable[HALF_SAMPLES - i][0];
+            sinCosTable[i][1] = sinCosTable[HALF_SAMPLES - i][1];
         }
     }
 
-    /// @brief The top level FFT function for 16-bit samples. This will automatically initialize everything when called the first time.
-    /// This computes the amplitude spectrum for the positive frequencies only. Hence, ana can have half the elements of samp
-    /// @param ana The array where the resulting data is written. This cannot be NULL
-    /// @param samp An array of 16-bit samples
-    /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
-    /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
-    /// @return Returns the power level of the audio
-    auto DoInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
+    auto DoFFT(uint16_t *amplitudeArray, const int16_t *sampleData, int sampleIncrement, int bitDepth)
     {
-        const auto full = std::min(1 << bits, SAMPLES);
-        const auto half = full >> 1;
-        auto intensity = 0.0f;
+        const auto numSamples = std::min(1 << bitDepth, NUM_SAMPLES);
+        const auto halfNumSamples = numSamples >> 1;
+        auto averageSignalEnergy = 0.0f;
 
-        for (auto i = 0; i < full; ++i)
+        for (auto i = 0; i < numSamples; ++i)
         {
-            auto sample = float(*samp) * S16_TO_F32_MUL;
-            x86[i][0] = int32_t(*samp) << 12;
-            intensity = intensity + sample * sample;
-            samp += inc;
-            x86[i][1] = 0;
-        }
-        intensity = float(inc) * intensity / float(full);
-
-        Do86(x86, bits);
-
-        for (auto i = 1; i <= half; ++i)
-        {
-            auto xr0 = x86[permtab[i] >> (POW - bits)][0] >> 12;
-            auto xr1 = x86[permtab[i] >> (POW - bits)][1] >> 12;
-            ana[i - 1] = uint16_t(std::sqrt((xr0 * xr0 + xr1 * xr1) * i));
+            auto sample = float(*sampleData) * S16_TO_F32_MULTIPLIER;
+            fftBuffer[i][0] = int32_t(*sampleData) << 12;
+            fftBuffer[i][1] = 0;
+            averageSignalEnergy += sample * sample;
+            sampleData += sampleIncrement;
         }
 
-        return intensity;
+        averageSignalEnergy = averageSignalEnergy / float(numSamples);
+
+        PerformButterflyOperation(fftBuffer, bitDepth);
+
+        for (auto i = 1; i <= halfNumSamples; ++i)
+        {
+            auto realPart = fftBuffer[bitReversalTable[i] >> (FFT_POWER - bitDepth)][0] >> 12;
+            auto imagPart = fftBuffer[bitReversalTable[i] >> (FFT_POWER - bitDepth)][1] >> 12;
+            amplitudeArray[i - 1] = uint16_t(std::sqrt((realPart * realPart + imagPart * imagPart) * i));
+        }
+
+        return averageSignalEnergy;
     }
 
-    /// @brief This is a variation of AnalyzerFFTInteger() for floating point samples.
-    /// The samples are converted to 16-bit on the fly. It automatically initialize everything when called the first time.
-    /// This computes the amplitude spectrum for the positive frequencies only. Hence, ana can have half the elements of samp
-    /// @param ana The array where the resulting data is written. This cannot be NULL
-    /// @param samp An array of floating point (FP32) samples
-    /// @param inc The number to use to get to the next sample in samp. For stereo interleaved samples use 2, else 1
-    /// @param bits The size of the sample data. So if bits = 9, then samples = 1 << 9 or 512
-    /// @return Returns the power level of the audio
-    float DoSingle(uint16_t *ana, const float *samp, int inc, int bits)
+    float DoFFT(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
     {
-        const auto full = std::min(1 << bits, SAMPLES);
-        const auto half = full >> 1;
-        auto intensity = 0.0f;
+        const auto numSamples = std::min(1 << bitDepth, NUM_SAMPLES);
+        const auto halfNumSamples = numSamples >> 1;
+        auto averageSignalEnergy = 0.0f;
 
-        for (auto i = 0; i < full; ++i)
+        for (auto i = 0; i < numSamples; ++i)
         {
-            auto sample = *samp;
-            x86[i][0] = int32_t(std::fmaxf(std::fminf(sample, 1.0f), -1.0f) * F32_TO_S16_MUL) << 12;
-            intensity = intensity + sample * sample;
-            samp += inc;
-            x86[i][1] = 0;
-        }
-        intensity = float(inc) * intensity / float(full);
-
-        Do86(x86, bits);
-
-        for (auto i = 1; i <= half; ++i)
-        {
-            auto xr0 = x86[permtab[i] >> (POW - bits)][0] >> 12;
-            auto xr1 = x86[permtab[i] >> (POW - bits)][1] >> 12;
-            ana[i - 1] = uint16_t(std::sqrt((xr0 * xr0 + xr1 * xr1) * i));
+            auto sample = *sampleData;
+            fftBuffer[i][0] = int32_t(std::fmaxf(std::fminf(sample, 1.0f), -1.0f) * F32_TO_S16_MULTIPLIER) << 12;
+            fftBuffer[i][1] = 0;
+            averageSignalEnergy += sample * sample;
+            sampleData += sampleIncrement;
         }
 
-        return intensity;
+        averageSignalEnergy = averageSignalEnergy / float(numSamples);
+
+        PerformButterflyOperation(fftBuffer, bitDepth);
+
+        for (auto i = 1; i <= halfNumSamples; ++i)
+        {
+            auto realPart = fftBuffer[bitReversalTable[i] >> (FFT_POWER - bitDepth)][0] >> 12;
+            auto imagPart = fftBuffer[bitReversalTable[i] >> (FFT_POWER - bitDepth)][1] >> 12;
+            amplitudeArray[i - 1] = uint16_t(std::sqrt((realPart * realPart + imagPart * imagPart) * i));
+        }
+
+        return averageSignalEnergy;
     }
 };
 
-uint16_t AnalyzerFFT::permtab[AnalyzerFFT::SAMPLES];
-int32_t AnalyzerFFT::cossintab86[AnalyzerFFT::SAMPLES2][2];
+uint16_t AudioAnalyzerFFT::bitReversalTable[AudioAnalyzerFFT::NUM_SAMPLES];
+int32_t AudioAnalyzerFFT::sinCosTable[AudioAnalyzerFFT::HALF_SAMPLES][2];
 
-static AnalyzerFFT g_AnalyzerFFT;
+static AudioAnalyzerFFT g_AudioAnalyzerFFT;
 
-float AnalyzerFFTInteger(uint16_t *ana, const int16_t *samp, int inc, int bits)
+/// @brief FFT for 16-bit integer samples. This computes the amplitude spectrum for the positive frequencies only.
+/// @param amplitudeArray The array where the resulting FFT amplitude data is stored.
+/// @param sampleData An array of 16-bit samples.
+/// @param sampleIncrement The number to use to get to the next sample in sampleData. For stereo interleaved samples use 2, else 1.
+/// @param bitDepth The bit depth representing the number of samples. So if bitDepth = 9, then samples = 1 << 9 or 512.
+/// @return Returns the average intensity level of the audio signal.
+auto AudioAnalyzerFFT_DoInteger(uint16_t *amplitudeArray, const int16_t *sampleData, int sampleIncrement, int bitDepth)
 {
-    return g_AnalyzerFFT.DoInteger(ana, samp, inc, bits);
+    return g_AudioAnalyzerFFT.DoFFT(amplitudeArray, sampleData, sampleIncrement, bitDepth);
 }
 
-float AnalyzerFFTSingle(uint16_t *ana, const float *samp, int inc, int bits)
+/// @brief FFT for floating-point samples. This computes the amplitude spectrum for the positive frequencies only.
+/// @param amplitudeArray The array where the resulting FFT amplitude data is stored.
+/// @param sampleData An array of floating-point (FP32) samples.
+/// @param sampleIncrement The number to use to get to the next sample in sampleData. For stereo interleaved samples use 2, else 1.
+/// @param bitDepth The bit depth representing the number of samples. So if bitDepth = 9, then samples = 1 << 9 or 512.
+/// @return Returns the average intensity level of the audio signal.
+auto AudioAnalyzerFFT_DoSingle(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
 {
-    return g_AnalyzerFFT.DoSingle(ana, samp, inc, bits);
+    return g_AudioAnalyzerFFT.DoFFT(amplitudeArray, sampleData, sampleIncrement, bitDepth);
 }
