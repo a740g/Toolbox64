@@ -12,7 +12,7 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
-'DIM buffer AS STRING: buffer = LoadFile("C:\Users\samue\source\repos\a740g\ANSI-Print-64\demos\aa-fldontcare.ans")
+'DIM buffer AS STRING: buffer = _READFILE$("C:\Users\samue\source\repos\a740g\ANSI-Print-64\demos\aa-fldontcare.ans")
 
 'PRINT SAUCE_IsPresent(buffer)
 
@@ -21,18 +21,10 @@ $INCLUDEONCE
 'PRINT SAUCE_GetAuthor(sauce)
 'PRINT SAUCE_GetDataType(sauce)
 'PRINT SAUCE_GetFileType(sauce)
-'PRINT HEX$(SAUCE_GetTypeFlags(sauce))
-
+'PRINT SAUCE_GetTypeInfoLong1(sauce), SAUCE_GetTypeInfoLong2(sauce)
+'PRINT _BIN$(SAUCE_GetTypeFlags(sauce))
+'PRINT SAUCE_GetTypeInfoString(sauce)
 'END
-
-'FUNCTION LoadFile$ (path AS STRING)
-'    IF _FILEEXISTS(path) THEN
-'        DIM AS LONG fh: fh = FREEFILE
-'        OPEN path FOR BINARY ACCESS READ AS fh
-'        LoadFile = INPUT$(LOF(fh), fh)
-'        CLOSE fh
-'    END IF
-'END FUNCTION
 '-----------------------------------------------------------------------------------------------------------------------
 
 ' Returns the position of the SAUCE record in a string buffer
@@ -388,7 +380,7 @@ END FUNCTION
 
 
 ' Gets the SAUCE type flags
-FUNCTION SAUCE_GetTypeFlags~& (sauce AS SAUCEType)
+FUNCTION SAUCE_GetTypeFlags~%% (sauce AS SAUCEType)
     ' Initialze the sauce record if needed
     IF sauce.record.id <> __SAUCE_ID THEN SAUCE_Initialize sauce
 
@@ -397,7 +389,7 @@ END FUNCTION
 
 
 ' Sets the SAUCE type flags
-SUB SAUCE_SetTypeFlags (sauce AS SAUCEType, typeFlags AS _UNSIGNED LONG)
+SUB SAUCE_SetTypeFlags (sauce AS SAUCEType, typeFlags AS _UNSIGNED _BYTE)
     ' Initialze the sauce record if needed
     IF sauce.record.id <> __SAUCE_ID THEN SAUCE_Initialize sauce
 

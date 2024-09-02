@@ -8,6 +8,7 @@ $INCLUDEONCE
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'GraphicOps.bi'
+'$INCLUDE:'SAUCE.bi'
 
 ' ANSI constants (not an exhaustive list)
 CONST ANSI_NUL = 0 ' Null
