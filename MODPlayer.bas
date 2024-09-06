@@ -2291,5 +2291,5 @@ FUNCTION MODPlayer_GetOrders~%
 END FUNCTION
 
 '$INCLUDE:'SoftSynth.bas'
-'$INCLUDE:'MemFile.bas'
+'$INCLUDE:'StringFile.bas'
 '$INCLUDE:'FileOps.bas'

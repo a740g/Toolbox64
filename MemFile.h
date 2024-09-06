@@ -151,7 +151,7 @@ size_t MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
 /// @brief Writes a chunk of data to the buffer at the cursor position (optionally growing the buffer size)
 /// @param p A valid pointer to a MemFile object
 /// @param data Pointer to the buffer the data needs to be read from
-/// @param size The size of the chuck that needs to be written
+/// @param size The size of the chunk that needs to be written
 /// @return The number of bytes written
 size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
 {
@@ -159,7 +159,14 @@ size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
 
     if (memFile && data)
     {
-        memFile->buffer.insert(memFile->buffer.begin() + memFile->cursor, (uint8_t *)data, (uint8_t *)data + size);
+        // Resize the buffer if needed
+        if (memFile->cursor + size > memFile->buffer.size())
+            memFile->buffer.resize(memFile->cursor + size);
+
+        // Copy the data to the buffer
+        std::copy((uint8_t *)data, (uint8_t *)data + size, memFile->buffer.begin() + memFile->cursor);
+
+        // Move the cursor
         memFile->cursor += size;
 
         return size;

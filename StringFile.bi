@@ -5,7 +5,9 @@
 
 $INCLUDEONCE
 
-CONST __STRINGFILE_FALSE%% = 0%%, __STRINGFILE_TRUE%% = NOT __STRINGFILE_FALSE
+'$INCLUDE:'Common.bi'
+'$INCLUDE:'Types.bi'
+'$INCLUDE:'PointerOps.bi'
 
 ' Simplified QB64-only memory-file
 TYPE StringFileType

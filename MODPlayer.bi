@@ -9,7 +9,7 @@ $INCLUDEONCE
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'SoftSynth.bi'
 '$INCLUDE:'AudioConv.bi'
-'$INCLUDE:'MemFile.bi'
+'$INCLUDE:'StringFile.bi'
 '$INCLUDE:'FileOps.bi'
 
 CONST __NOTE_NONE~%% = 132~%% ' Note will be set to this when there is nothing
