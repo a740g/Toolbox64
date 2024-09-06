@@ -48,11 +48,24 @@ $ELSE
     CONST UOFFSET_MIN~&& = 0~&&, UOFFSET_MAX~&& = 18446744073709551615~&&
 $END IF
 
-' QB <> C BOOL interop
+' Note: QB64 does not really care about the _OFFSET being used below.
+' For example, the output C code is "((int32)int32_t(20))" for "CLong(20~%%)"
 DECLARE LIBRARY "Types"
-    FUNCTION ToQBBool%% ALIAS "TO_QB_BOOL" (BYVAL x AS LONG)
-    FUNCTION ToCBool%% ALIAS "TO_C_BOOL" (BYVAL x AS LONG)
-    FUNCTION LNot& ALIAS "TO_L_NOT" (BYVAL x AS LONG)
+    $IF 32BIT THEN
+        FUNCTION COffset~& ALIAS "uintptr_t" (BYVAL p As _UNSIGNED _OFFSET)
+    $ELSE
+        FUNCTION COffset~&& ALIAS "uintptr_t" (BYVAL p AS _UNSIGNED _OFFSET)
+    $END IF
+    FUNCTION CBool%% ALIAS "TO_QB_BOOL" (BYVAL x AS _OFFSET)
+    FUNCTION CByte%% ALIAS "int8_t" (BYVAL x AS _UNSIGNED _OFFSET)
+    FUNCTION CUByte~%% ALIAS "uint8_t" (BYVAL x AS _OFFSET)
+    FUNCTION CInteger% ALIAS "int16_t" (BYVAL x AS _UNSIGNED _OFFSET)
+    FUNCTION CUInteger~% ALIAS "uint16_t" (BYVAL x AS _OFFSET)
+    FUNCTION CLong& ALIAS "int32_t" (BYVAL x AS _UNSIGNED _OFFSET)
+    FUNCTION CULong~& ALIAS "uint32_t" (BYVAL x AS _OFFSET)
+    FUNCTION CInteger64&& ALIAS "int64_t" (BYVAL x AS _UNSIGNED _INTEGER64)
+    FUNCTION CUInteger64~&& ALIAS "uint64_t" (BYVAL x AS _INTEGER64)
+    FUNCTION CString$ (BYVAL p AS _UNSIGNED _OFFSET)
 END DECLARE
 
 '-------------------------------------------------------------------------------------------------------------------
@@ -61,19 +74,32 @@ END DECLARE
 '$DEBUG
 '$CONSOLE:ONLY
 
-'PRINT ToQBBool(1)
-'PRINT ToQBBool(0)
-'PRINT ToQBBool(-1)
-'PRINT ToCBool(1)
-'PRINT ToCBool(0)
-'PRINT ToCBool(-1)
-'PRINT LNot(1)
-'PRINT LNot(0)
-'PRINT LNot(-1)
-
 'PRINT Compiler_GetDate
 'PRINT Compiler_GetTime
 'PRINT Compiler_GetFunctionName
+
+'PRINT CBool(0)
+'PRINT CBool(1)
+'PRINT CBool(-1)
+'PRINT CBool(100)
+'PRINT CBool(-100)
+
+'PRINT CLong(20~%%)
+'PRINT CULong(20%%)
+
+'DIM s AS STRING: s = "testing!" + CHR$(0)
+'PRINT CString(_OFFSET(s))
+
+'DIM ptr AS _OFFSET: ptr = _OFFSET(ptr)
+'PRINT COffset(ptr)
+'ptr = &HDEADBEEF
+'PRINT HEX$(COffset(ptr))
+
+'DIM b1 AS _BYTE: b1 = 255
+'PRINT CUByte(b1)
+
+'DIM b2 AS LONG: b2 = -127
+'PRINT CUByte(b2)
 
 'END
 '-------------------------------------------------------------------------------------------------------------------

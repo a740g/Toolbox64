@@ -13,6 +13,8 @@ $INCLUDEONCE
 '$DEBUG
 '$CONSOLE:ONLY
 
+'PRINT STRING_NULL
+
 'PRINT String_ToCStr("abcd") + "<END", LEN(String_ToCStr("abcd"))
 
 'PRINT String_Filter("Hello, -234.234world!", "+-01234567890.", FALSE) + "<END"
@@ -25,6 +27,8 @@ $INCLUDEONCE
 'PRINT String_FormatSingle(25.78, "%f")
 'PRINT String_FormatDouble(18.4455, "%f")
 'PRINT String_FormatOffset(&HDEADBEEFBEEFDEAD, "%p")
+'PRINT String_FormatString("hello", "----%s----")
+'PRINT String_FormatLong(0, "%.4X")
 
 'PRINT String_RemoveEnclosingPair("(hello + (2 * 5) - world)", "()")
 

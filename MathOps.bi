@@ -29,14 +29,6 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 
 DECLARE LIBRARY "MathOps"
-    FUNCTION Math_LongToSingle! ALIAS "float" (BYVAL x AS LONG)
-    FUNCTION Math_Integer64ToSingle! ALIAS "float" (BYVAL x AS _INTEGER64)
-    FUNCTION Math_LongToDouble# ALIAS "double" (BYVAL x AS LONG)
-    FUNCTION Math_Integer64ToDouble# ALIAS "double" (BYVAL x AS _INTEGER64)
-    FUNCTION Math_SingleToLong& ALIAS "int32_t" (BYVAL x AS SINGLE)
-    FUNCTION Math_DoubleToLong& ALIAS "int32_t" (BYVAL x AS DOUBLE)
-    FUNCTION Math_SingleToInteger64&& ALIAS "int64_t" (BYVAL x AS SINGLE)
-    FUNCTION Math_DoubleToInteger64&& ALIAS "int64_t" (BYVAL x AS DOUBLE)
     SUB Math_SetRandomSeed (BYVAL seed AS _UNSIGNED LONG)
     FUNCTION Math_GetRandomMax~&
     FUNCTION Math_GetRandomValue& ALIAS "rand"

@@ -64,11 +64,9 @@ $INCLUDEONCE
 
 DECLARE LIBRARY "PointerOps"
     $IF 32BIT THEN
-        FUNCTION  GetCStringLength~& ALIAS "__GetCStringLength" (BYVAL str As _UNSIGNED _OFFSET)
-        FUNCTION CLngPtr~& ALIAS "uintptr_t" (BYVAL p As _UNSIGNED _OFFSET)
+        FUNCTION GetCStringLength~& ALIAS "__GetCStringLength" (BYVAL str As _UNSIGNED _OFFSET)
     $ELSE
         FUNCTION GetCStringLength~&& ALIAS "__GetCStringLength" (BYVAL str AS _UNSIGNED _OFFSET)
-        FUNCTION CLngPtr~&& ALIAS "uintptr_t" (BYVAL p AS _UNSIGNED _OFFSET)
     $END IF
     FUNCTION CompareMemory& ALIAS "__CompareMemory" (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
     SUB SetMemoryByte ALIAS "__SetMemoryByte" (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS _UNSIGNED _BYTE, BYVAL count AS _UNSIGNED _OFFSET)
@@ -84,7 +82,6 @@ DECLARE LIBRARY "PointerOps"
     FUNCTION AllocateAndClearMemory~%& ALIAS "__AllocateAndClearMemory" (BYVAL size AS _UNSIGNED _OFFSET)
     FUNCTION ReallocateMemory~%& ALIAS "__ReallocateMemory" (BYVAL ptr AS _UNSIGNED _OFFSET, BYVAL new_size AS _UNSIGNED _OFFSET)
     SUB FreeMemory ALIAS "__FreeMemory" (BYVAL ptr AS _UNSIGNED _OFFSET)
-    FUNCTION CStr$ (BYVAL p AS _UNSIGNED _OFFSET)
     FUNCTION PeekByte%% (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)
     SUB PokeByte (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET, BYVAL n AS _BYTE)
     FUNCTION PeekInteger% (BYVAL p AS _UNSIGNED _OFFSET, BYVAL o AS _UNSIGNED _OFFSET)

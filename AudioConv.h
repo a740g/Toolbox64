@@ -14,17 +14,17 @@
 #include <cstdint>
 #include <cstdlib>
 
-static const auto AUDIOCONV_S8_TO_F32_MUL = 1.0f / 128.0f;
-static const auto AUDIOCONV_S16_TO_F32_MUL = 1.0f / 32768.0f;
-static const auto AUDIOCONV_S32_TO_F32_MUL = 1.0f / 2147483648.0f;
-static const auto AUDIOCONV_F32_TO_S8_MUL = 127.0f;
-static const auto AUDIOCONV_F32_TO_S16_MUL = 32767.0f;
-static const auto AUDIOCONV_F32_TO_S32_MUL = 2147483647.0f;
+static const auto AUDIOCONV_S8_TO_F32_MULTIPLER = 1.0f / 128.0f;
+static const auto AUDIOCONV_S16_TO_F32_MULTIPLER = 1.0f / 32768.0f;
+static const auto AUDIOCONV_S32_TO_F32_MULTIPLER = 1.0f / 2147483648.0f;
+static const auto AUDIOCONV_F32_TO_S8_MULTIPLIER = 127.0f;
+static const auto AUDIOCONV_F32_TO_S16_MULTIPLIER = 32767.0f;
+static const auto AUDIOCONV_F32_TO_S32_MULTIPLIER = 2147483647.0f;
 
 /// @brief Converts unsigned 8-bit audio samples to signed 8-bit inplace.
 /// @param source The input unsigned 8-bit sample frame buffer.
 /// @param samples The number of samples in the sample frame buffer, where samples = frames * channels.
-inline void __AudioConv_ConvertU8ToS8(void *source, uint32_t samples)
+void AudioConv_ConvertU8ToS8(uintptr_t source, uint32_t samples)
 {
     if (!source or !samples)
         return;
@@ -38,7 +38,7 @@ inline void __AudioConv_ConvertU8ToS8(void *source, uint32_t samples)
 /// @brief Converts unsigned 16-bit audio samples to signed 16-bit inplace.
 /// @param source The input unsigned 16-bit sample frame buffer.
 /// @param samples The number of samples in the sample frame buffer, where samples = frames * channels.
-inline void __AudioConv_ConvertU16ToS16(void *source, uint32_t samples)
+void AudioConv_ConvertU16ToS16(uintptr_t source, uint32_t samples)
 {
     if (!source or !samples)
         return;
@@ -49,12 +49,27 @@ inline void __AudioConv_ConvertU16ToS16(void *source, uint32_t samples)
         buffer[i] ^= 0x8000; // xor_eq
 }
 
+/// @brief Converts unsigned 8-bit audio samples to floating point.
+/// @param src The input unsigned 8-bit sample frame buffer.
+/// @param samples The number of samples in the buffer, where samples = frames * channels.
+/// @param dst The output floating point sample frame buffer. The buffer size must be at least samples * sizeof(float) bytes.
+void AudioConv_ConvertU8ToF32(uintptr_t src, uint32_t samples, uintptr_t dst)
+{
+    if (!src or !dst or !samples)
+        return;
+
+    auto srcBuffer = reinterpret_cast<const uint8_t *>(src);
+    auto dstBuffer = reinterpret_cast<float *>(dst);
+
+    for (size_t i = 0; i < samples; i++)
+        dstBuffer[i] = float(int8_t(srcBuffer[i] ^ 0x80)) * AUDIOCONV_S8_TO_F32_MULTIPLER;
+}
+
 /// @brief Converts signed 8-bit audio samples to floating point.
 /// @param src The input signed 8-bit sample frame buffer.
 /// @param samples The number of samples in the buffer, where samples = frames * channels.
 /// @param dst The output floating point sample frame buffer. The buffer size must be at least samples * sizeof(float) bytes.
-/// @return True if successful.
-inline void __AudioConv_ConvertS8ToF32(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertS8ToF32(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src or !dst or !samples)
         return;
@@ -63,14 +78,30 @@ inline void __AudioConv_ConvertS8ToF32(const void *src, uint32_t samples, void *
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < samples; i++)
-        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S8_TO_F32_MUL;
+        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S8_TO_F32_MULTIPLER;
+}
+
+/// @brief Converts unsigned 8-bit audio samples to signed 16-bit.
+/// @param src The input unsigned 8-bit sample frame buffer.
+/// @param samples The number of samples in the buffer, where samples = frames * channels.
+/// @param dst The output signed 16-bit sample frame buffer. The buffer size must be at least samples * sizeof(int16_t) bytes.
+void AudioConv_ConvertU8ToS16(uintptr_t src, uint32_t samples, uintptr_t dst)
+{
+    if (!src or !dst or !samples)
+        return;
+
+    auto srcBuffer = reinterpret_cast<const uint8_t *>(src);
+    auto dstBuffer = reinterpret_cast<int16_t *>(dst);
+
+    for (size_t i = 0; i < samples; i++)
+        dstBuffer[i] = int8_t(srcBuffer[i] ^ 0x80) << 8;
 }
 
 /// @brief Converts signed 8-bit audio samples to signed 16-bit.
 /// @param src The input signed 8-bit sample frame buffer.
 /// @param samples The number of samples in the buffer, where samples = frames * channels.
 /// @param dst The output signed 16-bit sample frame buffer. The buffer size must be at least samples * sizeof(int16_t) bytes.
-inline void __AudioConv_ConvertS8ToS16(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertS8ToS16(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src or !dst or !samples)
         return;
@@ -86,8 +117,7 @@ inline void __AudioConv_ConvertS8ToS16(const void *src, uint32_t samples, void *
 /// @param src The input signed 16-bit sample frame buffer.
 /// @param samples The number of samples in the buffer, where samples = frames * channels.
 /// @param dst The output floating point sample frame buffer. The buffer size must be at least samples * sizeof(float) bytes.
-/// @return True if successful.
-inline void __AudioConv_ConvertS16ToF32(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertS16ToF32(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src or !dst or !samples)
         return;
@@ -96,7 +126,23 @@ inline void __AudioConv_ConvertS16ToF32(const void *src, uint32_t samples, void 
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < samples; i++)
-        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S16_TO_F32_MUL;
+        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S16_TO_F32_MULTIPLER;
+}
+
+/// @brief Converts signed 32-bit audio samples to floating point.
+/// @param src The input signed 32-bit sample frame buffer.
+/// @param samples The number of samples in the buffer, where samples = frames * channels.
+/// @param dst The output floating point sample frame buffer. The buffer size must be at least samples * sizeof(float) bytes.
+void AudioConv_ConvertS32ToF32(uintptr_t src, uint32_t samples, uintptr_t dst)
+{
+    if (!src or !dst or !samples)
+        return;
+
+    auto srcBuffer = reinterpret_cast<const int32_t *>(src);
+    auto dstBuffer = reinterpret_cast<float *>(dst);
+
+    for (size_t i = 0; i < samples; i++)
+        dstBuffer[i] = (float)srcBuffer[i] * AUDIOCONV_S32_TO_F32_MULTIPLER;
 }
 
 /// @brief Decodes an 8-bit unsigned integer using the A-Law.
@@ -129,7 +175,7 @@ static inline int16_t __AudioConv_DecodeALawSample(int8_t number)
 /// @param src Pointer to the A-Law encoded audio samples buffer.
 /// @param samples Number of samples in the buffer, where samples = frames * channels.
 /// @param dst Pointer to the buffer where the signed 16-bit samples will be stored. The buffer size must be at least samples * sizeof(int16_t) bytes.
-void __AudioConv_ConvertALawToS16(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertALawToS16(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src or !dst or !samples)
         return;
@@ -145,7 +191,7 @@ void __AudioConv_ConvertALawToS16(const void *src, uint32_t samples, void *dst)
 /// @param src Pointer to the A-Law encoded audio samples buffer.
 /// @param frames Number of samples in the buffer.
 /// @param dst Pointer to the buffer where the floating point samples will be stored. The buffer size must be at least samples * sizeof(float) bytes.
-void __AudioConv_ConvertALawToF32(const void *src, uint32_t frames, void *dst)
+void AudioConv_ConvertALawToF32(uintptr_t src, uint32_t frames, uintptr_t dst)
 {
     if (!src or !dst or !frames)
         return;
@@ -154,7 +200,7 @@ void __AudioConv_ConvertALawToF32(const void *src, uint32_t frames, void *dst)
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < frames; i++)
-        dstBuffer[i] = (float)__AudioConv_DecodeALawSample(srcBuffer[i]) * AUDIOCONV_S16_TO_F32_MUL;
+        dstBuffer[i] = (float)__AudioConv_DecodeALawSample(srcBuffer[i]) * AUDIOCONV_S16_TO_F32_MULTIPLER;
 }
 
 /// @brief Decodes an 8-bit unsigned integer using the mu-Law.
@@ -184,7 +230,7 @@ static inline int16_t __AudioConv_DecodeMuLawSample(int8_t number)
 /// @param src Pointer to the mu-Law encoded audio samples buffer.
 /// @param samples Number of samples in the buffer, where samples = frames * channels.
 /// @param dst Pointer to the buffer where the signed 16-bit samples will be stored. The buffer size must be at least samples * sizeof(int16_t) bytes.
-void __AudioConv_ConvertMuLawToS16(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertMuLawToS16(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src or !dst or !samples)
         return;
@@ -200,7 +246,7 @@ void __AudioConv_ConvertMuLawToS16(const void *src, uint32_t samples, void *dst)
 /// @param src Pointer to the mu-Law encoded audio samples buffer.
 /// @param samples Number of samples in the buffer.
 /// @param dst Pointer to the buffer where the floating point samples will be stored. The buffer size must be at least samples * sizeof(float) bytes.
-void __AudioConv_ConvertMuLawToF32(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertMuLawToF32(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src or !dst or !samples)
         return;
@@ -209,7 +255,7 @@ void __AudioConv_ConvertMuLawToF32(const void *src, uint32_t samples, void *dst)
     auto dstBuffer = reinterpret_cast<float *>(dst);
 
     for (size_t i = 0; i < samples; i++)
-        dstBuffer[i] = (float)__AudioConv_DecodeMuLawSample(srcBuffer[i]) * AUDIOCONV_S16_TO_F32_MUL;
+        dstBuffer[i] = (float)__AudioConv_DecodeMuLawSample(srcBuffer[i]) * AUDIOCONV_S16_TO_F32_MULTIPLER;
 }
 
 /// @brief Converts 4-bit ADPCM compressed audio samples to 8-bit signed samples.
@@ -217,7 +263,7 @@ void __AudioConv_ConvertMuLawToF32(const void *src, uint32_t samples, void *dst)
 /// @param srcLen The number of bytes in the input buffer.
 /// @param compTab Pointer to the compression table used to decode the ADPCM codes.
 /// @param dst Pointer to the buffer where the 8-bit signed samples will be stored. The buffer size must be at least srcLen * 2 bytes.
-inline void __AudioConv_ConvertADPCM4ToS8(const void *src, uint32_t srcLen, const char *compTab, void *dst)
+void AudioConv_ConvertADPCM4ToS8(uintptr_t src, uint32_t srcLen, const char *compTab, uintptr_t dst)
 {
     auto srcBuffer = reinterpret_cast<const uint8_t *>(src);
     auto dstBuffer = reinterpret_cast<int8_t *>(dst);
@@ -240,7 +286,7 @@ inline void __AudioConv_ConvertADPCM4ToS8(const void *src, uint32_t srcLen, cons
 /// @param samples Number of samples in the buffer.
 /// @param dst Pointer to the buffer where the stereo interleaved audio samples will be stored. The buffer size must be at least samples * sizeof(T) bytes.
 template <typename T>
-inline void AudioConv_ConvertDualMonoToStereoInterleaved(const void *src, uint32_t samples, void *dst)
+void AudioConv_ConvertDualMonoToStereo(uintptr_t src, uint32_t samples, uintptr_t dst)
 {
     if (!src || !dst || samples < 4)
         return;
@@ -258,64 +304,31 @@ inline void AudioConv_ConvertDualMonoToStereoInterleaved(const void *src, uint32
 }
 
 // Specializations of AudioConv_ConvertDualMonoToStereoInterleaved() for different data types
-#define __AudioConv_ConvertDualMonoToStereoInterleavedS8(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereoInterleaved<int8_t>(_src_, _samples_, _dst_)
-#define __AudioConv_ConvertDualMonoToStereoInterleavedS16(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereoInterleaved<int16_t>(_src_, _samples_, _dst_)
-#define __AudioConv_ConvertDualMonoToStereoInterleavedF32(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereoInterleaved<float>(_src_, _samples_, _dst_)
+#define AudioConv_ConvertDualMonoToStereoS8(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereo<int8_t>(_src_, _samples_, _dst_)
+#define AudioConv_ConvertDualMonoToStereoS16(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereo<int16_t>(_src_, _samples_, _dst_)
+#define AudioConv_ConvertDualMonoToStereoF32(_src_, _samples_, _dst_) AudioConv_ConvertDualMonoToStereo<float>(_src_, _samples_, _dst_)
 
-/// @brief Resamples 16-bit audio samples. Set output to NULL to get the output buffer size in samples frames
-/// @param input The input 16-bit integer sample frame buffer
-/// @param output The output 16-bit integer sample frame buffer
-/// @param inSampleRate The input sample rate
-/// @param outSampleRate The output sample rate
-/// @param inputSize The number of samples frames in the input
-/// @param channels The number of channels for both input and output
-/// @return The number of samples frames written to the output
-uint64_t AudioConv_ResampleS16(const int16_t *input, int16_t *output, int inSampleRate, int outSampleRate, uint64_t inputSize, uint32_t channels)
+/// @brief Resamples an audio buffer. Set output to NULL to get the output buffer size in samples frames.
+/// @tparam T The sample data type.
+/// @param src The input sample frame buffer.
+/// @param dst The output sample frame buffer.
+/// @param inSampleRate The input sample rate.
+/// @param outSampleRate The output sample rate.
+/// @param inputSize The number of samples frames in the input.
+/// @param channels The number of channels for both input and output.
+/// @return The number of samples frames written to the output.
+template <typename T>
+uint64_t AudioConv_Resample(uintptr_t src, uintptr_t dst, int inSampleRate, int outSampleRate, uint64_t inputSize, uint32_t channels)
 {
+    auto input = reinterpret_cast<const T *>(src);
+
     if (!input)
         return 0;
 
     auto outputSize = (uint64_t)(inputSize * (double)outSampleRate / (double)inSampleRate);
     outputSize -= outputSize % channels;
 
-    if (!output)
-        return outputSize;
-
-    auto stepDist = ((double)inSampleRate / (double)outSampleRate);
-    const uint64_t fixedFraction = (1LL << 32);
-    const double normFixed = (1.0 / (1LL << 32));
-    auto step = ((uint64_t)(stepDist * fixedFraction + 0.5));
-    uint64_t curOffset = 0;
-
-    for (uint32_t i = 0; i < outputSize; i += 1)
-    {
-        for (uint32_t c = 0; c < channels; c += 1)
-        {
-            *output++ = (int16_t)(input[c] + (input[c + channels] - input[c]) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
-        }
-        curOffset += step;
-        input += (curOffset >> 32) * channels;
-        curOffset &= (fixedFraction - 1);
-    }
-
-    return outputSize;
-}
-
-/// @brief Resamples 32-bit audio samples. Set output to NULL to get the output buffer size in samples frames
-/// @param input The input 32-bit floating point sample frame buffer
-/// @param output The output 32-bit floating point sample frame buffer
-/// @param inSampleRate The input sample rate
-/// @param outSampleRate The output sample rate
-/// @param inputSize The number of samples frames in the input
-/// @param channels The number of channels for both input and output
-/// @return The number of samples frames written to the output
-uint64_t AudioConv_ResampleF32(const float *input, float *output, int inSampleRate, int outSampleRate, uint64_t inputSize, uint32_t channels)
-{
-    if (!input)
-        return 0;
-
-    auto outputSize = (uint64_t)(inputSize * (double)outSampleRate / (double)inSampleRate);
-    outputSize -= outputSize % channels;
+    auto output = reinterpret_cast<T *>(dst);
 
     if (!output)
         return outputSize;
@@ -330,7 +343,7 @@ uint64_t AudioConv_ResampleF32(const float *input, float *output, int inSampleRa
     {
         for (uint32_t c = 0; c < channels; c += 1)
         {
-            *output++ = (float)(input[c] + (input[c + channels] - input[c]) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
+            *output++ = static_cast<T>(input[c] + (input[c + channels] - input[c]) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
         }
         curOffset += step;
         input += (curOffset >> 32) * channels;
@@ -340,84 +353,7 @@ uint64_t AudioConv_ResampleF32(const float *input, float *output, int inSampleRa
     return outputSize;
 }
 
-/// @brief Resamples and converts 8-bit signed audio samples to 32-bit. Set output to NULL to get the output buffer size in samples frames
-/// @param input The input 8-bit signed integer sample frame buffer
-/// @param output The output 32-bit floating point sample frame buffer
-/// @param inSampleRate The input sample rate
-/// @param outSampleRate The output sample rate
-/// @param inputSize The number of samples frames in the input
-/// @param channels The number of channels for both input and output
-/// @return The number of samples frames written to the output
-uint64_t AudioConv_ResampleAndConvertS8ToF32(const int8_t *input, float *output, uint32_t inSampleRate, uint32_t outSampleRate, uint64_t inputSampleFrames, uint32_t channels)
-{
-    if (!input)
-        return 0;
-
-    auto outputSize = (uint64_t)(inputSampleFrames * (double)outSampleRate / (double)inSampleRate);
-    outputSize -= outputSize % channels;
-
-    if (!output)
-        return outputSize;
-
-    auto stepDist = ((double)inSampleRate / (double)outSampleRate);
-    const uint64_t fixedFraction = (1LL << 32);
-    const double normFixed = (1.0 / (1LL << 32));
-    auto step = ((uint64_t)(stepDist * fixedFraction + 0.5));
-    uint64_t curOffset = 0;
-
-    for (uint32_t i = 0; i < outputSize; i += 1)
-    {
-        for (uint32_t c = 0; c < channels; c += 1)
-        {
-            auto sampleFP1 = (float)input[c] * AUDIOCONV_S8_TO_F32_MUL;
-            auto sampleFP2 = (float)input[c + channels] * AUDIOCONV_S8_TO_F32_MUL;
-            *output++ = (float)(sampleFP1 + (sampleFP2 - sampleFP1) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
-        }
-        curOffset += step;
-        input += (curOffset >> 32) * channels;
-        curOffset &= (fixedFraction - 1);
-    }
-
-    return outputSize;
-}
-
-/// @brief Resamples and converts 16-bit audio samples to 32-bit. Set output to NULL to get the output buffer size in samples frames
-/// @param input The input 16-bit integer sample frame buffer
-/// @param output The output 32-bit floating point sample frame buffer
-/// @param inSampleRate The input sample rate
-/// @param outSampleRate The output sample rate
-/// @param inputSize The number of samples frames in the input
-/// @param channels The number of channels for both input and output
-/// @return The number of samples frames written to the output
-uint64_t AudioConv_ResampleAndConvertS16ToF32(const int16_t *input, float *output, uint32_t inSampleRate, uint32_t outSampleRate, uint64_t inputSampleFrames, uint32_t channels)
-{
-    if (!input)
-        return 0;
-
-    auto outputSize = (uint64_t)(inputSampleFrames * (double)outSampleRate / (double)inSampleRate);
-    outputSize -= outputSize % channels;
-
-    if (!output)
-        return outputSize;
-
-    auto stepDist = ((double)inSampleRate / (double)outSampleRate);
-    const uint64_t fixedFraction = (1LL << 32);
-    const double normFixed = (1.0 / (1LL << 32));
-    auto step = ((uint64_t)(stepDist * fixedFraction + 0.5));
-    uint64_t curOffset = 0;
-
-    for (uint32_t i = 0; i < outputSize; i += 1)
-    {
-        for (uint32_t c = 0; c < channels; c += 1)
-        {
-            auto sampleFP1 = (float)input[c] * AUDIOCONV_S16_TO_F32_MUL;
-            auto sampleFP2 = (float)input[c + channels] * AUDIOCONV_S16_TO_F32_MUL;
-            *output++ = (float)(sampleFP1 + (sampleFP2 - sampleFP1) * ((double)(curOffset >> 32) + ((curOffset & (fixedFraction - 1)) * normFixed)));
-        }
-        curOffset += step;
-        input += (curOffset >> 32) * channels;
-        curOffset &= (fixedFraction - 1);
-    }
-
-    return outputSize;
-}
+// Specializations of AudioConv_Resample() for different data types
+#define AudioConv_ResampleS16(_src_, _dst_, _src_sample_rate_, _dst_sample_rate_, _src_size_, _channels_) AudioConv_Resample<int16_t>(_src_, _dst_, _src_sample_rate_, _dst_sample_rate_, _src_size_, _channels_)
+#define AudioConv_ResampleS32(_src_, _dst_, _src_sample_rate_, _dst_sample_rate_, _src_size_, _channels_) AudioConv_Resample<int32_t>(_src_, _dst_, _src_sample_rate_, _dst_sample_rate_, _src_size_, _channels_)
+#define AudioConv_ResampleF32(_src_, _dst_, _src_sample_rate_, _dst_sample_rate_, _src_size_, _channels_) AudioConv_Resample<float>(_src_, _dst_, _src_sample_rate_, _dst_sample_rate_, _src_size_, _channels_)

@@ -16,9 +16,7 @@
 #define GET_ARRAY_SIZE(_x_) (sizeof(_x_) / sizeof(_x_[0]))
 
 // Temporary 4k static buffer shared by various modules
-static uint8_t g_TmpBufF[4096];
-// Temporary std::vector shared by various modules
-static std::vector<uint8_t> g_TmpBufV;
+static uint8_t g_TmpBuf[4096];
 
 #define Compiler_GetDate() (__DATE__)
 #define Compiler_GetTime() (__TIME__)

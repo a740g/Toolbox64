@@ -15,6 +15,12 @@ typedef int8_t qb_bool;
 #define QB_FALSE 0
 #endif
 
-#define TO_C_BOOL(_exp_) ((_exp_) != false)
-#define TO_QB_BOOL(_exp_) ((qb_bool)(-TO_C_BOOL(_exp_)))
-#define TO_L_NOT(_exp_) (-(not(_exp_)))
+#define TO_QB_BOOL(_exp_) (qb_bool(-(bool(_exp_))))
+
+/// @brief Casts a QB64 _OFFSET to a C string. QB64 does the right thing to convert this to a QB64 string
+/// @param p A pointer (_OFFSET)
+/// @return A C string (char ptr)
+inline const char *CString(uintptr_t p)
+{
+    return reinterpret_cast<const char *>(p);
+}

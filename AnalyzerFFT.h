@@ -3,6 +3,9 @@
 // Copyright (c) 2024 Samuel Gomes
 // Copyright (c) 2004-2022 Stian Skjelstad
 // Copyright (c) 1994-2005 Niklas Beisert
+//
+// This includes heavily modified code from Open Cubic Player:
+// https://www.cubic.org/player/
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -105,18 +108,18 @@ public:
     {
         const auto numSamples = std::min(1 << bitDepth, NUM_SAMPLES);
         const auto halfNumSamples = numSamples >> 1;
-        auto averageSignalEnergy = 0.0f;
+        auto averageIntensity = 0.0f;
 
         for (auto i = 0; i < numSamples; ++i)
         {
             auto sample = float(*sampleData) * S16_TO_F32_MULTIPLIER;
             fftBuffer[i][0] = int32_t(*sampleData) << 12;
             fftBuffer[i][1] = 0;
-            averageSignalEnergy += sample * sample;
+            averageIntensity += sample * sample;
             sampleData += sampleIncrement;
         }
 
-        averageSignalEnergy = averageSignalEnergy / float(numSamples);
+        averageIntensity = averageIntensity / float(numSamples);
 
         PerformButterflyOperation(fftBuffer, bitDepth);
 
@@ -127,25 +130,25 @@ public:
             amplitudeArray[i - 1] = uint16_t(std::sqrt((realPart * realPart + imagPart * imagPart) * i));
         }
 
-        return averageSignalEnergy;
+        return averageIntensity;
     }
 
     float DoFFT(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
     {
         const auto numSamples = std::min(1 << bitDepth, NUM_SAMPLES);
         const auto halfNumSamples = numSamples >> 1;
-        auto averageSignalEnergy = 0.0f;
+        auto averageIntensity = 0.0f;
 
         for (auto i = 0; i < numSamples; ++i)
         {
             auto sample = *sampleData;
             fftBuffer[i][0] = int32_t(std::fmaxf(std::fminf(sample, 1.0f), -1.0f) * F32_TO_S16_MULTIPLIER) << 12;
             fftBuffer[i][1] = 0;
-            averageSignalEnergy += sample * sample;
+            averageIntensity += sample * sample;
             sampleData += sampleIncrement;
         }
 
-        averageSignalEnergy = averageSignalEnergy / float(numSamples);
+        averageIntensity = averageIntensity / float(numSamples);
 
         PerformButterflyOperation(fftBuffer, bitDepth);
 
@@ -156,7 +159,7 @@ public:
             amplitudeArray[i - 1] = uint16_t(std::sqrt((realPart * realPart + imagPart * imagPart) * i));
         }
 
-        return averageSignalEnergy;
+        return averageIntensity;
     }
 };
 

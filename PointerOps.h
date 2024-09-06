@@ -33,14 +33,6 @@ inline void Pointer_SetMemory(T *dst, T value, size_t elements)
 #define __ReallocateMemory(_ptr_, _nsz_) ((uintptr_t)realloc((void *)(_ptr_), (size_t)(_nsz_)))
 #define __FreeMemory(_ptr_) free((void *)(_ptr_))
 
-/// @brief Casts a QB64 _OFFSET to a C string. QB64 does the right thing to convert this to a QB64 string
-/// @param p A pointer (_OFFSET)
-/// @return A C string (char ptr)
-inline const char *CStr(uintptr_t p)
-{
-    return reinterpret_cast<const char *>(p);
-}
-
 /// @brief Peeks a BYTE (8-bits) value at p + o
 /// @param p Pointer base
 /// @param o Offset from base
