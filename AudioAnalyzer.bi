@@ -12,7 +12,7 @@ $INCLUDEONCE
 '$INCLUDE:'MathOps.bi'
 '$INCLUDE:'StringOps.bi'
 '$INCLUDE:'GraphicOps.bi'
-'$INCLUDE:'AnalyzerFFT.bi'
+'$INCLUDE:'AudioAnalyzerFFT.bi'
 '$INCLUDE:'AudioConv.bi'
 
 CONST __AUDIOANALYZER_FORMAT_UNKNOWN~%% = 0~%%

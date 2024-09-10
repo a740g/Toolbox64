@@ -7,7 +7,7 @@ $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 
-DECLARE LIBRARY "AnalyzerFFT"
+DECLARE LIBRARY "AudioAnalyzerFFT"
     FUNCTION AudioAnalyzerFFT_DoInteger! (amplitudeArray AS _UNSIGNED INTEGER, sampleDataArray AS INTEGER, BYVAL sampleIncrement AS LONG, BYVAL bitDepth AS LONG)
     FUNCTION AudioAnalyzerFFT_DoSingle! (amplitudeArray AS _UNSIGNED INTEGER, sampleDataArray AS SINGLE, BYVAL sampleIncrement AS LONG, BYVAL bitDepth AS LONG)
 END DECLARE
