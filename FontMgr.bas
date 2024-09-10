@@ -114,7 +114,7 @@ FUNCTION FontMgr_BuildList~& (fontList() AS STRING)
     WEND
 
     ' Sort the array (else it looks really ugly)
-    IF fontCount > 1 THEN FontMgr_SortStringArray fontList(), 1, fontCount
+    IF fontCount > 1 THEN String_SortArray fontList(), 1, fontCount
 
     FontMgr_BuildList = fontCount
 END FUNCTION
@@ -158,7 +158,7 @@ FUNCTION FontMgr_GetName$ (filePath AS STRING, fontIndex AS _UNSIGNED LONG, name
         GET f, , ttcHeader
 
         IF ttcHeader.szTag = "ttcf" THEN ' TTC format
-            ttcHeader.uNumFonts = __FontMgr_BSwap32(ttcHeader.uNumFonts)
+            ttcHeader.uNumFonts = ByteSwapLong(ttcHeader.uNumFonts)
 
             IF fontIndex >= ttcHeader.uNumFonts THEN
                 CLOSE f
@@ -167,7 +167,7 @@ FUNCTION FontMgr_GetName$ (filePath AS STRING, fontIndex AS _UNSIGNED LONG, name
 
             DIM fontBaseOffset AS _UNSIGNED LONG
             GET f, 1 + LEN(ttcHeader) + (fontIndex * __FONTMGR_SIZE_OF_LONG), fontBaseOffset
-            fontBaseOffset = __FontMgr_BSwap32(fontBaseOffset)
+            fontBaseOffset = ByteSwapLong(fontBaseOffset)
         ELSEIF fontIndex > 0 THEN
             CLOSE f
             EXIT FUNCTION ' not TTC format
@@ -179,13 +179,13 @@ FUNCTION FontMgr_GetName$ (filePath AS STRING, fontIndex AS _UNSIGNED LONG, name
         ' Read the first main table header
         DIM ttOffsetTable AS __FontMgr_TTOffsetTableType
         GET f, , ttOffsetTable
-        ttOffsetTable.uMajorVersion = __FontMgr_BSwap16(ttOffsetTable.uMajorVersion)
-        ttOffsetTable.uMinorVersion = __FontMgr_BSwap16(ttOffsetTable.uMinorVersion)
+        ttOffsetTable.uMajorVersion = ByteSwapInteger(ttOffsetTable.uMajorVersion)
+        ttOffsetTable.uMinorVersion = ByteSwapInteger(ttOffsetTable.uMinorVersion)
 
         ' Check is this is a true type font and the version is 1.0
         IF ttOffsetTable.uMajorVersion <> 1 OR ttOffsetTable.uMinorVersion <> 0 THEN EXIT FUNCTION
 
-        ttOffsetTable.uNumOfTables = __FontMgr_BSwap16(ttOffsetTable.uNumOfTables)
+        ttOffsetTable.uNumOfTables = ByteSwapInteger(ttOffsetTable.uNumOfTables)
 
         DIM i AS _UNSIGNED LONG
         WHILE i < ttOffsetTable.uNumOfTables
@@ -194,28 +194,28 @@ FUNCTION FontMgr_GetName$ (filePath AS STRING, fontIndex AS _UNSIGNED LONG, name
 
             IF tblDir.szTag = "name" THEN
                 ' We have found the name table header, now we get the length and offset of name record
-                tblDir.uLength = __FontMgr_BSwap32(tblDir.uLength)
-                tblDir.uOffset = __FontMgr_BSwap32(tblDir.uOffset)
+                tblDir.uLength = ByteSwapLong(tblDir.uLength)
+                tblDir.uOffset = ByteSwapLong(tblDir.uOffset)
 
                 DIM ttNTHeader AS __FontMgr_TTNameTableHeaderType
                 GET f, 1 + tblDir.uOffset, ttNTHeader
-                ttNTHeader.uNRCount = __FontMgr_BSwap16(ttNTHeader.uNRCount)
-                ttNTHeader.uStorageOffset = __FontMgr_BSwap16(ttNTHeader.uStorageOffset)
+                ttNTHeader.uNRCount = ByteSwapInteger(ttNTHeader.uNRCount)
+                ttNTHeader.uStorageOffset = ByteSwapInteger(ttNTHeader.uStorageOffset)
 
                 DIM j AS _UNSIGNED LONG: j = 0
                 DO WHILE j < ttNTHeader.uNRCount
                     DIM ttRecord AS __FontMgr_TTNameRecordType
                     GET f, , ttRecord
-                    ttRecord.uNameID = __FontMgr_BSwap16(ttRecord.uNameID)
-                    ttRecord.uLanguageID = __FontMgr_BSwap16(ttRecord.uLanguageID)
-                    ttRecord.uPlatformID = __FontMgr_BSwap16(ttRecord.uPlatformID)
+                    ttRecord.uNameID = ByteSwapInteger(ttRecord.uNameID)
+                    ttRecord.uLanguageID = ByteSwapInteger(ttRecord.uLanguageID)
+                    ttRecord.uPlatformID = ByteSwapInteger(ttRecord.uPlatformID)
 
                     ' 1 specifies font name, this could be modified to get other info
                     ' mac and unicode platform id should be 0 for english
                     IF ttRecord.uNameID = nameId THEN
                         IF (ttRecord.uPlatformID = __FONTMGR_PLATFORM_ID_UNI AND ttRecord.uLanguageID = __FONTMGR_LANGUAGE_ID_UNI) OR (ttRecord.uPlatformID = __FONTMGR_PLATFORM_ID_MAC AND ttRecord.uLanguageID = __FONTMGR_LANGUAGE_ID_MAC) OR (ttRecord.uPlatformID = __FONTMGR_PLATFORM_ID_WIN AND ttRecord.uLanguageID = __FONTMGR_LANGUAGE_ID_WIN) THEN
-                            ttRecord.uStringLength = __FontMgr_BSwap16(ttRecord.uStringLength)
-                            ttRecord.uStringOffset = __FontMgr_BSwap16(ttRecord.uStringOffset)
+                            ttRecord.uStringLength = ByteSwapInteger(ttRecord.uStringLength)
+                            ttRecord.uStringOffset = ByteSwapInteger(ttRecord.uStringOffset)
 
                             DIM nPos AS _UNSIGNED LONG: nPos = LOC(f) ' save current file position
 
@@ -276,7 +276,7 @@ FUNCTION FontMgr_GetCount~& (filePath AS STRING)
         GET f, , ttcHeader
 
         IF ttcHeader.szTag = "ttcf" THEN ' TTC format
-            FontMgr_GetCount = __FontMgr_BSwap32(ttcHeader.uNumFonts)
+            FontMgr_GetCount = ByteSwapLong(ttcHeader.uNumFonts)
             CLOSE f
             EXIT FUNCTION
         END IF
@@ -285,8 +285,8 @@ FUNCTION FontMgr_GetCount~& (filePath AS STRING)
 
         DIM ttOffsetTable AS __FontMgr_TTOffsetTableType
         GET f, , ttOffsetTable
-        ttOffsetTable.uMajorVersion = __FontMgr_BSwap16(ttOffsetTable.uMajorVersion)
-        ttOffsetTable.uMinorVersion = __FontMgr_BSwap16(ttOffsetTable.uMinorVersion)
+        ttOffsetTable.uMajorVersion = ByteSwapInteger(ttOffsetTable.uMajorVersion)
+        ttOffsetTable.uMinorVersion = ByteSwapInteger(ttOffsetTable.uMinorVersion)
 
         IF ttOffsetTable.uMajorVersion = 1 AND ttOffsetTable.uMinorVersion = 0 THEN
             SELECT CASE LCASE$(RIGHT$(filePath, 4))
@@ -313,7 +313,7 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
         outMinSize = __FONTMGR_PROBE_SIZE_MIN
         outMaxSize = 16
 
-        FontMgr_GetSizeRange = __FONTMGR_TRUE
+        FontMgr_GetSizeRange = TRUE
     ELSEIF _FILEEXISTS(filePath) THEN
         ' There is no point doing this for scalable fonts
         ' Just set the min and max and exit
@@ -323,7 +323,7 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
                 outMinSize = __FONTMGR_PROBE_SIZE_MIN
                 outMaxSize = __FONTMGR_PROBE_SIZE_MAX
 
-                FontMgr_GetSizeRange = __FONTMGR_TRUE
+                FontMgr_GetSizeRange = TRUE
                 EXIT FUNCTION
         END SELECT
 
@@ -350,40 +350,11 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
             outMinSize = minSize
             outMaxSize = maxSize
 
-            FontMgr_GetSizeRange = __FONTMGR_TRUE
+            FontMgr_GetSizeRange = TRUE
         END IF
     END IF
 END FUNCTION
 
 
-''' @brief Sorts a string array
-''' @param strArr The string array to sort
-''' @param l The lower index
-''' @param u The upper index
-SUB FontMgr_SortStringArray (strArr() AS STRING, l AS _UNSIGNED LONG, u AS _UNSIGNED LONG)
-    DIM i AS _UNSIGNED LONG: i = l
-    DIM j AS _UNSIGNED LONG: j = u
-    DIM pivot AS STRING: pivot = strArr((l + u) \ 2)
-
-    WHILE i <= j
-        WHILE _STRCMP(strArr(i), pivot) < 0
-            i = i + 1
-        WEND
-
-        WHILE _STRCMP(strArr(j), pivot) > 0
-            j = j - 1
-        WEND
-
-        IF i <= j THEN
-            SWAP strArr(i), strArr(j)
-            i = i + 1
-            j = j - 1
-        END IF
-    WEND
-
-    ' Recursively sort the partitions
-    IF l < j THEN FontMgr_SortStringArray strArr(), l, j
-    IF i < u THEN FontMgr_SortStringArray strArr(), i, u
-END SUB
-
+'$INCLUDE:'StringOps.bas'
 '$INCLUDE:'Pathname.bas'

@@ -16,18 +16,23 @@ END DECLARE
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
 '$DEBUG
-'DIM buffer(0 TO 1023) AS INTEGER
-'DIM outp(0 TO 1023) AS INTEGER
+
+'CONST FFT_POW = 10
+'CONST FFT_FRAMES = 2 ^ FFT_POW
+'CONST FFT_HALF_FRAMES = FFT_FRAMES \ 2
+
+'DIM buffer(0 TO FFT_FRAMES - 1) AS SINGLE
+'DIM outp(0 TO FFT_HALF_FRAMES - 1) AS INTEGER
 
 'RANDOMIZE TIMER
 
 'DO
 '    DIM i AS LONG
-'    FOR i = 0 TO 1023
-'        buffer(i) = RND * 65536 - 32768
+'    FOR i = 0 TO FFT_FRAMES - 1
+'        buffer(i) = RND - RND
 '    NEXT i
 
-'    PRINT USING "#####.#####"; AudioAnalyzerFFT_DoInteger(outp(0), buffer(0), 1, 10)
+'    PRINT USING "#####.#####"; AudioAnalyzerFFT_DoSingle(outp(0), buffer(0), 1, 10)
 'LOOP UNTIL _KEYHIT = 27
 
 'END

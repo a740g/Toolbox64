@@ -341,6 +341,37 @@ FUNCTION String_Join$ (sourceArray() AS STRING, delimiter AS STRING)
 END FUNCTION
 
 
+''' @brief Sorts a string array
+''' @param strArr The string array to sort
+''' @param l The lower index
+''' @param u The upper index
+SUB String_SortArray (strArr() AS STRING, l AS _UNSIGNED LONG, u AS _UNSIGNED LONG)
+    DIM i AS _UNSIGNED LONG: i = l
+    DIM j AS _UNSIGNED LONG: j = u
+    DIM pivot AS STRING: pivot = strArr((l + u) \ 2)
+
+    WHILE i <= j
+        WHILE _STRCMP(strArr(i), pivot) < 0
+            i = i + 1
+        WEND
+
+        WHILE _STRCMP(strArr(j), pivot) > 0
+            j = j - 1
+        WEND
+
+        IF i <= j THEN
+            SWAP strArr(i), strArr(j)
+            i = i + 1
+            j = j - 1
+        END IF
+    WEND
+
+    ' Recursively sort the partitions
+    IF l < j THEN String_SortArray strArr(), l, j
+    IF i < u THEN String_SortArray strArr(), i, u
+END SUB
+
+
 ' Reverses and returns the characters of a string
 FUNCTION String_Reverse$ (s AS STRING)
     $CHECKING:OFF

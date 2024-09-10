@@ -5,9 +5,12 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'Common.bi'
+'$INCLUDE:'Types.bi'
+'$INCLUDE:'BitwiseOps.bi'
+'$INCLUDE:'StringOps.bi'
 '$INCLUDE:'Pathname.bi'
 
-CONST __FONTMGR_FALSE~%% = 0~%%, __FONTMGR_TRUE~%% = NOT __FONTMGR_FALSE
 CONST __FONTMGR_PROBE_SIZE_MIN~%% = 8~% ' minimum font height that can be reported
 CONST __FONTMGR_PROBE_SIZE_MAX~%% = 120~%% ' maximum font height that can be reported
 CONST __FONTMGR_PLATFORM_ID_UNI~% = 0~%
@@ -77,8 +80,3 @@ TYPE __FontMgr_TTNameRecordType
     uStringLength AS _UNSIGNED INTEGER
     uStringOffset AS _UNSIGNED INTEGER
 END TYPE
-
-DECLARE LIBRARY
-    FUNCTION __FontMgr_BSwap16~% ALIAS "__builtin_bswap16" (BYVAL x AS _UNSIGNED INTEGER)
-    FUNCTION __FontMgr_BSwap32~& ALIAS "__builtin_bswap32" (BYVAL x AS _UNSIGNED LONG)
-END DECLARE

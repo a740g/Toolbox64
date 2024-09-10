@@ -31,12 +31,12 @@ private:
 
     int32_t fftBuffer[NUM_SAMPLES][2];
 
-    constexpr auto MultiplyShift29(int32_t a, int32_t b)
+    static inline constexpr auto MultiplyShift29(int32_t a, int32_t b)
     {
         return int32_t((int64_t(a) * int64_t(b)) >> 29);
     }
 
-    void CalculateFFT(int32_t *currentSample, int32_t *currentSinCos, uint32_t distance)
+    static void CalculateFFT(int32_t *currentSample, int32_t *currentSinCos, uint32_t distance)
     {
         auto realPart = currentSample[0] - currentSample[distance + 0];
         currentSample[0] = (currentSample[0] + currentSample[distance + 0]) >> 1;
@@ -48,7 +48,7 @@ private:
         currentSample[distance + 1] = MultiplyShift29(realPart, currentSinCos[1]) + MultiplyShift29(imagPart, currentSinCos[0]);
     }
 
-    void PerformButterflyOperation(int32_t (*data)[2], int stage)
+    static void PerformButterflyOperation(int32_t (*data)[2], int stage)
     {
         auto lastStageData = data[1 << stage];
         int32_t currentSinCos[2];
@@ -133,7 +133,7 @@ public:
         return averageIntensity;
     }
 
-    float DoFFT(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
+    auto DoFFT(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
     {
         const auto numSamples = std::min(1 << bitDepth, NUM_SAMPLES);
         const auto halfNumSamples = numSamples >> 1;
@@ -141,8 +141,8 @@ public:
 
         for (auto i = 0; i < numSamples; ++i)
         {
-            auto sample = *sampleData;
-            fftBuffer[i][0] = int32_t(std::fmaxf(std::fminf(sample, 1.0f), -1.0f) * F32_TO_S16_MULTIPLIER) << 12;
+            auto sample = std::fmaxf(std::fminf(*sampleData, 1.0f), -1.0f);
+            fftBuffer[i][0] = int32_t(sample * F32_TO_S16_MULTIPLIER) << 12;
             fftBuffer[i][1] = 0;
             averageIntensity += sample * sample;
             sampleData += sampleIncrement;
