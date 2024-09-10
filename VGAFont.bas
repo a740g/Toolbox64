@@ -165,7 +165,7 @@ END FUNCTION
 
 ' Loads a PSF v1 font file from disk
 FUNCTION PSF1_LoadFontFromFile%% (fileName AS STRING, psf AS PSF1Type)
-    PSF1_LoadFontFromFile = PSF1_LoadFontFromMemory(LoadFile(fileName), psf)
+    PSF1_LoadFontFromFile = PSF1_LoadFontFromMemory(File_Load(fileName), psf)
 END FUNCTION
 
 
@@ -335,4 +335,4 @@ FUNCTION PSF1_SaveFont%% (fileName AS STRING)
     END IF
 END FUNCTION
 
-'$INCLUDE:'FileOps.bas'
+'$INCLUDE:'File.bas'

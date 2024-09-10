@@ -87,29 +87,6 @@ SUB StringFile_Create (stringFile AS StringFileType, src AS STRING)
 END SUB
 
 
-' Loads a whole file from disk into a StringFile object
-' This will reset the StringFile object if it was previously being used
-FUNCTION StringFile_Load%% (stringFile AS StringFileType, fileName AS STRING)
-    IF _FILEEXISTS(fileName) THEN
-        stringFile.buffer = _READFILE$(fileName)
-        stringFile.cursor = 0
-
-        StringFile_Load = TRUE
-    END IF
-END FUNCTION
-
-
-' Saves a StringFile object to a file
-' This does not disturb the read / write cursor
-FUNCTION StringFile_Save%% (stringFile AS StringFileType, fileName AS STRING, overwrite AS _BYTE)
-    IF _FILEEXISTS(fileName) AND NOT overwrite THEN EXIT FUNCTION
-
-    _WRITEFILE fileName, stringFile.buffer
-
-    StringFile_Save = TRUE
-END FUNCTION
-
-
 ' Returns true if EOF is reached
 FUNCTION StringFile_IsEOF%% (stringFile AS StringFileType)
     StringFile_IsEOF = (stringFile.cursor >= LEN(stringFile.buffer))

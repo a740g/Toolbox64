@@ -28,22 +28,22 @@ END SUB
 
 
 FUNCTION MIDI_PlayFromFile%% (fileName AS STRING)
-    MIDI_PlayFromFile = MIDI_PlayFromMemory(LoadFile(fileName))
+    MIDI_PlayFromFile = MIDI_PlayFromMemory(File_Load(fileName))
 END FUNCTION
 
 
 SUB MIDI_PlayFromFile (fileName AS STRING)
-    MIDI_PlayFromMemory LoadFile(fileName)
+    MIDI_PlayFromMemory File_Load(fileName)
 END SUB
 
 
 FUNCTION Sound_PlayFromFile%% (fileName AS STRING, looping AS _BYTE)
-    Sound_PlayFromFile = Sound_PlayFromMemory(LoadFile(fileName), looping)
+    Sound_PlayFromFile = Sound_PlayFromMemory(File_Load(fileName), looping)
 END FUNCTION
 
 
 SUB Sound_PlayFromFile (fileName AS STRING, looping AS _BYTE)
-    DIM sink AS _BYTE: sink = Sound_PlayFromMemory(LoadFile(fileName), looping)
+    DIM sink AS _BYTE: sink = Sound_PlayFromMemory(File_Load(fileName), looping)
 END SUB
 
 
@@ -52,4 +52,4 @@ SUB Sound_PlayFromMemory (buffer AS STRING, looping AS _BYTE)
 END SUB
 
 '$INCLUDE:'MemFile.bas'
-'$INCLUDE:'FileOps.bas'
+'$INCLUDE:'File.bas'

@@ -68,7 +68,7 @@ FUNCTION Pathname_IsAbsolute%% (pathName AS STRING)
     $ELSE
         ' /
         IF LEN(pathName) > 0 THEN
-            Pathname_IsAbsolute = (ASC(pathName, 1) = PATHNAME_DIR_SEPARATOR_CODE)
+            Pathname_IsAbsolute = (PATHNAME_DIR_SEPARATOR_CODE = ASC(pathName, 1))
         END IF
     $END IF
 END FUNCTION
@@ -170,7 +170,7 @@ FUNCTION Pathname_HasFileExtension%% (pathOrURL AS STRING)
                     EXIT FOR
 
                 CASE PATHNAME_EXT_SEPARATOR_CODE
-                    Pathname_HasFileExtension = __PATHNAME_TRUE
+                    Pathname_HasFileExtension = TRUE
                     EXIT FOR
             END SELECT
         $ELSE
@@ -179,7 +179,7 @@ FUNCTION Pathname_HasFileExtension%% (pathOrURL AS STRING)
                     EXIT FOR
 
                 CASE PATHNAME_EXT_SEPARATOR_CODE
-                    Pathname_HasFileExtension = __PATHNAME_TRUE
+                    Pathname_HasFileExtension = TRUE
                     EXIT FOR
             END SELECT
         $END IF

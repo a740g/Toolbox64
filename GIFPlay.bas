@@ -77,9 +77,9 @@ FUNCTION GIF_LoadFromFile%% (Id AS LONG, fileName AS STRING)
         END IF
     $END IF
 
-    DIM sf AS StringFileType
+    DIM sf AS StringFileType: StringFile_Create sf, File_Load(fileName)
 
-    IF StringFile_Load(sf, fileName) THEN
+    IF StringFile_GetSize(sf) THEN
         GIF_LoadFromFile = __GIF_Load(Id, sf)
     END IF
 END FUNCTION
@@ -109,7 +109,7 @@ SUB GIF_Free (Id AS LONG)
         END IF
 
         ' Mark the frame slot as unused so that it can be reused
-        __GIFPlayFrame(__GIFPlay(idx).frame).isUsed = __GIF_FALSE
+        __GIFPlayFrame(__GIFPlay(idx).frame).isUsed = FALSE
 
         ' Note the lowest free frame
         IF __GIF_FirstFreeFrame > __GIFPlay(idx).frame THEN __GIF_FirstFreeFrame = __GIFPlay(idx).frame
@@ -131,7 +131,7 @@ SUB GIF_Free (Id AS LONG)
     END IF
 
     ' Finally mark the GIF slot as unused so that it can be reused
-    __GIFPlay(idx).isUsed = __GIF_FALSE
+    __GIFPlay(idx).isUsed = FALSE
 
     ' Remove Id from the hash table
     HashTable_Remove __GIFPlayHashTable(), Id
@@ -190,8 +190,8 @@ SUB GIF_Play (Id AS LONG)
     IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
         DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
 
-        __GIFPlay(idx).isPlaying = __GIF_TRUE
-        __GIFPlay(idx).lastTick = __GIF_GetTicks
+        __GIFPlay(idx).isPlaying = TRUE
+        __GIFPlay(idx).lastTick = Time_GetTicks
     END IF
 END SUB
 
@@ -202,7 +202,7 @@ SUB GIF_Pause (Id AS LONG)
     SHARED __GIFPlay() AS __GIFPlayType
 
     IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isPlaying = __GIF_FALSE
+        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isPlaying = FALSE
     END IF
 END SUB
 
@@ -215,13 +215,13 @@ SUB GIF_Stop (Id AS LONG)
     IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
         DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
 
-        __GIFPlay(idx).isPlaying = __GIF_FALSE
+        __GIFPlay(idx).isPlaying = FALSE
         __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame
         __GIFPlay(idx).frameNumber = 0
         __GIFPlay(idx).loopCounter = 0
         __GIFPlay(idx).elapsedTime = 0
         __GIFPlay(idx).lastFrameRendered = -1
-        __GIFPlay(idx).hasSavedImage = __GIF_FALSE
+        __GIFPlay(idx).hasSavedImage = FALSE
     END IF
 END SUB
 
@@ -299,7 +299,7 @@ FUNCTION GIF_GetFrame& (Id AS LONG)
     IF __GIFPlay(idx).loops <> 0 AND (__GIFPlay(idx).loopCounter < 0 OR __GIFPlay(idx).loopCounter >= __GIFPlay(idx).loops) THEN EXIT FUNCTION
 
     ' Fetch and store the current tick
-    DIM currentTick AS _UNSIGNED _INTEGER64: currentTick = __GIF_GetTicks
+    DIM currentTick AS _UNSIGNED _INTEGER64: currentTick = Time_GetTicks
 
     ' Remember the last frame index
     DIM lastFrameRendered AS LONG: lastFrameRendered = __GIFPlay(idx).frame
@@ -347,7 +347,7 @@ FUNCTION GIF_GetFrame& (Id AS LONG)
                 IF __GIFPlay(idx).hasSavedImage THEN
                     ' Copy back the saved image and unset the flag
                     _PUTIMAGE , __GIFPlay(idx).savedImage, __GIFPlay(idx).image
-                    __GIFPlay(idx).hasSavedImage = __GIF_FALSE
+                    __GIFPlay(idx).hasSavedImage = FALSE
                 END IF
 
                 ' All other disposal methods do not require any action
@@ -357,7 +357,7 @@ FUNCTION GIF_GetFrame& (Id AS LONG)
     ' If the current frame's disposal method is 3 (restore to previous) then save the current rendered frame and set the flag
     IF __GIFPlayFrame(__GIFPlay(idx).frame).disposalMethod = 3 THEN
         _PUTIMAGE , __GIFPlay(idx).image, __GIFPlay(idx).savedImage
-        __GIFPlay(idx).hasSavedImage = __GIF_TRUE
+        __GIFPlay(idx).hasSavedImage = TRUE
     END IF
 
     ' Render the frame at the correct (x, y) offset on the final image
@@ -604,7 +604,7 @@ FUNCTION __GIF_DecodeLZW%% (sf AS StringFileType, bmpMem AS _MEM)
         prev = code
     LOOP
 
-    __GIF_DecodeLZW = __GIF_TRUE
+    __GIF_DecodeLZW = TRUE
 END FUNCTION
 
 
@@ -660,25 +660,25 @@ FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
     ' No free GIF slots?
     IF idx > UBOUND(__GIFPlay) THEN REDIM _PRESERVE __GIFPlay(0 TO idx) AS __GIFPlayType
 
-    __GIFPlay(idx).isUsed = __GIF_TRUE ' occupy the slot
+    __GIFPlay(idx).isUsed = TRUE ' occupy the slot
     HashTable_InsertLong __GIFPlayHashTable(), Id, idx ' add it to the hash table
 
     ' Reset some stuff
-    __GIFPlay(idx).isReady = __GIF_FALSE
+    __GIFPlay(idx).isReady = FALSE
     __GIFPlay(idx).firstFrame = -1
     __GIFPlay(idx).lastFrame = -1
     __GIFPlay(idx).frame = -1
     __GIFPlay(idx).frameCount = 0
     __GIFPlay(idx).frameNumber = 0
-    __GIFPlay(idx).isPlaying = __GIF_FALSE
+    __GIFPlay(idx).isPlaying = FALSE
     __GIFPlay(idx).loops = 0
     __GIFPlay(idx).loopCounter = 0
     __GIFPlay(idx).duration = 0
     __GIFPlay(idx).lastTick = 0
     __GIFPlay(idx).elapsedTime = 0
     __GIFPlay(idx).lastFrameRendered = -1
-    __GIFPlay(idx).hasSavedImage = __GIF_FALSE
-    __GIFPlay(idx).overlayEnabled = __GIF_TRUE
+    __GIFPlay(idx).hasSavedImage = FALSE
+    __GIFPlay(idx).overlayEnabled = TRUE
 
     ' Get width and height
     DIM W AS _UNSIGNED INTEGER: W = StringFile_ReadInteger(sf)
@@ -737,7 +737,7 @@ FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
                 IF frameIdx > UBOUND(__GIFPlayFrame) THEN REDIM _PRESERVE __GIFPlayFrame(0 TO frameIdx) AS __GIFPlayFrameType
 
                 ' Occupy the slot
-                __GIFPlayFrame(frameIdx).isUsed = __GIF_TRUE
+                __GIFPlayFrame(frameIdx).isUsed = TRUE
 
                 ' Read frame size and offset
                 __GIFPlayFrame(frameIdx).L = StringFile_ReadInteger(sf)
@@ -854,14 +854,14 @@ FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
 
     '__GIF_PrintDebugInfo idx
 
-    __GIFPlay(idx).isReady = __GIF_TRUE ' set the ready flag
+    __GIFPlay(idx).isReady = TRUE ' set the ready flag
 
     ' Render the first frame and then stop
     GIF_Play Id
     DIM dummy AS LONG: dummy = GIF_GetFrame(Id)
     GIF_Stop Id
 
-    __GIF_Load = __GIF_TRUE
+    __GIF_Load = TRUE
     EXIT FUNCTION
 
     gif_load_error:
@@ -917,19 +917,19 @@ END FUNCTION
 FUNCTION __GIF_GetOverlayImage&
     CONST SIZE_GIFOVERLAYIMAGE_BMP_16506~& = 16506~&
     CONST COMP_GIFOVERLAYIMAGE_BMP_16506%% = -1%%
-        CONST DATA_GIFOVERLAYIMAGE_BMP_16506 = _
-            "eNpy8q1yYACDKiDOAWIHKGZkUGBgZsAF/kMQjDM4gRSgfbsGjt+I4jgexj+2YU57nd27H0Nl6htD6wkzJ31hqFyFWkMVZmZm5rzjMyjfzcwLvEKj" + _
-            "tXTnFbyZjxn0O60WBBjDdVjDU/gAP0LwK77CW3gKa7gOY+B3c1k13Ic3ICm9gftQQ8h1BIt4GdInL2MRRxBKHcd1+BIyIF/iehzHYdWpmMXnkEPy" + _
-            "OWZxKgZZV2AbEohtXI5B1Di+hQTmW4z3ub3fBQncXX04Hs7CKiQnVnFWhtkfh+TM4zgrgza/AsmplZTHwh2QnLszRT8vheA/LlyObyAF8Q0u9zjm" + _
-            "tyEFs52wL5iFFNRsgrXMZ5CC+gwnY/JfBym462LW719BCu4rHIGtRUhJLNo+H29ASuINMxYMQ1JooIUOekYHLTQgFpromJ8V1NFGV7+HOiQjw9C6" + _
-            "L0VumzlOB02TvWehhTZ6VoavwX3QehXixWz7ysrK7rPPPrsXmXJfc98zGdqoa8bNzc2/f++tt97a19dJ9/tPP/20H1EPPfSQ/o0mJAOvwdVFabK7" + _
-            "bFHCeuSRR/ZMWxh4fuMiTBygzff+u9267XY/X3vttT33Nc3gyn08NTW1474fQP4J3ATx0LH7/eabbzbt24D7mUajEWmWQPLfhHXffT8yMrJjs6Nr" + _
-            "+3k00LZZAsq/jqcgCbX+u+8/++yzfc2OOgR1bSNWgPmfwoe+bd/ljig93tGCOLrd/ctvwM4dPLyL7yAJ9Rxt+/Pz8ztmnzTRc1+PYirT/Ibna/AF" + _
-            "5KD56Qc0f72v+ROU+V1J6JeM89v2Hy+A/Inav8mm45ht/7b/i9FBPZD2n0X/107ye0YnhP4vzfjnti3BuqShc0FdC7iPQxn/fOc/msX2ZTr/Qd2u" + _
-            "be2cIaD5/3oW81/tByzl5vsRZecM2R//3ucJbsLYQdc/bnv/u8616wCX2635Isrse6eRYX6r67H+uRDiqYWeo/mSjE8cN6aPzm78i5mTxbkIrl5J" + _
-            "8xroOlfHBbvmN+2iAwkg/6vQuhfixfRvCWj/KN7nv/x1Pc9/DfX5/GcD9ZTnP5Fp/zdkzn+/Xsrz39X1D63z8SWk4L7Eker6Z2mvfx9HXM2U+P4H" + _
-            "HQu2IAVDJrIlq8uKd/8TmfxqrMT3v2ndBsm526v7X6v7n6v736vnH6rnX6rnnzI+HmYCeP5tBqeW8PnH63A8wOdfX4L0yUvm+ddQq4a78QokpVdw" + _
-            "N2rIY+nz70tYxZN431x3/g7v40msYmlQz7//BcxY2A4="
+    CONST DATA_GIFOVERLAYIMAGE_BMP_16506 = _
+        "eNpy8q1yYACDKiDOAWIHKGZkUGBgZsAF/kMQjDM4gRSgfbsGjt+I4jgexj+2YU57nd27H0Nl6htD6wkzJ31hqFyFWkMVZmZm5rzjMyjfzcwLvEKj" + _
+        "tXTnFbyZjxn0O60WBBjDdVjDU/gAP0LwK77CW3gKa7gOY+B3c1k13Ic3ICm9gftQQ8h1BIt4GdInL2MRRxBKHcd1+BIyIF/iehzHYdWpmMXnkEPy" + _
+        "OWZxKgZZV2AbEohtXI5B1Di+hQTmW4z3ub3fBQncXX04Hs7CKiQnVnFWhtkfh+TM4zgrgza/AsmplZTHwh2QnLszRT8vheA/LlyObyAF8Q0u9zjm" + _
+        "tyEFs52wL5iFFNRsgrXMZ5CC+gwnY/JfBym462LW719BCu4rHIGtRUhJLNo+H29ASuINMxYMQ1JooIUOekYHLTQgFpromJ8V1NFGV7+HOiQjw9C6" + _
+        "L0VumzlOB02TvWehhTZ6VoavwX3QehXixWz7ysrK7rPPPrsXmXJfc98zGdqoa8bNzc2/f++tt97a19dJ9/tPP/20H1EPPfSQ/o0mJAOvwdVFabK7" + _
+        "bFHCeuSRR/ZMWxh4fuMiTBygzff+u9267XY/X3vttT33Nc3gyn08NTW1474fQP4J3ATx0LH7/eabbzbt24D7mUajEWmWQPLfhHXffT8yMrJjs6Nr" + _
+        "+3k00LZZAsq/jqcgCbX+u+8/++yzfc2OOgR1bSNWgPmfwoe+bd/ljig93tGCOLrd/ctvwM4dPLyL7yAJ9Rxt+/Pz8ztmnzTRc1+PYirT/Ibna/AF" + _
+        "5KD56Qc0f72v+ROU+V1J6JeM89v2Hy+A/Inav8mm45ht/7b/i9FBPZD2n0X/107ye0YnhP4vzfjnti3BuqShc0FdC7iPQxn/fOc/msX2ZTr/Qd2u" + _
+        "be2cIaD5/3oW81/tByzl5vsRZecM2R//3ucJbsLYQdc/bnv/u8616wCX2635Isrse6eRYX6r67H+uRDiqYWeo/mSjE8cN6aPzm78i5mTxbkIrl5J" + _
+        "8xroOlfHBbvmN+2iAwkg/6vQuhfixfRvCWj/KN7nv/x1Pc9/DfX5/GcD9ZTnP5Fp/zdkzn+/Xsrz39X1D63z8SWk4L7Eker6Z2mvfx9HXM2U+P4H" + _
+        "HQu2IAVDJrIlq8uKd/8TmfxqrMT3v2ndBsm526v7X6v7n6v736vnH6rnX6rnnzI+HmYCeP5tBqeW8PnH63A8wOdfX4L0yUvm+ddQq4a78QokpVdw" + _
+        "N2rIY+nz70tYxZN431x3/g7v40msYmlQz7//BcxY2A4="
 
     STATIC overlayImage AS LONG
 
@@ -944,3 +944,4 @@ END FUNCTION
 '$INCLUDE:'HashTable.bas'
 '$INCLUDE:'StringFile.bas'
 '$INCLUDE:'Base64.bas'
+'$INCLUDE:'File.bas'

@@ -8,7 +8,7 @@ $INCLUDEONCE
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'MemFile.bi'
-'$INCLUDE:'FileOps.bi'
+'$INCLUDE:'File.bi'
 
 DECLARE LIBRARY "WinMIDIPlayer"
     FUNCTION __MIDI_PlayFromMemory%% (buffer AS STRING, BYVAL bufferSize AS _OFFSET)

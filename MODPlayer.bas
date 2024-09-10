@@ -1287,7 +1287,7 @@ END FUNCTION
 ' Load the MOD file from disk or a URL
 FUNCTION MODPlayer_LoadFromDisk%% (fileName AS STRING)
     ' TODO: Startrekker .mod + .nt support
-    MODPlayer_LoadFromDisk = MODPlayer_LoadFromMemory(LoadFile(fileName))
+    MODPlayer_LoadFromDisk = MODPlayer_LoadFromMemory(File_Load(fileName))
 END FUNCTION
 
 
@@ -2292,4 +2292,4 @@ END FUNCTION
 
 '$INCLUDE:'SoftSynth.bas'
 '$INCLUDE:'StringFile.bas'
-'$INCLUDE:'FileOps.bas'
+'$INCLUDE:'File.bas'

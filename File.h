@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------------------------------------
-// File, path and filesystem routines
+// File management routines
 // Copyright (c) 2024 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -24,7 +24,7 @@
 /// @brief Returns some basic attributes of a file or directory
 /// @param pathName The path name to get the attribute for
 /// @return A 32-bit value where each bit represents an attribute (see __FILE_* above)
-inline uint32_t __GetFileAttributes(const char *pathName)
+inline uint32_t __File_GetAttributes(const char *pathName)
 {
     uint32_t attributes = 0;
 
@@ -55,7 +55,7 @@ inline uint32_t __GetFileAttributes(const char *pathName)
 /// @brief Returns the 64-bit file size without opening the file
 /// @param fileName The file name to get the size for
 /// @return A 64-bit integer value (size)
-inline int64_t __GetFileSize(const char *fileName)
+inline int64_t __File_GetSize(const char *fileName)
 {
     struct stat64 st;
 

@@ -82,15 +82,6 @@ FUNCTION MemFile_CreateFromString~%& (src AS STRING)
 END FUNCTION
 
 
-' Creates a MemFile from a file
-FUNCTION MemFile_CreateFromFile~%& (fileName AS STRING)
-    IF _FILEEXISTS(fileName) THEN
-        DIM buffer AS STRING: buffer = _READFILE$(fileName)
-        MemFile_CreateFromFile = MemFile_Create(_OFFSET(buffer), LEN(buffer))
-    END IF
-END FUNCTION
-
-
 ' Reads and returns a string of length size
 FUNCTION MemFile_ReadString$ (memFile AS _UNSIGNED _OFFSET, size AS _UNSIGNED LONG)
     DIM dst AS STRING: dst = STRING$(size, NULL)
@@ -125,16 +116,3 @@ SUB MemFile_WriteType (memFile AS _UNSIGNED _OFFSET, typeOffset AS _UNSIGNED _OF
         ERROR ERROR_ILLEGAL_FUNCTION_CALL
     END IF
 END SUB
-
-
-' Saves a MemFile object to a file
-' This does not disturb the read / write cursor
-FUNCTION MemFile_SaveToFile%% (memFile AS _UNSIGNED _OFFSET, fileName AS STRING, overwrite AS _BYTE)
-    IF (NOT _FILEEXISTS(fileName) _ORELSE overwrite) _ANDALSO MemFile_GetSize(memFile) THEN
-        DIM position AS _OFFSET: position = MemFile_GetPosition(memFile)
-        MemFile_Seek memFile, 0
-        _WRITEFILE fileName, MemFile_ReadString(memFile, MemFile_GetSize(memFile))
-        MemFile_Seek memFile, position
-        MemFile_SaveToFile = TRUE
-    END IF
-END FUNCTION
