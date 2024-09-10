@@ -1,6 +1,6 @@
 # TOOLBOX64
 
-This is A740G's Toolbox. A collection of libraries for [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe).
+This is A740G's Toolbox. A collection of libraries for [QB64-PE](https://www.qb64phoenix.com/).
 
 ## USAGE
 
