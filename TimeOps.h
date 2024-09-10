@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "Common.h"
-#include "Types.h"
+#include <cstdint>
 
 /// @brief GetTicks returns the number of "ticks" (ms) since the program started execution where 1000 "ticks" (ms) = 1 second.
 /// @return Ticks in ms.

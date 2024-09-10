@@ -12,6 +12,8 @@ $INCLUDEONCE
 '-------------------------------------------------------------------------------------------------------------------
 'DEFLNG A-Z
 'OPTION _EXPLICIT
+'WIDTH , 60
+'_FONT 14
 
 'REDIM MyHashTable(0 TO 0) AS HashTableType
 
@@ -61,13 +63,15 @@ $INCLUDEONCE
 '    PRINT USING "#####.##### seconds"; TIMER - t
 'NEXT
 
-'FOR i = TEST_UB TO TEST_LB STEP -1
+'REDIM MyHashTable(0 TO 0) AS HashTableType
+
+'FOR i = TEST_LB TO TEST_UB
 '    LOCATE , 1: PRINT "Adding key"; i; "Size:"; UBOUND(MyHashTable) + 1;
 '    HashTable_InsertLong MyHashTable(), i, myarray(i)
 'NEXT
 'PRINT
 
-'FOR i = TEST_UB TO TEST_LB STEP -1
+'FOR i = TEST_LB TO TEST_UB
 '    LOCATE , 1: PRINT "Verifying key: "; i;
 '    IF HashTable_LookupLong(MyHashTable(), i) <> myarray(i) THEN
 '        PRINT "[fail] ";
@@ -96,18 +100,6 @@ $INCLUDEONCE
 
 'END
 '-------------------------------------------------------------------------------------------------------------------
-
-' Simple hash function: k is the 32-bit key and l is the upper bound of the array
-FUNCTION __HashTable_GetHash~& (k AS _UNSIGNED LONG, l AS _UNSIGNED LONG)
-    $CHECKING:OFF
-    ' Actually this should be k MOD (l + 1)
-    ' However, we can get away using AND because our arrays size always doubles in multiples of 2
-    ' So, if l = 255, then (k MOD (l + 1)) = (k AND l)
-    ' Another nice thing here is that we do not need to do the addition :)
-    __HashTable_GetHash = k AND l
-    $CHECKING:ON
-END FUNCTION
-
 
 ' Subroutine to resize and rehash the elements in a hash table
 SUB __HashTable_ResizeAndRehash (hashTable() AS HashTableType)
@@ -181,9 +173,9 @@ SUB HashTable_Remove (hashTable() AS HashTableType, k AS _UNSIGNED LONG)
     DIM idx AS LONG: idx = __HashTable_GetLookupIndex(hashTable(), k)
 
     IF idx >= 0 THEN
-        hashTable(idx).U = __HASHTABLE_FALSE
+        hashTable(idx).U = FALSE
     ELSE
-        ERROR 9
+        ERROR ERROR_SUBSCRIPT_OUT_OF_RANGE
     END IF
 END SUB
 
@@ -193,11 +185,11 @@ SUB HashTable_InsertLong (hashTable() AS HashTableType, k AS _UNSIGNED LONG, v A
     DIM idx AS LONG: idx = __HashTable_GetInsertIndex(hashTable(), k)
 
     IF idx >= 0 THEN
-        hashTable(idx).U = __HASHTABLE_TRUE
+        hashTable(idx).U = TRUE
         hashTable(idx).K = k
         hashTable(idx).V = v
     ELSE
-        ERROR 9
+        ERROR ERROR_SUBSCRIPT_OUT_OF_RANGE
     END IF
 END SUB
 
@@ -209,6 +201,6 @@ FUNCTION HashTable_LookupLong& (hashTable() AS HashTableType, k AS _UNSIGNED LON
     IF idx >= 0 THEN
         HashTable_LookupLong = hashTable(idx).V
     ELSE
-        ERROR 9
+        ERROR ERROR_SUBSCRIPT_OUT_OF_RANGE
     END IF
 END FUNCTION
