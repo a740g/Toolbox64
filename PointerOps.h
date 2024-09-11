@@ -159,7 +159,7 @@ inline void PokeOffset(uintptr_t p, uintptr_t o, uintptr_t n)
     *(reinterpret_cast<uintptr_t *>(p) + o) = n;
 }
 
-/// @brief Gets a UDT value from a pointer positon offset by o. Same as t = p[o]
+/// @brief Gets a UDT value from a pointer position offset by o. Same as t = p[o]
 /// @param p The base pointer
 /// @param o Offset from base (each offset is t_size bytes)
 /// @param t A pointer to the UDT variable

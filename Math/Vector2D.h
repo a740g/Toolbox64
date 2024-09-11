@@ -6,7 +6,9 @@
 #pragma once
 
 #include "../Types.h"
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 struct Vector2D
 {

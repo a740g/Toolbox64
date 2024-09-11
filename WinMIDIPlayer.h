@@ -2,7 +2,7 @@
 // MIDI Player library using Win32 WinMM MIDI streaming API
 // Copyright (c) 2024 Samuel Gomes
 //
-// This is a heavily modiified version of the Win32 native MIDI codec from SDL_mixer
+// This is a heavily modified version of the Win32 native MIDI codec from SDL_mixer
 // https://github.com/libsdl-org/SDL_mixer/tree/main/src/codecs/native_midi
 //
 // native_midi: Hardware Midi support for the SDL_mixer library
@@ -11,7 +11,7 @@
 // warranty.In no event will the authors be held liable for any damages
 // arising from the use of this software.
 // Permission is granted to anyone to use this software for any purpose,
-// including commercial applications, and to alter itand redistribute it
+// including commercial applications, and to alter it and redistribute it
 // freely, subject to the following restrictions :
 // 1. The origin of this software must not be misrepresented; you must not
 // claim that you wrote the original software.If you use this software
@@ -45,7 +45,7 @@
 
 /* We store the midi events in a linked list; this way it is
    easy to shuffle the tracks together later on; and we are
-   flexible in the size of each elemnt.
+   flexible in the size of each element.
  */
 struct MIDIEvent
 {
@@ -64,7 +64,7 @@ struct MIDITrack
     int len;       /* length of the track data */
 };
 
-/* A midi file, stripped down to the absolute minimum - divison & track data */
+/* A midi file, stripped down to the absolute minimum - division & track data */
 struct MIDIFile
 {
     int division;     /* number of pulses per quarter note (ppqn) */
@@ -394,7 +394,7 @@ bail:
 }
 
 /* Load a midifile to memory, converting it to a list of MIDIEvents.
-   This function returns a linked lists of MIDIEvents, 0 if an error occured.
+   This function returns a linked lists of MIDIEvents, 0 if an error occurred.
  */
 static MIDIEvent *MIDICreateEventList(uintptr_t src, uint16_t *division)
 {

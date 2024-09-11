@@ -45,7 +45,7 @@ struct img_struct
     uint8_t print_mode;
     // BEGIN apm ('active page migration')
     // everything between apm points is migrated during active page changes
-    // note: apm data is only relevent to graphics modes
+    // note: apm data is only relevant to graphics modes
     uint8_t apm_p1;
     int32_t view_x1, view_y1, view_x2, view_y2;
     int32_t view_offset_x, view_offset_y;

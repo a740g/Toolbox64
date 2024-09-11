@@ -32,4 +32,4 @@ Assuming you made this a [Git submodule](https://git-scm.com/book/en/v2/Git-Tool
 - All library files have include guards. You can include these multiple times (even from your own include files)
 - I do not use the `.bm` extension because GitHub does not syntax-highlight `.bm` files
 - There is no documentation because I do not have the time to write those. The source code is (in most cases) self-documenting
-- I use this in most of my QB64-PE projects. Those projects in most cases have a brief API documentaion and also should have good amounts of example code to get you started
+- I use this in most of my QB64-PE projects. Those projects in most cases have a brief API documentation and also should have good amounts of example code to get you started

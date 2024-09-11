@@ -6,7 +6,6 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 // Use these with care. Expressions passed to macros can be evaluated multiple times and wrong types can cause all kinds of bugs
 #define IS_STRING_EMPTY(_s_) ((_s_) == nullptr || (_s_)[0] == 0)
