@@ -26,7 +26,7 @@
 
 #include "Common.h"
 #include "Types.h"
-#include "MathOps.h"
+#include "Math/Math.h"
 #include "MemFile.h"
 #include <cstdint>
 #include <windows.h>
