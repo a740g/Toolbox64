@@ -9,7 +9,7 @@ $INCLUDEONCE
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'PointerOps.bi'
 '$INCLUDE:'BitwiseOps.bi'
-'$INCLUDE:'MathOps.bi'
+'$INCLUDE:'Math/Math.bi'
 '$INCLUDE:'StringOps.bi'
 '$INCLUDE:'GraphicOps.bi'
 '$INCLUDE:'AudioAnalyzerFFT.bi'

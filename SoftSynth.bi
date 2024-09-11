@@ -7,7 +7,7 @@ $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
-'$INCLUDE:'MathOps.bi'
+'$INCLUDE:'Math/Math.bi'
 '$INCLUDE:'PointerOps.bi'
 
 CONST SOFTSYNTH_VOICE_PLAY_FORWARD = 0 ' single-shot forward playback

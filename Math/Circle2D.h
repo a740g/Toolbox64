@@ -10,5 +10,5 @@
 struct Circle2D
 {
     Vector2D position;
-    int32_t radius;
+    float radius;
 };

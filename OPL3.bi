@@ -7,7 +7,7 @@ $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
-'$INCLUDE:'MathOps.bi'
+'$INCLUDE:'Math/Math.bi'
 '$INCLUDE:'PointerOps.bi'
 
 CONST OPL3_SOUND_BUFFER_CHANNELS = 2 ' 2 channels (stereo)

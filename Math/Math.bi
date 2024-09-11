@@ -5,7 +5,7 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'Common.bi'
+'$INCLUDE:'../Common.bi'
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
@@ -28,10 +28,10 @@ $INCLUDEONCE
 'END
 '-----------------------------------------------------------------------------------------------------------------------
 
-DECLARE LIBRARY "MathOps"
+DECLARE LIBRARY "Math"
     SUB Math_SetRandomSeed (BYVAL seed AS _UNSIGNED LONG)
     FUNCTION Math_GetRandomMax~&
-    FUNCTION Math_GetRandomValue& ALIAS "rand"
+    FUNCTION Math_GetRandomValue& ALIAS "std::rand"
     FUNCTION Math_GetRandomBetween& (BYVAL lo AS LONG, BYVAL hi AS LONG)
     FUNCTION Math_IsSingleNaN! (BYVAL n AS SINGLE)
     FUNCTION Math_IsDoubleNaN# (BYVAL n AS DOUBLE)
@@ -55,10 +55,10 @@ DECLARE LIBRARY "MathOps"
     FUNCTION Math_RemapInteger64&& (BYVAL value AS _INTEGER64, BYVAL oldMin AS _INTEGER64, BYVAL oldMax AS _INTEGER64, BYVAL newMin AS _INTEGER64, BYVAL newMax AS _INTEGER64)
     FUNCTION Math_RemapSingle! (BYVAL value AS SINGLE, BYVAL oldMin AS SINGLE, BYVAL oldMax AS SINGLE, BYVAL newMin AS SINGLE, BYVAL newMax AS SINGLE)
     FUNCTION Math_RemapDouble# (BYVAL value AS DOUBLE, BYVAL oldMin AS DOUBLE, BYVAL oldMax AS DOUBLE, BYVAL newMin AS DOUBLE, BYVAL newMax AS DOUBLE)
-    FUNCTION Math_GetMaxSingle! ALIAS "fmaxf" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
-    FUNCTION Math_GetMinSingle! ALIAS "fminf" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
-    FUNCTION Math_GetMaxDouble# ALIAS "fmax" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
-    FUNCTION Math_GetMinDouble# ALIAS "fmin" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+    FUNCTION Math_GetMaxSingle! ALIAS "std::fmax" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
+    FUNCTION Math_GetMinSingle! ALIAS "std::fmin" (BYVAL a AS SINGLE, BYVAL b AS SINGLE)
+    FUNCTION Math_GetMaxDouble# ALIAS "std::fmax" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
+    FUNCTION Math_GetMinDouble# ALIAS "std::fmin" (BYVAL a AS DOUBLE, BYVAL b AS DOUBLE)
     FUNCTION Math_GetMaxLong& (BYVAL a AS LONG, BYVAL b AS LONG)
     FUNCTION Math_GetMinLong& (BYVAL a AS LONG, BYVAL b AS LONG)
     FUNCTION Math_GetMaxInteger64&& (BYVAL a AS _INTEGER64, BYVAL b AS _INTEGER64)
@@ -71,19 +71,19 @@ DECLARE LIBRARY "MathOps"
     FUNCTION Math_WrapDouble# (BYVAL value AS DOUBLE, BYVAL startValue AS DOUBLE, BYVAL endValue AS DOUBLE)
     FUNCTION Math_IsSingleEqual%% (BYVAL x AS SINGLE, BYVAL y AS SINGLE)
     FUNCTION Math_IsDoubleEqual%% (BYVAL x AS DOUBLE, BYVAL y AS DOUBLE)
-    FUNCTION Math_FMASingle! ALIAS "fmaf" (BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE)
-    FUNCTION Math_FMADouble# ALIAS "fma" (BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE)
-    FUNCTION Math_PowerSingle! ALIAS "powf" (BYVAL b AS SINGLE, BYVAL e AS SINGLE)
-    FUNCTION Math_PowerDouble# ALIAS "pow" (BYVAL b AS DOUBLE, BYVAL e AS DOUBLE)
+    FUNCTION Math_FMASingle! ALIAS "std::fma" (BYVAL x AS SINGLE, BYVAL y AS SINGLE, BYVAL z AS SINGLE)
+    FUNCTION Math_FMADouble# ALIAS "std::fma" (BYVAL x AS DOUBLE, BYVAL y AS DOUBLE, BYVAL z AS DOUBLE)
+    FUNCTION Math_PowerSingle! ALIAS "std::pow" (BYVAL b AS SINGLE, BYVAL e AS SINGLE)
+    FUNCTION Math_PowerDouble# ALIAS "std::pow" (BYVAL b AS DOUBLE, BYVAL e AS DOUBLE)
     FUNCTION Math_FastPowerSingle! ALIAS "__builtin_powif" (BYVAL b AS SINGLE, BYVAL e AS LONG)
     FUNCTION Math_FastPowerDouble# ALIAS "__builtin_powi" (BYVAL b AS DOUBLE, BYVAL e AS LONG)
     FUNCTION Math_FastSquareRoot! (BYVAL n AS SINGLE)
     FUNCTION Math_FastInverseSquareRoot! (BYVAL n AS SINGLE)
-    FUNCTION Math_Log10Single! ALIAS "log10f" (BYVAL n AS SINGLE)
-    FUNCTION Math_Log10Double# ALIAS "log10" (BYVAL n AS DOUBLE)
-    FUNCTION Math_Log2Single! ALIAS "log2f" (BYVAL n AS SINGLE)
-    FUNCTION Math_Log2Double# ALIAS "log2" (BYVAL n AS DOUBLE)
-    FUNCTION Math_CubeRootSingle! ALIAS "cbrtf" (BYVAL n AS SINGLE)
-    FUNCTION Math_CubeRootDouble# ALIAS "cbrt" (BYVAL n AS DOUBLE)
+    FUNCTION Math_Log10Single! ALIAS "std::log10" (BYVAL n AS SINGLE)
+    FUNCTION Math_Log10Double# ALIAS "std::log10" (BYVAL n AS DOUBLE)
+    FUNCTION Math_Log2Single! ALIAS "std::log2" (BYVAL n AS SINGLE)
+    FUNCTION Math_Log2Double# ALIAS "std::log2" (BYVAL n AS DOUBLE)
+    FUNCTION Math_CubeRootSingle! ALIAS "std::cbrt" (BYVAL n AS SINGLE)
+    FUNCTION Math_CubeRootDouble# ALIAS "std::cbrt" (BYVAL n AS DOUBLE)
     FUNCTION Math_MulDiv (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
 END DECLARE

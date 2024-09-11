@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "Types.h"
+#include "../Types.h"
 #include <cstdint>
 #include <cfloat>
 #include <cstdlib>
@@ -35,7 +35,7 @@ extern void sub_randomize(double seed, int32_t passed); // QB64's random seed fu
 /// @param seed Any number
 inline void Math_SetRandomSeed(uint32_t seed)
 {
-    srand(seed);
+    std::srand(seed);
     sub_randomize(seed, 1);
 }
 
@@ -45,7 +45,7 @@ inline void Math_SetRandomSeed(uint32_t seed)
 /// @return A number between lo and hi
 inline int32_t Math_GetRandomBetween(int32_t lo, int32_t hi)
 {
-    return lo + rand() % (hi - lo + 1);
+    return lo + std::rand() % (hi - lo + 1);
 }
 
 /// @brief Determines if the given floating point number arg is a not-a-number (NaN) value
@@ -316,7 +316,7 @@ inline constexpr double Math_NormalizeDouble(double value, double start, double 
 /// @return The wrapped value
 inline float Math_WrapSingle(float value, float min, float max)
 {
-    return value - (max - min) * floorf((value - min) / (max - min));
+    return value - (max - min) * std::floor((value - min) / (max - min));
 }
 
 /// @brief Wrap input value from min to max
@@ -326,7 +326,7 @@ inline float Math_WrapSingle(float value, float min, float max)
 /// @return The wrapped value
 inline double Math_WrapDouble(double value, double min, double max)
 {
-    return value - (max - min) * floor((value - min) / (max - min));
+    return value - (max - min) * std::floor((value - min) / (max - min));
 }
 
 /// @brief Check whether two given floats are almost equal
@@ -335,7 +335,7 @@ inline double Math_WrapDouble(double value, double min, double max)
 /// @return True if both are almost equal
 inline qb_bool Math_IsSingleEqual(float x, float y)
 {
-    return TO_QB_BOOL(fabsf(x - y) <= FLT_EPSILON * fmaxf(1.0f, fmaxf(fabsf(x), fabsf(y))));
+    return TO_QB_BOOL(std::fabs(x - y) <= FLT_EPSILON * std::fmax(1.0f, std::fmax(std::fabs(x), std::fabs(y))));
 }
 
 /// @brief Check whether two given floats are almost equal
@@ -344,7 +344,7 @@ inline qb_bool Math_IsSingleEqual(float x, float y)
 /// @return True if both are almost equal
 inline qb_bool Math_IsDoubleEqual(double x, double y)
 {
-    return TO_QB_BOOL(fabs(x - y) <= DBL_EPSILON * fmax(1.0, fmax(fabs(x), fabs(y))));
+    return TO_QB_BOOL(std::fabs(x - y) <= DBL_EPSILON * std::fmax(1.0, std::fmax(std::fabs(x), std::fabs(y))));
 }
 
 /// @brief This one comes from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Approximations_that_depend_on_the_floating_point_representation
