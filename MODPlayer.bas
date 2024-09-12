@@ -275,15 +275,11 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
         ' 8 <= x <= 15: Right PCM channel 1-8 (Rx)
         ' 16 <= x <= 24: Adlib/OPL2 #1 melody (Ax)
         ' 25 <= x <= 29: Adlib/OPL2 #1 drums (Ax)
-        IF NOT _READBIT(channelInfo(i), 7) THEN
-            ' Channel is active is bit 7 is not set
-            IF __Song.channels < channelInfo(i) THEN __Song.channels = channelInfo(i)
-        END IF
+        ' Channel is enabled if bit 7 is not set
+        IF NOT _READBIT(channelInfo(i), 7) THEN __Song.channels = i + 1 ' change to count
 
         '_ECHO "Channel info" + STR$(i) + " =" + STR$(channelInfo(i))
     NEXT i
-
-    __Song.channels = __Song.channels + 1 ' change to count
 
     '_ECHO "Channels =" + STR$(__Song.channels)
 
@@ -315,6 +311,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                 __Channel(i).subtype = __INSTRUMENT_FM_BASSDRUM ' FM drums channel
         END SELECT
 
+        '_ECHO "Channel " + STR$(i) + " enabled =" + STR$(NOT _READBIT(channelInfo(i), 7))
         '_ECHO "Channel " + STR$(i) + " panning =" + STR$(SoftSynth_GetVoiceBalance(i)) + " , subtype =" + STR$(__Channel(i).subtype)
     NEXT i
 
@@ -503,7 +500,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
             IF flags THEN ' we have some data; unpack it
                 chan = flags AND 31 ' get the channel number
 
-                IF chan >= __Song.channels THEN
+                IF chan >= __Song.channels _ORELSE _READBIT(channelInfo(chan), 7) THEN
                     ' Invalid channel: we'll ignore the remaining packed data
                     IF flags AND 32 THEN ' ignore the note
                         StringFile_Seek memFile, StringFile_GetPosition(memFile) + 2
