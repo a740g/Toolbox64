@@ -1358,8 +1358,14 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
 
                 ' Check for end of song marker
                 IF __PATTERN_END = __Order(__Song.orderPosition) THEN
-                    __Song.isPlaying = FALSE
-                    EXIT SUB ' bail
+                    IF __Song.isLooping THEN
+                        __Song.orderPosition = __Song.endJumpOrder
+                        __Song.speed = __Song.defaultSpeed
+                        __Song.tick = __Song.speed
+                    ELSE
+                        __Song.isPlaying = FALSE
+                        EXIT SUB ' bail
+                    END IF
                 END IF
 
                 ' Save the pattern and row for __MODPlayer_UpdateTick()
