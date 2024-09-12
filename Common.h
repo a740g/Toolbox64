@@ -20,3 +20,4 @@ static uint8_t g_TmpBuf[4096];
 #define Compiler_GetDate() (__DATE__)
 #define Compiler_GetTime() (__TIME__)
 #define Compiler_GetFunctionName() (__func__)
+#define __IIf(_e_, _t_, _f_) ((_e_) ? (_t_) : (_f_))

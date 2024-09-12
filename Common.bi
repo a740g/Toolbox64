@@ -193,4 +193,14 @@ DECLARE LIBRARY "Common"
     FUNCTION Compiler_GetDate$
     FUNCTION Compiler_GetTime$
     FUNCTION Compiler_GetFunctionName$
+    FUNCTION IIf_Byte%% ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS _BYTE, BYVAL falsePart AS _BYTE)
+    FUNCTION IIf_UByte~%% ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS _UNSIGNED _BYTE, BYVAL falsePart AS _UNSIGNED _BYTE)
+    FUNCTION IIf_Integer% ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS INTEGER, BYVAL falsePart AS INTEGER)
+    FUNCTION IIf_Uinteger~% ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS _UNSIGNED INTEGER, BYVAL falsePart AS _UNSIGNED INTEGER)
+    FUNCTION IIf_Long& ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS LONG, BYVAL falsePart AS LONG)
+    FUNCTION IIf_ULong~& ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS _UNSIGNED LONG, BYVAL falsePart AS _UNSIGNED LONG)
+    FUNCTION IIf_Integer64&& ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS _INTEGER64, BYVAL falsePart AS _INTEGER64)
+    FUNCTION IIf_UInteger64~&& ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS _UNSIGNED _INTEGER64, BYVAL falsePart AS _UNSIGNED _INTEGER64)
+    FUNCTION IIf_Single! ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS SINGLE, BYVAL falsePart AS SINGLE)
+    FUNCTION IIf_Double# ALIAS "__IIf" (BYVAL expression AS _OFFSET, BYVAL truePart AS DOUBLE, BYVAL falsePart AS DOUBLE)
 END DECLARE
