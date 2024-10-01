@@ -1298,7 +1298,7 @@ END FUNCTION
 
 ' Load the MOD file from disk or a URL
 FUNCTION MODPlayer_LoadFromDisk%% (fileName AS STRING)
-    ' TODO: Startrekker .mod + .nt support
+    ' TODO: Startrekker .mod + .nt support. Startrekker module instrument files must have the same name as the module itself, followed by either ".nt" or ".as".
     MODPlayer_LoadFromDisk = MODPlayer_LoadFromMemory(File_Load(fileName))
 END FUNCTION
 
