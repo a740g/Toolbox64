@@ -78,16 +78,22 @@ $INCLUDEONCE
 '        COLOR &HFFFFFFFF ' text color - bright white
 
 '        IF isVertical THEN
+'            Graphics_DrawRectangle 349, 99, 451, 501, Yellow
 '            AudioAnalyzer_Render 350, 100, 450, 500, 0
 '        ELSE
+'            Graphics_DrawRectangle 99, 249, 701, 351, Yellow
 '            AudioAnalyzer_Render 100, 250, 700, 350, 0
 '        END IF
 '    ELSE
 '        IF isVertical THEN
+'            Graphics_DrawRectangle 149, 99, 251, 501, Yellow
 '            AudioAnalyzer_Render 150, 100, 250, 500, 0
+'            Graphics_DrawRectangle 549, 99, 651, 501, Yellow
 '            AudioAnalyzer_Render 550, 100, 650, 500, 1
 '        ELSE
+'            Graphics_DrawRectangle 49, 249, 351, 351, Yellow
 '            AudioAnalyzer_Render 50, 250, 350, 350, 0
+'            Graphics_DrawRectangle 449, 249, 751, 351, Yellow
 '            AudioAnalyzer_Render 450, 250, 750, 350, 1
 '        END IF
 '    END IF
@@ -565,11 +571,11 @@ SUB AudioAnalyzer_RenderProgress (w AS LONG, h AS LONG)
 
         IF _NEGATE __AudioAnalyzer.progressTextHide THEN
             DIM text AS STRING: text = __AudioAnalyzer.currentTimeText + " / " + __AudioAnalyzer.totalTimeText
-            DIM textX AS LONG: textX = w \ 2 - _UPRINTWIDTH(text) \ 2
+            DIM textX AS LONG: textX = w \ 2 - _PRINTWIDTH(text) \ 2
             DIM textY AS LONG: textY = h \ 2 - _UFONTHEIGHT \ 2
             _PRINTMODE _KEEPBACKGROUND
             COLOR __AudioAnalyzer.progressTextColor
-            _UPRINTSTRING (textX, textY), text
+            _PRINTSTRING (textX, textY), text
         END IF
     END IF
 END SUB
