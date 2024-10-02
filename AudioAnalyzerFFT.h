@@ -18,11 +18,11 @@
 class AudioAnalyzerFFT
 {
 private:
-    static const auto FFT_POWER = 11;
-    static const auto NUM_SAMPLES = 1 << FFT_POWER;
-    static const auto HALF_SAMPLES = NUM_SAMPLES >> 1;
-    static const auto QUARTER_SAMPLES = HALF_SAMPLES >> 1;
-    static const auto SCALE_FACTOR = 1 << 28;
+    static constexpr auto FFT_POWER = 11;
+    static constexpr auto NUM_SAMPLES = 1 << FFT_POWER;
+    static constexpr auto HALF_SAMPLES = NUM_SAMPLES >> 1;
+    static constexpr auto QUARTER_SAMPLES = HALF_SAMPLES >> 1;
+    static constexpr auto SCALE_FACTOR = 1 << 28;
     static constexpr auto S16_TO_F32_MULTIPLIER = 1.0f / 32768.0f;
     static constexpr auto F32_TO_S16_MULTIPLIER = 32767.0f;
 
