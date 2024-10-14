@@ -1,5 +1,5 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' ImGUI library
+' A simple GUI library
 ' Copyright (c) 2024 Samuel Gomes
 '
 ' This is very loosely based on Terry Ritchie's GLINPUT & RQBL
@@ -38,19 +38,21 @@ END FUNCTION
 ' This can be improved ... a lot XD
 ' Also all colors are hardcoded
 SUB WidgetDrawBox3D (r AS RectangleType, depressed AS _BYTE)
-    IF depressed THEN ' sunken
-        LINE (r.a.x, r.a.y)-(r.b.x - 1, r.a.y), &HFF696969
-        LINE (r.a.x, r.a.y)-(r.a.x, r.b.y - 1), &HFF696969
-        LINE (r.a.x, r.b.y)-(r.b.x, r.b.y), &HFFD3D3D3
-        LINE (r.b.x, r.a.y)-(r.b.x, r.b.y - 1), &HFFD3D3D3
-    ELSE ' raised
-        LINE (r.a.x, r.a.y)-(r.b.x - 1, r.a.y), &HFFD3D3D3
-        LINE (r.a.x, r.a.y)-(r.a.x, r.b.y - 1), &HFFD3D3D3
-        LINE (r.a.x, r.b.y)-(r.b.x, r.b.y), &HFF696969
-        LINE (r.b.x, r.a.y)-(r.b.x, r.b.y - 1), &HFF696969
+    IF depressed THEN
+        ' sunken
+        Graphics_DrawHorizontalLine r.a.x, r.a.y, r.b.x - 1, &HFF696969
+        Graphics_DrawVerticalLine r.a.x, r.a.y, r.b.y - 1, &HFF696969
+        Graphics_DrawHorizontalLine r.a.x, r.b.y, r.b.x, &HFFD3D3D3
+        Graphics_DrawVerticalLine r.b.x, r.a.y, r.b.y - 1, &HFFD3D3D3
+    ELSE
+        ' raised
+        Graphics_DrawHorizontalLine r.a.x, r.a.y, r.b.x - 1, &HFFD3D3D3
+        Graphics_DrawVerticalLine r.a.x, r.a.y, r.b.y - 1, &HFFD3D3D3
+        Graphics_DrawHorizontalLine r.a.x, r.b.y, r.b.x, &HFF696969
+        Graphics_DrawVerticalLine r.b.x, r.a.y, r.b.y - 1, &HFF696969
     END IF
 
-    LINE (r.a.x + 1, r.a.y + 1)-(r.b.x - 1, r.b.y - 1), &HFF808080, BF
+    Graphics_DrawFilledRectangle r.a.x + 1, r.a.y + 1, r.b.x - 1, r.b.y - 1, &HFF808080
 END SUB
 
 
@@ -992,9 +994,9 @@ SUB __TextBoxDraw (handle AS LONG)
 
         curPosX = 2 + Widget(handle).position.x + (charWidth * (Widget(handle).txt.boxPosition - 1))
         IF Widget(handle).txt.insertMode THEN
-            LINE (curPosX, textY + charHeight - 4)-(curPosX + charWidth - 1, textY + charHeight - 1), &HFF000000, BF
+            Graphics_DrawFilledRectangle curPosX, textY + charHeight - 4, curPosX + charWidth - 1, textY + charHeight - 1, &HFF000000
         ELSE
-            LINE (curPosX, textY)-(curPosX + charWidth - 1, textY + charHeight - 1), &HFF000000, BF
+            Graphics_DrawFilledRectangle curPosX, textY, curPosX + charWidth - 1, textY + charHeight - 1, &HFF000000
         END IF
     END IF
 END SUB

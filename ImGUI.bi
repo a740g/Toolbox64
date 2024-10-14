@@ -1,5 +1,5 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' ImGUI library
+' A simple GUI library
 ' Copyright (c) 2024 Samuel Gomes
 '
 ' This is very loosely based on Terry Ritchie's GLINPUT & RQBL
