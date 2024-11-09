@@ -11,8 +11,6 @@ $INCLUDEONCE
 '$INCLUDE:'Pathname.bi'
 '$INCLUDE:'TimeOps.bi'
 
-$UNSTABLE:HTTP
-
 CONST __FILE_UPDATES_PER_SECOND_DEFAULT = 120 ' refresh happens 120 times a second
 CONST __FILE_TIMEOUT_DEFAULT = 60 * 5 ' timeout happens after 5 mins by default
 

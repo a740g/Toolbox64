@@ -28,6 +28,7 @@
 #include "Types.h"
 #include "Math/Math.h"
 #include "MemFile.h"
+#include <algorithm>
 #include <cstdint>
 #include <windows.h>
 
@@ -759,7 +760,7 @@ void MIDI_SetVolume(float volume)
 {
     if (hMIDIStream)
     {
-        volume = Math_Clamp(volume, 0.0f, 1.0f);
+        volume = std::clamp(volume, 0.0f, 1.0f);
         auto calcVolume = int(65535.0f * volume);
         midiOutSetVolume((HMIDIOUT)hMIDIStream, MAKELONG(calcVolume, calcVolume));
     }

@@ -117,12 +117,7 @@ SUB SoftSynth_Update (frames AS _UNSIGNED LONG)
     __SoftSynth_Update __SoftSynth_SoundBuffer(0), frames
 
     ' Feed the samples to the QB64 sound pipe
-    DIM i AS _UNSIGNED LONG
-    DO WHILE i < __SoftSynth.soundBufferSamples
-        ' Feed the samples to the QB64 sound pipe
-        _SNDRAW __SoftSynth_SoundBuffer(i), __SoftSynth_SoundBuffer(i + 1), __SoftSynth.soundHandle
-        i = i + SOFTSYNTH_SOUND_BUFFER_CHANNELS
-    LOOP
+    _SNDRAWBATCH __SoftSynth_SoundBuffer(), SOFTSYNTH_SOUND_BUFFER_CHANNELS, __SoftSynth.soundHandle
     $CHECKING:ON
 END SUB
 

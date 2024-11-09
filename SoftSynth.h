@@ -5,15 +5,21 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include "Debug.h"
 #include "Types.h"
 #include "Math/Math.h"
 #include <cstdint>
-#include <vector>
 #include <memory>
+#include <utility>
+#include <vector>
 
 struct SoftSynth
 {
+    static constexpr auto VOLUME_MIN = 0.0f; // minimum volume
+    static constexpr auto VOLUME_MAX = 1.0f; // maximum volume
+
     struct Voice
     {
         static const auto NO_SOUND = -1; // used to unbind a sound from a voice
@@ -21,6 +27,10 @@ struct SoftSynth
         static constexpr auto MULTIPLIER_32_TO_8 = 128.0f;
         static constexpr auto MULTIPLIER_16_TO_32 = 1.0f / MULTIPLIER_32_TO_16;
         static constexpr auto MULTIPLIER_8_TO_32 = 1.0f / MULTIPLIER_32_TO_8;
+        static constexpr auto PAN_LEFT = -1.0f;                  // left-most pan position
+        static constexpr auto PAN_RIGHT = 1.0f;                  // right-most pan position
+        static constexpr auto PAN_CENTER = PAN_LEFT + PAN_RIGHT; // center pan position
+        static constexpr auto QUARTER_PI = float(M_PI) / 4.0f;
 
         /// @brief Various playing modes
         enum PlayMode
@@ -29,34 +39,45 @@ struct SoftSynth
             FORWARD_LOOP, // forward-looping playback
         };
 
-        int32_t sound;          // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
-        uint32_t frequency;     // the frequency of the sound
-        float pitch;            // the mixer uses this to step through the sound frames correctly
-        float volume;           // voice volume (0.0 - 1.0)
-        float balance;          // position -0.5 is leftmost ... 0.5 is rightmost
-        float position;         // sample frame position in the sound buffer
-        uint32_t iPosition;     // sample frame position without the factional value
-        uint32_t startPosition; // this can be loop start or just start depending on play mode (in frames!)
-        uint32_t endPosition;   // this can be loop end or just end depending on play mode (in frames!)
-        int32_t mode;           // how should the sound be played?
-        float frame;            // current frame
-        float oldFrame;         // the previous frame
+        int32_t sound;                // the Sound to be mixed. This is set to -1 once the mixer is done with the Sound
+        uint32_t frequency;           // the frequency of the sound
+        float pitch;                  // the mixer uses this to step through the sound frames correctly
+        float volume;                 // voice volume (0.0 - 1.0)
+        float panPosition;            // stereo pan setting for (-1.0f - 0.0f - 1.0f)
+        std::pair<float, float> gain; // left and right gain (calculated from panPosition)
+        float position;               // sample frame position in the sound buffer
+        uint32_t iPosition;           // sample frame position without the factional value
+        uint32_t startPosition;       // this can be loop start or just start depending on play mode (in frames!)
+        uint32_t endPosition;         // this can be loop end or just end depending on play mode (in frames!)
+        int32_t mode;                 // how should the sound be played?
+        float frame;                  // current frame
+        float oldFrame;               // the previous frame
 
         /// @brief Initialized the voice (including pan position)
         Voice()
         {
             Reset();
-            balance = 0.0f; // center the voice only when creating it the first time
+            SetPanPosition(PAN_CENTER); // center the voice only when creating it the first time
         }
 
         /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
         void Reset()
         {
             sound = NO_SOUND;
-            volume = 1.0f;
+            volume = VOLUME_MAX;
             frequency = iPosition = startPosition = endPosition = 0;
             position = pitch = frame = oldFrame = 0.0f;
             mode = PlayMode::FORWARD;
+        }
+
+        void SetPanPosition(float value)
+        {
+            panPosition = std::clamp(value, PAN_LEFT, PAN_RIGHT); // clamp the value
+
+            // Calculate the left and right channel gain values using pan law (-3.0dB pan depth)
+            auto panMapped = (panPosition + 1.0f) * QUARTER_PI;
+            gain.first = std::cos(panMapped);
+            gain.second = std::sin(panMapped);
         }
     };
 
@@ -89,14 +110,20 @@ inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesP
 inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
 {
     if (g_SoftSynth)
+    {
         return QB_TRUE;
+    }
 
     if (!sampleRate)
+    {
         return QB_FALSE;
+    }
 
     g_SoftSynth = std::make_unique<SoftSynth>();
     if (!g_SoftSynth)
+    {
         return QB_FALSE;
+    }
 
     g_SoftSynth->sampleRate = sampleRate;
     g_SoftSynth->activeVoices = 0;
@@ -190,7 +217,7 @@ void SoftSynth_SetGlobalVolume(float volume)
         return;
     }
 
-    g_SoftSynth->volume = Math_ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->volume = std::clamp(volume, SoftSynth::VOLUME_MIN, SoftSynth::VOLUME_MAX);
 }
 
 /// @brief Copies and prepares the sound data in memory. Multi-channel sounds are flattened to mono.
@@ -210,7 +237,9 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
 
     // Resize the vector to fit the number of sounds if needed
     if (sound >= g_SoftSynth->sounds.size())
+    {
         g_SoftSynth->sounds.resize(sound + 1);
+    }
 
     auto frames = SoftSynth_BytesToFrames(bytes, bytesPerSample, channels);
     auto &data = g_SoftSynth->sounds[sound];
@@ -232,7 +261,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
             // Flatten all channels to mono
             for (auto j = 0; j < channels; j++)
             {
-                data[i] = fmaf(*src, SoftSynth::Voice::MULTIPLIER_8_TO_32, data[i]);
+                data[i] = std::fma(float(*src), SoftSynth::Voice::MULTIPLIER_8_TO_32, data[i]);
                 ++src;
             }
         }
@@ -247,7 +276,7 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
             // Flatten all channels to mono
             for (auto j = 0; j < channels; j++)
             {
-                data[i] = fmaf(*src, SoftSynth::Voice::MULTIPLIER_16_TO_32, data[i]);
+                data[i] = std::fma(float(*src), SoftSynth::Voice::MULTIPLIER_16_TO_32, data[i]);
                 ++src;
             }
         }
@@ -343,7 +372,7 @@ void SoftSynth_SetVoiceVolume(uint32_t voice, float volume)
         return;
     }
 
-    g_SoftSynth->voices[voice].volume = Math_ClampSingle(volume, 0.0f, 1.0f);
+    g_SoftSynth->voices[voice].volume = std::clamp(volume, SoftSynth::VOLUME_MIN, SoftSynth::VOLUME_MAX);
 }
 
 float SoftSynth_GetVoiceBalance(uint32_t voice)
@@ -354,7 +383,7 @@ float SoftSynth_GetVoiceBalance(uint32_t voice)
         return 0.0f;
     }
 
-    return g_SoftSynth->voices[voice].balance * 2.0f; // scale to -1.0 to 1.0 range
+    return g_SoftSynth->voices[voice].panPosition;
 }
 
 void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
@@ -365,7 +394,7 @@ void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
         return;
     }
 
-    g_SoftSynth->voices[voice].balance = Math_ClampSingle(balance * 0.5f, -0.5f, 0.5f); // scale and clamp (-1.0 to 1.0 > -0.5 to 0.5)
+    g_SoftSynth->voices[voice].SetPanPosition(balance);
 }
 
 /// @brief Gets the voice frequency
@@ -500,22 +529,26 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                     auto iPos = (uint32_t)voice.position;
                     if (iPos != voice.iPosition) // only fetch a new frame if we have really crossed over to the new one
                     {
-                        voice.oldFrame = voice.frame;      // save the current frame first
-                        voice.iPosition = iPos;            // save the new integer position
-                        if (voice.iPosition < soundFrames) // this protects us from segfaults
+                        voice.oldFrame = voice.frame; // save the current frame first
+                        voice.iPosition = iPos;       // save the new integer position
+
+                        // This protects us from segfaults
+                        if (voice.iPosition < soundFrames)
+                        {
                             voice.frame = soundData[voice.iPosition];
+                        }
                     }
 
                     // Lerp & volume
-                    auto outFrame = fmaf(voice.frame - voice.oldFrame, voice.position - voice.iPosition, voice.oldFrame) * voice.volume;
+                    auto outFrame = std::fma(voice.frame - voice.oldFrame, voice.position - voice.iPosition, voice.oldFrame) * voice.volume;
 
                     // Move to the next sample position based on the pitch
                     voice.position += voice.pitch;
 
                     // Mixing and panning
-                    *output = fmaf(outFrame, (0.5f - voice.balance), *output); // left channel
+                    *output = std::fma(outFrame, voice.gain.first, *output); // left channel
                     ++output;
-                    *output = fmaf(outFrame, (0.5f + voice.balance), *output); // right channel
+                    *output = std::fma(outFrame, voice.gain.second, *output); // right channel
                     ++output;
                 }
             }

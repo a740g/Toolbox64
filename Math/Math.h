@@ -6,27 +6,12 @@
 #pragma once
 
 #include "../Types.h"
-#include <cstdint>
+#include <algorithm>
 #include <cfloat>
-#include <cstdlib>
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
 
-template <class T>
-inline constexpr T Math_Clamp(T x, T lo, T hi)
-{
-    if (lo > hi)
-        std::swap(lo, hi);
-    return std::max(std::min(x, hi), lo);
-}
-
-#define Math_ClampLong(_x_, _lo_, _hi_) Math_Clamp<int32_t>((_x_), (_lo_), (_hi_))
-#define Math_ClampInteger64(_x_, _lo_, _hi_) Math_Clamp<int64_t>((_x_), (_lo_), (_hi_))
-#define Math_ClampSingle(_x_, _lo_, _hi_) Math_Clamp<float>((_x_), (_lo_), (_hi_))
-#define Math_ClampDouble(_x_, _lo_, _hi_) Math_Clamp<double>((_x_), (_lo_), (_hi_))
-#define Math_GetMaxLong(_a_, _b_) std::max<int32_t>((_a_), (_b_))
-#define Math_GetMaxInteger64(_a_, _b_) std::max<int64_t>((_a_), (_b_))
-#define Math_GetMinLong(_a_, _b_) std::min<int32_t>((_a_), (_b_))
-#define Math_GetMinInteger64(_a_, _b_) std::min<int64_t>((_a_), (_b_))
 #define Math_GetRandomMax() RAND_MAX
 
 extern void sub_randomize(double seed, int32_t passed); // QB64's random seed function
