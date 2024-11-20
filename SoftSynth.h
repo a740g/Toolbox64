@@ -30,7 +30,6 @@ struct SoftSynth
         static constexpr auto PAN_LEFT = -1.0f;                  // left-most pan position
         static constexpr auto PAN_RIGHT = 1.0f;                  // right-most pan position
         static constexpr auto PAN_CENTER = PAN_LEFT + PAN_RIGHT; // center pan position
-        static constexpr auto QUARTER_PI = float(M_PI) / 4.0f;
 
         /// @brief Various playing modes
         enum PlayMode
@@ -72,6 +71,8 @@ struct SoftSynth
 
         void SetPanPosition(float value)
         {
+            static constexpr auto QUARTER_PI = float(M_PI) / 4.0f;
+
             panPosition = std::clamp(value, PAN_LEFT, PAN_RIGHT); // clamp the value
 
             // Calculate the left and right channel gain values using pan law (-3.0dB pan depth)
@@ -514,8 +515,8 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                     {
                         if (SoftSynth::Voice::PlayMode::FORWARD_LOOP == voice.mode)
                         {
-                            // Reset loop position if we reached the end of the loop
-                            voice.position = voice.startPosition;
+                            // Reset loop position if we reached the end of the loop and preserve fractional position
+                            voice.position = voice.startPosition + (voice.position - voice.endPosition);
                         }
                         else
                         {
@@ -526,16 +527,15 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                     }
 
                     // Fetch the sample frame to mix
-                    auto iPos = (uint32_t)voice.position;
+                    auto iPos = uint32_t(voice.position);
                     if (iPos != voice.iPosition) // only fetch a new frame if we have really crossed over to the new one
                     {
                         voice.oldFrame = voice.frame; // save the current frame first
                         voice.iPosition = iPos;       // save the new integer position
 
-                        // This protects us from segfaults
-                        if (voice.iPosition < soundFrames)
+                        if (iPos < soundFrames) // this protects us from segfaults
                         {
-                            voice.frame = soundData[voice.iPosition];
+                            voice.frame = soundData[iPos];
                         }
                     }
 
