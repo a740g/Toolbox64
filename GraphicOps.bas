@@ -169,7 +169,7 @@ $INCLUDEONCE
 
 ' Converts a web color in hex format to a 32-bit RGB color
 FUNCTION Graphics_GetBGRAFromWebColor~& (webColor AS STRING)
-    IF LEN(webColor) <> 6 THEN ERROR ERROR_ILLEGAL_FUNCTION_CALL
+    IF LEN(webColor) <> 6 THEN ERROR _ERR_ILLEGAL_FUNCTION_CALL
     Graphics_GetBGRAFromWebColor = Graphics_MakeBGRA(VAL("&H" + LEFT$(webColor, 2)), VAL("&H" + MID$(webColor, 3, 2)), VAL("&H" + RIGHT$(webColor, 2)), 255)
 END FUNCTION
 
@@ -177,7 +177,7 @@ END FUNCTION
 ' This will progressively change the palette of dstImg to that of srcImg
 ' Keep calling this repeatedly until it returns true
 FUNCTION Graphics_MorphPalette%% (dstImage AS LONG, srcImage AS LONG, startIndex AS _UNSIGNED _BYTE, stopIndex AS _UNSIGNED _BYTE)
-    Graphics_MorphPalette = TRUE ' Assume completed
+    Graphics_MorphPalette = _TRUE ' Assume completed
 
     DIM i AS LONG: FOR i = startIndex TO stopIndex
         ' Get both src and dst colors of the current index
@@ -194,28 +194,28 @@ FUNCTION Graphics_MorphPalette%% (dstImage AS LONG, srcImage AS LONG, startIndex
 
         ' Change red
         IF dstR < srcR THEN
-            Graphics_MorphPalette = FALSE
+            Graphics_MorphPalette = _FALSE
             dstR = dstR + 1
         ELSEIF dstR > srcR THEN
-            Graphics_MorphPalette = FALSE
+            Graphics_MorphPalette = _FALSE
             dstR = dstR - 1
         END IF
 
         ' Change green
         IF dstG < srcG THEN
-            Graphics_MorphPalette = FALSE
+            Graphics_MorphPalette = _FALSE
             dstG = dstG + 1
         ELSEIF dstG > srcG THEN
-            Graphics_MorphPalette = FALSE
+            Graphics_MorphPalette = _FALSE
             dstG = dstG - 1
         END IF
 
         ' Change blue
         IF dstB < srcB THEN
-            Graphics_MorphPalette = FALSE
+            Graphics_MorphPalette = _FALSE
             dstB = dstB + 1
         ELSEIF dstB > srcB THEN
-            Graphics_MorphPalette = FALSE
+            Graphics_MorphPalette = _FALSE
             dstB = dstB - 1
         END IF
 

@@ -125,22 +125,22 @@ FUNCTION AudioAnalyzer_Init%% (handle AS LONG)
             ' Note: We do not support 24-bit audio yet
             IF __AudioAnalyzer.buffer.TYPE = 1153 THEN
                 __AudioAnalyzer.format = __AUDIOANALYZER_FORMAT_U8
-                __AudioAnalyzer.channels = COffset(__AudioAnalyzer.buffer.ELEMENTSIZE) \ SIZE_OF_BYTE
+                __AudioAnalyzer.channels = __AudioAnalyzer.buffer.ELEMENTSIZE \ _SIZE_OF_BYTE
             ELSEIF __AudioAnalyzer.buffer.TYPE = 130 THEN
                 __AudioAnalyzer.format = __AUDIOANALYZER_FORMAT_S16
-                __AudioAnalyzer.channels = COffset(__AudioAnalyzer.buffer.ELEMENTSIZE) \ SIZE_OF_INTEGER
+                __AudioAnalyzer.channels = __AudioAnalyzer.buffer.ELEMENTSIZE \ _SIZE_OF_INTEGER
             ELSEIF __AudioAnalyzer.buffer.TYPE = 132 THEN
                 __AudioAnalyzer.format = __AUDIOANALYZER_FORMAT_S32
-                __AudioAnalyzer.channels = COffset(__AudioAnalyzer.buffer.ELEMENTSIZE) \ SIZE_OF_LONG
+                __AudioAnalyzer.channels = __AudioAnalyzer.buffer.ELEMENTSIZE \ _SIZE_OF_LONG
             ELSEIF __AudioAnalyzer.buffer.TYPE = 260 THEN
                 __AudioAnalyzer.format = __AUDIOANALYZER_FORMAT_F32
-                __AudioAnalyzer.channels = COffset(__AudioAnalyzer.buffer.ELEMENTSIZE) \ SIZE_OF_SINGLE
+                __AudioAnalyzer.channels = __AudioAnalyzer.buffer.ELEMENTSIZE \ _SIZE_OF_SINGLE
             END IF
         END IF
 
         __AudioAnalyzer.totalTime = _SNDLEN(handle)
         __AudioAnalyzer.totalFrames = __AudioAnalyzer.totalTime * _SNDRATE
-        __AudioAnalyzer.isLengthQueryPending = TRUE
+        __AudioAnalyzer.isLengthQueryPending = _TRUE
         __AudioAnalyzer.clipBufferFrames = Math_RoundDownLongToPowerOf2(__AUDIOANALYZER_CLIP_BUFFER_TIME * _SNDRATE) ' save the clip buffer frames
         __AudioAnalyzer.clipBufferSamples = __AudioAnalyzer.clipBufferFrames * __AudioAnalyzer.channels
         __AudioAnalyzer.fftBufferSamples = __AudioAnalyzer.clipBufferFrames \ 2 ' since we get the data for positive frequencies only
@@ -148,7 +148,7 @@ FUNCTION AudioAnalyzer_Init%% (handle AS LONG)
 
         AudioAnalyzer_SetFFTScale __AUDIOANALYZER_FFT_SCALE_X, __AUDIOANALYZER_FFT_SCALE_Y
         AudioAnalyzer_SetVUPeakFallSpeed __AUDIOANALYZER_VU_PEAK_FALL_SPEED
-        AudioAnalyzer_SetProgressProperties FALSE, __AUDIOANALYZER_TEXT_COLOR
+        AudioAnalyzer_SetProgressProperties _FALSE, __AUDIOANALYZER_TEXT_COLOR
         AudioAnalyzer_SetColors _RGB32(0, 255, 0), _RGB32(255, 0, 0), _RGB32(0, 0, 255)
 
         __AudioAnalyzer.currentTimeText = "00:00:00"
@@ -177,7 +177,7 @@ FUNCTION AudioAnalyzer_Init%% (handle AS LONG)
         ' Note: We'll return success even if we failed to acquire the sound buffer
         ' That's because some formats simply do not allow accessing sample data (i.e. .ogg; due to the way stb_vorbis works :()
         ' In these cases we'll force fallback to the "progress" style
-        AudioAnalyzer_Init = TRUE
+        AudioAnalyzer_Init = _TRUE
     END IF
 END FUNCTION
 
@@ -201,8 +201,8 @@ SUB AudioAnalyzer_Done
         __AudioAnalyzer.clipBufferFrames = 0
         __AudioAnalyzer.clipBufferSamples = 0
         __AudioAnalyzer.fftBufferSamples = 0
-        __AudioAnalyzer.currentTimeText = STRING_EMPTY
-        __AudioAnalyzer.totalTimeText = STRING_EMPTY
+        __AudioAnalyzer.currentTimeText = _STR_EMPTY
+        __AudioAnalyzer.totalTimeText = _STR_EMPTY
     END IF
 END SUB
 
@@ -783,7 +783,7 @@ SUB AudioAnalyzer_Update
 
     IF __AudioAnalyzer.handle THEN
         __AudioAnalyzer.currentTime = _SNDGETPOS(__AudioAnalyzer.handle)
-        __AudioAnalyzer.currentFrame = CUInteger64(__AudioAnalyzer.currentTime * _SNDRATE)
+        __AudioAnalyzer.currentFrame = _CAST(_UNSIGNED _INTEGER64, __AudioAnalyzer.currentTime * _SNDRATE)
 
         hours = __AudioAnalyzer.currentTime \ 3600
         minutes = (__AudioAnalyzer.currentTime - hours * 3600) \ 60
@@ -794,7 +794,7 @@ SUB AudioAnalyzer_Update
             DIM totalTime AS DOUBLE: totalTime = _SNDLEN(__AudioAnalyzer.handle)
             __AudioAnalyzer.isLengthQueryPending = (totalTime <> __AudioAnalyzer.totalTime _ORELSE totalTime = 0#)
             __AudioAnalyzer.totalTime = totalTime
-            __AudioAnalyzer.totalFrames = CUInteger64(__AudioAnalyzer.totalTime * _SNDRATE)
+            __AudioAnalyzer.totalFrames = _CAST(_UNSIGNED _INTEGER64, __AudioAnalyzer.totalTime * _SNDRATE)
 
             hours = __AudioAnalyzer.totalTime \ 3600
             minutes = (__AudioAnalyzer.totalTime - hours * 3600) \ 60
@@ -817,7 +817,7 @@ SUB AudioAnalyzer_Update
                     AudioConv_ConvertS32ToF32 byteOffset, __AudioAnalyzer.clipBufferSamples, _OFFSET(__AudioAnalyzer_ClipBuffer(0))
 
                 CASE __AUDIOANALYZER_FORMAT_F32
-                    CopyMemory _OFFSET(__AudioAnalyzer_ClipBuffer(0)), byteOffset, __AudioAnalyzer.clipBufferSamples * SIZE_OF_SINGLE
+                    CopyMemory _OFFSET(__AudioAnalyzer_ClipBuffer(0)), byteOffset, __AudioAnalyzer.clipBufferSamples * _SIZE_OF_SINGLE
             END SELECT
 
             i = 0

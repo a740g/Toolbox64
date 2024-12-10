@@ -97,7 +97,7 @@ SUB MemFile_WriteString (memFile AS _UNSIGNED _OFFSET, src AS STRING)
     DIM size AS _UNSIGNED LONG: size = LEN(src)
 
     IF MemFile_Write(memFile, _OFFSET(src), size) <> size THEN
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END SUB
 
@@ -105,7 +105,7 @@ END SUB
 ' Reads a TYPE / ARRAY
 SUB MemFile_ReadType (memFile AS _UNSIGNED _OFFSET, typeOffset AS _UNSIGNED _OFFSET, typeSize AS _UNSIGNED _OFFSET)
     IF MemFile_Read(memFile, typeOffset, typeSize) <> typeSize THEN
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END SUB
 
@@ -113,6 +113,6 @@ END SUB
 ' Writes a TYPE / ARRAY
 SUB MemFile_WriteType (memFile AS _UNSIGNED _OFFSET, typeOffset AS _UNSIGNED _OFFSET, typeSize AS _UNSIGNED _OFFSET)
     IF MemFile_Write(memFile, typeOffset, typeSize) <> typeSize THEN
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END SUB

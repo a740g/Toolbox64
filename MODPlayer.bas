@@ -127,9 +127,9 @@ END SUB
 SUB __MODPlayer_InitializeSong
     SHARED __Song AS __SongType
 
-    __Song.caption = STRING_EMPTY
-    __Song.subtype = STRING_EMPTY
-    __Song.comment = STRING_EMPTY
+    __Song.caption = _STR_EMPTY
+    __Song.subtype = _STR_EMPTY
+    __Song.comment = _STR_EMPTY
     __Song.channels = NULL
     __Song.instruments = NULL
     __Song.orders = NULL
@@ -140,9 +140,9 @@ SUB __MODPlayer_InitializeSong
     __Song.patternRow = NULL
     __Song.tickPattern = NULL
     __Song.tickPatternRow = NULL
-    __Song.isLooping = FALSE
-    __Song.isPlaying = FALSE
-    __Song.isPaused = FALSE
+    __Song.isLooping = _FALSE
+    __Song.isPlaying = _FALSE
+    __Song.isPaused = _FALSE
     __Song.patternDelay = NULL
     __Song.periodTableMax = NULL
     __Song.speed = NULL
@@ -153,15 +153,15 @@ SUB __MODPlayer_InitializeSong
     __Song.tempoTimerValue = NULL
     __Song.framesPerTick = NULL
     __Song.activeChannels = NULL
-    __Song.useAmigaLPF = FALSE
-    __Song.useST2Vibrato = FALSE
-    __Song.useST2Tempo = FALSE
-    __Song.useAmigaSlides = FALSE
-    __Song.useVolumeOptimization = FALSE
-    __Song.useAmigaLimits = FALSE
-    __Song.useFilterSFX = FALSE
-    __Song.useST300VolumeSlides = FALSE
-    __Song.hasSpecialCustomData = FALSE
+    __Song.useAmigaLPF = _FALSE
+    __Song.useST2Vibrato = _FALSE
+    __Song.useST2Tempo = _FALSE
+    __Song.useAmigaSlides = _FALSE
+    __Song.useVolumeOptimization = _FALSE
+    __Song.useAmigaLimits = _FALSE
+    __Song.useFilterSFX = _FALSE
+    __Song.useST300VolumeSlides = _FALSE
+    __Song.hasSpecialCustomData = _FALSE
 END SUB
 
 
@@ -402,7 +402,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
         IF __Instrument(i).subtype > __INSTRUMENT_PCM THEN ' this is an FM instrument
             'TODO: Implement FM instrument loading support
-            ERROR ERROR_FEATURE_UNAVAILABLE
+            ERROR _ERR_FEATURE_UNAVAILABLE
         ELSE ' this is a standard PCM or blank instrument
             ' Read and convert the actual address to the PCM instrument sample data
             ' Convert this to a long. Eww! WTF!
@@ -447,17 +447,17 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
 
             IF _READBIT(byte1, 1) THEN
                 __Instrument(i).channels = 2
-                isSampleCompressed(i) = FALSE ' per OpenMPT stereo samples cannot be compressed
+                isSampleCompressed(i) = _FALSE ' per OpenMPT stereo samples cannot be compressed
             ELSE
                 __Instrument(i).channels = 1
             END IF
             '_ECHO " Channels =" + STR$(__Instrument(i).channels)
 
             IF _READBIT(byte1, 2) THEN
-                __Instrument(i).bytesPerSample = SIZE_OF_INTEGER
-                isSampleCompressed(i) = FALSE ' per OpenMPT 16-bit samples cannot be compressed
+                __Instrument(i).bytesPerSample = _SIZE_OF_INTEGER
+                isSampleCompressed(i) = _FALSE ' per OpenMPT 16-bit samples cannot be compressed
             ELSE
-                __Instrument(i).bytesPerSample = SIZE_OF_BYTE
+                __Instrument(i).bytesPerSample = _SIZE_OF_BYTE
             END IF
             '_ECHO " Bytes / sample =" + STR$(__Instrument(i).bytesPerSample)
 
@@ -719,7 +719,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
     FOR i = 0 TO __Song.instruments - 1
         IF __Instrument(i).subtype > __INSTRUMENT_PCM THEN
             ' TODO: Can this happen? Probably a corrupt file?
-            ERROR ERROR_FEATURE_UNAVAILABLE
+            ERROR _ERR_FEATURE_UNAVAILABLE
         ELSE
             ' Seek to the correct position in the file to read the PCM instrument sample data
             StringFile_Seek memFile, instrumentPointer(i)
@@ -740,9 +740,9 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                 ' Convert unsigned samples to signed if unsigned flag was set
                 ' This is not needed if the sample is ADPCM4 compressed
                 IF isUnsignedFormat THEN
-                    IF __Instrument(i).bytesPerSample = SIZE_OF_INTEGER THEN
+                    IF __Instrument(i).bytesPerSample = _SIZE_OF_INTEGER THEN
                         ' Apparently 16-bit audio data is also unsigned when the unsigned flag is set! Fuck!
-                        AudioConv_ConvertU16ToS16 _OFFSET(sampBuf), LEN(sampBuf) \ SIZE_OF_INTEGER
+                        AudioConv_ConvertU16ToS16 _OFFSET(sampBuf), LEN(sampBuf) \ _SIZE_OF_INTEGER
                         '_ECHO "Converted to S16:" + STR$(i)
                     ELSE
                         ' Else we'll assume these are 8-bit samples
@@ -755,8 +755,8 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
                 ' Again, this is not needed if the sample is ADPCM4 compressed
                 IF __Instrument(i).channels = 2 THEN
                     tempBuf = STRING$(LEN(sampBuf), NULL)
-                    IF __Instrument(i).bytesPerSample = SIZE_OF_INTEGER THEN
-                        AudioConv_ConvertDualMonoToStereoS16 _OFFSET(sampBuf), LEN(sampBuf) \ SIZE_OF_INTEGER, _OFFSET(tempBuf)
+                    IF __Instrument(i).bytesPerSample = _SIZE_OF_INTEGER THEN
+                        AudioConv_ConvertDualMonoToStereoS16 _OFFSET(sampBuf), LEN(sampBuf) \ _SIZE_OF_INTEGER, _OFFSET(tempBuf)
                         '_ECHO "Fixed S16 stereo data:" + STR$(i)
                     ELSE
                         AudioConv_ConvertDualMonoToStereoS8 _OFFSET(sampBuf), LEN(sampBuf), _OFFSET(tempBuf)
@@ -776,7 +776,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
     __MODPlayer_LoadTables
 
     ' What a fucked up format!
-    __MODPlayer_LoadS3M = TRUE
+    __MODPlayer_LoadS3M = _TRUE
 END FUNCTION
 
 
@@ -894,7 +894,7 @@ FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
 
         ' Read attribute
         byte1 = StringFile_ReadByte(memFile)
-        __Instrument(i).bytesPerSample = SIZE_OF_BYTE + SIZE_OF_BYTE * (byte1 AND &H1) ' 1 if 8-bit else 2 if 16-bit
+        __Instrument(i).bytesPerSample = _SIZE_OF_BYTE + _SIZE_OF_BYTE * (byte1 AND &H1) ' 1 if 8-bit else 2 if 16-bit
         __Instrument(i).channels = 1 ' all MTM sounds are mono
     NEXT i
 
@@ -982,7 +982,7 @@ FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
         DIM sampBuf AS STRING: sampBuf = StringFile_ReadString(memFile, __Instrument(i).length)
 
         ' Convert 8-bit unsigned samples to 8-bit signed
-        IF __Instrument(i).bytesPerSample = SIZE_OF_BYTE THEN AudioConv_ConvertU8ToS8 _OFFSET(sampBuf), LEN(sampBuf)
+        IF __Instrument(i).bytesPerSample = _SIZE_OF_BYTE THEN AudioConv_ConvertU8ToS8 _OFFSET(sampBuf), LEN(sampBuf)
 
         ' Load sample size bytes of data and send it to our softsynth sample manager
         SoftSynth_LoadSound i, sampBuf, __Instrument(i).bytesPerSample, __Instrument(i).channels
@@ -991,7 +991,7 @@ FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
     ' Load all needed LUTs
     __MODPlayer_LoadTables
 
-    __MODPlayer_LoadMTM = TRUE
+    __MODPlayer_LoadMTM = _TRUE
 END FUNCTION
 
 
@@ -1142,7 +1142,7 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
         END IF
 
         ' Set sample frame size as 1 since MODs always use 8-bit mono samples
-        __Instrument(i).bytesPerSample = SIZE_OF_BYTE
+        __Instrument(i).bytesPerSample = _SIZE_OF_BYTE
         __Instrument(i).channels = 1
     NEXT
 
@@ -1244,7 +1244,7 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
         NEXT
     END IF
 
-    __MODPlayer_LoadMOD = TRUE
+    __MODPlayer_LoadMOD = _TRUE
     EXIT FUNCTION
 
     ' This part loads a single channel worth of pattern data
@@ -1284,13 +1284,13 @@ END FUNCTION
 ' It returns TRUE if a loader is successful
 FUNCTION MODPlayer_LoadFromMemory%% (buffer AS STRING)
     IF __MODPlayer_LoadS3M(buffer) THEN
-        MODPlayer_LoadFromMemory = TRUE
+        MODPlayer_LoadFromMemory = _TRUE
         EXIT FUNCTION
     ELSEIF __MODPlayer_LoadMTM(buffer) THEN
-        MODPlayer_LoadFromMemory = TRUE
+        MODPlayer_LoadFromMemory = _TRUE
         EXIT FUNCTION
     ELSEIF __MODPlayer_LoadMOD(buffer) THEN
-        MODPlayer_LoadFromMemory = TRUE
+        MODPlayer_LoadFromMemory = _TRUE
         EXIT FUNCTION
     END IF
 END FUNCTION
@@ -1313,12 +1313,12 @@ SUB MODPlayer_Play
     __Song.patternRow = NULL
     __Song.speed = __Song.defaultSpeed
     __Song.tick = __Song.speed
-    __Song.isPaused = FALSE
+    __Song.isPaused = _FALSE
 
     ' Set default BPM
     __MODPlayer_SetBPM __Song.defaultBPM
 
-    __Song.isPlaying = TRUE
+    __Song.isPlaying = _TRUE
 END SUB
 
 
@@ -1329,7 +1329,7 @@ SUB MODPlayer_Stop
     ' Tell softsynth we are done
     SoftSynth_Finalize
 
-    __Song.isPlaying = FALSE
+    __Song.isPlaying = _FALSE
 END SUB
 
 
@@ -1365,7 +1365,7 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
                             __Song.speed = __Song.defaultSpeed
                             __Song.tick = __Song.speed
                         ELSE
-                            __Song.isPlaying = FALSE
+                            __Song.isPlaying = _FALSE
                             EXIT SUB ' bail
                         END IF
                     END IF
@@ -1378,7 +1378,7 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
                         __Song.speed = __Song.defaultSpeed
                         __Song.tick = __Song.speed
                     ELSE
-                        __Song.isPlaying = FALSE
+                        __Song.isPlaying = _FALSE
                         EXIT SUB ' bail
                     END IF
                 END IF
@@ -1408,7 +1408,7 @@ SUB MODPlayer_Update (bufferTimeSecs AS SINGLE)
                             __Song.speed = __Song.defaultSpeed
                             __Song.tick = __Song.speed
                         ELSE
-                            __Song.isPlaying = FALSE ' we'll not bail here to allow any remaining samples to mix and play below
+                            __Song.isPlaying = _FALSE ' we'll not bail here to allow any remaining samples to mix and play below
                         END IF
                     END IF
                 END IF
@@ -1452,7 +1452,7 @@ SUB __MODPlayer_UpdateRow
         nOperand = __Pattern(__Song.tickPattern, __Song.tickPatternRow, nChannel).operand
         nOpX = _SHR(nOperand, 4)
         nOpY = nOperand AND &HF
-        noFrequency = FALSE
+        noFrequency = _FALSE
 
         ' Set volume. We never play if sample number is zero. Our sample array is 1 based
         ' ONLY RESET VOLUME IF THERE IS A SAMPLE NUMBER
@@ -1469,7 +1469,7 @@ SUB __MODPlayer_UpdateRow
         IF nNote < __NOTE_NONE THEN
             __Channel(nChannel).lastPeriod = (8363 * __PeriodTable(nNote)) \ __Instrument(__Channel(nChannel).instrument).c2Spd
             __Channel(nChannel).note = nNote
-            __Channel(nChannel).restart = TRUE
+            __Channel(nChannel).restart = _TRUE
             __Song.activeChannels = nChannel
 
             ' Retrigger tremolo and vibrato waveforms
@@ -1481,7 +1481,7 @@ SUB __MODPlayer_UpdateRow
                 __Channel(nChannel).period = __Channel(nChannel).lastPeriod
             END IF
         ELSE
-            __Channel(nChannel).restart = FALSE
+            __Channel(nChannel).restart = _FALSE
         END IF
 
         IF nVolume <= __INSTRUMENT_VOLUME_MAX THEN __Channel(nChannel).volume = nVolume
@@ -1492,11 +1492,11 @@ SUB __MODPlayer_UpdateRow
             CASE __MOD_FX_PORTAMENTO
                 IF nOperand THEN __Channel(nChannel).portamentoSpeed = nOperand
                 __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
-                __Channel(nChannel).restart = FALSE
+                __Channel(nChannel).restart = _FALSE
 
             CASE __MOD_FX_PORTAMENTO_VOLUME_SLIDE
                 __Channel(nChannel).portamentoTo = __Channel(nChannel).lastPeriod
-                __Channel(nChannel).restart = FALSE
+                __Channel(nChannel).restart = _FALSE
 
             CASE __MOD_FX_VIBRATO
                 IF nOpX THEN __Channel(nChannel).vibratoSpeed = nOpX
@@ -1520,7 +1520,7 @@ SUB __MODPlayer_UpdateRow
                 __Song.orderPosition = nOperand
                 IF __Song.orderPosition >= __Song.orders THEN __Song.orderPosition = __Song.endJumpOrder
                 __Song.patternRow = -1 ' This will increment right after & we will start at 0
-                jumpEffectFlag = TRUE
+                jumpEffectFlag = _TRUE
 
             CASE __MOD_FX_VOLUME
                 __Channel(nChannel).volume = nOperand ' Operand can never be -ve cause it is unsigned. So we only clip for max below
@@ -1533,12 +1533,12 @@ SUB __MODPlayer_UpdateRow
                     __Song.orderPosition = __Song.orderPosition + 1
                     IF __Song.orderPosition >= __Song.orders THEN __Song.orderPosition = __Song.endJumpOrder
                 END IF
-                breakEffectFlag = TRUE
+                breakEffectFlag = _TRUE
 
             CASE __MOD_FX_EXTENDED
                 SELECT CASE nOpX
                     CASE __MOD_FX_EXTENDED_FILTER
-                        __Song.useAmigaLPF = (nOpY <> FALSE)
+                        __Song.useAmigaLPF = (nOpY <> _FALSE)
 
                     CASE __MOD_FX_EXTENDED_PORTAMENTO_FINE_UP
                         __Channel(nChannel).period = __Channel(nChannel).period - _SHL(nOpY, 2)
@@ -1547,7 +1547,7 @@ SUB __MODPlayer_UpdateRow
                         __Channel(nChannel).period = __Channel(nChannel).period + _SHL(nOpY, 2)
 
                     CASE __MOD_FX_EXTENDED_GLISSANDO_CONTROL
-                        __Channel(nChannel).useGlissando = (nOpY <> FALSE)
+                        __Channel(nChannel).useGlissando = (nOpY <> _FALSE)
 
                     CASE __MOD_FX_EXTENDED_VIBRATO_WAVEFORM
                         __Channel(nChannel).waveControl = __Channel(nChannel).waveControl AND &HF0
@@ -1587,8 +1587,8 @@ SUB __MODPlayer_UpdateRow
                         IF __Channel(nChannel).volume < 0 THEN __Channel(nChannel).volume = 0
 
                     CASE __MOD_FX_EXTENDED_NOTE_DELAY
-                        __Channel(nChannel).restart = FALSE
-                        noFrequency = TRUE
+                        __Channel(nChannel).restart = _FALSE
+                        noFrequency = _TRUE
 
                     CASE __MOD_FX_EXTENDED_PATTERN_DELAY
                         __Song.patternDelay = nOpY
@@ -1645,19 +1645,19 @@ SUB __MODPlayer_UpdateRow
 
             CASE __MOD_FX_VIBRATO_VOLUME_FINE_SLIDE
                 IF nOperand THEN __Channel(nChannel).lastVolumeSlide = nOperand
-                noFrequency = TRUE
+                noFrequency = _TRUE
 
             CASE __MOD_FX_PORTAMENTO_VOLUME_FINE_SLIDE
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_CHANNEL_VOLUME
                 IF nOperand <= __S3M_GLOBAL_VOLUME_MAX THEN __Channel(nChannel).volume = nOperand
 
             CASE __MOD_FX_CHANNEL_VOLUME_SLIDE
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_PANNING_FINE_SLIDE
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_NOTE_RETRIGGER_VOLUME_SLIDE
                 IF nOperand THEN
@@ -1666,16 +1666,16 @@ SUB __MODPlayer_UpdateRow
                 END IF
 
             CASE __MOD_FX_PANBRELLO_WAVEFORM
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_PATTERN_FINE_DELAY
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_SOUND_CONTROL
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_HIGH_OFFSET
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_TEMPO
                 IF nOperand THEN __MODPlayer_SetBPM nOperand
@@ -1689,13 +1689,13 @@ SUB __MODPlayer_UpdateRow
                 IF nOperand <= __S3M_GLOBAL_VOLUME_MAX THEN SoftSynth_SetGlobalVolume nOperand / __S3M_GLOBAL_VOLUME_MAX
 
             CASE __MOD_FX_GLOBAL_VOLUME_SLIDE
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_PANBRELLO
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
             CASE __MOD_FX_MIDI_MACRO
-                ERROR ERROR_FEATURE_UNAVAILABLE
+                ERROR _ERR_FEATURE_UNAVAILABLE
 
         END SELECT
 
@@ -1770,21 +1770,21 @@ SUB __MODPlayer_UpdateTick
                     __MODPlayer_DoPortamento nChannel
 
                 CASE __MOD_FX_VIBRATO
-                    __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
+                    __MODPlayer_DoVibrato nChannel, _TRUE ' true here means not fine vibrato
 
                 CASE __MOD_FX_PORTAMENTO_VOLUME_SLIDE
                     __MODPlayer_DoPortamento nChannel
-                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
+                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, _TRUE ' true here means not fine volume slide
 
                 CASE __MOD_FX_VIBRATO_VOLUME_SLIDE
-                    __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
-                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
+                    __MODPlayer_DoVibrato nChannel, _TRUE ' true here means not fine vibrato
+                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, _TRUE ' true here means not fine volume slide
 
                 CASE __MOD_FX_TREMOLO
                     __MODPlayer_DoTremolo nChannel
 
                 CASE __MOD_FX_VOLUME_SLIDE
-                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, TRUE ' true here means not fine volume slide
+                    __MODPlayer_DoVolumeSlide nChannel, nOpX, nOpY, _TRUE ' true here means not fine volume slide
 
                 CASE __MOD_FX_EXTENDED
                     SELECT CASE nOpX
@@ -1812,7 +1812,7 @@ SUB __MODPlayer_UpdateTick
                     END SELECT
 
                 CASE __MOD_FX_VOLUME_FINE_SLIDE
-                    __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, FALSE ' false here means fine volume slide
+                    __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, _FALSE ' false here means fine volume slide
 
                 CASE __MOD_FX_PORTAMENTO_EXTRA_FINE_DOWN
                     IF __Channel(nChannel).lastPortamento < &HE0 THEN __Channel(nChannel).period = __Channel(nChannel).period + _SHL(__Channel(nChannel).lastPortamento, 2)
@@ -1826,11 +1826,11 @@ SUB __MODPlayer_UpdateTick
                     __MODPlayer_DoS3MTremor nChannel
 
                 CASE __MOD_FX_VIBRATO_VOLUME_FINE_SLIDE
-                    __MODPlayer_DoVibrato nChannel, TRUE ' true here means not fine vibrato
-                    __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, FALSE ' false here means fine volume slide
+                    __MODPlayer_DoVibrato nChannel, _TRUE ' true here means not fine vibrato
+                    __MODPlayer_DoVolumeSlide nChannel, _SHR(__Channel(nChannel).lastVolumeSlide, 4), __Channel(nChannel).lastVolumeSlide AND &HF, _FALSE ' false here means fine volume slide
 
                 CASE __MOD_FX_PORTAMENTO_VOLUME_FINE_SLIDE
-                    ERROR ERROR_FEATURE_UNAVAILABLE
+                    ERROR _ERR_FEATURE_UNAVAILABLE
 
                 CASE __MOD_FX_NOTE_RETRIGGER_VOLUME_SLIDE
                     IF __Channel(nChannel).retriggerTickCount THEN
@@ -1900,7 +1900,7 @@ SUB __MODPlayer_UpdateTick
                     END IF
 
                 CASE __MOD_FX_VIBRATO_FINE
-                    __MODPlayer_DoVibrato nChannel, FALSE ' false here means fine vibrato
+                    __MODPlayer_DoVibrato nChannel, _FALSE ' false here means fine vibrato
 
             END SELECT
         END IF

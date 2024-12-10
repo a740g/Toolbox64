@@ -46,7 +46,7 @@ FUNCTION OPL3_Initialize%%
     SHARED __OPL3_SoundBuffer() AS SINGLE
 
     IF OPL3_IsInitialized THEN
-        OPL3_Initialize = TRUE
+        OPL3_Initialize = _TRUE
         EXIT FUNCTION
     END IF
 
@@ -65,7 +65,7 @@ FUNCTION OPL3_Initialize%%
     __OPL3.soundBufferBytes = __OPL3.soundBufferSamples * OPL3_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
     REDIM __OPL3_SoundBuffer(0 TO __OPL3.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
 
-    OPL3_Initialize = TRUE
+    OPL3_Initialize = _TRUE
 END FUNCTION
 
 

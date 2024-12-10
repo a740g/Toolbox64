@@ -159,7 +159,7 @@ FUNCTION PSF1_LoadFontFromMemory%% (buffer AS STRING, psf AS PSF1Type)
     ' Set this as the default font if nothing is loaded
     IF __CurPSF.size.x = 0 OR __CurPSF.size.y = 0 OR LEN(__CurPSF.bitmap) = NULL THEN __CurPSF = psf
 
-    PSF1_LoadFontFromMemory = TRUE
+    PSF1_LoadFontFromMemory = _TRUE
 END FUNCTION
 
 
@@ -221,7 +221,7 @@ FUNCTION PSF1_SetFont%% (buffer AS STRING)
     __CurPSF.size.y = i \ 256
     __CurPSF.size.x = PSF1_FONT_WIDTH ' just in case this was not set
 
-    PSF1_SetFont = TRUE
+    PSF1_SetFont = _TRUE
 END FUNCTION
 
 
@@ -331,7 +331,7 @@ FUNCTION PSF1_SaveFont%% (fileName AS STRING)
 
         CLOSE hFile
 
-        PSF1_SaveFont = TRUE
+        PSF1_SaveFont = _TRUE
     END IF
 END FUNCTION
 

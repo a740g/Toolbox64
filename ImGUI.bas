@@ -97,7 +97,7 @@ SUB WidgetUpdate
     END IF
 
     ' Check for user input requesting focus change
-    IF InputManager.keyCode = KEY_TAB THEN
+    IF InputManager.keyCode = _KEY_TAB THEN
         WidgetManager.forced = -1 ' Move to the next widget
         InputManager.keyCode = NULL ' consume the key
     END IF
@@ -105,8 +105,8 @@ SUB WidgetUpdate
     ' Check if the user is trying to click on something to change focus
     FOR h = 1 TO UBOUND(Widget)
         ' Reset some stuff that the user should have handled last time
-        Widget(h).clicked = FALSE
-        Widget(h).txt.entered = FALSE
+        Widget(h).clicked = _FALSE
+        Widget(h).txt.entered = _FALSE
 
         IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled AND h <> WidgetManager.current THEN
 
@@ -166,30 +166,30 @@ SUB InputManagerUpdate
 
         ' Check if the left button were previously held down and update the up position if released
         IF NOT InputManager.mouseLeftButton AND mouseLeftButtonDown THEN
-            mouseLeftButtonDown = FALSE
+            mouseLeftButtonDown = _FALSE
             InputManager.mouseLeftButtonClickedRectangle.b = InputManager.mousePosition
-            InputManager.mouseLeftClicked = TRUE
+            InputManager.mouseLeftClicked = _TRUE
         END IF
 
         ' Check if the button were previously held down and update the up position if released
         IF NOT InputManager.mouseRightButton AND mouseRightButtonDown THEN
-            mouseRightButtonDown = FALSE
+            mouseRightButtonDown = _FALSE
             InputManager.mouseRightButtonClickedRectangle.b = InputManager.mousePosition
-            InputManager.mouseRightClicked = TRUE
+            InputManager.mouseRightClicked = _TRUE
         END IF
 
         ' Check if the mouse button was pressed and update the down position
         IF InputManager.mouseLeftButton AND NOT mouseLeftButtonDown THEN
-            mouseLeftButtonDown = TRUE
+            mouseLeftButtonDown = _TRUE
             InputManager.mouseLeftButtonClickedRectangle.a = InputManager.mousePosition
-            InputManager.mouseLeftClicked = FALSE
+            InputManager.mouseLeftClicked = _FALSE
         END IF
 
         ' Check if the mouse button was pressed and update the down position
         IF InputManager.mouseRightButton AND NOT mouseRightButtonDown THEN
-            mouseRightButtonDown = TRUE
+            mouseRightButtonDown = _TRUE
             InputManager.mouseRightButtonClickedRectangle.a = InputManager.mousePosition
-            InputManager.mouseRightClicked = FALSE
+            InputManager.mouseRightClicked = _FALSE
         END IF
     LOOP
 
@@ -261,7 +261,7 @@ SUB WidgetCurrent (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB ' Leave if nothing is active
 
     IF handle < -1 OR handle = NULL OR handle > UBOUND(Widget) THEN ' is handle valid?
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetManager.forced = handle ' inform WidgetUpdate to change the focus
@@ -276,12 +276,12 @@ SUB WidgetFree (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB ' leave if nothing is active
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN ' is handle valid?
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     ' We will not bother resizing the widget array so that subsequent allocations will be faster
     ' So just set the 'inUse' member to false
-    Widget(handle).inUse = FALSE
+    Widget(handle).inUse = _FALSE
     IF handle = WidgetManager.current THEN WidgetManager.forced = -1 ' Set focus on the next widget if it is current
 END SUB
 
@@ -306,7 +306,7 @@ FUNCTION WidgetText$ (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetText = Widget(handle).text
@@ -320,11 +320,11 @@ SUB WidgetText (handle AS LONG, text AS STRING)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).text = text
-    Widget(handle).changed = TRUE
+    Widget(handle).changed = _TRUE
 END SUB
 
 
@@ -335,7 +335,7 @@ FUNCTION TextBoxEntered%% (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION ' leave if nothing is active
 
     IF handle < 1 OR handle > UBOUND(Widget) OR Widget(handle).class <> WIDGET_TEXT_BOX THEN ' is handle valid?
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     TextBoxEntered = Widget(handle).txt.entered
@@ -349,7 +349,7 @@ FUNCTION TextBoxChanged%% (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION ' leave if nothing is active
 
     IF handle < 1 OR handle > UBOUND(Widget) OR Widget(handle).class <> WIDGET_TEXT_BOX THEN ' is handle valid?
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     TextBoxChanged = Widget(handle).changed
@@ -362,12 +362,12 @@ FUNCTION __WidgetNew& (class AS LONG)
     SHARED WidgetManager AS WidgetManagerType
 
     IF class < NULL OR class > WIDGET_CLASS_COUNT THEN
-        ERROR ERROR_FEATURE_UNAVAILABLE
+        ERROR _ERR_FEATURE_UNAVAILABLE
     END IF
 
     IF UBOUND(Widget) = NULL THEN ' Reallocate the widget array if this the first time
         REDIM Widget(1 TO 1) AS WidgetType
-        Widget(1).inUse = FALSE
+        Widget(1).inUse = _FALSE
     END IF
 
     DIM h AS LONG ' the new handle number
@@ -384,7 +384,7 @@ FUNCTION __WidgetNew& (class AS LONG)
     DIM temp AS WidgetType
     Widget(h) = temp ' ensure everything is wiped
 
-    Widget(h).inUse = TRUE
+    Widget(h).inUse = _TRUE
     Widget(h).class = class ' set the class
 
     __WidgetNew = h ' return the handle
@@ -399,7 +399,7 @@ FUNCTION WidgetCopy& (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     DIM nh AS LONG
@@ -422,7 +422,7 @@ FUNCTION PushButtonNew& (text AS STRING, x AS LONG, y AS LONG, w AS _UNSIGNED LO
     Widget(b).position.y = y
     Widget(b).size.x = w
     Widget(b).size.y = h
-    Widget(b).visible = TRUE
+    Widget(b).visible = _TRUE
 
     ' Set class specific stuff
     Widget(b).flags = toggleButton
@@ -444,7 +444,7 @@ FUNCTION TextBoxNew& (text AS STRING, x AS LONG, y AS LONG, w AS _UNSIGNED LONG,
     Widget(t).position.y = y
     Widget(t).size.x = w
     Widget(t).size.y = h
-    Widget(t).visible = TRUE
+    Widget(t).visible = _TRUE
 
     ' Set class specific stuff
     Widget(t).flags = flags ' store the flags
@@ -452,7 +452,7 @@ FUNCTION TextBoxNew& (text AS STRING, x AS LONG, y AS LONG, w AS _UNSIGNED LONG,
     Widget(t).txt.boxPosition = 1
     Widget(t).txt.boxTextLength = (w - _PRINTWIDTH("W") * 2) \ _PRINTWIDTH("W") ' calculate the number of character we can show at a time
     Widget(t).txt.boxStartCharacter = 1
-    Widget(t).txt.insertMode = TRUE ' initial insert mode to insert
+    Widget(t).txt.insertMode = _TRUE ' initial insert mode to insert
 
     TextBoxNew = t
 END FUNCTION
@@ -465,7 +465,7 @@ SUB WidgetVisible (handle AS LONG, visible AS _BYTE)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).visible = visible
@@ -479,7 +479,7 @@ FUNCTION WidgetVisible%% (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetVisible = Widget(handle).visible
@@ -507,7 +507,7 @@ SUB WidgetDisabled (handle AS LONG, disabled AS _BYTE)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).disabled = disabled
@@ -521,7 +521,7 @@ FUNCTION WidgetDisabled%% (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetDisabled = Widget(handle).disabled
@@ -534,7 +534,7 @@ SUB WidgetPositionX (handle AS LONG, x AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).position.x = x
@@ -547,7 +547,7 @@ FUNCTION WidgetPositionX& (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetPositionX = Widget(handle).position.x
@@ -560,7 +560,7 @@ SUB WidgetPositionY (handle AS LONG, y AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).position.y = y
@@ -573,7 +573,7 @@ FUNCTION WidgetPositionY& (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetPositionY = Widget(handle).position.y
@@ -586,7 +586,7 @@ SUB WidgetSizeX (handle AS LONG, x AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).size.x = x
@@ -599,7 +599,7 @@ FUNCTION WidgetSizeX& (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetSizeX = Widget(handle).size.x
@@ -612,7 +612,7 @@ SUB WidgetSizeY (handle AS LONG, y AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).size.y = y
@@ -625,7 +625,7 @@ FUNCTION WidgetSizeY& (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetSizeY = Widget(handle).size.y
@@ -638,7 +638,7 @@ FUNCTION WidgetClicked%% (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     WidgetClicked = Widget(handle).clicked
@@ -651,7 +651,7 @@ SUB PushButtonDepressed (handle AS LONG, depressed AS _BYTE)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse OR Widget(handle).class <> WIDGET_PUSH_BUTTON THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).cmd.depressed = depressed
@@ -664,7 +664,7 @@ FUNCTION PushButtonDepressed%% (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT FUNCTION
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse OR Widget(handle).class <> WIDGET_PUSH_BUTTON THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     PushButtonDepressed = Widget(handle).cmd.depressed
@@ -678,7 +678,7 @@ SUB PushButtonToggleDepressed (handle AS LONG)
     IF UBOUND(Widget) = NULL THEN EXIT SUB
 
     IF handle < 1 OR handle > UBOUND(Widget) OR NOT Widget(handle).inUse OR Widget(handle).class <> WIDGET_PUSH_BUTTON THEN
-        ERROR ERROR_INVALID_HANDLE
+        ERROR _ERR_INVALID_HANDLE
     END IF
 
     Widget(handle).cmd.depressed = NOT Widget(handle).cmd.depressed
@@ -698,20 +698,20 @@ SUB __PushButtonUpdate
 
     IF InputManager.mouseLeftClicked THEN
         IF RectangleContainsRectangle(r, InputManager.mouseLeftButtonClickedRectangle) THEN
-            clicked = TRUE
-            InputManager.mouseLeftClicked = FALSE ' consume mouse click
+            clicked = _TRUE
+            InputManager.mouseLeftClicked = _FALSE ' consume mouse click
         END IF
     END IF
 
     IF InputManager.mouseRightClicked THEN
         IF RectangleContainsRectangle(r, InputManager.mouseRightButtonClickedRectangle) THEN
-            clicked = TRUE
-            InputManager.mouseRightClicked = FALSE ' consume mouse click
+            clicked = _TRUE
+            InputManager.mouseRightClicked = _FALSE ' consume mouse click
         END IF
     END IF
 
-    IF InputManager.keyCode = KEY_ENTER OR InputManager.keyCode = KEY_SPACE THEN
-        clicked = TRUE
+    IF InputManager.keyCode = _KEY_ENTER OR InputManager.keyCode = KEY_SPACE THEN
+        clicked = _TRUE
         InputManager.keyCode = NULL ' consume keystroke
     END IF
 
@@ -731,17 +731,17 @@ SUB __TextBoxUpdate
     SHARED WidgetManager AS WidgetManagerType
     SHARED InputManager AS InputManagerType
 
-    Widget(WidgetManager.current).changed = FALSE ' Set this to false
-    Widget(WidgetManager.current).txt.entered = FALSE ' Set this to false too
+    Widget(WidgetManager.current).changed = _FALSE ' Set this to false
+    Widget(WidgetManager.current).txt.entered = _FALSE ' Set this to false too
 
     ' First process any pressed keys
     SELECT CASE InputManager.keyCode ' which key was hit?
-        CASE KEY_INSERT
+        CASE _KEY_INSERT
             Widget(WidgetManager.current).txt.insertMode = NOT Widget(WidgetManager.current).txt.insertMode
 
             InputManager.keyCode = NULL ' consume the key
 
-        CASE KEY_RIGHT_ARROW
+        CASE _KEY_RIGHT
             Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
             IF Widget(WidgetManager.current).txt.textPosition > LEN(Widget(WidgetManager.current).text) + 1 THEN ' will this take the cursor too far?
                 Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 ' yes, keep the cursor at the end of the line
@@ -762,7 +762,7 @@ SUB __TextBoxUpdate
 
             InputManager.keyCode = NULL ' consume the key
 
-        CASE KEY_LEFT_ARROW
+        CASE _KEY_LEFT
             Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
             IF Widget(WidgetManager.current).txt.textPosition < 1 THEN ' did cursor go beyone beginning of line?
                 Widget(WidgetManager.current).txt.textPosition = 1 ' yes, keep the cursor at the beginning of the line
@@ -779,7 +779,7 @@ SUB __TextBoxUpdate
 
             InputManager.keyCode = NULL ' consume the key
 
-        CASE KEY_BACKSPACE
+        CASE _KEY_BACKSPACE
             IF Widget(WidgetManager.current).txt.textPosition > 1 THEN ' is the cursor at the beginning of the line?
                 Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 2) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' no, delete character
                 Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
@@ -795,9 +795,9 @@ SUB __TextBoxUpdate
             END IF
 
             InputManager.keyCode = NULL ' consume the key
-            Widget(WidgetManager.current).changed = TRUE ' something changed
+            Widget(WidgetManager.current).changed = _TRUE ' something changed
 
-        CASE KEY_HOME
+        CASE _KEY_HOME
             Widget(WidgetManager.current).txt.textPosition = 1 ' move the cursor to the beginning of the line
 
             ' Box cursor movement
@@ -806,7 +806,7 @@ SUB __TextBoxUpdate
 
             InputManager.keyCode = NULL ' consume the key
 
-        CASE KEY_END
+        CASE _KEY_END
             Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 ' move the cursor to the end of the line
 
             ' Box cursor movement
@@ -821,17 +821,17 @@ SUB __TextBoxUpdate
 
             InputManager.keyCode = NULL ' consume the key
 
-        CASE KEY_DELETE
+        CASE _KEY_DELETE
             IF Widget(WidgetManager.current).txt.textPosition < LEN(Widget(WidgetManager.current).text) + 1 THEN ' is the cursor at the end of the line?
                 Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' no, delete character
             END IF
 
             InputManager.keyCode = NULL ' consume the key
-            Widget(WidgetManager.current).changed = TRUE ' something changed
+            Widget(WidgetManager.current).changed = _TRUE ' something changed
 
-        CASE KEY_ENTER
-            Widget(WidgetManager.current).txt.entered = TRUE ' if enter key was pressed remember it (TRUE)
-            Widget(WidgetManager.current).changed = TRUE ' something changed
+        CASE _KEY_ENTER
+            Widget(WidgetManager.current).txt.entered = _TRUE ' if enter key was pressed remember it (TRUE)
+            Widget(WidgetManager.current).changed = _TRUE ' something changed
             WidgetManager.forced = -1 ' Move to the next widget
 
             InputManager.keyCode = NULL ' consume the key
@@ -903,7 +903,7 @@ SUB __TextBoxUpdate
                     END IF
 
                     InputManager.keyCode = NULL ' consume the key
-                    Widget(WidgetManager.current).changed = TRUE ' something changed
+                    Widget(WidgetManager.current).changed = _TRUE ' something changed
                 END IF
             END IF
     END SELECT
@@ -968,7 +968,7 @@ SUB __TextBoxDraw (handle AS LONG)
     END IF
 
     ' Draw the depressed box first
-    WidgetDrawBox3D r, TRUE
+    WidgetDrawBox3D r, _TRUE
 
     ' Next figure out what part of the text we need to draw
     visibleText = MID$(Widget(handle).text, Widget(handle).txt.boxStartCharacter, Widget(handle).txt.boxTextLength)

@@ -313,7 +313,7 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
         outMinSize = __FONTMGR_PROBE_SIZE_MIN
         outMaxSize = 16
 
-        FontMgr_GetSizeRange = TRUE
+        FontMgr_GetSizeRange = _TRUE
     ELSEIF _FILEEXISTS(filePath) THEN
         ' There is no point doing this for scalable fonts
         ' Just set the min and max and exit
@@ -323,7 +323,7 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
                 outMinSize = __FONTMGR_PROBE_SIZE_MIN
                 outMaxSize = __FONTMGR_PROBE_SIZE_MAX
 
-                FontMgr_GetSizeRange = TRUE
+                FontMgr_GetSizeRange = _TRUE
                 EXIT FUNCTION
         END SELECT
 
@@ -350,7 +350,7 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
             outMinSize = minSize
             outMaxSize = maxSize
 
-            FontMgr_GetSizeRange = TRUE
+            FontMgr_GetSizeRange = _TRUE
         END IF
     END IF
 END FUNCTION

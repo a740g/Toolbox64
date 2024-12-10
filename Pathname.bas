@@ -170,7 +170,7 @@ FUNCTION Pathname_HasFileExtension%% (pathOrURL AS STRING)
                     EXIT FOR
 
                 CASE PATHNAME_EXT_SEPARATOR_CODE
-                    Pathname_HasFileExtension = TRUE
+                    Pathname_HasFileExtension = _TRUE
                     EXIT FOR
             END SELECT
         $ELSE
@@ -179,7 +179,7 @@ FUNCTION Pathname_HasFileExtension%% (pathOrURL AS STRING)
                     EXIT FOR
 
                 CASE PATHNAME_EXT_SEPARATOR_CODE
-                    Pathname_HasFileExtension = TRUE
+                    Pathname_HasFileExtension = _TRUE
                     EXIT FOR
             END SELECT
         $END IF

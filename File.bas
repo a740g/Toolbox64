@@ -86,7 +86,7 @@ SUB File_SetDownloaderProperties (updatesPerSecond AS _UNSIGNED LONG, timeoutSec
 
     __File.updatesPerSecond = updatesPerSecond
     __File.timeoutTicks = 1000 * timeoutSeconds ' convert to ticks
-    __File.initialized = TRUE
+    __File.initialized = _TRUE
 END SUB
 
 
@@ -94,7 +94,7 @@ END SUB
 FUNCTION File_Save%% (buffer AS STRING, fileName AS STRING, overwrite AS _BYTE)
     IF _FILEEXISTS(fileName) AND NOT overwrite THEN EXIT FUNCTION
     _WRITEFILE fileName, buffer
-    File_Save = TRUE
+    File_Save = _TRUE
 END FUNCTION
 
 

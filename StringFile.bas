@@ -110,7 +110,7 @@ SUB StringFile_Seek (stringFile AS StringFileType, position AS _UNSIGNED LONG)
     IF position <= LEN(stringFile.buffer) THEN ' allow seeking to EOF position
         stringFile.cursor = position
     ELSE
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END SUB
 
@@ -138,7 +138,7 @@ FUNCTION StringFile_ReadString$ (stringFile AS StringFileType, size AS _UNSIGNED
 
             StringFile_ReadString = dst
         ELSE ' not enough bytes to read
-            ERROR ERROR_ILLEGAL_FUNCTION_CALL
+            ERROR _ERR_ILLEGAL_FUNCTION_CALL
         END IF
     END IF
 END FUNCTION
@@ -162,11 +162,11 @@ END SUB
 
 ' Reads a byte from the file
 FUNCTION StringFile_ReadByte~%% (stringFile AS StringFileType)
-    IF stringFile.cursor + SIZE_OF_BYTE <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
+    IF stringFile.cursor + _SIZE_OF_BYTE <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
         StringFile_ReadByte = PeekStringByte(stringFile.buffer, stringFile.cursor) ' read the data
-        stringFile.cursor = stringFile.cursor + SIZE_OF_BYTE ' this puts the cursor right after the last positon read
+        stringFile.cursor = stringFile.cursor + _SIZE_OF_BYTE ' this puts the cursor right after the last positon read
     ELSE ' not enough bytes to read
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 
@@ -176,20 +176,20 @@ SUB StringFile_WriteByte (stringFile AS StringFileType, src AS _UNSIGNED _BYTE)
     DIM curSize AS _UNSIGNED LONG: curSize = LEN(stringFile.buffer)
 
     ' Grow the buffer if needed
-    IF stringFile.cursor + SIZE_OF_BYTE >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + SIZE_OF_BYTE - curSize, NULL)
+    IF stringFile.cursor + _SIZE_OF_BYTE >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + _SIZE_OF_BYTE - curSize, NULL)
 
     PokeStringByte stringFile.buffer, stringFile.cursor, src ' write the data
-    stringFile.cursor = stringFile.cursor + SIZE_OF_BYTE ' this puts the cursor right after the last positon written
+    stringFile.cursor = stringFile.cursor + _SIZE_OF_BYTE ' this puts the cursor right after the last positon written
 END SUB
 
 
 ' Reads an integer from the file
 FUNCTION StringFile_ReadInteger~% (stringFile AS StringFileType)
-    IF stringFile.cursor + SIZE_OF_INTEGER <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
-        StringFile_ReadInteger = CVI(MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_INTEGER)) ' read the data
-        stringFile.cursor = stringFile.cursor + SIZE_OF_INTEGER ' this puts the cursor right after the last positon read
+    IF stringFile.cursor + _SIZE_OF_INTEGER <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
+        StringFile_ReadInteger = CVI(MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_INTEGER)) ' read the data
+        stringFile.cursor = stringFile.cursor + _SIZE_OF_INTEGER ' this puts the cursor right after the last positon read
     ELSE ' not enough bytes to read
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 
@@ -199,20 +199,20 @@ SUB StringFile_WriteInteger (stringFile AS StringFileType, src AS _UNSIGNED INTE
     DIM curSize AS _UNSIGNED LONG: curSize = LEN(stringFile.buffer)
 
     ' Grow the buffer if needed
-    IF stringFile.cursor + SIZE_OF_INTEGER >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + SIZE_OF_INTEGER - curSize, NULL)
+    IF stringFile.cursor + _SIZE_OF_INTEGER >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + _SIZE_OF_INTEGER - curSize, NULL)
 
-    MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_INTEGER) = MKI$(src) ' write the data
-    stringFile.cursor = stringFile.cursor + SIZE_OF_INTEGER ' this puts the cursor right after the last positon written
+    MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_INTEGER) = MKI$(src) ' write the data
+    stringFile.cursor = stringFile.cursor + _SIZE_OF_INTEGER ' this puts the cursor right after the last positon written
 END SUB
 
 
 ' Reads a long from the file
 FUNCTION StringFile_ReadLong~& (stringFile AS StringFileType)
-    IF stringFile.cursor + SIZE_OF_LONG <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
-        StringFile_ReadLong = CVL(MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_LONG)) ' read the data
-        stringFile.cursor = stringFile.cursor + SIZE_OF_LONG ' this puts the cursor right after the last positon read
+    IF stringFile.cursor + _SIZE_OF_LONG <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
+        StringFile_ReadLong = CVL(MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_LONG)) ' read the data
+        stringFile.cursor = stringFile.cursor + _SIZE_OF_LONG ' this puts the cursor right after the last positon read
     ELSE ' not enough bytes to read
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 
@@ -222,20 +222,20 @@ SUB StringFile_WriteLong (stringFile AS StringFileType, src AS _UNSIGNED LONG)
     DIM curSize AS _UNSIGNED LONG: curSize = LEN(stringFile.buffer)
 
     ' Grow the buffer if needed
-    IF stringFile.cursor + SIZE_OF_LONG >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + SIZE_OF_LONG - curSize, NULL)
+    IF stringFile.cursor + _SIZE_OF_LONG >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + _SIZE_OF_LONG - curSize, NULL)
 
-    MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_LONG) = MKL$(src) ' write the data
-    stringFile.cursor = stringFile.cursor + SIZE_OF_LONG ' this puts the cursor right after the last positon written
+    MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_LONG) = MKL$(src) ' write the data
+    stringFile.cursor = stringFile.cursor + _SIZE_OF_LONG ' this puts the cursor right after the last positon written
 END SUB
 
 
 ' Reads a single from the file
 FUNCTION StringFile_ReadSingle! (stringFile AS StringFileType)
-    IF stringFile.cursor + SIZE_OF_SINGLE <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
-        StringFile_ReadSingle = CVS(MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_SINGLE)) ' read the data
-        stringFile.cursor = stringFile.cursor + SIZE_OF_SINGLE ' this puts the cursor right after the last positon read
+    IF stringFile.cursor + _SIZE_OF_SINGLE <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
+        StringFile_ReadSingle = CVS(MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_SINGLE)) ' read the data
+        stringFile.cursor = stringFile.cursor + _SIZE_OF_SINGLE ' this puts the cursor right after the last positon read
     ELSE ' not enough bytes to read
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 
@@ -245,20 +245,20 @@ SUB StringFile_WriteSingle (stringFile AS StringFileType, src AS SINGLE)
     DIM curSize AS _UNSIGNED LONG: curSize = LEN(stringFile.buffer)
 
     ' Grow the buffer if needed
-    IF stringFile.cursor + SIZE_OF_SINGLE >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + SIZE_OF_SINGLE - curSize, NULL)
+    IF stringFile.cursor + _SIZE_OF_SINGLE >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + _SIZE_OF_SINGLE - curSize, NULL)
 
-    MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_SINGLE) = MKS$(src) ' write the data
-    stringFile.cursor = stringFile.cursor + SIZE_OF_SINGLE ' this puts the cursor right after the last positon written
+    MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_SINGLE) = MKS$(src) ' write the data
+    stringFile.cursor = stringFile.cursor + _SIZE_OF_SINGLE ' this puts the cursor right after the last positon written
 END SUB
 
 
 ' Reads an integer64 from the file
 FUNCTION StringFile_ReadInteger64~&& (stringFile AS StringFileType)
-    IF stringFile.cursor + SIZE_OF_INTEGER64 <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
-        StringFile_ReadInteger64 = _CV(_UNSIGNED _INTEGER64, MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_INTEGER64)) ' read the data
-        stringFile.cursor = stringFile.cursor + SIZE_OF_INTEGER64 ' this puts the cursor right after the last positon read
+    IF stringFile.cursor + _SIZE_OF_INTEGER64 <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
+        StringFile_ReadInteger64 = _CV(_UNSIGNED _INTEGER64, MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_INTEGER64)) ' read the data
+        stringFile.cursor = stringFile.cursor + _SIZE_OF_INTEGER64 ' this puts the cursor right after the last positon read
     ELSE ' not enough bytes to read
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 
@@ -268,20 +268,20 @@ SUB StringFile_WriteInteger64 (stringFile AS StringFileType, src AS _UNSIGNED _I
     DIM curSize AS _UNSIGNED LONG: curSize = LEN(stringFile.buffer)
 
     ' Grow the buffer if needed
-    IF stringFile.cursor + SIZE_OF_INTEGER64 >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + SIZE_OF_INTEGER64 - curSize, NULL)
+    IF stringFile.cursor + _SIZE_OF_INTEGER64 >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + _SIZE_OF_INTEGER64 - curSize, NULL)
 
-    MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_INTEGER64) = _MK$(_UNSIGNED _INTEGER64, src) ' write the data
-    stringFile.cursor = stringFile.cursor + SIZE_OF_INTEGER64 ' this puts the cursor right after the last positon written
+    MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_INTEGER64) = _MK$(_UNSIGNED _INTEGER64, src) ' write the data
+    stringFile.cursor = stringFile.cursor + _SIZE_OF_INTEGER64 ' this puts the cursor right after the last positon written
 END SUB
 
 
 ' Reads a double from the file
 FUNCTION StringFile_ReadDouble# (stringFile AS StringFileType)
-    IF stringFile.cursor + SIZE_OF_DOUBLE <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
-        StringFile_ReadDouble = CVD(MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_DOUBLE)) ' read the data
-        stringFile.cursor = stringFile.cursor + SIZE_OF_DOUBLE ' this puts the cursor right after the last positon read
+    IF stringFile.cursor + _SIZE_OF_DOUBLE <= LEN(stringFile.buffer) THEN ' check if we really have the amount of bytes to read
+        StringFile_ReadDouble = CVD(MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_DOUBLE)) ' read the data
+        stringFile.cursor = stringFile.cursor + _SIZE_OF_DOUBLE ' this puts the cursor right after the last positon read
     ELSE ' not enough bytes to read
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 
@@ -291,8 +291,8 @@ SUB StringFile_WriteDouble (stringFile AS StringFileType, src AS DOUBLE)
     DIM curSize AS _UNSIGNED LONG: curSize = LEN(stringFile.buffer)
 
     ' Grow the buffer if needed
-    IF stringFile.cursor + SIZE_OF_DOUBLE >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + SIZE_OF_DOUBLE - curSize, NULL)
+    IF stringFile.cursor + _SIZE_OF_DOUBLE >= curSize THEN stringFile.buffer = stringFile.buffer + STRING$(stringFile.cursor + _SIZE_OF_DOUBLE - curSize, NULL)
 
-    MID$(stringFile.buffer, stringFile.cursor + 1, SIZE_OF_DOUBLE) = MKD$(src) ' write the data
-    stringFile.cursor = stringFile.cursor + SIZE_OF_DOUBLE ' this puts the cursor right after the last positon written
+    MID$(stringFile.buffer, stringFile.cursor + 1, _SIZE_OF_DOUBLE) = MKD$(src) ' write the data
+    stringFile.cursor = stringFile.cursor + _SIZE_OF_DOUBLE ' this puts the cursor right after the last positon written
 END SUB

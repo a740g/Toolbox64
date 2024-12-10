@@ -56,7 +56,7 @@ inline const char *String_FormatBoolean(int32_t n, uint32_t fmt)
         {"Unavailable", "Available"},
         {"Out", "In"}};
 
-    return BOOLEAN_STRINGS[fmt < GET_ARRAY_SIZE(BOOLEAN_STRINGS) ? fmt : 0][n != 0];
+    return BOOLEAN_STRINGS[fmt < _countof(BOOLEAN_STRINGS) ? fmt : 0][n != 0];
 }
 
 /// @brief Check if the character is an alphanumeric character

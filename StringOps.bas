@@ -164,7 +164,7 @@ FUNCTION String_Tokenize& (text AS STRING, delims AS STRING, quoteChars AS STRIN
         IF insideQuote THEN
             IF char = RIGHT$(quoteChars, 1) THEN
                 ' Closing quote char encountered, resume delimiting
-                insideQuote = FALSE
+                insideQuote = _FALSE
                 GOSUB add_token ' add the token to the array
                 IF returnDelims THEN GOSUB add_delim ' add the closing quote char as delimiter if required
             ELSE
@@ -173,7 +173,7 @@ FUNCTION String_Tokenize& (text AS STRING, delims AS STRING, quoteChars AS STRIN
         ELSE
             IF char = LEFT$(quoteChars, 1) THEN
                 ' Opening quote char encountered, temporarily stop delimiting
-                insideQuote = TRUE
+                insideQuote = _TRUE
                 GOSUB add_token ' add the token to the array
                 IF returnDelims THEN GOSUB add_delim ' add the opening quote char as delimiter if required
             ELSEIF INSTR(delims, char) = NULL THEN
@@ -197,7 +197,7 @@ FUNCTION String_Tokenize& (text AS STRING, delims AS STRING, quoteChars AS STRIN
     add_token:
     IF LEN(token) > NULL THEN
         tokens(arrIdx) = token ' add the token to the token array
-        token = STRING_EMPTY ' clear the current token
+        token = _STR_EMPTY ' clear the current token
         GOSUB increment_counters_and_resize_array
     END IF
     RETURN
@@ -241,7 +241,7 @@ FUNCTION String_GetToken$ (sourceString AS STRING, delimiters AS STRING)
 
     ' Check if the token start is found
     IF currentPosition > LEN(originalString) THEN
-        String_GetToken = STRING_EMPTY ' no more tokens, return an empty string
+        String_GetToken = _STR_EMPTY ' no more tokens, return an empty string
         EXIT FUNCTION
     END IF
 

@@ -173,9 +173,9 @@ SUB HashTable_Remove (hashTable() AS HashTableType, k AS _UNSIGNED LONG)
     DIM idx AS LONG: idx = __HashTable_GetLookupIndex(hashTable(), k)
 
     IF idx >= 0 THEN
-        hashTable(idx).U = FALSE
+        hashTable(idx).U = _FALSE
     ELSE
-        ERROR ERROR_SUBSCRIPT_OUT_OF_RANGE
+        ERROR _ERR_SUBSCRIPT_OUT_OF_RANGE
     END IF
 END SUB
 
@@ -185,11 +185,11 @@ SUB HashTable_InsertLong (hashTable() AS HashTableType, k AS _UNSIGNED LONG, v A
     DIM idx AS LONG: idx = __HashTable_GetInsertIndex(hashTable(), k)
 
     IF idx >= 0 THEN
-        hashTable(idx).U = TRUE
+        hashTable(idx).U = _TRUE
         hashTable(idx).K = k
         hashTable(idx).V = v
     ELSE
-        ERROR ERROR_SUBSCRIPT_OUT_OF_RANGE
+        ERROR _ERR_SUBSCRIPT_OUT_OF_RANGE
     END IF
 END SUB
 
@@ -201,6 +201,6 @@ FUNCTION HashTable_LookupLong& (hashTable() AS HashTableType, k AS _UNSIGNED LON
     IF idx >= 0 THEN
         HashTable_LookupLong = hashTable(idx).V
     ELSE
-        ERROR ERROR_SUBSCRIPT_OUT_OF_RANGE
+        ERROR _ERR_SUBSCRIPT_OUT_OF_RANGE
     END IF
 END FUNCTION

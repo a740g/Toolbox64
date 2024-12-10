@@ -95,14 +95,14 @@ SUB ANSI_InitializeEmulator
 
     ' Reset the foreground and background color
     __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
-    ANSI_SetTextCanvasColor __ANSIEmu.fC, FALSE, TRUE
+    ANSI_SetTextCanvasColor __ANSIEmu.fC, _FALSE, _TRUE
     __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
-    ANSI_SetTextCanvasColor __ANSIEmu.bC, TRUE, TRUE
+    ANSI_SetTextCanvasColor __ANSIEmu.bC, _TRUE, _TRUE
 
     ' Reset text attributes
-    __ANSIEmu.isBold = FALSE
-    __ANSIEmu.isBlink = FALSE
-    __ANSIEmu.isInvert = FALSE
+    __ANSIEmu.isBold = _FALSE
+    __ANSIEmu.isBlink = _FALSE
+    __ANSIEmu.isInvert = _FALSE
 
     ' Get the current cursor position
     __ANSIEmu.posDEC.x = POS(0)
@@ -122,7 +122,7 @@ SUB ANSI_InitializeEmulator
 
     _CONTROLCHR ON ' get assist from QB64's control character handling (only for tabs; we are pretty much doing the rest ourselves)
 
-    __ANSIEmu.isInitialized = TRUE ' set to true to indicate init is done
+    __ANSIEmu.isInitialized = _TRUE ' set to true to indicate init is done
 END SUB
 
 
@@ -130,7 +130,7 @@ END SUB
 SUB ANSI_ResetEmulator
     SHARED __ANSIEmu AS __ANSIEmulatorType
 
-    __ANSIEmu.isInitialized = FALSE ' set the init flag to false
+    __ANSIEmu.isInitialized = _FALSE ' set the init flag to false
     ANSI_InitializeEmulator ' call the init routine
 END SUB
 
@@ -149,38 +149,38 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
     SHARED __ANSIEmu AS __ANSIEmulatorType
     SHARED __ANSIArg() AS LONG
 
-    ANSI_PrintCharacter = TRUE ' by default we will return true to tell the caller to keep going
+    ANSI_PrintCharacter = _TRUE ' by default we will return true to tell the caller to keep going
 
     DIM AS LONG x, y, z ' temp variables used in many places (usually as counter / index)
 
     SELECT CASE __ANSIEmu.state
         CASE __ANSI_STATE_TEXT ' handle normal characters (including some control characters)
             SELECT CASE ch
-                CASE ANSI_SUB ' stop processing and exit loop on EOF (usually put by SAUCE blocks)
+                CASE _ASC_SUB ' stop processing and exit loop on EOF (usually put by SAUCE blocks)
                     __ANSIEmu.state = __ANSI_STATE_END
 
-                CASE ANSI_BEL ' handle Bell - because QB64 does not (even with ControlChr On)
+                CASE _ASC_BEL ' handle Bell - because QB64 does not (even with ControlChr On)
                     BEEP
 
-                CASE ANSI_BS ' handle Backspace - because QB64 does not (even with ControlChr On)
+                CASE _ASC_BS ' handle Backspace - because QB64 does not (even with ControlChr On)
                     x = POS(0) - 1
                     IF x > 0 THEN LOCATE , x ' move to the left only if we are not on the edge
 
-                CASE ANSI_LF ' handle Line Feed (including EOL CRLF special case)
-                    PRINT STRING$(1 - (ANSI_CR = __ANSIEmu.lastChar AND ANSI_GetTextCanvasWidth = __ANSIEmu.lastCharX), ch);
+                CASE _ASC_LF ' handle Line Feed (including EOL CRLF special case)
+                    PRINT STRING$(1 - (_ASC_CR = __ANSIEmu.lastChar AND ANSI_GetTextCanvasWidth = __ANSIEmu.lastCharX), ch);
 
-                CASE ANSI_FF ' handle Form Feed - because QB64 does not (even with ControlChr On)
+                CASE _ASC_FF ' handle Form Feed - because QB64 does not (even with ControlChr On)
                     LOCATE 1, 1
 
-                CASE ANSI_CR ' handle Carriage Return because QB64 screws this up and moves the cursor to the beginning of the next line
+                CASE _ASC_CR ' handle Carriage Return because QB64 screws this up and moves the cursor to the beginning of the next line
                     LOCATE , 1
 
                     'Case ANSI_DEL ' TODO: Check what to do with this
 
-                CASE ANSI_ESC ' handle escape character
+                CASE _ASC_ESC ' handle escape character
                     __ANSIEmu.state = __ANSI_STATE_BEGIN ' beginning a new escape sequence
 
-                CASE ANSI_RS, ANSI_US ' QB64 does non-ANSI stuff with these two when ControlChar is On
+                CASE _ASC_RS, _ASC_US ' QB64 does non-ANSI stuff with these two when ControlChar is On
                     _CONTROLCHR OFF
                     __ANSIEmu.lastCharX = POS(0)
                     PRINT CHR$(ch); ' print escaped ESC character
@@ -196,7 +196,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
 
         CASE __ANSI_STATE_BEGIN ' handle escape sequence
             SELECT CASE ch
-                CASE IS < ANSI_SP ' handle escaped character
+                CASE IS < _ASC_SPACE ' handle escaped character
                     _CONTROLCHR OFF
                     __ANSIEmu.lastCharX = POS(0)
                     PRINT CHR$(ch); ' print escaped ESC character
@@ -225,45 +225,45 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                     __ANSIEmu.state = __ANSI_STATE_SEQUENCE
 
                 CASE ELSE ' throw an error for stuff we are not handling
-                    ERROR ERROR_FEATURE_UNAVAILABLE
+                    ERROR _ERR_FEATURE_UNAVAILABLE
 
             END SELECT
 
         CASE __ANSI_STATE_SEQUENCE ' handle CSI sequence
             SELECT CASE ch
-                CASE ANSI_0 TO ANSI_QUESTION_MARK ' argument bytes
+                CASE ASC_0 TO _ASC_QUESTION ' argument bytes
                     IF __ANSIEmu.argIndex < 1 THEN __ANSIEmu.argIndex = 1 ' set the argument index to one if this is the first time
 
                     SELECT CASE ch
-                        CASE ANSI_0 TO ANSI_9 ' handle sequence numeric arguments
-                            __ANSIArg(__ANSIEmu.argIndex) = __ANSIArg(__ANSIEmu.argIndex) * 10 + ch - ANSI_0
+                        CASE ASC_0 TO ASC_9 ' handle sequence numeric arguments
+                            __ANSIArg(__ANSIEmu.argIndex) = __ANSIArg(__ANSIEmu.argIndex) * 10 + ch - ASC_0
 
-                        CASE ANSI_SEMICOLON ' handle sequence argument seperators
+                        CASE _ASC_SEMICOLON ' handle sequence argument seperators
                             __ANSIEmu.argIndex = __ANSIEmu.argIndex + 1 ' increment the argument index
                             IF __ANSIEmu.argIndex > UBOUND(__ANSIArg) THEN REDIM _PRESERVE __ANSIArg(1 TO __ANSIEmu.argIndex) AS LONG ' dynamically expand the argument list if needed
 
-                        CASE ANSI_EQUALS_SIGN, ANSI_GREATER_THAN_SIGN, ANSI_QUESTION_MARK ' handle lead-in prefix
+                        CASE _ASC_EQUAL, _ASC_GREATERTHAN, _ASC_QUESTION ' handle lead-in prefix
                             ' NOP: leadInPrefix = ch ' just save the prefix type
 
                         CASE ELSE ' throw an error for stuff we are not handling
-                            ERROR ERROR_FEATURE_UNAVAILABLE
+                            ERROR _ERR_FEATURE_UNAVAILABLE
 
                     END SELECT
 
-                CASE ANSI_SP TO ANSI_SLASH ' intermediate bytes
+                CASE _ASC_SPACE TO _ASC_FORWARDSLASH ' intermediate bytes
                     SELECT CASE ch
-                        CASE ANSI_SP ' ignore spaces
+                        CASE _ASC_SPACE ' ignore spaces
                             ' NOP
 
                         CASE ELSE ' throw an error for stuff we are not handling
-                            ERROR ERROR_FEATURE_UNAVAILABLE
+                            ERROR _ERR_FEATURE_UNAVAILABLE
 
                     END SELECT
 
-                CASE ANSI_AT_SIGN TO ANSI_TILDE ' final byte
+                CASE ASC_AT TO _ASC_TILDE ' final byte
                     SELECT CASE ch
                         CASE ANSI_ESC_CSI_SM, ANSI_ESC_CSI_RM ' Set and reset screen mode
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             SELECT CASE __ANSIArg(1)
                                 CASE 0 TO 6, 14 TO 18 ' all mode changes are ignored. the screen type must be set by the caller
@@ -272,7 +272,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                                 CASE 7 ' Enable / disable line wrapping
                                     ' NOP: QB64 does line wrapping by default
                                     IF ANSI_ESC_CSI_RM = ch THEN ' ANSI_ESC_CSI_RM disable line wrapping unsupported
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        ERROR _ERR_FEATURE_UNAVAILABLE
                                     END IF
 
                                 CASE 12 ' Text Cursor Enable / Disable Blinking
@@ -286,12 +286,12 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                                     END IF
 
                                 CASE ELSE ' throw an error for stuff we are not handling
-                                    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    ERROR _ERR_FEATURE_UNAVAILABLE
 
                             END SELECT
 
                         CASE ANSI_ESC_CSI_ED ' Erase in Display
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             SELECT CASE __ANSIArg(1)
                                 CASE 0 ' clear from cursor to end of screen
@@ -309,12 +309,12 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                                     ANSI_ClearTextCanvasArea 1, 1, ANSI_GetTextCanvasWidth, ANSI_GetTextCanvasHeight
 
                                 CASE ELSE ' throw an error for stuff we are not handling
-                                    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    ERROR _ERR_FEATURE_UNAVAILABLE
 
                             END SELECT
 
                         CASE ANSI_ESC_CSI_EL ' Erase in Line
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             SELECT CASE __ANSIArg(1)
                                 CASE 0 ' erase from cursor to end of line
@@ -327,7 +327,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                                     ANSI_ClearTextCanvasArea 1, CSRLIN, ANSI_GetTextCanvasWidth, CSRLIN
 
                                 CASE ELSE ' throw an error for stuff we are not handling
-                                    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    ERROR _ERR_FEATURE_UNAVAILABLE
 
                             END SELECT
 
@@ -339,117 +339,117 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                                     CASE 0 ' reset all modes (styles and colors)
                                         __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
                                         __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
-                                        __ANSIEmu.isBold = FALSE
-                                        __ANSIEmu.isBlink = FALSE
-                                        __ANSIEmu.isInvert = FALSE
-                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
-                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                        __ANSIEmu.isBold = _FALSE
+                                        __ANSIEmu.isBlink = _FALSE
+                                        __ANSIEmu.isInvert = _FALSE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                     CASE 1 ' enable high intensity colors
                                         IF __ANSIEmu.fC < 8 THEN __ANSIEmu.fC = __ANSIEmu.fC + 8
-                                        __ANSIEmu.isBold = TRUE
-                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                        __ANSIEmu.isBold = _TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
 
                                     CASE 2, 22 ' enable low intensity, disable high intensity colors
                                         IF __ANSIEmu.fC > 7 THEN __ANSIEmu.fC = __ANSIEmu.fC - 8
-                                        __ANSIEmu.isBold = FALSE
-                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                        __ANSIEmu.isBold = _FALSE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
 
                                     CASE 3, 4, 23, 24 ' set / reset italic & underline mode ignored
                                         ' NOP: This can be used if we load monospaced TTF fonts using 'italics', 'underline' properties
 
                                     CASE 5, 6 ' turn blinking on
                                         IF __ANSIEmu.bC < 8 THEN __ANSIEmu.bC = __ANSIEmu.bC + 8
-                                        __ANSIEmu.isBlink = TRUE
-                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                        __ANSIEmu.isBlink = _TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                     CASE 7 ' enable reverse video
                                         IF NOT __ANSIEmu.isInvert THEN
-                                            __ANSIEmu.isInvert = TRUE
-                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
-                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            __ANSIEmu.isInvert = _TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
                                         END IF
 
                                     CASE 25 ' turn blinking off
                                         IF __ANSIEmu.bC > 7 THEN __ANSIEmu.bC = __ANSIEmu.bC - 8
-                                        __ANSIEmu.isBlink = FALSE
-                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                        __ANSIEmu.isBlink = _FALSE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                     CASE 27 ' disable reverse video
                                         IF __ANSIEmu.isInvert THEN
-                                            __ANSIEmu.isInvert = FALSE
-                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
-                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            __ANSIEmu.isInvert = _FALSE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
                                         END IF
 
                                     CASE 30 TO 37 ' set foreground color
                                         __ANSIEmu.fC = __ANSIArg(x) - 30
                                         IF __ANSIEmu.isBold THEN __ANSIEmu.fC = __ANSIEmu.fC + 8
-                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
 
                                     CASE 38 ' set 8-bit 256 or 24-bit RGB foreground color
                                         z = __ANSIEmu.argIndex - x ' get the number of arguments remaining
 
                                         IF __ANSIArg(x + 1) = 2 AND z >= 4 THEN ' 32bpp color with 5 arguments
                                             __ANSIEmu.fC = _RGB32(__ANSIArg(x + 2) AND &HFF, __ANSIArg(x + 3) AND &HFF, __ANSIArg(x + 4) AND &HFF)
-                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, FALSE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _FALSE
 
                                             x = x + 4 ' skip to last used arg
 
                                         ELSEIF __ANSIArg(x + 1) = 5 AND z >= 2 THEN ' 256 color with 3 arguments
                                             __ANSIEmu.fC = __ANSIArg(x + 2)
-                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
 
                                             x = x + 2 ' skip to last used arg
 
                                         ELSE
-                                            ERROR ERROR_CANNOT_CONTINUE
+                                            ERROR _ERR_CANNOT_CONTINUE
 
                                         END IF
 
                                     CASE 39 ' set default foreground color
                                         __ANSIEmu.fC = __ANSI_DEFAULT_COLOR_FOREGROUND
-                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
 
                                     CASE 40 TO 47 ' set background color
                                         __ANSIEmu.bC = __ANSIArg(x) - 40
                                         IF __ANSIEmu.isBlink THEN __ANSIEmu.bC = __ANSIEmu.bC + 8
-                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                     CASE 48 ' set 8-bit 256 or 24-bit RGB background color
                                         z = __ANSIEmu.argIndex - x ' get the number of arguments remaining
 
                                         IF __ANSIArg(x + 1) = 2 AND z >= 4 THEN ' 32bpp color with 5 arguments
                                             __ANSIEmu.bC = _RGB32(__ANSIArg(x + 2) AND &HFF, __ANSIArg(x + 3) AND &HFF, __ANSIArg(x + 4) AND &HFF)
-                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, FALSE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _FALSE
 
                                             x = x + 4 ' skip to last used arg
 
                                         ELSEIF __ANSIArg(x + 1) = 5 AND z >= 2 THEN ' 256 color with 3 arguments
                                             __ANSIEmu.bC = __ANSIArg(x + 2)
-                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                            ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                             x = x + 2 ' skip to last used arg
 
                                         ELSE
-                                            ERROR ERROR_CANNOT_CONTINUE
+                                            ERROR _ERR_CANNOT_CONTINUE
 
                                         END IF
 
                                     CASE 49 ' set default background color
                                         __ANSIEmu.bC = __ANSI_DEFAULT_COLOR_BACKGROUND
-                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                     CASE 90 TO 97 ' set high intensity foreground color
                                         __ANSIEmu.fC = 8 + __ANSIArg(x) - 90
-                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.fC, __ANSIEmu.isInvert, _TRUE
 
                                     CASE 100 TO 107 ' set high intensity background color
                                         __ANSIEmu.bC = 8 + __ANSIArg(x) - 100
-                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, TRUE
+                                        ANSI_SetTextCanvasColor __ANSIEmu.bC, NOT __ANSIEmu.isInvert, _TRUE
 
                                     CASE ELSE ' throw an error for stuff we are not handling
-                                        ERROR ERROR_FEATURE_UNAVAILABLE
+                                        ERROR _ERR_FEATURE_UNAVAILABLE
 
                                 END SELECT
 
@@ -457,23 +457,23 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOOP
 
                         CASE ANSI_ESC_CSI_SCP ' Save Current Cursor Position (SCO)
-                            IF __ANSIEmu.argIndex > 0 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting args
+                            IF __ANSIEmu.argIndex > 0 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting args
 
                             __ANSIEmu.posSCO.x = POS(0)
                             __ANSIEmu.posSCO.y = CSRLIN
 
                         CASE ANSI_ESC_CSI_RCP ' Restore Saved Cursor Position (SCO)
-                            IF __ANSIEmu.argIndex > 0 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting args
+                            IF __ANSIEmu.argIndex > 0 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting args
 
                             LOCATE __ANSIEmu.posSCO.y, __ANSIEmu.posSCO.x
 
                         CASE ANSI_ESC_CSI_PABLODRAW_24BPP ' PabloDraw 24-bit ANSI sequences
-                            IF __ANSIEmu.argIndex <> 4 THEN ERROR ERROR_CANNOT_CONTINUE ' we need 4 arguments
+                            IF __ANSIEmu.argIndex <> 4 THEN ERROR _ERR_CANNOT_CONTINUE ' we need 4 arguments
 
-                            ANSI_SetTextCanvasColor _RGB32(__ANSIArg(2) AND &HFF, __ANSIArg(3) AND &HFF, __ANSIArg(4) AND &HFF), __ANSIArg(1) = FALSE, FALSE
+                            ANSI_SetTextCanvasColor _RGB32(__ANSIArg(2) AND &HFF, __ANSIArg(3) AND &HFF, __ANSIArg(4) AND &HFF), __ANSIArg(1) = _FALSE, _FALSE
 
                         CASE ANSI_ESC_CSI_CUP, ANSI_ESC_CSI_HVP ' Cursor position or Horizontal and vertical position
-                            IF __ANSIEmu.argIndex > 2 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 2 args
+                            IF __ANSIEmu.argIndex > 2 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 2 args
 
                             y = ANSI_GetTextCanvasHeight
                             IF __ANSIArg(1) < 1 THEN
@@ -492,7 +492,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE __ANSIArg(1), __ANSIArg(2) ' line #, column #
 
                         CASE ANSI_ESC_CSI_CUU ' Cursor up
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                             y = CSRLIN - __ANSIArg(1)
@@ -500,7 +500,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE y
 
                         CASE ANSI_ESC_CSI_CUD ' Cursor down
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                             y = CSRLIN + __ANSIArg(1)
@@ -509,7 +509,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE y
 
                         CASE ANSI_ESC_CSI_CUF ' Cursor forward
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                             x = POS(0) + __ANSIArg(1)
@@ -518,7 +518,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE , x
 
                         CASE ANSI_ESC_CSI_CUB ' Cursor back
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                             x = POS(0) - __ANSIArg(1)
@@ -526,7 +526,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE , x
 
                         CASE ANSI_ESC_CSI_CNL ' Cursor Next Line
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                             y = CSRLIN + __ANSIArg(1)
@@ -535,7 +535,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE y, 1
 
                         CASE ANSI_ESC_CSI_CPL ' Cursor Previous Line
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             IF __ANSIArg(1) < 1 THEN __ANSIArg(1) = 1
                             y = CSRLIN - __ANSIArg(1)
@@ -543,7 +543,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE y, 1
 
                         CASE ANSI_ESC_CSI_CHA ' Cursor Horizontal Absolute
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             x = ANSI_GetTextCanvasWidth
                             IF __ANSIArg(1) < 1 THEN
@@ -554,7 +554,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE , __ANSIArg(1)
 
                         CASE ANSI_ESC_CSI_VPA ' Vertical Line Position Absolute
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             y = ANSI_GetTextCanvasHeight
                             IF __ANSIArg(1) < 1 THEN
@@ -565,7 +565,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                             LOCATE __ANSIArg(1)
 
                         CASE ANSI_ESC_CSI_DECSCUSR
-                            IF __ANSIEmu.argIndex > 1 THEN ERROR ERROR_CANNOT_CONTINUE ' was not expecting more than 1 arg
+                            IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
 
                             SELECT CASE __ANSIArg(1)
                                 CASE 0, 3, 4 ' Default, Blinking & Steady underline cursor shape
@@ -578,12 +578,12 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                                     LOCATE , , , 16, 31 ' since we cannot get a bar cursor in QB64, we'll just use a half-block cursor
 
                                 CASE ELSE ' throw an error for stuff we are not handling
-                                    ERROR ERROR_FEATURE_UNAVAILABLE
+                                    ERROR _ERR_FEATURE_UNAVAILABLE
 
                             END SELECT
 
                         CASE ELSE ' throw an error for stuff we are not handling
-                            ERROR ERROR_FEATURE_UNAVAILABLE
+                            ERROR _ERR_FEATURE_UNAVAILABLE
 
                     END SELECT
 
@@ -591,16 +591,16 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
                     __ANSIEmu.state = __ANSI_STATE_TEXT
 
                 CASE ELSE ' throw an error for stuff we are not handling
-                    ERROR ERROR_FEATURE_UNAVAILABLE
+                    ERROR _ERR_FEATURE_UNAVAILABLE
 
             END SELECT
 
         CASE __ANSI_STATE_END ' end of the stream has been reached
-            ANSI_PrintCharacter = FALSE ' tell the caller the we should stop processing the rest of the stream
+            ANSI_PrintCharacter = _FALSE ' tell the caller the we should stop processing the rest of the stream
             EXIT FUNCTION ' and then leave
 
         CASE ELSE ' this should never happen
-            ERROR ERROR_CANNOT_CONTINUE
+            ERROR _ERR_CANNOT_CONTINUE
 
     END SELECT
 
@@ -612,11 +612,11 @@ END FUNCTION
 ' This simply wraps PrintANSICharacter()
 ' It returns True when EOF is encountered
 FUNCTION ANSI_PrintString%% (s AS STRING)
-    ANSI_PrintString = TRUE
+    ANSI_PrintString = _TRUE
 
     DIM AS LONG i: FOR i = 1 TO LEN(s)
         IF NOT ANSI_PrintCharacter(ASC(s, i)) THEN
-            ANSI_PrintString = FALSE ' signal end of stream
+            ANSI_PrintString = _FALSE ' signal end of stream
             EXIT FUNCTION
         END IF
     NEXT i

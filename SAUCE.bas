@@ -67,7 +67,7 @@ SUB SAUCE_Remove (buffer AS STRING)
         DIM sauce AS SAUCEType: SAUCE_Read buffer, sauce
 
         ' The total size of the SAUCE record is sizeof(EOF byte) + sizeof(comment block) + sizeof(SAUCE record)
-        DIM bytesToRemove AS _UNSIGNED LONG: bytesToRemove = SIZE_OF_BYTE + LEN(sauce.record)
+        DIM bytesToRemove AS _UNSIGNED LONG: bytesToRemove = _SIZE_OF_BYTE + LEN(sauce.record)
 
         ' Add the comments block if we have one
         IF LEN(sauce.comments) > 0 THEN bytesToRemove = bytesToRemove + LEN(__SAUCE_COMMENT_ID) + LEN(sauce.comments)
@@ -85,7 +85,7 @@ SUB SAUCE_Initialize (sauce AS SAUCEType)
     SetMemoryByte _OFFSET(sauce.record), NULL, LEN(sauce.record)
 
     ' Zap the comments
-    sauce.comments = STRING_EMPTY
+    sauce.comments = _STR_EMPTY
 
     ' Set the SAUCE ID
     sauce.record.id = __SAUCE_ID
@@ -111,7 +111,7 @@ SUB SAUCE_Read (buffer AS STRING, sauce AS SAUCEType)
         IF position > 0 THEN
             sauce.comments = MID$(buffer, position + LEN(__SAUCE_COMMENT_ID), sauce.record.commentLines * __SAUCE_COMMENT_SIZE) ' read comments
         ELSE
-            sauce.comments = STRING_EMPTY ' no comments
+            sauce.comments = _STR_EMPTY ' no comments
         END IF
 
     ELSE
@@ -244,7 +244,7 @@ SUB SAUCE_SetDate (sauce AS SAUCEType, dateString AS STRING)
         END IF
     END IF
 
-    ERROR ERROR_ILLEGAL_FUNCTION_CALL
+    ERROR _ERR_ILLEGAL_FUNCTION_CALL
 END SUB
 
 
@@ -275,7 +275,7 @@ SUB SAUCE_SetDataType (sauce AS SAUCEType, dataType AS _UNSIGNED LONG)
     IF dataType < __SAUCE_DATATYPE_COUNT THEN
         sauce.record.dataType = dataType
     ELSE
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END SUB
 
@@ -424,7 +424,7 @@ FUNCTION SAUCE_GetComment$ (sauce AS SAUCEType, commentLine AS _UNSIGNED _BYTE)
     IF sauce.record.commentLines > 0 THEN
         SAUCE_GetComment = MID$(sauce.comments, 1 + (commentLine - 1) * __SAUCE_COMMENT_SIZE, __SAUCE_COMMENT_SIZE)
     ELSE
-        ERROR ERROR_ILLEGAL_FUNCTION_CALL
+        ERROR _ERR_ILLEGAL_FUNCTION_CALL
     END IF
 END FUNCTION
 

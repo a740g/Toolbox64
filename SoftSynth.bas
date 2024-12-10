@@ -58,7 +58,7 @@ FUNCTION SoftSynth_Initialize%%
 
     ' Return true if we have already been initialized
     IF SoftSynth_IsInitialized THEN
-        SoftSynth_Initialize = TRUE
+        SoftSynth_Initialize = _TRUE
         EXIT FUNCTION
     END IF
 
@@ -80,7 +80,7 @@ FUNCTION SoftSynth_Initialize%%
     __SoftSynth.soundBufferBytes = __SoftSynth.soundBufferSamples * SOFTSYNTH_SOUND_BUFFER_SAMPLE_SIZE ' buffer bytes
     REDIM __SoftSynth_SoundBuffer(0 TO __SoftSynth.soundBufferSamples - 1) AS SINGLE ' stereo interleaved buffer
 
-    SoftSynth_Initialize = TRUE
+    SoftSynth_Initialize = _TRUE
 END FUNCTION
 
 
