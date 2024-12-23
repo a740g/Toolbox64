@@ -8,7 +8,6 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
-'$CONSOLE
 'OPTION _EXPLICIT
 
 'DIM hIn AS LONG: hIn = MIDIIO_Create(_TRUE)
@@ -62,6 +61,7 @@ $INCLUDEONCE
 DECLARE LIBRARY "MIDIIO"
     FUNCTION MIDIIO_Create& (BYVAL isInput AS _BYTE)
     SUB MIDIIO_Delete (BYVAL handle AS LONG)
+    FUNCTION MIDIIO_GetLastErrorMessage$ (BYVAL handle AS LONG)
     FUNCTION MIDIIO_GetPortCount~& (BYVAL handle AS LONG)
     FUNCTION MIDIIO_GetPortName$ (BYVAL handle AS LONG, BYVAL portIndex AS LONG)
     FUNCTION MIDIIO_GetOpenPortNumber&& (BYVAL handle AS LONG)

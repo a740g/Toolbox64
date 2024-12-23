@@ -7,11 +7,12 @@
 // https://www.personal.kent.edu/~sbirch/Music_Production/MP-II/MIDI/midi_file_format.htm
 // http://www.somascape.org/midi/tech/spec.html
 // https://www.dogsbodynet.com/fileformats/midi.html
+// http://www.music.mcgill.ca/~gary/rtmidi/group__C-interface.html
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
 
-// TODO: Check if this is good enough.
+// Platform-specific API selection
 #ifdef _WIN32
 #define __WINDOWS_MM__
 #elif __APPLE__
@@ -20,12 +21,11 @@
 #define __LINUX_ALSA__
 #endif
 
-#define TOOLBOX64_DEBUG 0
-#include "Debug.h"
-#include "Common.h"
+// This is needed since we are including the .cpp files
+#define RTMIDI_SOURCE_INCLUDED
+
 #include "Types.h"
 #include "external/rtmidi/RtMidi.cpp"
-#define RTMIDI_SOURCE_INCLUDED
 #include "external/rtmidi/rtmidi_c.cpp"
 #include <cstdint>
 #include <cstdlib>
@@ -109,265 +109,214 @@ struct MIDIIOContext
     static const auto InvalidPort = -1;
     static constexpr auto IOPortName = "QB64-PE";
 
-    enum class Type
-    {
-        None,
-        Input,
-        Output
-    };
-
     struct MIDIInputData
     {
         double timestamp;
-        std::vector<uint8_t> message;
+        std::string message;
 
         MIDIInputData() : timestamp(0.0) {}
 
-        MIDIInputData(double timestamp, std::vector<uint8_t> message) : timestamp(timestamp), message(std::move(message)) {}
+        MIDIInputData(double timestamp, std::string message) : timestamp(timestamp), message(std::move(message)) {}
     };
 
-    Type type;
+    bool isInput;
     RtMidiPtr rtMidi;
     int64_t port;
     std::queue<MIDIInputData> inputQueue;
     MIDIInputData input;
 
-    MIDIIOContext() : type(Type::None), rtMidi(nullptr), port(InvalidPort) { input.timestamp = 0.0; }
+    MIDIIOContext() : isInput(false), rtMidi(nullptr), port(InvalidPort) {}
 
-    // Callback function to handle incoming MIDI messages
+    /// @brief Callback function to handle incoming MIDI messages.
+    /// @param timeStamp The delta timestamp at which the message was received.
+    /// @param message Pointer to the MIDI message data.
+    /// @param messageSize The size of the MIDI message.
+    /// @param userData Pointer to user-defined data, expected to be a MIDIIOContext instance.
     static void InputCallback(double timeStamp, const unsigned char *message, size_t messageSize, void *userData)
     {
         // TODO: This needs to be thread-safe!!!
         auto context = static_cast<MIDIIOContext *>(userData);
         if (context)
         {
-            context->inputQueue.emplace(timeStamp, std::vector<uint8_t>(message, message + messageSize));
+            context->inputQueue.emplace(timeStamp, std::string(reinterpret_cast<const char *>(message), messageSize));
         }
     }
 };
 
 static ResourceHandleManager<MIDIIOContext> g_MIDIIOContextManager;
 
+/// @brief Creates a MIDIIO context and returns a handle to it.
+/// @param isInput Boolean indicating whether the context is for MIDI input.
+/// @return A handle to the created MIDIIO context, or InvalidHandle if creation fails.
 ResourceHandleManager<MIDIIOContext>::Handle MIDIIO_Create(qb_bool isInput)
 {
-    auto ctxObj = std::make_unique<MIDIIOContext>();
-    if (ctxObj)
+    auto handle = g_MIDIIOContextManager.CreateHandle(std::make_unique<MIDIIOContext>());
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+
+    if (context)
     {
-        TOOLBOX64_DEBUG_PRINT("Created MIDIIO context object");
+        context->rtMidi = isInput ? rtmidi_in_create_default() : rtmidi_out_create_default();
 
-        auto handle = g_MIDIIOContextManager.CreateHandle(std::move(ctxObj));
-
-        if (g_MIDIIOContextManager.IsHandleValid(handle))
+        if (context->rtMidi && context->rtMidi->ok)
         {
-            TOOLBOX64_DEBUG_PRINT("Handle: %d", handle);
+            context->isInput = bool(isInput);
 
-            auto context = g_MIDIIOContextManager.GetResource(handle);
-            if (context)
-            {
-                TOOLBOX64_DEBUG_PRINT("Got MIDIIO context");
-
-                context->rtMidi = isInput ? rtmidi_in_create_default() : rtmidi_out_create_default();
-
-                if (context->rtMidi)
-                {
-                    TOOLBOX64_DEBUG_PRINT("Created RtMidi object");
-
-                    if (context->rtMidi->ok)
-                    {
-                        TOOLBOX64_DEBUG_PRINT("RtMidi object created without error");
-
-                        context->type = isInput ? MIDIIOContext::Type::Input : MIDIIOContext::Type::Output;
-
-                        return handle;
-                    }
-                    else
-                    {
-                        TOOLBOX64_DEBUG_PRINT("RtMidi object created with error: %s", context->rtMidi->msg);
-
-                        g_MIDIIOContextManager.ReleaseHandle(handle);
-                    }
-                }
-                else
-                {
-                    TOOLBOX64_DEBUG_PRINT("Failed to create RtMidi object");
-
-                    g_MIDIIOContextManager.ReleaseHandle(handle);
-                }
-            }
-            else
-            {
-                TOOLBOX64_DEBUG_PRINT("Failed to get MIDIIO context");
-
-                g_MIDIIOContextManager.ReleaseHandle(handle);
-            }
+            return handle;
         }
     }
 
-    TOOLBOX64_DEBUG_PRINT("Failed to create MIDIIO context");
+    g_MIDIIOContextManager.ReleaseHandle(handle);
 
     return ResourceHandleManager<MIDIIOContext>::InvalidHandle;
 }
 
+/// @brief Deletes a MIDIIO context associated with a handle. It cancels any active MIDI input callbacks, closes the MIDI port if open.
+/// frees the MIDI resources, and releases the handle.
+/// @param handle The handle of the MIDIIO context to delete.
+/// This function retrieves the MIDIIO context for the given handle,
 void MIDIIO_Delete(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
+        if (context->rtMidi)
         {
-            TOOLBOX64_DEBUG_PRINT("Got MIDIIO context");
-
-            if (context->rtMidi)
+            if (context->port >= 0)
             {
-                TOOLBOX64_DEBUG_PRINT("RtMidi object exists");
-
-                if (context->type == MIDIIOContext::Type::Input || context->type == MIDIIOContext::Type::Output)
+                if (context->isInput)
                 {
-                    if (context->port >= 0)
-                    {
-                        TOOLBOX64_DEBUG_PRINT("Closing port: %lld", context->port);
-
-                        rtmidi_close_port(context->rtMidi);
-                    }
-
-                    rtmidi_in_free(context->rtMidi);
-
-                    TOOLBOX64_DEBUG_PRINT("RtMidi object freed");
+                    rtmidi_in_cancel_callback(context->rtMidi);
                 }
+
+                rtmidi_close_port(context->rtMidi);
             }
 
-            TOOLBOX64_DEBUG_PRINT("Releasing handle: %d", handle);
+            if (context->isInput)
+            {
+                rtmidi_in_free(context->rtMidi);
+            }
+            else
+            {
+                rtmidi_out_free(context->rtMidi);
+            }
         }
-
-        g_MIDIIOContextManager.ReleaseHandle(handle);
     }
+
+    g_MIDIIOContextManager.ReleaseHandle(handle);
 }
 
+/// @brief Retrieves the last error message associated with a given MIDIIO context handle.
+/// @param handle The handle of the MIDIIO context for which the error message is retrieved.
+/// @return A pointer to the error message string if there is an error; otherwise, an empty string.
+const char *MIDIIO_GetLastErrorMessage(ResourceHandleManager<MIDIIOContext>::Handle handle)
+{
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+
+    return (context && context->rtMidi && !context->rtMidi->ok) ? context->rtMidi->msg : "";
+}
+
+/// @brief Retrieves the number of available MIDI ports for the given context.
+/// @param handle The handle of the MIDIIO context for which the port count is retrieved.
+/// @return The number of available MIDI ports if successful; otherwise, 0.
 uint32_t MIDIIO_GetPortCount(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context && context->rtMidi)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
+        auto count = rtmidi_get_port_count(context->rtMidi);
+        if (context->rtMidi->ok)
         {
-            if (context->rtMidi)
-            {
-                auto count = rtmidi_get_port_count(context->rtMidi);
-                if (context->rtMidi->ok)
-                {
-                    return count;
-                }
-                else
-                {
-                    TOOLBOX64_DEBUG_PRINT("RtMidi error: %s", context->rtMidi->msg);
-                }
-            }
+            return count;
         }
     }
 
-    return 0;
+    return 0u;
 }
 
+/// @brief Retrieves the name of a MIDI port associated with a given context.
+/// @param handle The handle of the MIDIIO context for which the port name is retrieved.
+/// @param port The index of the MIDI port for which the name is retrieved.
+/// @return The name of the MIDI port if successful; otherwise, an empty string.
 const char *MIDIIO_GetPortName(ResourceHandleManager<MIDIIOContext>::Handle handle, uint32_t port)
 {
-    g_TmpBuf[0] = '\0';
+    static thread_local std::string buffer;
 
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
+        if (context->rtMidi)
         {
-            if (context->rtMidi)
+            auto bufLen = 0;
+            rtmidi_get_port_name(context->rtMidi, port, nullptr, &bufLen); // get the required buffer size
+            buffer.resize(bufLen);
+            rtmidi_get_port_name(context->rtMidi, port, buffer.data(), &bufLen);
+
+            if (context->rtMidi->ok)
             {
-                int tmpBufLen = sizeof(g_TmpBuf);
-                rtmidi_get_port_name(context->rtMidi, port, reinterpret_cast<char *>(g_TmpBuf), &tmpBufLen);
-                g_TmpBuf[tmpBufLen - 1] = '\0';
-
-                if (context->rtMidi->ok)
-                {
-                    return reinterpret_cast<char *>(g_TmpBuf);
-                }
-                else
-                {
-                    g_TmpBuf[0] = '\0';
-
-                    TOOLBOX64_DEBUG_PRINT("RtMidi error: %s", context->rtMidi->msg);
-                }
+                return buffer.c_str();
             }
         }
     }
 
-    return reinterpret_cast<char *>(g_TmpBuf);
+    buffer.clear();
+
+    return buffer.c_str();
 }
 
+/// @brief Retrieves the currently open MIDI port number associated with a given context.
+/// @param handle The handle of the MIDIIO context for which the open port number is retrieved.
+/// @return The currently open MIDI port number if successful; otherwise, InvalidPort.
 int64_t MIDIIO_GetOpenPortNumber(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
-    {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
-        {
-            return context->port;
-        }
-    }
+    auto context = g_MIDIIOContextManager.GetResource(handle);
 
-    return MIDIIOContext::InvalidPort;
+    return context ? context->port : MIDIIOContext::InvalidPort;
 }
 
+/// @brief Opens a MIDI port for the given context handle and port number. This function attempts to open the specified
+/// MIDI port for the given context handle. If the port is already open, it returns true. If another port is open, it
+/// returns false. For input ports, it also sets up a callback for incoming messages.
+/// @param handle The handle of the MIDIIO context for which the port is to be opened.
+/// @param port The index of the MIDI port to open.
+/// @return QB_TRUE if the port is successfully opened or already open; otherwise, QB_FALSE.
 qb_bool MIDIIO_OpenPort(ResourceHandleManager<MIDIIOContext>::Handle handle, uint32_t port)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context && context->rtMidi)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
+        if (int64_t(port) == context->port)
         {
-            if (int64_t(port) == context->port)
-            {
-                return QB_TRUE; // already open
-            }
-            else if (context->port >= 0)
-            {
-                return QB_FALSE; // some other port is already open
-            }
+            return QB_TRUE; // already open
+        }
+        else if (context->port >= 0)
+        {
+            return QB_FALSE; // some other port is already open
+        }
 
-            if (context->rtMidi)
+        if (context->isInput)
+        {
+            rtmidi_open_port(context->rtMidi, port, MIDIIOContext::IOPortName);
+            if (context->rtMidi->ok)
             {
-                if (context->type == MIDIIOContext::Type::Input)
+                // Setup callback
+                rtmidi_in_set_callback(context->rtMidi, MIDIIOContext::InputCallback, context);
+                if (context->rtMidi->ok)
                 {
-                    rtmidi_open_port(context->rtMidi, port, MIDIIOContext::IOPortName);
-                    if (context->rtMidi->ok)
-                    {
-                        // Setup callback
-                        rtmidi_in_set_callback(context->rtMidi, MIDIIOContext::InputCallback, context);
-                        if (context->rtMidi->ok)
-                        {
-                            context->port = port;
+                    context->port = port;
 
-                            return QB_TRUE;
-                        }
-
-                        TOOLBOX64_DEBUG_PRINT("RtMidi error: %s", context->rtMidi->msg);
-
-                        rtmidi_close_port(context->rtMidi);
-                    }
-                    else
-                    {
-                        TOOLBOX64_DEBUG_PRINT("RtMidi error: %s", context->rtMidi->msg);
-                    }
+                    return QB_TRUE;
                 }
-                else if (context->type == MIDIIOContext::Type::Output)
-                {
-                    rtmidi_open_port(context->rtMidi, port, MIDIIOContext::IOPortName);
-                    if (context->rtMidi->ok)
-                    {
-                        context->port = port;
-                        return QB_TRUE;
-                    }
-                    else
-                    {
-                        TOOLBOX64_DEBUG_PRINT("RtMidi error: %s", context->rtMidi->msg);
-                    }
-                }
+
+                rtmidi_close_port(context->rtMidi);
+            }
+        }
+        else
+        {
+            rtmidi_open_port(context->rtMidi, port, MIDIIOContext::IOPortName);
+            if (context->rtMidi->ok)
+            {
+                context->port = port;
+                return QB_TRUE;
             }
         }
     }
@@ -375,32 +324,21 @@ qb_bool MIDIIO_OpenPort(ResourceHandleManager<MIDIIOContext>::Handle handle, uin
     return QB_FALSE;
 }
 
+/// @brief Closes a MIDI port for the given context handle. If no port is open or the handle is invalid, it does nothing.
+/// @param handle The handle of the MIDIIO context for which the port is to be closed.
 void MIDIIO_ClosePort(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context && context->rtMidi && context->port >= 0)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
+        if (context->isInput)
         {
-            if (context->port >= 0)
-            {
-                if (context->rtMidi)
-                {
-                    if (context->type == MIDIIOContext::Type::Input)
-                    {
-                        TOOLBOX64_DEBUG_PRINT("Cancelling callback for port: %lld", context->port);
-
-                        rtmidi_in_cancel_callback(context->rtMidi);
-                    }
-
-                    TOOLBOX64_DEBUG_PRINT("Closing port: %lld", context->port);
-
-                    rtmidi_close_port(context->rtMidi);
-
-                    context->port = MIDIIOContext::InvalidPort;
-                }
-            }
+            rtmidi_in_cancel_callback(context->rtMidi);
         }
+
+        rtmidi_close_port(context->rtMidi);
+
+        context->port = MIDIIOContext::InvalidPort;
     }
 }
 
@@ -410,21 +348,17 @@ void MIDIIO_ClosePort(ResourceHandleManager<MIDIIOContext>::Handle handle)
 size_t MIDIIO_GetMessageCount(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
     // TODO: This needs to be thread-safe!!!
-
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
+        auto messages = context->inputQueue.size();
+        if (messages)
         {
-            auto inputs = context->inputQueue.size();
-            if (inputs)
-            {
-                context->input = context->inputQueue.front(); // get and store the first message
-                context->inputQueue.pop();                    // remove the first message from the queue
-            }
-
-            return inputs;
+            context->input = context->inputQueue.front(); // get and store the first message
+            context->inputQueue.pop();                    // remove the first message from the queue
         }
+
+        return messages;
     }
 
     return 0;
@@ -435,67 +369,44 @@ size_t MIDIIO_GetMessageCount(ResourceHandleManager<MIDIIOContext>::Handle handl
 /// @return The first message in the input queue.
 const char *MIDIIO_GetMessage(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    g_TmpBuf[0] = '\0';
+    auto context = g_MIDIIOContextManager.GetResource(handle);
 
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
-    {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
-        {
-            // Copy the message data to a temporary buffer and null terminate
-            memcpy(g_TmpBuf, context->input.message.data(), std::min(context->input.message.size(), sizeof(g_TmpBuf)));
-            g_TmpBuf[std::min(context->input.message.size(), sizeof(g_TmpBuf) - 1)] = '\0';
-
-            return reinterpret_cast<char *>(g_TmpBuf);
-        }
-    }
-
-    return reinterpret_cast<char *>(g_TmpBuf);
+    return context ? context->input.message.c_str() : "";
 }
 
-/// @brief Returns the timestamp of the first message in the input queue.
+/// @brief Returns the delta timestamp of the first message in the input queue.
 /// @param port The port number.
-/// @return The timestamp of the first message in the input queue.
+/// @return The delta timestamp of the first message in the input queue.
 double MIDIIO_GetTimestamp(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
-    {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
-        {
-            return context->input.timestamp;
-        }
-    }
+    auto context = g_MIDIIOContextManager.GetResource(handle);
 
-    return 0.0;
+    return context ? context->input.timestamp : 0.0;
 }
 
+/// @brief Sets flags to ignore certain types of incoming MIDI messages for the given context.
+/// @param handle The handle of the MIDIIO context for which the message types are to be ignored.
+/// @param midiSysex Boolean indicating whether to ignore SYSEX messages.
+/// @param midiTime Boolean indicating whether to ignore MIDI Time Code messages.
+/// @param midiSense Boolean indicating whether to ignore MIDI Sense messages.
 void MIDIIO_IgnoreMessageTypes(ResourceHandleManager<MIDIIOContext>::Handle handle, qb_bool midiSysex, qb_bool midiTime, qb_bool midiSense)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context && context->rtMidi)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
-        {
-            if (context->type == MIDIIOContext::Type::Input && context->rtMidi)
-            {
-                rtmidi_in_ignore_types(context->rtMidi, bool(midiSysex), bool(midiTime), bool(midiSense));
-            }
-        }
+        rtmidi_in_ignore_types(context->rtMidi, bool(midiSysex), bool(midiTime), bool(midiSense));
     }
 }
 
+/// @brief Sends a MIDI message through the specified context.
+/// @param handle The handle of the MIDIIO context through which the message is to be sent.
+/// @param message Pointer to the MIDI message data.
+/// @param messageSize The size of the MIDI message.
 void MIDIIO_SendMessage(ResourceHandleManager<MIDIIOContext>::Handle handle, const char *message, size_t messageSize)
 {
-    if (g_MIDIIOContextManager.IsHandleValid(handle))
+    auto context = g_MIDIIOContextManager.GetResource(handle);
+    if (context && context->rtMidi)
     {
-        auto context = g_MIDIIOContextManager.GetResource(handle);
-        if (context)
-        {
-            if (context->type == MIDIIOContext::Type::Output && context->port >= 0 && context->rtMidi)
-            {
-                rtmidi_out_send_message(context->rtMidi, reinterpret_cast<const unsigned char *>(message), messageSize);
-            }
-        }
+        rtmidi_out_send_message(context->rtMidi, reinterpret_cast<const unsigned char *>(message), messageSize);
     }
 }
