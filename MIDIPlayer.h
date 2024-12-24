@@ -89,23 +89,26 @@ public:
                             TOOLBOX64_DEBUG_PRINT("Total time: %f", totalTime);
 
                             fmidi_player_event_callback(player, PlayerEventCallback, rtMidiOut);
+                            fmidi_player_finish_callback(player, PlayerFinishCallback, this);
 
                             fmidi_player_start(player);
 
                             TOOLBOX64_DEBUG_PRINT("Player started");
 
-                            midiTimer.Start([=]()
-                                            {
-                                    auto now = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
-                                    
-                                    if (haveMIDITick)
-                                    {
-                                        fmidi_player_tick(player, now - lastMIDITick);
-                                    }
+                            midiTimer.SetCallback([this]()
+                                                  {
+                                                    auto now = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+                                                    
+                                                    if (haveMIDITick)
+                                                    {
+                                                        fmidi_player_tick(player, now - lastMIDITick);
+                                                    }
 
-                                    haveMIDITick = true;
-                                    lastMIDITick = now; },
-                                            std::chrono::milliseconds(1));
+                                                    haveMIDITick = true;
+                                                    lastMIDITick = now; },
+                                                  std::chrono::milliseconds(1));
+
+                            midiTimer.Start();
 
                             TOOLBOX64_DEBUG_PRINT("Timer started");
 
@@ -269,6 +272,23 @@ private:
         }
     }
 
+    static void PlayerFinishCallback(void *data)
+    {
+        return;
+
+        auto player = static_cast<MIDIPlayer *>(data);
+
+        if (player->loops > 0)
+        {
+            player->loops--;
+            fmidi_player_start(player->player);
+        }
+        else
+        {
+            // player->Stop();
+        }
+    }
+
     class Timer
     {
     public:
@@ -276,35 +296,57 @@ private:
 
         ~Timer() { Stop(); }
 
-        void Start(std::function<void()> callback, std::chrono::milliseconds interval)
+        void SetCallback(std::function<void()> callback,
+                         std::chrono::milliseconds interval)
         {
+            this->callback = callback;
+            this->interval = interval;
+        }
+
+        bool Start()
+        {
+            if (!callback)
+            {
+                return false;
+            }
+
             if (running)
             {
                 Stop();
             }
+
             running = true;
-            worker = std::thread([=]()
+            worker = std::thread([this]()
                                  {
-                while (running) {
-                    std::this_thread::sleep_for(interval);
-                    if (running) {
-                        callback();
-                    }
-                } });
+            while (running) {
+                std::this_thread::sleep_for(interval);
+
+                if (running && callback) {
+                    callback();
+                }
+            } });
+
+            return true;
         }
 
         void Stop()
         {
             running = false;
+
             if (worker.joinable())
             {
                 worker.join();
             }
         }
 
+        bool IsRunning() const { return running; }
+
     private:
         std::thread worker;
         bool running;
+
+        std::function<void()> callback;
+        std::chrono::milliseconds interval;
     };
 
     fmidi_smf_t *smf;
