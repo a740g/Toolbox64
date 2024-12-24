@@ -1,20 +1,24 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' MIDI Player library using Win32 WinMM MIDI streaming API
+' MIDI Player library using fmidi + RtMidi
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
 
-'$INCLUDE:'WinMIDIPlayer.bi'
+'$INCLUDE:'MIDIPlayer.bi'
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
-'Sound_Beep 750, 300
+$CONSOLE
+IF MIDI_PlayFromFile("C:\Users\samue\OneDrive\Public\Media\Music\MIDIs\I Am Born To Make You Happy.MID") THEN
+    DO
+        LOCATE , 1: PRINT USING "Time: ######.### / ######.###"; MIDI_GetCurrentTime; MIDI_GetTotalTime;
+        _LIMIT 60
+    LOOP UNTIL _KEYHIT = 27
 
-'Sound_PlayFromFile ENVIRON$("SYSTEMROOT") + "\Media\Ring05.wav", TRUE
-
-'END
+    MIDI_Stop
+END IF
 '-----------------------------------------------------------------------------------------------------------------------
 
 FUNCTION MIDI_PlayFromMemory%% (buffer AS STRING)
@@ -36,20 +40,4 @@ SUB MIDI_PlayFromFile (fileName AS STRING)
     MIDI_PlayFromMemory File_Load(fileName)
 END SUB
 
-
-FUNCTION Sound_PlayFromFile%% (fileName AS STRING, looping AS _BYTE)
-    Sound_PlayFromFile = Sound_PlayFromMemory(File_Load(fileName), looping)
-END FUNCTION
-
-
-SUB Sound_PlayFromFile (fileName AS STRING, looping AS _BYTE)
-    DIM sink AS _BYTE: sink = Sound_PlayFromMemory(File_Load(fileName), looping)
-END SUB
-
-
-SUB Sound_PlayFromMemory (buffer AS STRING, looping AS _BYTE)
-    DIM sink AS _BYTE: sink = Sound_PlayFromMemory(buffer, looping)
-END SUB
-
-'$INCLUDE:'MemFile.bas'
 '$INCLUDE:'File.bas'

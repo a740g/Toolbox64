@@ -12,6 +12,7 @@
 
 #pragma once
 
+#ifndef RTMIDI_SOURCE_INCLUDED
 // Platform-specific API selection
 #ifdef _WIN32
 #define __WINDOWS_MM__
@@ -24,13 +25,13 @@
 // This is needed since we are including the .cpp files
 #define RTMIDI_SOURCE_INCLUDED
 
-#include "Types.h"
 #include "external/rtmidi/RtMidi.cpp"
 #include "external/rtmidi/rtmidi_c.cpp"
+#endif
+
+#include "Types.h"
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
+#include <string>
 #include <unordered_map>
 #include <queue>
 #include <stack>

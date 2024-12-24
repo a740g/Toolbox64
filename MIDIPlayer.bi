@@ -1,5 +1,5 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' MIDI Player library using Win32 WinMM MIDI streaming API
+' MIDI Player library using fmidi + RtMidi
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
@@ -7,10 +7,10 @@ $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
-'$INCLUDE:'MemFile.bi'
 '$INCLUDE:'File.bi'
 
-DECLARE LIBRARY "WinMIDIPlayer"
+DECLARE LIBRARY "MIDIPlayer"
+    FUNCTION MIDI_GetErrorMessage$
     FUNCTION __MIDI_PlayFromMemory%% (buffer AS STRING, BYVAL bufferSize AS _OFFSET)
     SUB MIDI_Stop
     FUNCTION MIDI_IsPlaying%%
@@ -18,9 +18,6 @@ DECLARE LIBRARY "WinMIDIPlayer"
     FUNCTION MIDI_IsLooping%%
     SUB MIDI_Pause (BYVAL state AS _BYTE)
     FUNCTION MIDI_IsPaused%%
-    SUB MIDI_SetVolume (BYVAL volume AS SINGLE)
-    FUNCTION MIDI_GetVolume!
-    FUNCTION Sound_PlayFromMemory%% (buffer AS STRING, BYVAL looping AS _BYTE)
-    SUB Sound_Stop
-    SUB Sound_Beep ALIAS "Beep" (BYVAL frequency AS _UNSIGNED LONG, BYVAL duration AS _UNSIGNED LONG)
+    FUNCTION MIDI_GetTotalTime#
+    FUNCTION MIDI_GetCurrentTime#
 END DECLARE
