@@ -22,7 +22,12 @@
 #include "external/rtmidi/rtmidi_c.cpp"
 #endif
 
+// This need to be defined to link the library statically
+#define FMIDI_STATIC
+
+// Set to 1 to enable debug messages
 #define TOOLBOX64_DEBUG 1
+
 #include "Debug.h"
 #include "Types.h"
 #include "external/fmidi/fmidi.cpp"
@@ -88,7 +93,7 @@ public:
 
                             TOOLBOX64_DEBUG_PRINT("Total time: %f", totalTime);
 
-                            fmidi_player_event_callback(player, PlayerEventCallback, rtMidiOut);
+                            fmidi_player_event_callback(player, PlayerEventCallback, this);
                             fmidi_player_finish_callback(player, PlayerFinishCallback, this);
 
                             fmidi_player_start(player);
@@ -164,7 +169,13 @@ public:
         TOOLBOX64_DEBUG_PRINT("MIDI playback stopped");
     }
 
-    qb_bool IsPlaying() {}
+    qb_bool IsPlaying()
+    {
+        if (player)
+        {
+            return fmidi_player_running(player) ? QB_TRUE : QB_FALSE;
+        }
+    }
 
     void Loop(int32_t loops) {}
 
@@ -197,6 +208,71 @@ public:
 
 private:
     static const auto Channels = 16;
+    static const auto SysExEnd = 0xF7u;
+    static constexpr uint8_t SysExResetGM[] = {0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7};
+    static constexpr uint8_t SysExResetGM2[] = {0xF0, 0x7E, 0x7F, 0x09, 0x03, 0xF7};
+    static constexpr uint8_t SysExResetGS[] = {0xF0, 0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7F, 0x00, 0x41, 0xF7};
+    static constexpr uint8_t SysExResetXG[] = {0xF0, 0x43, 0x10, 0x4C, 0x00, 0x00, 0x7E, 0x00, 0xF7};
+
+    class Timer
+    {
+    public:
+        Timer() : running(false) {}
+
+        ~Timer() { Stop(); }
+
+        void SetCallback(std::function<void()> callback,
+                         std::chrono::milliseconds interval)
+        {
+            this->callback = callback;
+            this->interval = interval;
+        }
+
+        bool Start()
+        {
+            if (!callback)
+            {
+                return false;
+            }
+
+            if (running)
+            {
+                Stop();
+            }
+
+            running = true;
+            worker = std::thread([this]()
+                                 {
+            while (running) {
+                std::this_thread::sleep_for(interval);
+
+                if (running && callback) {
+                    callback();
+                }
+            } });
+
+            return true;
+        }
+
+        void Stop()
+        {
+            running = false;
+
+            if (worker.joinable())
+            {
+                worker.join();
+            }
+        }
+
+        bool IsRunning() const { return running; }
+
+    private:
+        std::thread worker;
+        bool running;
+
+        std::function<void()> callback;
+        std::chrono::milliseconds interval;
+    };
 
     MIDIPlayer() : smf(nullptr), player(nullptr), totalTime(0.0), rtMidiOut(nullptr), lastMIDITick(0.0), haveMIDITick(false), loops(0) {}
 
@@ -262,13 +338,100 @@ private:
         }
     }
 
+    void MIDIOutSysExReset(bool isXG)
+    {
+        if (!rtMidiOut)
+            return;
+
+        // Send SysEx reset messages using rtmidi_out_send_message
+        rtmidi_out_send_message(rtMidiOut, SysExResetXG, sizeof(SysExResetXG));
+        rtmidi_out_send_message(rtMidiOut, SysExResetGM2, sizeof(SysExResetGM2));
+        rtmidi_out_send_message(rtMidiOut, SysExResetGM, sizeof(SysExResetGM));
+
+        // Loop for sending control changes and other events for each channel
+        for (uint8_t i = 0; i < Channels; ++i)
+        {
+            {
+                uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 120, 0}; // CC 120 Channel Mute / Sound Off
+                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+            }
+            {
+                uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 121, 0}; // CC 121 Reset All Controllers
+                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+            }
+
+            if (!isXG || i != 9)
+            {
+                {
+                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 32, 0}; // CC 32 Bank select LSB
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+                {
+                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 0, 0}; // CC 0 Bank select MSB
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+                {
+                    uint8_t msg[]{(uint8_t)((0b1100 << 4) | i), 0}; // Program Change 0
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+            }
+        }
+
+        // Configure channel 10 as drum kit in XG mode
+        if (isXG)
+        {
+            {
+                uint8_t msg[]{(uint8_t)((0b1011 << 4) | 9), 32, 0}; // CC 32 Bank select LSB
+                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+            }
+            {
+                uint8_t msg[]{(uint8_t)((0b1011 << 4) | 9), 0, 0}; // CC 0 Bank select MSB (Drum Kit in XG)
+                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+            }
+            {
+                uint8_t msg[]{(uint8_t)((0b1100 << 4) | 9), 0}; // Program Change 0
+                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+            }
+        }
+    }
+
+    static bool IsSysExReset(const uint8_t *data)
+    {
+        return IsSysExEqual(data, SysExResetGM) || IsSysExEqual(data, SysExResetGM2) || IsSysExEqual(data, SysExResetGS) || IsSysExEqual(data, SysExResetXG);
+    }
+
+    static bool IsSysExEqual(const uint8_t *a, const uint8_t *b)
+    {
+        while ((*a != SysExEnd) && (*b != SysExEnd) && (*a == *b))
+        {
+            a++;
+            b++;
+        }
+
+        return (*a == *b);
+    }
+
     static void PlayerEventCallback(const fmidi_event_t *event, void *data)
     {
-        auto rtMidiOut = static_cast<RtMidiOutPtr>(data);
+        auto player = static_cast<MIDIPlayer *>(data);
 
         if (event->type == fmidi_event_message)
         {
-            rtmidi_out_send_message(rtMidiOut, event->data, event->datalen);
+            if (event->datalen)
+            {
+                if (IsSysExEqual(event->data, SysExResetXG))
+                {
+                    player->MIDIOutSysExReset(true);
+                }
+                else if (IsSysExReset(event->data))
+                {
+                    player->MIDIOutSysExReset(false);
+                }
+                else
+                {
+                    rtmidi_out_send_message(player->rtMidiOut, event->data, event->datalen);
+                }
+            }
         }
     }
 
@@ -288,66 +451,6 @@ private:
             // player->Stop();
         }
     }
-
-    class Timer
-    {
-    public:
-        Timer() : running(false) {}
-
-        ~Timer() { Stop(); }
-
-        void SetCallback(std::function<void()> callback,
-                         std::chrono::milliseconds interval)
-        {
-            this->callback = callback;
-            this->interval = interval;
-        }
-
-        bool Start()
-        {
-            if (!callback)
-            {
-                return false;
-            }
-
-            if (running)
-            {
-                Stop();
-            }
-
-            running = true;
-            worker = std::thread([this]()
-                                 {
-            while (running) {
-                std::this_thread::sleep_for(interval);
-
-                if (running && callback) {
-                    callback();
-                }
-            } });
-
-            return true;
-        }
-
-        void Stop()
-        {
-            running = false;
-
-            if (worker.joinable())
-            {
-                worker.join();
-            }
-        }
-
-        bool IsRunning() const { return running; }
-
-    private:
-        std::thread worker;
-        bool running;
-
-        std::function<void()> callback;
-        std::chrono::milliseconds interval;
-    };
 
     fmidi_smf_t *smf;
     fmidi_player_t *player;
