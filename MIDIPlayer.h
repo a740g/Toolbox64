@@ -139,6 +139,7 @@ public:
         totalTime = 0.0;
         currentTime = 0.0;
         paused = false;
+        volumeDirty = true;
     }
 
     /// @brief Checks if the MIDI player is currently playing.
@@ -209,15 +210,11 @@ public:
     /// @param volume The volume to set, specified as a value between 0.0 and 1.0.
     void SetVolume(float volume)
     {
-        if (rtMidiOut)
+        volume = std::clamp(volume, 0.0f, 1.0f);
+        if (this->volume != volume)
         {
-            this->volume = std::clamp(volume, 0.0f, 1.0f);
-            uint16_t iVolume = this->volume * 16383; // Clamp volume to [0.0, 1.0] and scale volume to 14-bit range
-
-            // Construct the SysEx message for setting the global volume
-            uint8_t msg[]{0xF0, 0x7F, 0x7F, 0x04, 0x01, uint8_t(iVolume & 0x7F), uint8_t((iVolume >> 7) & 0x7F), 0xF7};
-
-            rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+            this->volume = volume;
+            volumeDirty = true;
         }
     }
 
@@ -310,7 +307,7 @@ private:
         std::chrono::milliseconds interval;
     };
 
-    MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f) {}
+    MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f), volumeDirty(true) {}
 
     ~MIDIPlayer()
     {
@@ -453,6 +450,18 @@ private:
                     rtmidi_out_send_message(player->rtMidiOut, event->data, event->datalen);
                 }
             }
+
+            if (player->volumeDirty)
+            {
+                uint16_t iVolume = player->volume * 16383; // clamp volume to [0.0, 1.0] and scale volume to 14-bit range
+
+                // Construct the SysEx message for setting the global volume
+                uint8_t msg[]{0xF0, 0x7F, 0x7F, 0x04, 0x01, uint8_t(iVolume & 0x7F), uint8_t((iVolume >> 7) & 0x7F), 0xF7};
+
+                rtmidi_out_send_message(player->rtMidiOut, msg, sizeof(msg));
+
+                player->volumeDirty = false;
+            }
         }
     }
 
@@ -490,6 +499,7 @@ private:
     int32_t loops;
     bool paused;
     float volume;
+    bool volumeDirty;
 };
 
 const char *MIDI_GetErrorMessage()
