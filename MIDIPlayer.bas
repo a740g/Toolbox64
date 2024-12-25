@@ -11,7 +11,7 @@ $INCLUDEONCE
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
 $CONSOLE
-IF MIDI_PlayFromFile("C:\Users\samue\OneDrive\Public\Media\Music\MIDIs\I Am Born To Make You Happy.MID") THEN
+IF MIDI_PlayFromFile(_OPENFILEDIALOG$("Open MIDI file", , "*.mid|*.midi|*.rmi|*.xmi|*.mus")) THEN
     DO
         LOCATE , 1: PRINT USING "Time: ######.### / ######.###"; MIDI_GetCurrentTime; MIDI_GetTotalTime;
         _LIMIT 60

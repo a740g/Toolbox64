@@ -21,13 +21,17 @@ $INCLUDEONCE
 '    PRINT MID$(buffer, bufPos, INSTR(bufPos, buffer, CHR$(34)) - bufPos)
 'END IF
 
-'DIM fname AS STRING: fname = "C:\Users\Samuel_Gomes\.gitconfig"
-'PRINT File_GetAttributes(fname); "("; File_GetSize(fname); ")"
-'PRINT File_GetAttributes(fname) AND FILE_ATTRIBUTE_DIRECTORY
-'PRINT File_GetAttributes(fname) AND FILE_ATTRIBUTE_READOLY
-'PRINT File_GetAttributes(fname) AND FILE_ATTRIBUTE_HIDDEN
-'PRINT File_GetAttributes(fname) AND FILE_ATTRIBUTE_ARCHIVE
-'PRINT File_GetAttributes(fname) AND FILE_ATTRIBUTE_SYSTEM
+'DIM fname AS STRING: fname = "C:\Users\samue\.gitconfig"
+'DIM attr AS _UNSIGNED LONG: attr = File_GetAttributes(fname)
+'PRINT "File size:"; File_GetSize(fname)
+'PRINT "Attributes :"; HEX$(attr)
+'PRINT _IIF(attr AND FILE_ATTRIBUTE_DIRECTORY, "Is directory", "Not a directory")
+'PRINT _IIF(attr AND FILE_ATTRIBUTE_REGULAR_FILE, "Is a regular file", "Not a regular file")
+'PRINT _IIF(attr AND FILE_ATTRIBUTE_READONLY, "Is read-only", "Not read-only")
+'PRINT _IIF(attr AND FILE_ATTRIBUTE_HIDDEN, "Is hidden", "Not hidden")
+'PRINT _IIF(attr AND FILE_ATTRIBUTE_ARCHIVE, "Is archive", "Not archive")
+'PRINT _IIF(attr AND FILE_ATTRIBUTE_SYSTEM, "Is system", "Not system")
+'PRINT "Modified time:"; File_GetModifiedTime(fname)
 
 'END
 '-----------------------------------------------------------------------------------------------------------------------
@@ -129,6 +133,10 @@ FUNCTION File_GetAttributes~& (pathName AS STRING)
     File_GetAttributes = __File_GetAttributes(String_ToCStr(pathName))
 END FUNCTION
 
+' Returns the creation time of a file
+FUNCTION File_GetModifiedTime&& (pathName AS STRING)
+    File_GetModifiedTime = __File_GetModifiedTime(String_ToCStr(pathName))
+END FUNCTION
 
 '$INCLUDE:'StringOps.bas'
 '$INCLUDE:'Pathname.bas'
