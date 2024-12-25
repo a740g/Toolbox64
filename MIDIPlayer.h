@@ -188,7 +188,7 @@ public:
 
     qb_bool IsPaused()
     {
-        return player ? (fmidi_player_running(player) ? QB_FALSE : QB_TRUE) : QB_FALSE;
+        return midiTimer.IsRunning() ? QB_FALSE : QB_TRUE;
     }
 
     /// @brief Gets the total time in seconds of the currently loaded MIDI file.
