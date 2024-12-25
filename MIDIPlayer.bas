@@ -10,7 +10,6 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
-'$CONSOLE
 '$DEBUG
 
 'DO
@@ -20,6 +19,8 @@ $INCLUDEONCE
 '    DIM AS _BYTE pause, repeat
 
 '    IF MIDI_PlayFromFile(fileName) THEN
+'        REM MIDI_Loop _TRUE
+
 '        DIM k AS LONG
 
 '        PRINT "Playing: "; fileName
@@ -46,6 +47,8 @@ $INCLUDEONCE
 '        PRINT
 
 '        MIDI_Stop
+'    ELSE
+'        PRINT "Playback failed. Error: "; MIDI_GetErrorMessage
 '    END IF
 'LOOP
 

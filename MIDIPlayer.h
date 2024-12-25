@@ -22,22 +22,21 @@
 #include "external/rtmidi/rtmidi_c.cpp"
 #endif
 
-// This need to be defined to link the library statically
+// This needs to be defined to link the library statically
 #define FMIDI_STATIC
 
-// Set to 1 to enable debug messages
-#define TOOLBOX64_DEBUG 1
-
-#include "Debug.h"
 #include "Types.h"
 #include "external/fmidi/fmidi.cpp"
 #include <chrono>
 #include <thread>
 #include <functional>
 
+/// @brief The MIDI player singleton class.
 class MIDIPlayer
 {
 public:
+    /// @brief Retrieves the last error message associated with the MIDI player.
+    /// @return A pointer to the error message string if there is an error; otherwise, an empty string.
     const char *GetErrorMessage()
     {
         auto errorCode = fmidi_errno();
@@ -57,48 +56,35 @@ public:
         return "";
     }
 
+    /// @brief Starts playing a MIDI file from memory.
+    /// @param buffer The MIDI file data as a byte array.
+    /// @param bufferSize The size of the MIDI file data in bytes.
+    /// @return QB_TRUE if the file is successfully loaded and playback starts; QB_FALSE otherwise.
     qb_bool PlayFromMemory(const char *buffer, size_t bufferSize)
     {
         Stop();
 
-        TOOLBOX64_DEBUG_PRINT("Starting MIDI playback");
-
         rtMidiOut = rtmidi_out_create_default();
         if (rtMidiOut && rtMidiOut->ok)
         {
-            TOOLBOX64_DEBUG_PRINT("rtMidiOut created");
-
             if (rtmidi_get_port_count(rtMidiOut) && rtMidiOut->ok)
             {
-                TOOLBOX64_DEBUG_PRINT("Found output ports");
-
                 rtmidi_open_port(rtMidiOut, 0, "QB64-PE-MIDI-Player");
                 if (rtMidiOut->ok)
                 {
-                    TOOLBOX64_DEBUG_PRINT("Port 0 opened");
-
-                    MIDIOutReset();
+                    MIDIOutSysExReset(false);
 
                     smf = fmidi_auto_mem_read(reinterpret_cast<const uint8_t *>(buffer), bufferSize);
                     if (smf)
                     {
-                        TOOLBOX64_DEBUG_PRINT("File parsed and loaded");
-
                         player = fmidi_player_new(smf);
                         if (player)
                         {
-                            TOOLBOX64_DEBUG_PRINT("Player created");
-
                             totalTime = fmidi_smf_compute_duration(smf);
-
-                            TOOLBOX64_DEBUG_PRINT("Total time: %f", totalTime);
 
                             fmidi_player_event_callback(player, PlayerEventCallback, this);
                             fmidi_player_finish_callback(player, PlayerFinishCallback, this);
-
                             fmidi_player_start(player);
-
-                            TOOLBOX64_DEBUG_PRINT("Player started");
 
                             midiTimer.SetCallback([this]()
                                                   {
@@ -107,17 +93,14 @@ public:
                                                     if (haveMIDITick)
                                                     {
                                                         fmidi_player_tick(player, now - lastMIDITick);
+                                                        currentTime = fmidi_player_current_time(player);
                                                     }
 
                                                     haveMIDITick = true;
                                                     lastMIDITick = now; },
-                                                  std::chrono::milliseconds(1));
+                                                  std::chrono::milliseconds(TimerInterval));
 
                             midiTimer.Start();
-
-                            TOOLBOX64_DEBUG_PRINT("Timer started");
-
-                            TOOLBOX64_DEBUG_PRINT("MIDI playback started");
 
                             return QB_TRUE;
                         }
@@ -126,78 +109,100 @@ public:
             }
         }
 
-        TOOLBOX64_DEBUG_PRINT("MIDI playback failed");
-
         Stop();
 
         return QB_FALSE;
     }
 
+    /// @brief Stops MIDI playback if it is currently playing and releases all related resources.
     void Stop()
     {
-        TOOLBOX64_DEBUG_PRINT("Stopping MIDI playback");
-
-        MIDIOutReset();
+        MIDIOutSysExReset(false);
 
         midiTimer.Stop();
-
-        TOOLBOX64_DEBUG_PRINT("Timer stopped");
 
         fmidi_player_free(player);
         player = nullptr;
 
-        TOOLBOX64_DEBUG_PRINT("Player freed");
-
         fmidi_smf_free(smf);
         smf = nullptr;
-
-        TOOLBOX64_DEBUG_PRINT("File freed");
 
         if (rtMidiOut)
         {
             rtmidi_close_port(rtMidiOut);
             rtmidi_out_free(rtMidiOut);
             rtMidiOut = nullptr;
-
-            TOOLBOX64_DEBUG_PRINT("Port closed and freed");
         }
 
-        totalTime = 0.0;
         haveMIDITick = false;
         lastMIDITick = 0.0;
-
-        TOOLBOX64_DEBUG_PRINT("MIDI playback stopped");
+        totalTime = 0.0;
+        currentTime = 0.0;
+        paused = false;
     }
 
+    /// @brief Checks if the MIDI player is currently playing.
+    /// @return QB_TRUE if the player is running; QB_FALSE otherwise.
     qb_bool IsPlaying()
     {
         if (player)
         {
-            return fmidi_player_running(player) ? QB_TRUE : QB_FALSE;
+            return (loops || currentTime < totalTime) ? QB_TRUE : QB_FALSE;
         }
     }
 
-    void Loop(int32_t loops) {}
+    /// @brief Sets the number of times the MIDI playback will loop.
+    /// @param loops The number of loops to set. A value of 0 means no looping, a positive value indicates the number of times to repeat playback, while a negative value indicates an infinite loop.
+    void Loop(int32_t loops)
+    {
+        this->loops = loops;
+    }
 
-    qb_bool IsLooping() {}
+    /// @brief Checks if the MIDI player is currently set to loop.
+    /// @return QB_TRUE if the player is set to loop; QB_FALSE otherwise.
+    qb_bool IsLooping()
+    {
+        return loops != 0 ? QB_TRUE : QB_FALSE;
+    }
 
-    void Pause(int8_t state) {}
+    /// @brief Pauses or unpauses the MIDI playback.
+    /// @param state QB_TRUE to pause, QB_FALSE to unpause.
+    void Pause(int8_t state)
+    {
+        if (player)
+        {
+            if (state)
+            {
+                midiTimer.Stop();
+                haveMIDITick = false;
+                fmidi_player_stop(player);
+                MidiOutSoundOff();
+            }
+            else
+            {
+                fmidi_player_start(player);
+                midiTimer.Start();
+            }
+        }
+    }
 
-    qb_bool IsPaused() {}
+    qb_bool IsPaused()
+    {
+        return player ? (fmidi_player_running(player) ? QB_FALSE : QB_TRUE) : QB_FALSE;
+    }
 
+    /// @brief Gets the total time in seconds of the currently loaded MIDI file.
+    /// @return The total time in seconds of the currently loaded MIDI file.
     double GetTotalTime()
     {
         return totalTime;
     }
 
+    /// @brief Gets the current time in seconds of the currently playing MIDI file.
+    /// @return The current time in seconds of the currently playing MIDI file. If the player is not running, returns 0.0.
     double GetCurrentTime()
     {
-        if (player)
-        {
-            return fmidi_player_current_time(player);
-        }
-
-        return 0.0;
+        return currentTime;
     }
 
     static MIDIPlayer &Instance()
@@ -207,13 +212,15 @@ public:
     }
 
 private:
+    static const auto TimerInterval = 1; // milliseconds
     static const auto Channels = 16;
-    static const auto SysExEnd = 0xF7u;
+    static const auto SysExEnd = 0xF7u; // SysEx end byte status code
     static constexpr uint8_t SysExResetGM[] = {0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7};
     static constexpr uint8_t SysExResetGM2[] = {0xF0, 0x7E, 0x7F, 0x09, 0x03, 0xF7};
     static constexpr uint8_t SysExResetGS[] = {0xF0, 0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7F, 0x00, 0x41, 0xF7};
     static constexpr uint8_t SysExResetXG[] = {0xF0, 0x43, 0x10, 0x4C, 0x00, 0x00, 0x7E, 0x00, 0xF7};
 
+    /// @brief A timer class for MIDI playback.
     class Timer
     {
     public:
@@ -221,6 +228,9 @@ private:
 
         ~Timer() { Stop(); }
 
+        /// @brief Sets the callback function for this timer, which will be called at the given interval.
+        /// @param callback A callable object (such as a lambda or a std::function) that takes no arguments and returns void.
+        /// @param interval The interval at which the callback will be called, specified in milliseconds.
         void SetCallback(std::function<void()> callback,
                          std::chrono::milliseconds interval)
         {
@@ -228,6 +238,8 @@ private:
             this->interval = interval;
         }
 
+        /// @brief Starts the timer, which will call the callback function at the given interval.
+        /// @return true if the timer was started successfully, false otherwise.
         bool Start()
         {
             if (!callback)
@@ -254,6 +266,7 @@ private:
             return true;
         }
 
+        /// @brief Stops the timer, halting the callback function calls. If the timer is not running, this function does nothing. If the timer is running, this function will wait for the worker thread to finish before returning.
         void Stop()
         {
             running = false;
@@ -274,7 +287,7 @@ private:
         std::chrono::milliseconds interval;
     };
 
-    MIDIPlayer() : smf(nullptr), player(nullptr), totalTime(0.0), rtMidiOut(nullptr), lastMIDITick(0.0), haveMIDITick(false), loops(0) {}
+    MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false) {}
 
     ~MIDIPlayer()
     {
@@ -284,7 +297,8 @@ private:
     MIDIPlayer(const MIDIPlayer &) = delete;
     MIDIPlayer &operator=(const MIDIPlayer &) = delete;
 
-    void MIDIOutReset()
+    /// @brief Stops all sounds on all MIDI channels. This is used when pausing a MIDI file playback to ensure there is no sound coming from the MIDI output.
+    void MidiOutSoundOff()
     {
         if (rtMidiOut)
         {
@@ -295,111 +309,92 @@ private:
                     uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 120, 0};
                     rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
                 }
-                // Reset all controllers
-                {
-                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 121, 0};
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-                // Bank select
-                {
-                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 0, 0};
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-                {
-                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 32, 0};
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-                // Program change
-                {
-                    uint8_t msg[]{(uint8_t)((0b1100 << 4) | c), 0};
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-                // Pitch bend change
-                {
-                    uint8_t msg[]{(uint8_t)((0b1110 << 4) | c), 0, 0b1000000};
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
             }
         }
     }
 
-    void MidiOutSoundOff()
+    /// @brief Resets all MIDI channels by sending SysEx reset messages for XG, GM2 and GM modes.
+    /// @param isXG Channel 10 is configured as a drum kit in XG mode if this is true.
+    void MIDIOutSysExReset(bool isXG)
     {
         if (rtMidiOut)
         {
-            for (unsigned c = 0; c < Channels; ++c)
+
+            // Send SysEx reset messages using rtmidi_out_send_message
+            rtmidi_out_send_message(rtMidiOut, SysExResetXG, sizeof(SysExResetXG));
+            rtmidi_out_send_message(rtMidiOut, SysExResetGM2, sizeof(SysExResetGM2));
+            rtmidi_out_send_message(rtMidiOut, SysExResetGM, sizeof(SysExResetGM));
+
+            // Loop for sending control changes and other events for each channel
+            for (uint8_t c = 0; c < Channels; c++)
             {
-                // All sound off
                 {
-                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 120, 0};
+                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 120, 0}; // CC 120 Channel Mute / Sound Off
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+
+                {
+                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 121, 0}; // CC 121 Reset All Controllers
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+
+                if (!isXG || c != 9)
+                {
+                    {
+                        uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 32, 0}; // CC 32 Bank select LSB
+                        rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                    }
+
+                    {
+                        uint8_t msg[]{(uint8_t)((0b1011 << 4) | c), 0, 0}; // CC 0 Bank select MSB
+                        rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                    }
+
+                    {
+                        uint8_t msg[]{(uint8_t)((0b1100 << 4) | c), 0}; // Program Change 0
+                        rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                    }
+                }
+
+                {
+                    uint8_t msg[]{(uint8_t)((0b1110 << 4) | c), 0, 0b1000000}; // Pitch bend change
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+            }
+
+            // Configure channel 10 as drum kit in XG mode
+            if (isXG)
+            {
+                {
+                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | 9), 32, 0}; // CC 32 Bank select LSB
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+
+                {
+                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | 9), 0, 0}; // CC 0 Bank select MSB (Drum Kit in XG)
+                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+                }
+
+                {
+                    uint8_t msg[]{(uint8_t)((0b1100 << 4) | 9), 0}; // Program Change 0
                     rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
                 }
             }
         }
     }
 
-    void MIDIOutSysExReset(bool isXG)
-    {
-        if (!rtMidiOut)
-            return;
-
-        // Send SysEx reset messages using rtmidi_out_send_message
-        rtmidi_out_send_message(rtMidiOut, SysExResetXG, sizeof(SysExResetXG));
-        rtmidi_out_send_message(rtMidiOut, SysExResetGM2, sizeof(SysExResetGM2));
-        rtmidi_out_send_message(rtMidiOut, SysExResetGM, sizeof(SysExResetGM));
-
-        // Loop for sending control changes and other events for each channel
-        for (uint8_t i = 0; i < Channels; ++i)
-        {
-            {
-                uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 120, 0}; // CC 120 Channel Mute / Sound Off
-                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-            }
-            {
-                uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 121, 0}; // CC 121 Reset All Controllers
-                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-            }
-
-            if (!isXG || i != 9)
-            {
-                {
-                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 32, 0}; // CC 32 Bank select LSB
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-                {
-                    uint8_t msg[]{(uint8_t)((0b1011 << 4) | i), 0, 0}; // CC 0 Bank select MSB
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-                {
-                    uint8_t msg[]{(uint8_t)((0b1100 << 4) | i), 0}; // Program Change 0
-                    rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-                }
-            }
-        }
-
-        // Configure channel 10 as drum kit in XG mode
-        if (isXG)
-        {
-            {
-                uint8_t msg[]{(uint8_t)((0b1011 << 4) | 9), 32, 0}; // CC 32 Bank select LSB
-                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-            }
-            {
-                uint8_t msg[]{(uint8_t)((0b1011 << 4) | 9), 0, 0}; // CC 0 Bank select MSB (Drum Kit in XG)
-                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-            }
-            {
-                uint8_t msg[]{(uint8_t)((0b1100 << 4) | 9), 0}; // Program Change 0
-                rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
-            }
-        }
-    }
-
+    /// @brief Check if the given SysEx message is a reset message.
+    /// @param data The SysEx message to check.
+    /// @returns true if the message is a reset message, false otherwise.
     static bool IsSysExReset(const uint8_t *data)
     {
         return IsSysExEqual(data, SysExResetGM) || IsSysExEqual(data, SysExResetGM2) || IsSysExEqual(data, SysExResetGS) || IsSysExEqual(data, SysExResetXG);
     }
 
+    /// @brief Compares two SysEx messages to determine if they are equal.
+    /// @param a Pointer to the first SysEx message.
+    /// @param b Pointer to the second SysEx message.
+    /// @return true if both SysEx messages are equal, false otherwise.
     static bool IsSysExEqual(const uint8_t *a, const uint8_t *b)
     {
         while ((*a != SysExEnd) && (*b != SysExEnd) && (*a == *b))
@@ -411,6 +406,9 @@ private:
         return (*a == *b);
     }
 
+    /// @brief Callback function to handle MIDI player events.
+    /// @param event Pointer to the MIDI event structure.
+    /// @param data Pointer to user data, expected to be a MIDIPlayer instance.
     static void PlayerEventCallback(const fmidi_event_t *event, void *data)
     {
         auto player = static_cast<MIDIPlayer *>(data);
@@ -435,31 +433,39 @@ private:
         }
     }
 
+    /// @brief Callback function to handle the finish of a MIDI player.
+    /// @param data Pointer to user data, expected to be a MIDIPlayer instance.
     static void PlayerFinishCallback(void *data)
     {
-        return;
-
         auto player = static_cast<MIDIPlayer *>(data);
 
         if (player->loops > 0)
         {
             player->loops--;
-            fmidi_player_start(player->player);
+
+            if (player->loops > 0)
+            {
+                fmidi_player_rewind(player->player);
+                fmidi_player_start(player->player);
+            }
         }
-        else
+        else if (player->loops < 0)
         {
-            // player->Stop();
+            fmidi_player_rewind(player->player);
+            fmidi_player_start(player->player);
         }
     }
 
     fmidi_smf_t *smf;
     fmidi_player_t *player;
-    double totalTime;
     RtMidiOutPtr rtMidiOut;
     Timer midiTimer;
     bool haveMIDITick;
     double lastMIDITick;
+    double totalTime;
+    double currentTime;
     int32_t loops;
+    bool paused;
 };
 
 const char *MIDI_GetErrorMessage()
