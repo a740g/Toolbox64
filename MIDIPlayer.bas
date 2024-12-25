@@ -37,9 +37,16 @@ $INCLUDEONCE
 '                    repeat = NOT repeat
 '                    MIDI_Loop repeat
 '                    _KEYCLEAR
+
+'                CASE 18432
+'                    MIDI_SetVolume MIDI_GetVolume + 0.01!
+
+'                CASE 20480
+'                    MIDI_SetVolume MIDI_GetVolume - 0.01!
+
 '            END SELECT
 
-'            LOCATE , 1: PRINT USING "Time: ######.### / ######.###"; MIDI_GetCurrentTime; MIDI_GetTotalTime;
+'            LOCATE , 1: PRINT USING "Time: ######.### / ######.###, Volume ###%"; MIDI_GetCurrentTime; MIDI_GetTotalTime; MIDI_GetVolume * 100!;
 
 '            _LIMIT 60
 '        LOOP WHILE k <> 27 _ANDALSO MIDI_IsPlaying

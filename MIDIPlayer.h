@@ -205,6 +205,29 @@ public:
         return currentTime;
     }
 
+    /// @brief Sets the volume of the MIDI output.
+    /// @param volume The volume to set, specified as a value between 0.0 and 1.0.
+    void SetVolume(float volume)
+    {
+        if (rtMidiOut)
+        {
+            this->volume = std::clamp(volume, 0.0f, 1.0f);
+            uint16_t iVolume = this->volume * 16383; // Clamp volume to [0.0, 1.0] and scale volume to 14-bit range
+
+            // Construct the SysEx message for setting the global volume
+            uint8_t msg[]{0xF0, 0x7F, 0x7F, 0x04, 0x01, uint8_t(iVolume & 0x7F), uint8_t((iVolume >> 7) & 0x7F), 0xF7};
+
+            rtmidi_out_send_message(rtMidiOut, msg, sizeof(msg));
+        }
+    }
+
+    /// @brief Gets the volume of the MIDI output.
+    /// @return The volume of the MIDI output, specified as a value between 0.0 and 1.0.
+    float GetVolume()
+    {
+        return volume;
+    }
+
     static MIDIPlayer &Instance()
     {
         static MIDIPlayer instance;
@@ -287,7 +310,7 @@ private:
         std::chrono::milliseconds interval;
     };
 
-    MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false) {}
+    MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f) {}
 
     ~MIDIPlayer()
     {
@@ -302,7 +325,7 @@ private:
     {
         if (rtMidiOut)
         {
-            for (unsigned c = 0; c < Channels; c++)
+            for (uint8_t c = 0; c < Channels; c++)
             {
                 // All sound off
                 {
@@ -466,6 +489,7 @@ private:
     double currentTime;
     int32_t loops;
     bool paused;
+    float volume;
 };
 
 const char *MIDI_GetErrorMessage()
@@ -516,4 +540,14 @@ double MIDI_GetTotalTime()
 double MIDI_GetCurrentTime()
 {
     return MIDIPlayer::Instance().GetCurrentTime();
+}
+
+void MIDI_SetVolume(float volume)
+{
+    MIDIPlayer::Instance().SetVolume(volume);
+}
+
+float MIDI_GetVolume()
+{
+    return MIDIPlayer::Instance().GetVolume();
 }

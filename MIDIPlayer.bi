@@ -20,4 +20,6 @@ DECLARE LIBRARY "MIDIPlayer"
     FUNCTION MIDI_IsPaused%%
     FUNCTION MIDI_GetTotalTime#
     FUNCTION MIDI_GetCurrentTime#
+    SUB MIDI_SetVolume (BYVAL volume AS SINGLE)
+    FUNCTION MIDI_GetVolume!
 END DECLARE
