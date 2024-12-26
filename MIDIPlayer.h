@@ -69,7 +69,7 @@ public:
         {
             if (rtmidi_get_port_count(rtMidiOut) && rtMidiOut->ok)
             {
-                rtmidi_open_port(rtMidiOut, 0, "QB64-PE-MIDI-Player");
+                rtmidi_open_port(rtMidiOut, 0, "QB64-PE-MIDI-Player"); // TODO: Check this on macOS / Linux
                 if (rtMidiOut->ok)
                 {
                     MIDIOutSysExReset(false);
@@ -453,10 +453,10 @@ private:
 
             if (player->volumeDirty)
             {
-                uint16_t iVolume = player->volume * 16383; // clamp volume to [0.0, 1.0] and scale volume to 14-bit range
+                uint16_t volume = player->volume * 16383; // clamp volume to [0.0, 1.0] and scale volume to 14-bit range
 
                 // Construct the SysEx message for setting the global volume
-                uint8_t msg[]{0xF0, 0x7F, 0x7F, 0x04, 0x01, uint8_t(iVolume & 0x7F), uint8_t((iVolume >> 7) & 0x7F), 0xF7};
+                uint8_t msg[]{0xF0, 0x7F, 0x7F, 0x04, 0x01, uint8_t(volume & 0x7F), uint8_t((volume >> 7) & 0x7F), 0xF7};
 
                 rtmidi_out_send_message(player->rtMidiOut, msg, sizeof(msg));
 

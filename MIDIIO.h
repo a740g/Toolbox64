@@ -125,6 +125,7 @@ struct MIDIIOContext
     int64_t port;
     std::queue<MIDIInputData> inputQueue;
     MIDIInputData input;
+    mutable std::mutex inputQueueMutex;
 
     MIDIIOContext() : isInput(false), rtMidi(nullptr), port(InvalidPort) {}
 
@@ -139,6 +140,8 @@ struct MIDIIOContext
         auto context = static_cast<MIDIIOContext *>(userData);
         if (context)
         {
+            std::lock_guard<std::mutex> lock(context->inputQueueMutex);
+
             context->inputQueue.emplace(timeStamp, std::string(reinterpret_cast<const char *>(message), messageSize));
         }
     }
@@ -348,10 +351,11 @@ void MIDIIO_ClosePort(ResourceHandleManager<MIDIIOContext>::Handle handle)
 /// @return The number of available messages.
 size_t MIDIIO_GetMessageCount(ResourceHandleManager<MIDIIOContext>::Handle handle)
 {
-    // TODO: This needs to be thread-safe!!!
     auto context = g_MIDIIOContextManager.GetResource(handle);
     if (context)
     {
+        std::lock_guard<std::mutex> lock(context->inputQueueMutex);
+
         auto messages = context->inputQueue.size();
         if (messages)
         {
