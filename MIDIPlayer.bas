@@ -10,6 +10,19 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
+'$CONSOLE
+'DIM ports AS _UNSIGNED LONG: ports = MIDI_GetPortCount
+
+'IF ports THEN
+'    DIM i AS _UNSIGNED LONG
+
+'    PRINT "Ports found:"; ports
+
+'    FOR i = 1 TO ports
+'        PRINT "Port"; i - 1; ": "; MIDI_GetPortName(i - 1)
+'    NEXT i
+'END IF
+
 'DO
 '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open MIDI file", , "*.mid|*.midi|*.rmi|*.xmi|*.mus", "MIDI Files")
 '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO

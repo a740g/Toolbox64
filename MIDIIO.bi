@@ -10,6 +10,7 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
+'$CONSOLE
 'DIM hIn AS LONG: hIn = MIDIIO_Create(_TRUE)
 'DIM hOut AS LONG: hOut = MIDIIO_Create(_FALSE)
 
@@ -19,11 +20,18 @@ $INCLUDEONCE
 '    IF ports THEN
 '        DIM i AS _UNSIGNED LONG
 
+'        PRINT "Found input ports:"; ports
 '        FOR i = 1 TO ports
 '            PRINT "Port"; i - 1; ": "; MIDIIO_GetPortName(hIn, i - 1)
 '        NEXT i
 
-'        PRINT "Opening port 0..."
+'        ports = MIDIIO_GetPortCount(hOut)
+'        PRINT "Found output ports:"; ports
+'        FOR i = 1 TO ports
+'            PRINT "Port"; i - 1; ": "; MIDIIO_GetPortName(hOut, i - 1)
+'        NEXT i
+
+'        PRINT "Opening input port 0..."
 '        IF MIDIIO_OpenPort(hIn, 0) THEN
 '            PRINT "Opened output port 0:"; MIDIIO_OpenPort(hOut, 0)
 

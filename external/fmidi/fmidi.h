@@ -222,16 +222,6 @@ extern "C"
 } // extern "C"
 #endif
 
-//////////////////
-// C++ PRINTERS //
-//////////////////
-
-#if defined(__cplusplus) && !defined(FMIDI_DISABLE_DESCRIBE_API)
-#include <iosfwd>
-FMIDI_API std::ostream &operator<<(std::ostream &out, const fmidi_smf_t &smf);
-FMIDI_API std::ostream &operator<<(std::ostream &out, const fmidi_event_t &evt);
-#endif
-
 //////////////
 // C++ RAII //
 //////////////

@@ -66,7 +66,17 @@ public:
             rtMidiOut = rtmidi_out_create_default();
         }
 
-        return rtMidiOut && rtMidiOut->ok ? rtmidi_get_port_count(rtMidiOut) : 0;
+        if (rtMidiOut && rtMidiOut->ok)
+        {
+            auto count = rtmidi_get_port_count(rtMidiOut);
+
+            if (rtMidiOut->ok)
+            {
+                return count;
+            }
+        }
+
+        return 0u;
     }
 
     /// @brief Retrieves the name of a specified MIDI port.
@@ -82,12 +92,12 @@ public:
             rtMidiOut = rtmidi_out_create_default();
         }
 
-        if (rtMidiOut)
+        if (rtMidiOut && rtMidiOut->ok)
         {
             auto bufLen = 0;
-            rtmidi_get_port_name(rtMidiOut, port, nullptr, &bufLen); // get the required buffer size
+            rtmidi_get_port_name(rtMidiOut, portIndex, nullptr, &bufLen); // get the required buffer size
             buffer.resize(bufLen);
-            rtmidi_get_port_name(rtMidiOut, port, buffer.data(), &bufLen);
+            rtmidi_get_port_name(rtMidiOut, portIndex, buffer.data(), &bufLen);
 
             if (rtMidiOut->ok)
             {

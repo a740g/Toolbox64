@@ -246,19 +246,16 @@ const char *MIDIIO_GetPortName(ResourceHandleManager<MIDIIOContext>::Handle hand
     static thread_local std::string buffer;
 
     auto context = g_MIDIIOContextManager.GetResource(handle);
-    if (context)
+    if (context && context->rtMidi)
     {
-        if (context->rtMidi)
-        {
-            auto bufLen = 0;
-            rtmidi_get_port_name(context->rtMidi, port, nullptr, &bufLen); // get the required buffer size
-            buffer.resize(bufLen);
-            rtmidi_get_port_name(context->rtMidi, port, buffer.data(), &bufLen);
+        auto bufLen = 0;
+        rtmidi_get_port_name(context->rtMidi, port, nullptr, &bufLen); // get the required buffer size
+        buffer.resize(bufLen);
+        rtmidi_get_port_name(context->rtMidi, port, buffer.data(), &bufLen);
 
-            if (context->rtMidi->ok)
-            {
-                return buffer.c_str();
-            }
+        if (context->rtMidi->ok)
+        {
+            return buffer.c_str();
         }
     }
 
