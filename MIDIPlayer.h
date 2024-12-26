@@ -32,7 +32,7 @@
 #include <functional>
 
 /// @brief The MIDI player singleton class.
-class MIDIPlayer
+class __MIDIPlayer
 {
 public:
     /// @brief Retrieves the last error message associated with the MIDI player.
@@ -225,9 +225,9 @@ public:
         return volume;
     }
 
-    static MIDIPlayer &Instance()
+    static __MIDIPlayer &Instance()
     {
-        static MIDIPlayer instance;
+        static __MIDIPlayer instance;
         return instance;
     }
 
@@ -307,15 +307,15 @@ private:
         std::chrono::milliseconds interval;
     };
 
-    MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f), volumeDirty(true) {}
+    __MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f), volumeDirty(true) {}
 
-    ~MIDIPlayer()
+    ~__MIDIPlayer()
     {
         Stop();
     }
 
-    MIDIPlayer(const MIDIPlayer &) = delete;
-    MIDIPlayer &operator=(const MIDIPlayer &) = delete;
+    __MIDIPlayer(const __MIDIPlayer &) = delete;
+    __MIDIPlayer &operator=(const __MIDIPlayer &) = delete;
 
     /// @brief Stops all sounds on all MIDI channels. This is used when pausing a MIDI file playback to ensure there is no sound coming from the MIDI output.
     void MidiOutSoundOff()
@@ -428,10 +428,10 @@ private:
 
     /// @brief Callback function to handle MIDI player events.
     /// @param event Pointer to the MIDI event structure.
-    /// @param data Pointer to user data, expected to be a MIDIPlayer instance.
+    /// @param data Pointer to user data, expected to be a __MIDIPlayer instance.
     static void PlayerEventCallback(const fmidi_event_t *event, void *data)
     {
-        auto player = static_cast<MIDIPlayer *>(data);
+        auto player = static_cast<__MIDIPlayer *>(data);
 
         if (event->type == fmidi_event_message)
         {
@@ -466,10 +466,10 @@ private:
     }
 
     /// @brief Callback function to handle the finish of a MIDI player.
-    /// @param data Pointer to user data, expected to be a MIDIPlayer instance.
+    /// @param data Pointer to user data, expected to be a __MIDIPlayer instance.
     static void PlayerFinishCallback(void *data)
     {
-        auto player = static_cast<MIDIPlayer *>(data);
+        auto player = static_cast<__MIDIPlayer *>(data);
 
         if (player->loops > 0)
         {
@@ -504,60 +504,60 @@ private:
 
 const char *MIDI_GetErrorMessage()
 {
-    return MIDIPlayer::Instance().GetErrorMessage();
+    return __MIDIPlayer::Instance().GetErrorMessage();
 }
 
 inline qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
 {
-    return MIDIPlayer::Instance().PlayFromMemory(buffer, bufferSize);
+    return __MIDIPlayer::Instance().PlayFromMemory(buffer, bufferSize);
 }
 
 void MIDI_Stop()
 {
-    MIDIPlayer::Instance().Stop();
+    __MIDIPlayer::Instance().Stop();
 }
 
 qb_bool MIDI_IsPlaying()
 {
-    return MIDIPlayer::Instance().IsPlaying();
+    return __MIDIPlayer::Instance().IsPlaying();
 }
 
 void MIDI_Loop(int32_t loops)
 {
-    MIDIPlayer::Instance().Loop(loops);
+    __MIDIPlayer::Instance().Loop(loops);
 }
 
 qb_bool MIDI_IsLooping()
 {
-    return MIDIPlayer::Instance().IsLooping();
+    return __MIDIPlayer::Instance().IsLooping();
 }
 
 void MIDI_Pause(int8_t state)
 {
-    MIDIPlayer::Instance().Pause(state);
+    __MIDIPlayer::Instance().Pause(state);
 }
 
 qb_bool MIDI_IsPaused()
 {
-    return MIDIPlayer::Instance().IsPaused();
+    return __MIDIPlayer::Instance().IsPaused();
 }
 
 double MIDI_GetTotalTime()
 {
-    return MIDIPlayer::Instance().GetTotalTime();
+    return __MIDIPlayer::Instance().GetTotalTime();
 }
 
 double MIDI_GetCurrentTime()
 {
-    return MIDIPlayer::Instance().GetCurrentTime();
+    return __MIDIPlayer::Instance().GetCurrentTime();
 }
 
 void MIDI_SetVolume(float volume)
 {
-    MIDIPlayer::Instance().SetVolume(volume);
+    __MIDIPlayer::Instance().SetVolume(volume);
 }
 
 float MIDI_GetVolume()
 {
-    return MIDIPlayer::Instance().GetVolume();
+    return __MIDIPlayer::Instance().GetVolume();
 }
