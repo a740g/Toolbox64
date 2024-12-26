@@ -56,6 +56,72 @@ public:
         return "";
     }
 
+    /// @brief Retrieves the number of available MIDI ports for the MIDI player.
+    /// @return The number of available MIDI ports if successful; otherwise, 0.
+    uint32_t GetPortCount()
+    {
+        // Only create the RtMidiOut instance if it doesn't exist yet
+        if (!rtMidiOut)
+        {
+            rtMidiOut = rtmidi_out_create_default();
+        }
+
+        return rtMidiOut && rtMidiOut->ok ? rtmidi_get_port_count(rtMidiOut) : 0;
+    }
+
+    /// @brief Retrieves the name of a specified MIDI port.
+    /// @param portIndex The index of the MIDI port for which the name is retrieved.
+    /// @return A pointer to the name of the MIDI port if successful; otherwise, an empty string.
+    const char *GetPortName(uint32_t portIndex)
+    {
+        static thread_local std::string buffer;
+
+        // Only create the RtMidiOut instance if it doesn't exist yet
+        if (!rtMidiOut)
+        {
+            rtMidiOut = rtmidi_out_create_default();
+        }
+
+        if (rtMidiOut)
+        {
+            auto bufLen = 0;
+            rtmidi_get_port_name(rtMidiOut, port, nullptr, &bufLen); // get the required buffer size
+            buffer.resize(bufLen);
+            rtmidi_get_port_name(rtMidiOut, port, buffer.data(), &bufLen);
+
+            if (rtMidiOut->ok)
+            {
+                return buffer.c_str();
+            }
+        }
+
+        buffer.clear();
+
+        return buffer.c_str();
+    }
+
+    /// @brief Sets the MIDI port that will be used when sending MIDI messages.
+    /// @param portIndex The index of the MIDI port to set.
+    /// @return QB_TRUE if the MIDI port was set successfully; otherwise, QB_FALSE.
+    qb_bool SetPort(uint32_t portIndex)
+    {
+        if (portIndex < GetPortCount())
+        {
+            userPort = portIndex;
+
+            return QB_TRUE;
+        }
+
+        return QB_FALSE;
+    }
+
+    /// @brief Retrieves the currently selected MIDI port index.
+    /// @return The current MIDI port index.
+    uint32_t GetPort()
+    {
+        return userPort;
+    }
+
     /// @brief Starts playing a MIDI file from memory.
     /// @param buffer The MIDI file data as a byte array.
     /// @param bufferSize The size of the MIDI file data in bytes.
@@ -64,30 +130,29 @@ public:
     {
         Stop();
 
-        rtMidiOut = rtmidi_out_create_default();
-        if (rtMidiOut && rtMidiOut->ok)
+        if (GetPortCount())
         {
-            if (rtmidi_get_port_count(rtMidiOut) && rtMidiOut->ok)
+            port = userPort;
+            rtmidi_open_port(rtMidiOut, port, "QB64-PE-MIDI-Player"); // TODO: Check this on macOS / Linux
+            if (rtMidiOut->ok)
             {
-                rtmidi_open_port(rtMidiOut, 0, "QB64-PE-MIDI-Player"); // TODO: Check this on macOS / Linux
-                if (rtMidiOut->ok)
+                MIDIOutSysExReset(false);
+
+                smf = fmidi_auto_mem_read(reinterpret_cast<const uint8_t *>(buffer), bufferSize);
+                if (smf)
                 {
-                    MIDIOutSysExReset(false);
-
-                    smf = fmidi_auto_mem_read(reinterpret_cast<const uint8_t *>(buffer), bufferSize);
-                    if (smf)
+                    format = fmidi_mem_identify(reinterpret_cast<const uint8_t *>(buffer), bufferSize);
+                    player = fmidi_player_new(smf);
+                    if (player)
                     {
-                        player = fmidi_player_new(smf);
-                        if (player)
-                        {
-                            totalTime = fmidi_smf_compute_duration(smf);
+                        totalTime = fmidi_smf_compute_duration(smf);
 
-                            fmidi_player_event_callback(player, PlayerEventCallback, this);
-                            fmidi_player_finish_callback(player, PlayerFinishCallback, this);
-                            fmidi_player_start(player);
+                        fmidi_player_event_callback(player, PlayerEventCallback, this);
+                        fmidi_player_finish_callback(player, PlayerFinishCallback, this);
+                        fmidi_player_start(player);
 
-                            midiTimer.SetCallback([this]()
-                                                  {
+                        midiTimer.SetCallback([this]()
+                                              {
                                                     auto now = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
                                                     
                                                     if (haveMIDITick)
@@ -98,12 +163,11 @@ public:
 
                                                     haveMIDITick = true;
                                                     lastMIDITick = now; },
-                                                  std::chrono::milliseconds(TimerInterval));
+                                              std::chrono::milliseconds(TimerInterval));
 
-                            midiTimer.Start();
+                        midiTimer.Start();
 
-                            return QB_TRUE;
-                        }
+                        return QB_TRUE;
                     }
                 }
             }
@@ -117,8 +181,6 @@ public:
     /// @brief Stops MIDI playback if it is currently playing and releases all related resources.
     void Stop()
     {
-        MIDIOutSysExReset(false);
-
         midiTimer.Stop();
 
         fmidi_player_free(player);
@@ -129,8 +191,14 @@ public:
 
         if (rtMidiOut)
         {
-            rtmidi_close_port(rtMidiOut);
+            if (port >= 0)
+            {
+                rtmidi_close_port(rtMidiOut);
+                port = -1;
+            }
+
             rtmidi_out_free(rtMidiOut);
+
             rtMidiOut = nullptr;
         }
 
@@ -139,7 +207,7 @@ public:
         totalTime = 0.0;
         currentTime = 0.0;
         paused = false;
-        volumeDirty = true;
+        volumeDirtyCounter = VolumeDirtyCounterTicks;
     }
 
     /// @brief Checks if the MIDI player is currently playing.
@@ -211,7 +279,7 @@ public:
         if (this->volume != volume)
         {
             this->volume = volume;
-            volumeDirty = true;
+            volumeDirtyCounter = VolumeDirtyCounterTicks;
         }
     }
 
@@ -222,6 +290,34 @@ public:
         return volume;
     }
 
+    /// @brief Seeks the MIDI playback to the specified time position.
+    /// @param time The time position in seconds to seek to.
+    void SeekToTime(double time)
+    {
+        if (player)
+        {
+            fmidi_player_goto_time(player, time);
+        }
+    }
+
+    /// @brief Gets the format of the currently loaded MIDI file.
+    /// @return The format of the currently loaded MIDI file, specified as a null-terminated string.
+    const char *GetFormat()
+    {
+        switch (format)
+        {
+        case fmidi_fileformat_smf:
+            return "Standard MIDI";
+        case fmidi_fileformat_xmi:
+            return "eXtended MIDI";
+        case fmidi_fileformat_mus:
+            return "DMX MIDI";
+        default:
+            return "Unknown";
+        }
+    }
+
+    /// @brief Retrieves the singleton instance of the MIDI player.
     static __MIDIPlayer &Instance()
     {
         static __MIDIPlayer instance;
@@ -229,9 +325,11 @@ public:
     }
 
 private:
-    static constexpr auto TimerInterval = 1; // milliseconds
-    static const auto Channels = 16;
-    static const auto SysExEnd = 0xF7u; // SysEx end byte status code
+    static constexpr auto DefaultPort = 0;              // Default MIDI port number
+    static constexpr auto TimerInterval = 1;            // Timer interval in milliseconds
+    static constexpr auto Channels = 16;                // Number of MIDI channels
+    static constexpr auto SysExEnd = 0xF7u;             // SysEx end byte status code
+    static constexpr auto VolumeDirtyCounterTicks = 10; // Number of MIDI ticks before sending the volume change message
     static constexpr uint8_t SysExResetGM[] = {0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7};
     static constexpr uint8_t SysExResetGM2[] = {0xF0, 0x7E, 0x7F, 0x09, 0x03, 0xF7};
     static constexpr uint8_t SysExResetGS[] = {0xF0, 0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7F, 0x00, 0x41, 0xF7};
@@ -304,7 +402,7 @@ private:
         std::chrono::milliseconds interval;
     };
 
-    __MIDIPlayer() : smf(nullptr), player(nullptr), rtMidiOut(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f), volumeDirty(true) {}
+    __MIDIPlayer() : rtMidiOut(nullptr), port(-1), userPort(DefaultPort), smf(nullptr), player(nullptr), haveMIDITick(false), lastMIDITick(0.0), totalTime(0.0), currentTime(0.0), loops(0), paused(false), volume(1.0f), volumeDirtyCounter(VolumeDirtyCounterTicks), format(fmidi_fileformat_smf) {}
 
     ~__MIDIPlayer()
     {
@@ -432,23 +530,24 @@ private:
 
         if (event->type == fmidi_event_message)
         {
-            if (event->datalen)
+            if (IsSysExEqual(event->data, SysExResetXG))
             {
-                if (IsSysExEqual(event->data, SysExResetXG))
-                {
-                    player->MIDIOutSysExReset(true);
-                }
-                else if (IsSysExReset(event->data))
-                {
-                    player->MIDIOutSysExReset(false);
-                }
-                else
-                {
-                    rtmidi_out_send_message(player->rtMidiOut, event->data, event->datalen);
-                }
+                player->MIDIOutSysExReset(true);
+            }
+            else if (IsSysExReset(event->data))
+            {
+                player->MIDIOutSysExReset(false);
+            }
+            else
+            {
+                rtmidi_out_send_message(player->rtMidiOut, event->data, event->datalen);
             }
 
-            if (player->volumeDirty)
+            if (player->volumeDirtyCounter > 0)
+            {
+                player->volumeDirtyCounter--;
+            }
+            else if (player->volumeDirtyCounter == 0)
             {
                 uint16_t volume = player->volume * 16383; // clamp volume to [0.0, 1.0] and scale volume to 14-bit range
 
@@ -457,7 +556,7 @@ private:
 
                 rtmidi_out_send_message(player->rtMidiOut, msg, sizeof(msg));
 
-                player->volumeDirty = false;
+                player->volumeDirtyCounter--; // push the counter to a negative value to prevent sending the volume change message again
             }
         }
     }
@@ -485,9 +584,11 @@ private:
         }
     }
 
+    RtMidiOutPtr rtMidiOut;
+    int64_t port;
+    uint32_t userPort;
     fmidi_smf_t *smf;
     fmidi_player_t *player;
-    RtMidiOutPtr rtMidiOut;
     Timer midiTimer;
     bool haveMIDITick;
     double lastMIDITick;
@@ -496,12 +597,33 @@ private:
     int32_t loops;
     bool paused;
     float volume;
-    bool volumeDirty;
+    int volumeDirtyCounter;
+    fmidi_fileformat_t format;
 };
 
 const char *MIDI_GetErrorMessage()
 {
     return __MIDIPlayer::Instance().GetErrorMessage();
+}
+
+uint32_t MIDI_GetPortCount()
+{
+    return __MIDIPlayer::Instance().GetPortCount();
+}
+
+const char *MIDI_GetPortName(uint32_t portIndex)
+{
+    return __MIDIPlayer::Instance().GetPortName(portIndex);
+}
+
+qb_bool MIDI_SetPort(uint32_t portIndex)
+{
+    return __MIDIPlayer::Instance().SetPort(portIndex);
+}
+
+uint32_t MIDI_GetPort()
+{
+    return __MIDIPlayer::Instance().GetPort();
 }
 
 inline qb_bool __MIDI_PlayFromMemory(const char *buffer, size_t bufferSize)
@@ -557,4 +679,14 @@ void MIDI_SetVolume(float volume)
 float MIDI_GetVolume()
 {
     return __MIDIPlayer::Instance().GetVolume();
+}
+
+const char *MIDI_GetFormat()
+{
+    return __MIDIPlayer::Instance().GetFormat();
+}
+
+void MIDI_SeekToTime(double time)
+{
+    __MIDIPlayer::Instance().SeekToTime(time);
 }

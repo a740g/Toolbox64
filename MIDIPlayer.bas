@@ -10,8 +10,6 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
-'$DEBUG
-
 'DO
 '    DIM fileName AS STRING: fileName = _OPENFILEDIALOG$("Open MIDI file", , "*.mid|*.midi|*.rmi|*.xmi|*.mus", "MIDI Files")
 '    IF NOT _FILEEXISTS(fileName) THEN EXIT DO
@@ -23,7 +21,8 @@ $INCLUDEONCE
 
 '        DIM k AS LONG
 
-'        PRINT "Playing: "; fileName
+'        PRINT "Port: "; MIDI_GetPortName(MIDI_GetPort)
+'        PRINT "Playing ("; MIDI_GetFormat; "): "; fileName
 
 '        DO
 '            k = _KEYHIT
