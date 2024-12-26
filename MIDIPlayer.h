@@ -146,10 +146,7 @@ public:
     /// @return QB_TRUE if the player is running; QB_FALSE otherwise.
     qb_bool IsPlaying()
     {
-        if (player)
-        {
-            return (loops || currentTime < totalTime) ? QB_TRUE : QB_FALSE;
-        }
+        return (player && (loops || currentTime < totalTime)) ? QB_TRUE : QB_FALSE;
     }
 
     /// @brief Sets the number of times the MIDI playback will loop.
@@ -232,7 +229,7 @@ public:
     }
 
 private:
-    static const auto TimerInterval = 1; // milliseconds
+    static constexpr auto TimerInterval = 1; // milliseconds
     static const auto Channels = 16;
     static const auto SysExEnd = 0xF7u; // SysEx end byte status code
     static constexpr uint8_t SysExResetGM[] = {0xF0, 0x7E, 0x7F, 0x09, 0x01, 0xF7};
