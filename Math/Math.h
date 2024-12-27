@@ -356,6 +356,12 @@ inline float Math_FastInverseSquareRoot(float x)
     return x;
 }
 
+/// @brief Multiply and divide in a single operation, rounding towards zero
+/// @details This is a single operation (no intermediate results), and is more efficient than doing a separate multiplication and division.
+/// @param val The value to multiply and then divide
+/// @param mul The multiplier
+/// @param div The divisor
+/// @return The result of the multiplication and division, rounded towards zero
 inline constexpr int32_t Math_MulDiv(int32_t val, int32_t mul, int32_t div)
 {
     return int32_t((int64_t(val) * mul + (div >> 1)) / div);

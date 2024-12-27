@@ -85,5 +85,5 @@ DECLARE LIBRARY "Math"
     FUNCTION Math_Log2Double# ALIAS "std::log2" (BYVAL n AS DOUBLE)
     FUNCTION Math_CubeRootSingle! ALIAS "std::cbrt" (BYVAL n AS SINGLE)
     FUNCTION Math_CubeRootDouble# ALIAS "std::cbrt" (BYVAL n AS DOUBLE)
-    FUNCTION Math_MulDiv (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
+    FUNCTION Math_MulDiv& (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
 END DECLARE
