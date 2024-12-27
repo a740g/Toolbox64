@@ -140,10 +140,21 @@ public:
     {
         Stop();
 
-        if (GetPortCount())
+        auto ports = GetPortCount();
+
+        if (rtMidiOut || ports)
         {
             port = userPort;
-            rtmidi_open_port(rtMidiOut, port, "QB64-PE-MIDI-Player"); // TODO: Check this on macOS / Linux
+
+            if (ports)
+            {
+                rtmidi_open_port(rtMidiOut, port, "QB64-PE-MIDI-Player");
+            }
+            else
+            {
+                rtmidi_open_virtual_port(rtMidiOut, "QB64-PE-MIDI-Player");
+            }
+
             if (rtMidiOut->ok)
             {
                 MIDIOutSysExReset(false);
