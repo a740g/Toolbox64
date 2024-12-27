@@ -136,7 +136,6 @@ struct MIDIIOContext
     /// @param userData Pointer to user-defined data, expected to be a MIDIIOContext instance.
     static void InputCallback(double timeStamp, const unsigned char *message, size_t messageSize, void *userData)
     {
-        // TODO: This needs to be thread-safe!!!
         auto context = static_cast<MIDIIOContext *>(userData);
         if (context)
         {
