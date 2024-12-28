@@ -318,6 +318,7 @@ qb_bool MIDIIO_OpenPort(ResourceHandleManager<MIDIIOContext>::Handle handle, uin
             if (context->rtMidi->ok)
             {
                 context->port = port;
+
                 return QB_TRUE;
             }
         }
