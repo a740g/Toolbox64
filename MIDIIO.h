@@ -33,6 +33,8 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <memory>
+#include <mutex>
 #include <queue>
 #include <stack>
 
@@ -403,7 +405,7 @@ void MIDIIO_IgnoreMessageTypes(ResourceHandleManager<MIDIIOContext>::Handle hand
 /// @param handle The handle of the MIDIIO context through which the message is to be sent.
 /// @param message Pointer to the MIDI message data.
 /// @param messageSize The size of the MIDI message.
-void MIDIIO_SendMessage(ResourceHandleManager<MIDIIOContext>::Handle handle, const char *message, size_t messageSize)
+inline void __MIDIIO_SendMessage(ResourceHandleManager<MIDIIOContext>::Handle handle, const char *message, size_t messageSize)
 {
     auto context = g_MIDIIOContextManager.GetResource(handle);
     if (context && context->rtMidi)

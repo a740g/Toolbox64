@@ -80,10 +80,11 @@ END FUNCTION
 
 
 SUB MIDI_PlayFromMemory (buffer AS STRING)
-    ' Call _SNDRATE to tell QB64-PE to link in the system audio libraries
-    DIM sink AS LONG: sink = _SNDRATE
+    DIM sink AS LONG: sink = __MIDI_PlayFromMemory(buffer, LEN(buffer))
 
-    sink = __MIDI_PlayFromMemory(buffer, LEN(buffer))
+    EXIT SUB
+
+    sink = _SNDRATE ' This dummy call to _SNDRATE is to tell QB64-PE to link in the system audio libraries.
 END SUB
 
 
