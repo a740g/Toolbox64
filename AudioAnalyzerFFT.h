@@ -130,7 +130,7 @@ private:
     AudioAnalyzerFFT(const AudioAnalyzerFFT &) = delete;
     AudioAnalyzerFFT &operator=(const AudioAnalyzerFFT &) = delete;
 
-    static inline constexpr auto MultiplyShift29(int32_t a, int32_t b)
+    static inline constexpr int32_t MultiplyShift29(int32_t a, int32_t b)
     {
         return int32_t((int64_t(a) * int64_t(b)) >> 29);
     }
@@ -181,7 +181,7 @@ private:
 /// @param sampleIncrement The number to use to get to the next sample in sampleData. For stereo interleaved samples use 2, else 1.
 /// @param bitDepth The bit depth representing the number of samples. So if bitDepth = 9, then samples = 1 << 9 or 512.
 /// @return Returns the average intensity level of the audio signal.
-auto AudioAnalyzerFFT_DoInteger(uint16_t *amplitudeArray, const int16_t *sampleData, int sampleIncrement, int bitDepth)
+float AudioAnalyzerFFT_DoInteger(uint16_t *amplitudeArray, const int16_t *sampleData, int sampleIncrement, int bitDepth)
 {
     return AudioAnalyzerFFT::Instance().DoFFT(amplitudeArray, sampleData, sampleIncrement, bitDepth);
 }
@@ -192,7 +192,7 @@ auto AudioAnalyzerFFT_DoInteger(uint16_t *amplitudeArray, const int16_t *sampleD
 /// @param sampleIncrement The number to use to get to the next sample in sampleData. For stereo interleaved samples use 2, else 1.
 /// @param bitDepth The bit depth representing the number of samples. So if bitDepth = 9, then samples = 1 << 9 or 512.
 /// @return Returns the average intensity level of the audio signal.
-auto AudioAnalyzerFFT_DoSingle(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
+float AudioAnalyzerFFT_DoSingle(uint16_t *amplitudeArray, const float *sampleData, int sampleIncrement, int bitDepth)
 {
     return AudioAnalyzerFFT::Instance().DoFFT(amplitudeArray, sampleData, sampleIncrement, bitDepth);
 }
