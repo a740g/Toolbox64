@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Extended graphics routines
-// Copyright (c) 2024 Samuel Gomes
+// Copyright (c) 2025 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -59,6 +59,7 @@ struct img_struct
     // END apm
 };
 
+// NOTE: These are QB64-PE internal functions and can change at any time!
 extern uint8_t image_get_bgra_red(uint32_t c);
 extern uint8_t image_get_bgra_green(uint32_t c);
 extern uint8_t image_get_bgra_blue(uint32_t c);
@@ -79,54 +80,31 @@ extern int32_t func__alpha32(uint32_t col);
 extern int32_t func__red32(uint32_t col);
 extern int32_t func__green32(uint32_t col);
 extern int32_t func__blue32(uint32_t col);
-
-#else
-struct img_struct;
+extern void pset_and_clip(int32_t x, int32_t y, uint32_t color);
+extern void fast_boxfill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color);
+extern void validatepage(int32_t n);
 #endif
 
-// These are QB64-PE internal structures
+// NOTE: These are QB64-PE internal structures and can change at any time!
 extern img_struct *write_page;
+extern img_struct *read_page;
 extern img_struct *img;
 extern const int32_t *page;
 extern const int32_t nextimg;
 extern const uint8_t charset8x8[256][8][8];
 extern const uint8_t charset8x16[256][16][8];
 
-// These are QB64-PE internal functions
-extern void pset_and_clip(int32_t x, int32_t y, uint32_t color);
-extern void fast_boxfill(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t color);
-extern void validatepage(int32_t n);
-
-/// @brief This is a function pointer type that we'll use to plot "pixels" on graphics as well and "text" surfaces
+/// @brief This is a function pointer type that we'll use to plot "pixels" on graphics as well and "text" surfaces.
 typedef void (*Graphics_SetPixelFunction_)(int32_t x, int32_t y, uint32_t clrAtr);
 
-/// @brief We'll use this internally so that we do not have the overhead of calling _Graphics_SetSetPixelFunction() for every pixel
-Graphics_SetPixelFunction_ Graphics_SetPixel_ = nullptr;
+/// @brief We'll use this internally so that we do not have the overhead of calling _Graphics_SetSetPixelFunction() for every pixel.
+static Graphics_SetPixelFunction_ Graphics_SetPixel_ = nullptr;
 
-/// @brief Internal function for plotting an antialiased pixel (using Xiaolin Wu's algorithm) on a 32-bit graphic surface. This will clip out-of-bounds pixels.
-/// @param wx The x position.
-/// @param wy The y position.
-/// @param clrAtr A 32-bit RGBA color.
-inline void Graphics_SetPixelAA_(float wx, float wy, uint32_t clrAtr)
-{
-    auto x = int(wx);
-    auto y = int(wy);
-    auto fx = wx - x;
-    auto fy = wy - y;
-    auto invFx = 1.0f - fx;
-    auto invFy = 1.0f - fy;
-    auto a = image_get_bgra_alpha(clrAtr);
-    pset_and_clip(x, y, image_set_bgra_alpha(clrAtr, uint8_t(invFx * invFy * a)));
-    pset_and_clip(x + 1, y, image_set_bgra_alpha(clrAtr, uint8_t(fx * invFy * a)));
-    pset_and_clip(x, y + 1, image_set_bgra_alpha(clrAtr, uint8_t(invFx * fy * a)));
-    pset_and_clip(x + 1, y + 1, image_set_bgra_alpha(clrAtr, uint8_t(fx * fy * a)));
-}
-
-/// @brief This is used to plot a text "pixel" on a "text" surface. The pixel is clipped if it is outside bounds
-/// @param x The x position
-/// @param y The y position
-/// @param clrAtr A combination of the ASCII character and the text color attributes
-inline void Graphics_SetTextPixelClipped_(int32_t x, int32_t y, uint32_t clrAtr)
+/// @brief This is used to plot a text "pixel" on a "text" surface. The pixel is clipped if it is outside bounds.
+/// @param x The x position.
+/// @param y The y position.
+/// @param clrAtr A combination of the ASCII character and the text color attributes.
+static inline void Graphics_SetTextPixelClipped_(int32_t x, int32_t y, uint32_t clrAtr)
 {
     auto width = write_page->width;
 
@@ -136,68 +114,111 @@ inline void Graphics_SetTextPixelClipped_(int32_t x, int32_t y, uint32_t clrAtr)
     }
 }
 
-/// @brief This selects the correct "SetPixel" function for later rendering
-inline void Graphics_SelectSetPixelFunction_()
+/// @brief This selects the correct "SetPixel" function for later rendering.
+static inline void Graphics_SelectSetPixelFunction_()
 {
     Graphics_SetPixel_ = write_page->text ? Graphics_SetTextPixelClipped_ : pset_and_clip;
 }
 
-/// @brief Public library function for plotting pixels on text and graphic surfaces. This will clip out-of-bounds pixels
-/// @param x The x position
-/// @param y The y position
-/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Public library function for plotting pixels on text and graphic surfaces. This will clip out-of-bounds pixels.
+/// @param x The x position.
+/// @param y The y position.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 inline void Graphics_DrawPixel(int32_t x, int32_t y, uint32_t clrAtr)
 {
     Graphics_SelectSetPixelFunction_();
     Graphics_SetPixel_(x, y, clrAtr);
 }
 
-/// @brief This plots a pixel on a 32-bit graphic surface. The pixel is clipped if it is outside bounds.
-/// @param wx The x position (floating-point).
-/// @param wy The y position (floating-point).
-/// @param clrAtr A 32-bit RGBA color.
-inline void Graphics_DrawPixelAA(float wx, float wy, uint32_t clrAtr)
+/// @brief  This gets the pixel at the specified x, y position from the current source image or text surface.
+/// @param x The x position.
+/// @param y The y position.
+/// @return The pixel color.
+inline uint32_t Graphics_GetPixel(int32_t x, int32_t y)
 {
-    if (write_page->bits_per_pixel == 32)
+    auto width = read_page->width;
+
+    if (x >= 0 and x < width and y >= 0 and y < read_page->height)
     {
-        Graphics_SetPixelAA_(wx, wy, clrAtr);
+        if (read_page->text)
+        {
+            return *(reinterpret_cast<uint16_t *>(read_page->offset) + width * y + x);
+        }
+        else
+        {
+            if (read_page->bytes_per_pixel == 1)
+            {
+                return read_page->offset[width * y + x] & read_page->mask;
+            }
+            else
+            {
+                return read_page->offset32[width * y + x];
+            }
+        }
     }
+
+    return 0;
 }
 
-/// @brief Makes a character + text attribute pair for text mode images
-/// @param character An ASCII character
-/// @param fColor The foreground color (0 - 15)
-/// @param bColor The background color (0 - 15)
-/// @return A 16-bit text + color attribute pair
+/// @brief Makes a character + text attribute pair for text mode images.
+/// @param character An ASCII character.
+/// @param fColor The foreground color (0 - 15).
+/// @param bColor The background color (0 - 15).
+/// @return A 16-bit text + color attribute pair.
 inline constexpr uint16_t Graphics_MakeTextColorAttribute(uint8_t character, uint8_t fColor, uint8_t bColor)
 {
     return (uint16_t)character | ((((bColor > 7) << 7) | (bColor << 4) | (fColor & 0x0F)) << 8);
 }
 
-/// @brief Makes a character + text attribute pair for text mode images using the _DEFAULTCOLOR and _BACKGROUNDCOLOR
-/// @param character An ASCII character
-/// @return A 16-bit text + color attribute pair
+/// @brief Makes a character + text attribute pair for text mode images using the _DEFAULTCOLOR and _BACKGROUNDCOLOR.
+/// @param character An ASCII character.
+/// @return A 16-bit text + color attribute pair.
 inline uint16_t Graphics_MakeDefaultTextColorAttribute(uint8_t character)
 {
     return (uint16_t)character | ((((write_page->color > 15) << 7) | ((write_page->background_color & 0xFF) << 4) | (write_page->color & 0x0F)) << 8);
 }
 
-/// @brief Sets the foreground color for the current destination image
-/// @param fColor The foreground color (0 - 15 for text mode)
+/// @brief Gets the ASCII character from a text attribute pair.
+/// @param clrAttr A 16-bit text + color attribute pair.
+/// @return The ASCII character.
+inline constexpr uint8_t Graphics_GetTextAttributeCharacter(uint32_t clrAttr)
+{
+    return uint8_t(clrAttr & 0xFF);
+}
+
+/// @brief Gets the foreground color from a text attribute pair.
+/// @param clrAttr A 16-bit text + color attribute pair.
+/// @return The foreground color (0 - 15).
+inline constexpr uint8_t Graphics_GetTextAttributeForegroundColor(uint32_t clrAttr)
+{
+    return uint8_t((clrAttr >> 8) & 0x0F);
+}
+
+/// @brief Gets the background color from a text attribute pair.
+/// @param clrAttr A 16-bit text + color attribute pair.
+/// @return The background color (0 - 15).
+inline constexpr uint8_t Graphics_GetTextAttributeBackgroundColor(uint32_t clrAttr)
+{
+    auto attr = uint8_t(clrAttr >> 8);
+    return ((attr & 0x70) >> 4) | ((attr & 0x80) >> 3);
+}
+
+/// @brief Sets the foreground color for the current destination image.
+/// @param fColor The foreground color (0 - 15 for text mode).
 inline void Graphics_SetForegroundColor(uint32_t fColor)
 {
     write_page->color = write_page->text ? fColor & 0x0F : fColor;
 }
 
-/// @brief Gets the foreground color for the current destination image
-/// @return The foreground color (0 - 15 for text mode)
+/// @brief Gets the foreground color for the current destination image.
+/// @return The foreground color (0 - 15 for text mode).
 inline uint32_t Graphics_GetForegroundColor()
 {
     return write_page->text ? write_page->color & 0x0F : write_page->color;
 }
 
-/// @brief Sets the background color for the current destination image
-/// @param bColor The background color (0 - 15 for text mode)
+/// @brief Sets the background color for the current destination image.
+/// @param bColor The background color (0 - 15 for text mode).
 inline void Graphics_SetBackgroundColor(uint32_t bColor)
 {
     if (write_page->text)
@@ -211,35 +232,43 @@ inline void Graphics_SetBackgroundColor(uint32_t bColor)
     }
 }
 
-/// @brief Gets the background color for the current destination image
-/// @return The background color (0 - 15 for text mode)
+/// @brief Gets the background color for the current destination image.
+/// @return The background color (0 - 15 for text mode).
 inline uint32_t Graphics_GetBackgroundColor()
 {
     return write_page->text ? (write_page->background_color & 0x07) | ((write_page->color > 15) << 3) : write_page->background_color;
 }
 
-/// @brief Draws a horizontal line (works in both text and graphics modes)
-/// @param lx Left x position
-/// @param ty Top y position
-/// @param rx Right x position
-/// @param c A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Draws a horizontal line (works in both text and graphics modes).
+/// @param lx Left x position.
+/// @param ty Top y position.
+/// @param rx Right x position.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t clrAtr)
 {
     // Ensure the starting and ending coordinates are ordered correctly
     if (lx > rx)
+    {
         std::swap(lx, rx);
+    }
 
     // Ensure ty is within the image height
     if (ty < 0 || ty >= write_page->height || lx >= write_page->width || rx < 0)
+    {
         return; // Line is completely outside the image
+    }
 
     // Clip the line to the image boundaries
     if (lx < 0)
+    {
         lx = 0;
+    }
     if (rx >= write_page->width)
+    {
         rx = write_page->width - 1;
+    }
 
-    TOOLBOX64_DEBUG_PRINT("Drawing line segment: (%i, %i) - (%i, %i)", lx, ty, rx, ty);
+    TOOLBOX64_DEBUG_PRINT("Drawing horizontal line segment: (%i, %i) - (%i, %i)", lx, ty, rx, ty);
 
     if (write_page->text)
     {
@@ -256,28 +285,36 @@ void Graphics_DrawHorizontalLine(int32_t lx, int32_t ty, int32_t rx, uint32_t cl
     }
 }
 
-/// @brief Draws a vertical line (works in both text and graphics modes)
-/// @param lx Left x position
-/// @param ty Top y position
-/// @param by Bottom y position
-/// @param c A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Draws a vertical line (works in both text and graphics modes).
+/// @param lx Left x position.
+/// @param ty Top y position.
+/// @param by Bottom y position.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrAtr)
 {
     // Ensure the starting and ending coordinates are ordered correctly
     if (ty > by)
+    {
         std::swap(ty, by);
+    }
 
     // Ensure lx is within the image width
     if (lx < 0 || lx >= write_page->width || ty >= write_page->height || by < 0)
+    {
         return; // Line is completely outside the image
+    }
 
     // Clip the line to the image boundaries
     if (ty < 0)
+    {
         ty = 0;
+    }
     if (by >= write_page->height)
+    {
         by = write_page->height - 1;
+    }
 
-    TOOLBOX64_DEBUG_PRINT("Drawing line segment: (%i, %i) - (%i, %i)", lx, ty, lx, by);
+    TOOLBOX64_DEBUG_PRINT("Drawing vertical line segment: (%i, %i) - (%i, %i)", lx, ty, lx, by);
 
     if (write_page->text)
     {
@@ -298,21 +335,29 @@ void Graphics_DrawVerticalLine(int32_t lx, int32_t ty, int32_t by, uint32_t clrA
     }
 }
 
-/// @brief Draws a rectangle (works in both text and graphics modes)
-/// @param lx Left x position
-/// @param ty Top y position
-/// @param rx Right x position
-/// @param by Bottom y position
-/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Draws a rectangle (works in both text and graphics modes).
+/// @param lx Left x position.
+/// @param ty Top y position.
+/// @param rx Right x position.
+/// @param by Bottom y position.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 void Graphics_DrawRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by, uint32_t clrAtr)
 {
-    // Draw the top and bottom sides. No need to re-order; Graphics_DrawHorizontalLine() will do that
-    Graphics_DrawHorizontalLine(lx, ty, rx, clrAtr);
-    Graphics_DrawHorizontalLine(lx, by, rx, clrAtr);
-
     // Ensure the starting and ending coordinates are ordered correctly
     if (ty > by)
+    {
         std::swap(ty, by);
+    }
+    if (lx > rx)
+    {
+        std::swap(lx, rx);
+    }
+
+    TOOLBOX64_DEBUG_PRINT("Drawing rectangle: (%i, %i) - (%i, %i)", lx, ty, rx, by);
+
+    // Draw the top and bottom sides
+    Graphics_DrawHorizontalLine(lx, ty, rx, clrAtr);
+    Graphics_DrawHorizontalLine(lx, by, rx, clrAtr);
 
     // Avoid re-drawing corners
     ++ty;
@@ -326,33 +371,47 @@ void Graphics_DrawRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by, uint
     }
 }
 
-/// @brief Draws a filled rectangle (works in both text and graphics modes)
-/// @param lx Left x position
-/// @param ty Top y position
-/// @param rx Right x position
-/// @param by Bottom y position
-/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Draws a filled rectangle (works in both text and graphics modes).
+/// @param lx Left x position.
+/// @param ty Top y position.
+/// @param rx Right x position.
+/// @param by Bottom y position.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 void Graphics_DrawFilledRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by, uint32_t clrAtr)
 {
     // Ensure the starting and ending coordinates are ordered correctly
     if (lx > rx)
+    {
         std::swap(lx, rx);
+    }
     if (ty > by)
+    {
         std::swap(ty, by);
+    }
 
     // Leave if rectangle is completely outside the image
     if (lx >= write_page->width || ty >= write_page->height || rx < 0 || by < 0)
+    {
         return;
+    }
 
     // Clip rectangle to image
     if (lx < 0)
+    {
         lx = 0;
+    }
     if (rx >= write_page->width)
+    {
         rx = write_page->width - 1;
+    }
     if (ty < 0)
+    {
         ty = 0;
+    }
     if (by >= write_page->height)
+    {
         by = write_page->height - 1;
+    }
 
     TOOLBOX64_DEBUG_PRINT("Drawing filled rectangle: (%i, %i) - (%i, %i)", lx, ty, rx, ty);
 
@@ -381,13 +440,13 @@ void Graphics_DrawFilledRectangle(int32_t lx, int32_t ty, int32_t rx, int32_t by
     }
 }
 
-/// @brief This is an internal line drawing routine. This does not draw the last pixel and hence can be used to make multi-line shapes
-/// @param x1 Starting position x
-/// @param y1 Starting position y
-/// @param x2 Ending position x
-/// @param y2 Ending position y
-/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
-inline void Graphics_DrawLineInternal_(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t clrAtr)
+/// @brief This is an internal line drawing routine. This does not draw the last pixel and hence can be used to make multi-line shapes.
+/// @param x1 Starting position x.
+/// @param y1 Starting position y.
+/// @param x2 Ending position x.
+/// @param y2 Ending position y.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
+static inline void Graphics_DrawLineInternal_(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t clrAtr)
 {
     bool isVerticalLonger = false;
     int32_t shortDistance = y2 - y1;
@@ -442,17 +501,20 @@ inline void Graphics_DrawLineInternal_(int32_t x1, int32_t y1, int32_t x2, int32
     }
 }
 
-/// @brief Draws a line from x1, y1 to x2, y2 (works in both text and graphics modes)
-/// @param x1 Starting position x
-/// @param y1 Starting position y
-/// @param x2 Ending position x
-/// @param y2 Ending position y
-/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Draws a line from x1, y1 to x2, y2 (works in both text and graphics modes).
+/// @param x1 Starting position x.
+/// @param y1 Starting position y.
+/// @param x2 Ending position x.
+/// @param y2 Ending position y.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t clrAtr)
 {
+    // TODO: See https://lodev.org/cgtutor/lineclipping.html
     // Check if both endpoints of the line are outside the image bounds
     if ((x1 < 0 && x2 < 0) || (x1 >= write_page->width && x2 >= write_page->width) || (y1 < 0 && y2 < 0) || (y1 >= write_page->height && y2 >= write_page->height))
+    {
         return; // Line is completely outside the image
+    }
 
     // Select the correct pixel drawing routine just once
     Graphics_SelectSetPixelFunction_();
@@ -464,16 +526,18 @@ void Graphics_DrawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t 
     Graphics_SetPixel_(x2, y2, clrAtr);
 }
 
-/// @brief Draws a circle (works in both text and graphics modes)
-/// @param x The circles center x position
-/// @param y The circles center y position
-/// @param radius The radius of the circle
-/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color
+/// @brief Draws a circle (works in both text and graphics modes).
+/// @param x The circles center x position.
+/// @param y The circles center y position.
+/// @param radius The radius of the circle.
+/// @param clrAtr A color index for index graphics surfaces or a text color attribute for text surfaces or a 32-bit RGBA color.
 void Graphics_DrawCircle(int32_t x, int32_t y, int32_t radius, uint32_t clrAtr)
 {
     // Clip the circle completely if bounding box is completely off-image
     if (x + radius < 0 || x - radius >= write_page->width || y + radius < 0 || y - radius >= write_page->height)
+    {
         return;
+    }
 
     Graphics_SelectSetPixelFunction_();
 
@@ -533,7 +597,9 @@ void Graphics_DrawFilledCircle(int32_t x, int32_t y, int32_t radius, uint32_t cl
 {
     // Clip the circle completely if bounding box is completely off-image
     if (x + radius < 0 || x - radius >= write_page->width || y + radius < 0 || y - radius >= write_page->height)
+    {
         return;
+    }
 
     // Special case: draw a single pixel if the radius is < zero
     if (radius <= 0)
@@ -894,6 +960,14 @@ void Graphics_DrawFilledTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2,
     }
 }
 
+/// @brief This simply casts a BGRAType to a 32-bit BGRA color.
+/// @param bgra A pointer to a 32-bit BGRAType.
+/// @return A 32-bit BGRA color.
+inline uint32_t Graphics_BGRATypeToBGRA(void *bgra)
+{
+    return (*reinterpret_cast<uint32_t *>(bgra));
+}
+
 /// @brief Makes a RGBA color from RGBA components
 /// @param r Red (0 - 255)
 /// @param g Green (0 - 255)
@@ -956,7 +1030,7 @@ inline constexpr auto Graphics_InterpolateColor(uint32_t colorA, uint32_t colorB
 /// @param colorA The first color.
 /// @param colorB The second color.
 /// @return The distance between the two colors.
-inline auto Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB)
+inline float Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB)
 {
     return image_calculate_rgb_distance(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB), image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
 }
@@ -965,7 +1039,7 @@ inline auto Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB)
 /// @param colorA The first color.
 /// @param colorB The second color.
 /// @return The delta between the two colors.
-inline auto Graphics_GetRGBDelta(uint32_t colorA, uint32_t colorB)
+inline uint32_t Graphics_GetRGBDelta(uint32_t colorA, uint32_t colorB)
 {
     return image_get_color_delta(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB), image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
 }

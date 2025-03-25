@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Extended graphics routines
-' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2025 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
@@ -288,17 +288,15 @@ TYPE BGRAType
     a AS _UNSIGNED _BYTE
 END TYPE
 
-TYPE BGRType
-    b AS _UNSIGNED _BYTE
-    g AS _UNSIGNED _BYTE
-    r AS _UNSIGNED _BYTE
-END TYPE
-
 DECLARE LIBRARY "GraphicOps"
+    FUNCTION Graphics_BGRATypeToBGRA~& (bgra AS BGRAType)
     SUB Graphics_DrawPixel (BYVAL x AS LONG, BYVAL y AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
-    SUB Graphics_DrawPixelAA (BYVAL x as SINGLE, BYVAL y as SINGLE, BYVAL clrAtr AS _UNSIGNED LONG)
+    FUNCTION Graphics_GetPixel~& (BYVAL x AS LONG, BYVAL y AS LONG)
     FUNCTION Graphics_MakeTextColorAttribute~% (BYVAL character AS _UNSIGNED _BYTE, BYVAL fColor AS _UNSIGNED _BYTE, BYVAL bColor AS _UNSIGNED _BYTE)
     FUNCTION Graphics_MakeDefaultTextColorAttribute~% (BYVAL character AS _UNSIGNED _BYTE)
+    FUNCTION Graphics_GetTextAttributeCharacter~%% (BYVAL clrAtr AS _UNSIGNED LONG)
+    FUNCTION Graphics_GetTextAttributeForegroundColor~%% (BYVAL clrAtr AS _UNSIGNED LONG)
+    FUNCTION Graphics_GetTextAttributeBackgroundColor~%% (BYVAL clrAtr AS _UNSIGNED LONG)
     SUB Graphics_SetForegroundColor (BYVAL fColor AS _UNSIGNED LONG)
     FUNCTION Graphics_GetForegroundColor~&
     SUB Graphics_SetBackgroundColor (BYVAL bColor AS _UNSIGNED LONG)

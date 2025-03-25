@@ -60,68 +60,68 @@ $INCLUDEONCE
 'DIM t AS DOUBLE: t = TIMER
 
 'FOR i = 1 TO 100000
-'COLOR 17, 6: _PRINTSTRING (11, 11), "8"
-'Graphics_DrawPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
-'PSET (30, 30), 14
-'Graphics_DrawPixel 30, 30, 14
-'PSET (30, 30), _RGB32(166, 22, 183)
-'Graphics_DrawPixel 30, 30, _RGB32(166, 22, 183)
+'    COLOR 17, 6: _PRINTSTRING (11, 11), "8"
+'    Graphics_DrawPixel 10, 10, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    PSET (30, 30), 14
+'    Graphics_DrawPixel 30, 30, 14
+'    PSET (30, 30), _RGB32(166, 22, 183)
+'    Graphics_DrawPixel 30, 30, _RGB32(166, 22, 183)
 
-'Graphics_DrawHorizontalLine 0, 45, 159, Graphics_MakeTextColorAttribute(56, 1, 14)
-'LINE (0, 240)-(639, 240), 14
-'Graphics_DrawHorizontalLine 0, 240, 639, 14
-'LINE (0, 240)-(639, 240), _RGB32(166, 22, 183)
-'Graphics_DrawHorizontalLine 0, 240, 639, _RGB32(166, 22, 183)
+'    Graphics_DrawHorizontalLine 0, 45, 159, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    LINE (0, 240)-(639, 240), 14
+'    Graphics_DrawHorizontalLine 0, 240, 639, 14
+'    LINE (0, 240)-(639, 240), _RGB32(166, 22, 183)
+'    Graphics_DrawHorizontalLine 0, 240, 639, _RGB32(166, 22, 183)
 
-'Graphics_DrawVerticalLine 80, 0, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-'LINE (320, 0)-(320, 479), 14
-'Graphics_DrawVerticalLine 320, 0, 479, 14
-'LINE (320, 0)-(320, 479), _RGB32(166, 22, 183)
-'Graphics_DrawVerticalLine 320, 0, 479, _RGB32(166, 22, 183)
+'    Graphics_DrawVerticalLine 80, 0, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    LINE (320, 0)-(320, 479), 14
+'    Graphics_DrawVerticalLine 320, 0, 479, 14
+'    LINE (320, 0)-(320, 479), _RGB32(166, 22, 183)
+'    Graphics_DrawVerticalLine 320, 0, 479, _RGB32(166, 22, 183)
 
-'Graphics_DrawLine 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-'LINE (0, 0)-(639, 479), 14
-'Graphics_DrawLine 0, 0, 639, 479, 14
-'LINE (0, 0)-(639, 479), _RGB32(166, 22, 183)
-'Graphics_DrawLine 0, 0, 639, 479, _RGB32(166, 22, 183)
+'    Graphics_DrawLine 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    LINE (0, 0)-(639, 479), 14
+'    Graphics_DrawLine 0, 0, 639, 479, 14
+'    LINE (0, 0)-(639, 479), _RGB32(166, 22, 183)
+'    Graphics_DrawLine 0, 0, 639, 479, _RGB32(166, 22, 183)
 
-'Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-'LINE (0, 0)-(639, 479), 14, B
-'Graphics_DrawRectangle 0, 0, 639, 479, 14
-'LINE (0, 0)-(639, 479), _RGB32(166, 22, 183), B
-'Graphics_DrawRectangle 0, 0, 639, 479, _RGB32(166, 22, 183)
+'    Graphics_DrawRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    LINE (0, 0)-(639, 479), 14, B
+'    Graphics_DrawRectangle 0, 0, 639, 479, 14
+'    LINE (0, 0)-(639, 479), _RGB32(166, 22, 183), B
+'    Graphics_DrawRectangle 0, 0, 639, 479, _RGB32(166, 22, 183)
 
-'Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
-'LINE (0, 0)-(639, 479), 14, BF
-'Graphics_DrawFilledRectangle 0, 0, 639, 479, 14
-'LINE (0, 0)-(639, 479), _RGB32(166, 22, 183), BF
-'Graphics_DrawFilledRectangle 0, 0, 639, 479, _RGB32(166, 22, 183)
+'    Graphics_DrawFilledRectangle 0, 0, 159, 89, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    LINE (0, 0)-(639, 479), 14, BF
+'    Graphics_DrawFilledRectangle 0, 0, 639, 479, 14
+'    LINE (0, 0)-(639, 479), _RGB32(166, 22, 183), BF
+'    Graphics_DrawFilledRectangle 0, 0, 639, 479, _RGB32(166, 22, 183)
 
-'Graphics_DrawCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
-'CIRCLE (320, 240), 200, 14
-'Graphics_DrawCircle 320, 240, 200, 14
-'CIRCLE (320, 240), 200, _RGB32(166, 22, 183)
-'Graphics_DrawCircle 320, 240, 200, _RGB32(166, 22, 183)
+'    Graphics_DrawCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    CIRCLE (320, 240), 200, 14
+'    Graphics_DrawCircle 320, 240, 200, 14
+'    CIRCLE (320, 240), 200, _RGB32(166, 22, 183)
+'    Graphics_DrawCircle 320, 240, 200, _RGB32(166, 22, 183)
 
-'Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
-'Graphics_DrawFilledCircle 320, 240, 200, 14
-'Graphics_DrawFilledCircle 320, 240, 200, _RGB32(166, 22, 183)
+'    Graphics_DrawFilledCircle 80, 45, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    Graphics_DrawFilledCircle 320, 240, 200, 14
+'    Graphics_DrawFilledCircle 320, 240, 200, _RGB32(166, 22, 183)
 
-'Graphics_DrawEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
-'Graphics_DrawEllipse 320, 240, 300, 200, 14
-'Graphics_DrawEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
+'    Graphics_DrawEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    Graphics_DrawEllipse 320, 240, 300, 200, 14
+'    Graphics_DrawEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
 
-'Graphics_DrawFilledEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
-'Graphics_DrawFilledEllipse 320, 240, 300, 200, 14
-'Graphics_DrawFilledEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
+'    Graphics_DrawFilledEllipse 80, 45, 60, 40, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    Graphics_DrawFilledEllipse 320, 240, 300, 200, 14
+'    Graphics_DrawFilledEllipse 320, 240, 300, 200, _RGB32(166, 22, 183)
 
-'Graphics_DrawTriangle 2, 2, 14, 88, 158, 80, Graphics_MakeTextColorAttribute(56, 1, 14)
-'Graphics_DrawTriangle 20, 10, 70, 469, 629, 469, 14
-'Graphics_DrawTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
+'    Graphics_DrawTriangle 2, 2, 14, 88, 158, 80, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    Graphics_DrawTriangle 20, 10, 70, 469, 629, 469, 14
+'    Graphics_DrawTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
 
-'Graphics_DrawFilledTriangle 2, 2, 14, 88, 158, 80, Graphics_MakeTextColorAttribute(56, 1, 14)
-'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, 14
-'Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
+'    Graphics_DrawFilledTriangle 2, 2, 14, 88, 158, 80, Graphics_MakeTextColorAttribute(56, 1, 14)
+'    Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, 14
+'    Graphics_DrawFilledTriangle 20, 10, 70, 469, 629, 469, _RGB32(166, 22, 183)
 'NEXT
 
 'PRINT USING "###.### seconds to complete."; TIMER - t#
@@ -162,7 +162,7 @@ $INCLUDEONCE
 '    _LIMIT 60
 'LOOP UNTIL _KEYHIT = 27
 
-'Graphics_FadeScreen TRUE, 60, 100
+'Graphics_FadeScreen _TRUE, 60, 100
 
 'END
 '-----------------------------------------------------------------------------------------------------------------------
