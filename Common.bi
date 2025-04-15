@@ -5,24 +5,26 @@
 
 $INCLUDEONCE
 
-$IF VERSION < 4.0.0 THEN
+$IF VERSION < 4.1.0 THEN
     $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
 $END IF
 
-' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64.
-_DEFINE A-Z AS LONG
+$IF TOOLBOX64_RELAXED = UNDEFINED THEN
+    ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64.
+    _DEFINE A-Z AS LONG
 
-' Force all arrays to be defined (technically not required, since we use _EXPLICIT below).
-OPTION _EXPLICITARRAY
+    ' Force all arrays to be defined (technically not required, since we use _EXPLICIT below).
+    OPTION _EXPLICITARRAY
 
-' Force all variables to be defined.
-OPTION _EXPLICIT
+    ' Force all variables to be defined.
+    OPTION _EXPLICIT
 
-' All arrays should be static. If dynamic arrays are required, then use "REDIM".
-'$STATIC
+    ' All arrays should be static. If dynamic arrays are required, then use "REDIM".
+    '$STATIC
 
-' Start array lower bound from 1. If 0 is required, then use the syntax [RE]DIM (0 To {X}) AS {TYPE}.
-OPTION BASE 1
+    ' Start array lower bound from 1. If 0 is required, then use the syntax [RE]DIM (0 To {X}) AS {TYPE}.
+    OPTION BASE 1
+$END IF
 
 ' These constants should be move to their appropriate files later.
 
@@ -154,4 +156,5 @@ DECLARE LIBRARY "Common"
     FUNCTION Compiler_GetDate$
     FUNCTION Compiler_GetTime$
     FUNCTION Compiler_GetFunctionName$
+    FUNCTION Compiler_GetPrettyFunctionName$
 END DECLARE

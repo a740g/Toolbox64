@@ -24,12 +24,14 @@ END DECLARE
 '-------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-------------------------------------------------------------------------------------------------------------------
-'$DEBUG
 '$CONSOLE:ONLY
 
 'PRINT Compiler_GetDate
 'PRINT Compiler_GetTime
-'PRINT Compiler_GetFunctionName
+'PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
+
+'Foo 123
+'PRINT Bar(321)
 
 'PRINT CBool(0)
 'PRINT CBool(1)
@@ -41,4 +43,14 @@ END DECLARE
 'PRINT CString(_OFFSET(s))
 
 'END
+
+'SUB Foo (alpha AS LONG)
+'    PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
+'    PRINT alpha
+'END SUB
+
+'FUNCTION Bar (beta AS LONG)
+'    Bar = beta
+'    PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
+'END FUNCTION
 '-------------------------------------------------------------------------------------------------------------------
