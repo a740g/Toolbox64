@@ -44,28 +44,28 @@ $INCLUDEONCE
 ' Initializes library global variables and tables and then sets the init flag to true
 SUB ANSI_InitializeEmulator
     SHARED __ANSIEmu AS __ANSIEmulatorType
-    SHARED __ANSIColorLUT() AS BGRType
+    SHARED __ANSIColorLUT() AS BGRAType
     SHARED __ANSIArg() AS LONG
 
     IF __ANSIEmu.isInitialized THEN EXIT SUB ' leave if we have already initialized
 
     ' The first 16 are the standard 16 ANSI colors (matches QB64's VGA palette but with different color indices!)
-    __ANSIColorLUT(0).r = 0: __ANSIColorLUT(0).g = 0: __ANSIColorLUT(0).b = 0 '          0:  _RGB32(0,   0,   0)   (black)
-    __ANSIColorLUT(1).r = 170: __ANSIColorLUT(1).g = 0: __ANSIColorLUT(1).b = 0 '        1:  _RGB32(170, 0,   0)   (red)
-    __ANSIColorLUT(2).r = 0: __ANSIColorLUT(2).g = 170: __ANSIColorLUT(2).b = 0 '        2:  _RGB32(0,   170, 0)   (green)
-    __ANSIColorLUT(3).r = 170: __ANSIColorLUT(3).g = 85: __ANSIColorLUT(3).b = 0 '       3:  _RGB32(170, 85,  0)   (brown)
-    __ANSIColorLUT(4).r = 0: __ANSIColorLUT(4).g = 0: __ANSIColorLUT(4).b = 170 '        4:  _RGB32(0,   0,   170) (blue)
-    __ANSIColorLUT(5).r = 170: __ANSIColorLUT(5).g = 0: __ANSIColorLUT(5).b = 170 '      5:  _RGB32(170, 0,   170) (magenta)
-    __ANSIColorLUT(6).r = 0: __ANSIColorLUT(6).g = 170: __ANSIColorLUT(6).b = 170 '      6:  _RGB32(0,   170, 170) (cyan)
-    __ANSIColorLUT(7).r = 170: __ANSIColorLUT(7).g = 170: __ANSIColorLUT(7).b = 170 '    7:  _RGB32(170, 170, 170) (white)
-    __ANSIColorLUT(8).r = 85: __ANSIColorLUT(8).g = 85: __ANSIColorLUT(8).b = 85 '       8:  _RGB32(85,  85,  85)  (grey)
-    __ANSIColorLUT(9).r = 255: __ANSIColorLUT(9).g = 85: __ANSIColorLUT(9).b = 85 '      9:  _RGB32(255, 85,  85)  (bright red)
-    __ANSIColorLUT(10).r = 85: __ANSIColorLUT(10).g = 255: __ANSIColorLUT(10).b = 85 '   10: _RGB32(85,  255, 85)  (bright green)
-    __ANSIColorLUT(11).r = 255: __ANSIColorLUT(11).g = 255: __ANSIColorLUT(11).b = 85 '  11: _RGB32(255, 255, 85)  (bright yellow)
-    __ANSIColorLUT(12).r = 85: __ANSIColorLUT(12).g = 85: __ANSIColorLUT(12).b = 255 '   12: _RGB32(85,  85,  255) (bright blue)
-    __ANSIColorLUT(13).r = 255: __ANSIColorLUT(13).g = 85: __ANSIColorLUT(13).b = 255 '  13: _RGB32(255, 85,  255) (bright magenta)
-    __ANSIColorLUT(14).r = 85: __ANSIColorLUT(14).g = 255: __ANSIColorLUT(14).b = 255 '  14: _RGB32(85,  255, 255) (bright cyan)
-    __ANSIColorLUT(15).r = 255: __ANSIColorLUT(15).g = 255: __ANSIColorLUT(15).b = 255 ' 15: _RGB32(255, 255, 255) (bright white)
+    __ANSIColorLUT(0).r = 0: __ANSIColorLUT(0).g = 0: __ANSIColorLUT(0).b = 0: __ANSIColorLUT(0).a = 255 '            0: _RGB32(0,   0,   0)   (black)
+    __ANSIColorLUT(1).r = 170: __ANSIColorLUT(1).g = 0: __ANSIColorLUT(1).b = 0: __ANSIColorLUT(1).a = 255 '          1: _RGB32(170, 0,   0)   (red)
+    __ANSIColorLUT(2).r = 0: __ANSIColorLUT(2).g = 170: __ANSIColorLUT(2).b = 0: __ANSIColorLUT(2).a = 255 '          2: _RGB32(0,   170, 0)   (green)
+    __ANSIColorLUT(3).r = 170: __ANSIColorLUT(3).g = 85: __ANSIColorLUT(3).b = 0: __ANSIColorLUT(3).a = 255 '         3: _RGB32(170, 85,  0)   (brown)
+    __ANSIColorLUT(4).r = 0: __ANSIColorLUT(4).g = 0: __ANSIColorLUT(4).b = 170: __ANSIColorLUT(4).a = 255 '          4: _RGB32(0,   0,   170) (blue)
+    __ANSIColorLUT(5).r = 170: __ANSIColorLUT(5).g = 0: __ANSIColorLUT(5).b = 170: __ANSIColorLUT(5).a = 255 '        5: _RGB32(170, 0,   170) (magenta)
+    __ANSIColorLUT(6).r = 0: __ANSIColorLUT(6).g = 170: __ANSIColorLUT(6).b = 170: __ANSIColorLUT(6).a = 255 '        6: _RGB32(0,   170, 170) (cyan)
+    __ANSIColorLUT(7).r = 170: __ANSIColorLUT(7).g = 170: __ANSIColorLUT(7).b = 170: __ANSIColorLUT(7).a = 255 '      7: _RGB32(170, 170, 170) (white)
+    __ANSIColorLUT(8).r = 85: __ANSIColorLUT(8).g = 85: __ANSIColorLUT(8).b = 85: __ANSIColorLUT(8).a = 255 '         8: _RGB32(85,  85,  85)  (grey)
+    __ANSIColorLUT(9).r = 255: __ANSIColorLUT(9).g = 85: __ANSIColorLUT(9).b = 85: __ANSIColorLUT(9).a = 255 '        9: _RGB32(255, 85,  85)  (bright red)
+    __ANSIColorLUT(10).r = 85: __ANSIColorLUT(10).g = 255: __ANSIColorLUT(10).b = 85: __ANSIColorLUT(10).a = 255 '   10: _RGB32(85,  255, 85)  (bright green)
+    __ANSIColorLUT(11).r = 255: __ANSIColorLUT(11).g = 255: __ANSIColorLUT(11).b = 85: __ANSIColorLUT(11).a = 255 '  11: _RGB32(255, 255, 85)  (bright yellow)
+    __ANSIColorLUT(12).r = 85: __ANSIColorLUT(12).g = 85: __ANSIColorLUT(12).b = 255: __ANSIColorLUT(12).a = 255 '   12: _RGB32(85,  85,  255) (bright blue)
+    __ANSIColorLUT(13).r = 255: __ANSIColorLUT(13).g = 85: __ANSIColorLUT(13).b = 255: __ANSIColorLUT(13).a = 255 '  13: _RGB32(255, 85,  255) (bright magenta)
+    __ANSIColorLUT(14).r = 85: __ANSIColorLUT(14).g = 255: __ANSIColorLUT(14).b = 255: __ANSIColorLUT(14).a = 255 '  14: _RGB32(85,  255, 255) (bright cyan)
+    __ANSIColorLUT(15).r = 255: __ANSIColorLUT(15).g = 255: __ANSIColorLUT(15).b = 255: __ANSIColorLUT(15).a = 255 ' 15: _RGB32(255, 255, 255) (bright white)
 
     ' The next 216 colors (16 - 231) are formed by a 3bpc RGB value offset by 16
     DIM AS LONG c, i
@@ -78,6 +78,8 @@ SUB ANSI_InitializeEmulator
 
         i = ((c - 16) \ 1) MOD 6
         IF i = 0 THEN __ANSIColorLUT(c).b = 0 ELSE __ANSIColorLUT(c).b = (14135 + 10280 * i) \ 256
+
+        __ANSIColorLUT(c).a = 255
     NEXT
 
     ' The final 24 colors (232 - 255) are grayscale starting from a shade slighly lighter than black, ranging up to shade slightly darker than white
@@ -86,6 +88,7 @@ SUB ANSI_InitializeEmulator
         __ANSIColorLUT(c).r = i
         __ANSIColorLUT(c).g = i
         __ANSIColorLUT(c).b = i
+        __ANSIColorLUT(c).a = 255
     NEXT
 
     REDIM __ANSIArg(1 TO UBOUND(__ANSIArg)) AS LONG ' reset the CSI arg list
@@ -666,7 +669,7 @@ END SUB
 
 ' Set the foreground or background color
 SUB ANSI_SetTextCanvasColor (c AS _UNSIGNED LONG, isBackground AS LONG, isLegacy AS LONG)
-    SHARED __ANSIColorLUT() AS BGRType
+    SHARED __ANSIColorLUT() AS BGRAType
 
     DIM nRGB AS _UNSIGNED LONG
 

@@ -74,5 +74,5 @@ TYPE __ANSIEmulatorType
 END TYPE
 
 DIM __ANSIEmu AS __ANSIEmulatorType ' emulator state
-DIM __ANSIColorLUT(0 TO 255) AS BGRType ' this table is used to get the RGB for legacy ANSI colors
+DIM __ANSIColorLUT(0 TO 255) AS BGRAType ' this table is used to get the RGB for legacy ANSI colors
 REDIM __ANSIArg(1 TO __ANSI_ARG_COUNT) AS LONG ' CSI dynamic argument list
