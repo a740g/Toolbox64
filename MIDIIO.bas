@@ -10,32 +10,32 @@ $INCLUDEONCE
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-----------------------------------------------------------------------------------------------------------------------
-'$CONSOLE
+' $CONSOLE
 
-'DIM message_types(255) AS STRING
-'message_types(&H90) = "NOTE ON"
-'message_types(&H80) = "NOTE OFF"
-'message_types(&HB0) = "CONTROL CHANGE"
-'message_types(&HC0) = "PROGRAM CHANGE"
-'message_types(&HE0) = "PITCH BEND"
-'message_types(&HF0) = "SYSTEM EXCLUSIVE"
-'message_types(&HF7) = "END OF SYSTEM EXCLUSIVE"
-'message_types(&HFF) = "META EVENT"
-'message_types(&HFE) = "ACTIVE SENSING"
-'message_types(&HF8) = "TIMING CLOCK"
-'message_types(&HFA) = "START"
-'message_types(&HFB) = "CONTINUE"
-'message_types(&HFC) = "STOP"
-'message_types(&HFF) = "META EVENT"
-'message_types(&HF1) = "MIDI TIME CODE"
-'message_types(&HF2) = "SONG POSITION POINTER"
-'message_types(&HF3) = "SONG SELECT"
-'message_types(&HF6) = "TUNE REQUEST"
+' DIM message_types(255) AS STRING
+' message_types(&H90) = "NOTE ON"
+' message_types(&H80) = "NOTE OFF"
+' message_types(&HB0) = "CONTROL CHANGE"
+' message_types(&HC0) = "PROGRAM CHANGE"
+' message_types(&HE0) = "PITCH BEND"
+' message_types(&HF0) = "SYSTEM EXCLUSIVE"
+' message_types(&HF7) = "END OF SYSTEM EXCLUSIVE"
+' message_types(&HFF) = "META EVENT"
+' message_types(&HFE) = "ACTIVE SENSING"
+' message_types(&HF8) = "TIMING CLOCK"
+' message_types(&HFA) = "START"
+' message_types(&HFB) = "CONTINUE"
+' message_types(&HFC) = "STOP"
+' message_types(&HFF) = "META EVENT"
+' message_types(&HF1) = "MIDI TIME CODE"
+' message_types(&HF2) = "SONG POSITION POINTER"
+' message_types(&HF3) = "SONG SELECT"
+' message_types(&HF6) = "TUNE REQUEST"
 
-'DIM hIn AS LONG: hIn = MIDIIO_Create(_TRUE)
-'DIM hOut AS LONG: hOut = MIDIIO_Create(_FALSE)
+' DIM hIn AS LONG: hIn = MIDIIO_Create(_TRUE)
+' DIM hOut AS LONG: hOut = MIDIIO_Create(_FALSE)
 
-'IF hIn > 0 THEN
+' IF hIn > 0 THEN
 '    DIM ports AS _UNSIGNED LONG: ports = MIDIIO_GetPortCount(hIn)
 '    IF ports THEN
 '        DIM i AS _UNSIGNED LONG
@@ -63,7 +63,11 @@ $INCLUDEONCE
 '                    SELECT CASE code$
 '                        CASE "90", "80"
 '                            PRINT " NOTE #: "; _TOSTR$(ASC(message, 2));
-'                            PRINT " VELOCITY: "; _TOSTR$(ASC(message, 3));
+'                            IF LEN(message) = 3 THEN
+'                                PRINT " VELOCITY: "; _TOSTR$(ASC(message, 3));
+'                            ELSE
+'                                PRINT " VELOCITY: 0";
+'                            END IF
 '                        CASE "B0"
 '                            IF LEN(message) = 3 THEN
 '                                PRINT " CONTROLLER #: "; _TOSTR$(ASC(message, 2));
@@ -96,9 +100,9 @@ $INCLUDEONCE
 '    END IF
 '    MIDIIO_Delete hOut
 '    MIDIIO_Delete hIn
-'END IF
+' END IF
 
-'END
+' END
 '-----------------------------------------------------------------------------------------------------------------------
 
 SUB MIDIIO_SendMessage (handle AS LONG, message AS STRING)
