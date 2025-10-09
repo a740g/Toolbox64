@@ -7,7 +7,7 @@
 
 #include <cstdio>
 
-void __StandardIO_Write(const char *text)
+inline void __StandardIO_Write(const char *text)
 {
     std::fputs(text, stdout);
 }
