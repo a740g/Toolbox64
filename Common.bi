@@ -5,11 +5,11 @@
 
 $INCLUDEONCE
 
-$IF VERSION < 4.1.0 THEN
+$IF VERSION < 4.2.0 THEN
     $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
 $END IF
 
-$IF TOOLBOX64_RELAXED = UNDEFINED THEN
+$IF TOOLBOX64_STRICT = DEFINED AND TOOLBOX64_STRICT = TRUE THEN
     ' All identifiers must default to long (32-bits). This results in fastest code execution on x86 & x64.
     _DEFINE A-Z AS LONG
 

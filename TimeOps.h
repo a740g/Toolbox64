@@ -20,7 +20,7 @@ uint32_t Time_GetHertz()
 
     uint64_t currentTime = GetTicks();
 
-    if (currentTime >= lastTime + 1000)
+    if (currentTime - lastTime >= 1000)
     {
         lastTime = currentTime;
         finalFPS = counter;
