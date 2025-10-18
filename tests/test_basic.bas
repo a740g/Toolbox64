@@ -2,7 +2,7 @@ $LET TOOLBOX64_STRICT = TRUE
 '$INCLUDE:'../Debug/Test.bi'
 $CONSOLE:ONLY
 
-'$INCLUDE:'../HashTable.bi'
+'$INCLUDE:'../DS/HashTable.bi'
 '$INCLUDE:'../Pathname.bi'
 '$INCLUDE:'../StringFile.bi'
 '$INCLUDE:'../Math/Math.bi'
@@ -36,7 +36,7 @@ END SUB
 
 SUB Test_Hash
     CONST TEST_LB = 0
-    CONST TEST_UB = 9999999
+    CONST TEST_UB = 999999
 
     DIM myHashTable AS _UNSIGNED _OFFSET: myHashTable = HashTable_Create
 
@@ -81,6 +81,10 @@ SUB Test_Hash
     FOR i = TEST_LB TO TEST_UB
         HashTable_SetLong myHashTable, i, myarray(i)
     NEXT
+
+    TEST_CASE_BEGIN "HashTable: Size"
+    TEST_REQUIRE HashTable_GetSize(myHashTable) = TEST_UB + 1, "HashTable_GetSize(myHashTable) = TEST_UB + 1"
+    TEST_CASE_END
 
     TEST_CASE_BEGIN "HashTable: Lookup test"
     DIM lookupFailed AS _BYTE
@@ -361,4 +365,5 @@ END SUB
 
 '$INCLUDE:'../StringFile.bas'
 '$INCLUDE:'../Pathname.bas'
+'$INCLUDE:'../DS/HashTable.bas'
 '$INCLUDE:'../Debug/Test.bas'

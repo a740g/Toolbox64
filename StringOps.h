@@ -13,6 +13,8 @@
 #include <cstdio>
 #include <regex>
 
+constexpr auto String_Empty = "";
+
 /// @brief Used for formatting strings.
 /// @tparam T The type of the value to format.
 /// @param value The value to format.
