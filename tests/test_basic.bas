@@ -122,13 +122,13 @@ SUB Test_Pathname
     TEST_CHECK_FALSE Pathname_IsAbsolute(""), "Pathname_IsAbsolute('')"
 
     $IF WINDOWS THEN
-        TEST_CHECK Pathname_FixDirectoryName("Windows") = "Windows\", "Pathname_FixDirectoryName('Windows')"
+        TEST_CHECK Pathname_AddDirectorySeparator("Windows") = "Windows\", "Pathname_AddDirectorySeparator('Windows')"
     $ELSE
-        TEST_CHECK Pathname_FixDirectoryName("Windows") = "Windows/", "Pathname_FixDirectoryName('Windows')"
+        TEST_CHECK Pathname_AddDirectorySeparator("Windows") = "Windows/", "Pathname_AddDirectorySeparator('Windows')"
     $END IF
 
-    TEST_CHECK Pathname_FixDirectoryName("Windows/") = "Windows/", "Pathname_FixDirectoryName('Windows/')"
-    TEST_CHECK Pathname_FixDirectoryName("") = "", "Pathname_FixDirectoryName('')"
+    TEST_CHECK Pathname_AddDirectorySeparator("Windows/") = "Windows/", "Pathname_AddDirectorySeparator('Windows/')"
+    TEST_CHECK Pathname_AddDirectorySeparator("") = "", "Pathname_AddDirectorySeparator('')"
 
     $IF WINDOWS THEN
         TEST_CHECK Pathname_FixDirectorySeparators("C:/Windows\\") = "C:\Windows\\", "Pathname_FixDirectorySeparators('C:/Windows\\')"
@@ -163,8 +163,8 @@ SUB Test_Pathname
     TEST_CHECK Pathname_GetDriveOrScheme("C:\\Windows\\") = "C:", "Pathname_GetDriveOrScheme('C:\\Windows\\')"
     TEST_CHECK Pathname_GetDriveOrScheme("") = "", "Pathname_GetDriveOrScheme('')"
 
-    TEST_CHECK Pathname_MakeLegalFileName("<abracadabra.txt/>") = "_abracadabra.txt__", "Pathname_MakeLegalFileName('<abracadabra.txt/>')"
-    TEST_CHECK Pathname_MakeLegalFileName("") = "", "Pathname_MakeLegalFileName('')"
+    TEST_CHECK Pathname_Sanitize("<abracadabra.txt/>") = "_abracadabra.txt__", "Pathname_Sanitize('<abracadabra.txt/>')"
+    TEST_CHECK Pathname_Sanitize("") = "", "Pathname_Sanitize('')"
 
     TEST_CASE_END
 END SUB

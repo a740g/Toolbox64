@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' A simple hash table for various types of values
-' Copyright (c) 2024 Samuel Gomes
+' C++ unordered map wrapper library for QB64-PE
+' Copyright (c) 2025 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
