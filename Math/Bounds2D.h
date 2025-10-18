@@ -7,7 +7,7 @@
 
 #include "Vector2D.h"
 
-struct BoundsD
+struct Bounds2D
 {
     Vector2D lt;
     Vector2D rb;

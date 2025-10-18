@@ -644,7 +644,9 @@ SUB AudioAnalyzer_RenderCircleWaves (w AS LONG, h AS LONG, channel AS _UNSIGNED 
             __AudioAnalyzer_CircleWaves(channel, i).c.b = Math_GetRandomBetween(0, 128)
         END IF
 
-        Graphics_DrawFilledCircle __AudioAnalyzer_CircleWaves(channel, i).p.x, __AudioAnalyzer_CircleWaves(channel, i).p.y, __AudioAnalyzer_CircleWaves(channel, i).r + __AudioAnalyzer_CircleWaves(channel, i).r * __AudioAnalyzer_IntensityBuffer(channel) * __AudioAnalyzer.circleWaveRadiusMultiplier, Graphics_MakeBGRA(__AudioAnalyzer_CircleWaves(channel, i).c.r, __AudioAnalyzer_CircleWaves(channel, i).c.g, __AudioAnalyzer_CircleWaves(channel, i).c.b, 255! * __AudioAnalyzer_CircleWaves(channel, i).a)
+        __AudioAnalyzer_CircleWaves(channel, i).c.a = 255! * __AudioAnalyzer_CircleWaves(channel, i).a
+
+        Graphics_DrawFilledCircle __AudioAnalyzer_CircleWaves(channel, i).p.x, __AudioAnalyzer_CircleWaves(channel, i).p.y, __AudioAnalyzer_CircleWaves(channel, i).r + __AudioAnalyzer_CircleWaves(channel, i).r * __AudioAnalyzer_IntensityBuffer(channel) * __AudioAnalyzer.circleWaveRadiusMultiplier, Graphics_BGRATypeToBGRA(__AudioAnalyzer_CircleWaves(channel, i).c)
     NEXT i
 
     VIEW

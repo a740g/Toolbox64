@@ -132,12 +132,6 @@ TYPE Vector2LType
     y AS LONG
 END TYPE
 
-' A simple floating-point 2D vector.
-TYPE Vector2FType
-    x AS SINGLE
-    y AS SINGLE
-END TYPE
-
 ' A simple integer 2D vector.
 TYPE Vector3LType
     x AS LONG

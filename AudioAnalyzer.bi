@@ -10,6 +10,7 @@ $INCLUDEONCE
 '$INCLUDE:'PointerOps.bi'
 '$INCLUDE:'BitwiseOps.bi'
 '$INCLUDE:'Math/Math.bi'
+'$INCLUDE:'Math/Vector2D.bi'
 '$INCLUDE:'StringOps.bi'
 '$INCLUDE:'GraphicOps.bi'
 '$INCLUDE:'AudioAnalyzerFFT.bi'
@@ -51,10 +52,10 @@ TYPE __AudioAnalyzer_StarType
 END TYPE
 
 TYPE __AudioAnalyzer_CircleWaveType
-    p AS Vector2FType ' position
-    v AS Vector2FType ' velocity
+    p AS Vector2DType ' position
+    v AS Vector2DType ' velocity
     r AS SINGLE ' radius
-    c AS BGRType ' color
+    c AS BGRAType ' color
     a AS SINGLE ' alpha (0.0 - 1.0)
     s AS SINGLE ' fade speed
 END TYPE

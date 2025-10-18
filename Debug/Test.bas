@@ -7,43 +7,6 @@ $INCLUDEONCE
 
 '$INCLUDE:'Test.bi'
 
-'-----------------------------------------------------------------------------------------------------------------------
-' TEST CODE
-'-----------------------------------------------------------------------------------------------------------------------
-'TEST_BEGIN_ALL
-
-'TEST_CASE_BEGIN "Arithmetic (inline)"
-'TEST_CHECK 1 + 1 = 2, "1 + 1 = 2"
-'TEST_REQUIRE 2 * 3 = 6, "2 * 3 = 6"
-'TEST_CHECK2 5 / 2 = 2 ', "(5 / 2) = 2"
-'TEST_CASE_END
-
-'TEST_CASE_BEGIN "Arithmetic (in SUB)"
-'Test_Arithmetic
-'TEST_CASE_END
-
-'TEST_CASE_BEGIN "Booleans"
-'Test_Booleans
-'TEST_CASE_END
-
-'TEST_END_ALL
-
-'END
-
-'SUB Test_Arithmetic
-'    TEST_REQUIRE 10 - 3 = 7, "10 - 3 = 7"
-'    IF TEST_ABORTED THEN EXIT SUB
-
-'    TEST_CHECK 2 + 2 = 4, "2 + 2 = 4"
-'    TEST_CHECK 2 + 2 = 5, "2 + 2 = 5"
-'END SUB
-
-'SUB Test_Booleans
-'    TEST_REQUIRE_FALSE2 1 = 2 ', "1 = 2"
-'    TEST_CHECK_FALSE 3 = 4, "3 = 4"
-'END SUB
-'-----------------------------------------------------------------------------------------------------------------------
-
 SUB TEST_BEGIN_ALL
     SHARED __TestState AS __TestStateType
 

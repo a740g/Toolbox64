@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // 2D Vector routines
-// Copyright (c) 2024 Samuel Gomes
+// Copyright (c) 2025 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -29,8 +29,7 @@ inline void Vector2D_Initialize(float x, float y, void *dst)
 
 inline void Vector2D_Assign(const void *src, void *dst)
 {
-    reinterpret_cast<Vector2D *>(dst)->x = reinterpret_cast<const Vector2D *>(src)->x;
-    reinterpret_cast<Vector2D *>(dst)->y = reinterpret_cast<const Vector2D *>(src)->y;
+    *reinterpret_cast<Vector2D *>(dst) = *reinterpret_cast<const Vector2D *>(src);
 }
 
 inline auto constexpr Vector2D_IsNull(const void *src)

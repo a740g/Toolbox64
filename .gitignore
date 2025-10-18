@@ -7,10 +7,8 @@
 # Unignore all dirs
 !*/
 
-# Ignore compiled files
-*.o
-*.a
-*.out
+# Unignore Makefile
+!Makefile
 
 # Ignore all executable files
 *.com
@@ -18,6 +16,13 @@
 *.dll
 *.so
 *.dylib
+
+# Ignore compiled files
+*.o
+*.obj
+*.a
+*.lib
+*.out
 
 # Ignore Visual Studio Code stuff
 .vscode
