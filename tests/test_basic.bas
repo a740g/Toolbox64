@@ -3,7 +3,7 @@ $LET TOOLBOX64_STRICT = TRUE
 $CONSOLE:ONLY
 
 '$INCLUDE:'../DS/HashTable.bi'
-'$INCLUDE:'../Pathname.bi'
+'$INCLUDE:'../FS/Pathname.bi'
 '$INCLUDE:'../StringFile.bi'
 '$INCLUDE:'../Math/Math.bi'
 
@@ -364,6 +364,6 @@ SUB Test_Math
 END SUB
 
 '$INCLUDE:'../StringFile.bas'
-'$INCLUDE:'../Pathname.bas'
+'$INCLUDE:'../FS/Pathname.bas'
 '$INCLUDE:'../DS/HashTable.bas'
 '$INCLUDE:'../Debug/Test.bas'
