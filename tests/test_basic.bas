@@ -5,6 +5,7 @@ $CONSOLE:ONLY
 '$INCLUDE:'../HashTable.bi'
 '$INCLUDE:'../Pathname.bi'
 '$INCLUDE:'../StringFile.bi'
+'$INCLUDE:'../Math/Math.bi'
 
 TEST_BEGIN_ALL
 
@@ -12,6 +13,7 @@ Test_Test
 Test_Hash
 Test_Pathname
 Test_StringFile
+Test_Math
 
 TEST_END_ALL
 
@@ -240,6 +242,119 @@ SUB Test_StringFile
     StringFile_Seek sf, 0
     TEST_CHECK StringFile_ReadInteger64(sf) = 9999999999999999&&, "StringFile_ReadInteger64(sf) = 9999999999999999&&"
     TEST_CHECK LEN(sf.buffer) = 49, "LEN(sf.buffer) = 49"
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_Math
+    TEST_CASE_BEGIN "Math"
+
+    DIM n AS LONG
+    n = Math_GetRandomBetween(10, 20)
+    TEST_CHECK n >= 10 AND n <= 20, "n >= 10 AND n <= 20"
+
+    TEST_CHECK Math_IsSingleNaN(0 / 0), "Math_IsSingleNaN(0 / 0)"
+    TEST_CHECK_FALSE Math_IsSingleNaN(1), "Math_IsSingleNaN(1)"
+
+    TEST_CHECK Math_IsDoubleNaN(0 / 0), "Math_IsDoubleNaN(0 / 0)"
+    TEST_CHECK_FALSE Math_IsDoubleNaN(1), "Math_IsDoubleNaN(1)"
+
+    TEST_CHECK Math_IsLongEven(2), "Math_IsLongEven(2)"
+    TEST_CHECK_FALSE Math_IsLongEven(1), "Math_IsLongEven(1)"
+
+    TEST_CHECK Math_IsInteger64Even(2), "Math_IsInteger64Even(2)"
+    TEST_CHECK_FALSE Math_IsInteger64Even(1), "Math_IsInteger64Even(1)"
+
+    TEST_CHECK Math_IsLongPowerOf2(2), "Math_IsLongPowerOf2(2)"
+    TEST_CHECK_FALSE Math_IsLongPowerOf2(3), "Math_IsLongPowerOf2(3)"
+
+    TEST_CHECK Math_IsInteger64PowerOf2(2), "Math_IsInteger64PowerOf2(2)"
+    TEST_CHECK_FALSE Math_IsInteger64PowerOf2(3), "Math_IsInteger64PowerOf2(3)"
+
+    TEST_CHECK Math_RoundUpLongToPowerOf2(3) = 4, "Math_RoundUpLongToPowerOf2(3) = 4"
+    TEST_CHECK Math_RoundUpInteger64ToPowerOf2(3) = 4, "Math_RoundUpInteger64ToPowerOf2(3) = 4"
+
+    TEST_CHECK Math_RoundDownLongToPowerOf2(3) = 2, "Math_RoundDownLongToPowerOf2(3) = 2"
+    TEST_CHECK Math_RoundDownInteger64ToPowerOf2(3) = 2, "Math_RoundDownInteger64ToPowerOf2(3) = 2"
+
+    TEST_CHECK Math_GetDigitFromLong(123, 0) = 3, "Math_GetDigitFromLong(123, 0) = 3"
+    TEST_CHECK Math_GetDigitFromLong(123, 1) = 2, "Math_GetDigitFromLong(123, 1) = 2"
+    TEST_CHECK Math_GetDigitFromLong(123, 2) = 1, "Math_GetDigitFromLong(123, 2) = 1"
+
+    TEST_CHECK Math_GetDigitFromInteger64(123, 0) = 3, "Math_GetDigitFromInteger64(123, 0) = 3"
+    TEST_CHECK Math_GetDigitFromInteger64(123, 1) = 2, "Math_GetDigitFromInteger64(123, 1) = 2"
+    TEST_CHECK Math_GetDigitFromInteger64(123, 2) = 1, "Math_GetDigitFromInteger64(123, 2) = 1"
+
+    TEST_CHECK Math_AverageLong(10, 20) = 15, "Math_AverageLong(10, 20) = 15"
+    TEST_CHECK Math_AverageInteger64(10, 20) = 15, "Math_AverageInteger64(10, 20) = 15"
+
+    TEST_CHECK Math_ClampLong(5, 10, 20) = 10, "Math_ClampLong(5, 10, 20) = 10"
+    TEST_CHECK Math_ClampLong(25, 10, 20) = 20, "Math_ClampLong(25, 10, 20) = 20"
+    TEST_CHECK Math_ClampLong(15, 10, 20) = 15, "Math_ClampLong(15, 10, 20) = 15"
+
+    TEST_CHECK Math_ClampInteger64(5, 10, 20) = 10, "Math_ClampInteger64(5, 10, 20) = 10"
+    TEST_CHECK Math_ClampInteger64(25, 10, 20) = 20, "Math_ClampInteger64(25, 10, 20) = 20"
+    TEST_CHECK Math_ClampInteger64(15, 10, 20) = 15, "Math_ClampInteger64(15, 10, 20) = 15"
+
+    TEST_CHECK Math_ClampSingle(5, 10, 20) = 10, "Math_ClampSingle(5, 10, 20) = 10"
+    TEST_CHECK Math_ClampSingle(25, 10, 20) = 20, "Math_ClampSingle(25, 10, 20) = 20"
+    TEST_CHECK Math_ClampSingle(15, 10, 20) = 15, "Math_ClampSingle(15, 10, 20) = 15"
+
+    TEST_CHECK Math_ClampDouble(5, 10, 20) = 10, "Math_ClampDouble(5, 10, 20) = 10"
+    TEST_CHECK Math_ClampDouble(25, 10, 20) = 20, "Math_ClampDouble(25, 10, 20) = 20"
+    TEST_CHECK Math_ClampDouble(15, 10, 20) = 15, "Math_ClampDouble(15, 10, 20) = 15"
+
+    TEST_CHECK Math_RemapLong(5, 0, 10, 0, 100) = 50, "Math_RemapLong(5, 0, 10, 0, 100) = 50"
+    TEST_CHECK Math_RemapInteger64(5, 0, 10, 0, 100) = 50, "Math_RemapInteger64(5, 0, 10, 0, 100) = 50"
+    TEST_CHECK Math_RemapSingle(5, 0, 10, 0, 100) = 50, "Math_RemapSingle(5, 0, 10, 0, 100) = 50"
+    TEST_CHECK Math_RemapDouble(5, 0, 10, 0, 100) = 50, "Math_RemapDouble(5, 0, 10, 0, 100) = 50"
+
+    TEST_CHECK Math_GetMaxSingle(1, 2) = 2, "Math_GetMaxSingle(1, 2) = 2"
+    TEST_CHECK Math_GetMinSingle(1, 2) = 1, "Math_GetMinSingle(1, 2) = 1"
+    TEST_CHECK Math_GetMaxDouble(1, 2) = 2, "Math_GetMaxDouble(1, 2) = 2"
+    TEST_CHECK Math_GetMinDouble(1, 2) = 1, "Math_GetMinDouble(1, 2) = 1"
+    TEST_CHECK Math_GetMaxLong(1, 2) = 2, "Math_GetMaxLong(1, 2) = 2"
+    TEST_CHECK Math_GetMinLong(1, 2) = 1, "Math_GetMinLong(1, 2) = 1"
+    TEST_CHECK Math_GetMaxInteger64(1, 2) = 2, "Math_GetMaxInteger64(1, 2) = 2"
+    TEST_CHECK Math_GetMinInteger64(1, 2) = 1, "Math_GetMinInteger64(1, 2) = 1"
+
+    TEST_CHECK Math_LerpSingle(0, 10, 0.5) = 5, "Math_LerpSingle(0, 10, 0.5) = 5"
+    TEST_CHECK Math_LerpDouble(0, 10, 0.5) = 5, "Math_LerpDouble(0, 10, 0.5) = 5"
+
+    TEST_CHECK Math_NormalizeSingle(5, 0, 10) = 0.5, "Math_NormalizeSingle(5, 0, 10) = 0.5"
+    TEST_CHECK Math_NormalizeDouble(5, 0, 10) = 0.5, "Math_NormalizeDouble(5, 0, 10) = 0.5"
+
+    TEST_CHECK Math_WrapSingle(12, 0, 10) = 2, "Math_WrapSingle(12, 0, 10) = 2"
+    TEST_CHECK Math_WrapDouble(12, 0, 10) = 2, "Math_WrapDouble(12, 0, 10) = 2"
+
+    TEST_CHECK Math_IsSingleEqual(1.0, 1.0), "Math_IsSingleEqual(1.0, 1.0)"
+    TEST_CHECK_FALSE Math_IsSingleEqual(1.0, 2.0), "Math_IsSingleEqual(1.0, 2.0)"
+
+    TEST_CHECK Math_IsDoubleEqual(1.0, 1.0), "Math_IsDoubleEqual(1.0, 1.0)"
+    TEST_CHECK_FALSE Math_IsDoubleEqual(1.0, 2.0), "Math_IsDoubleEqual(1.0, 2.0)"
+
+    TEST_CHECK Math_FMASingle(2, 3, 4) = 10, "Math_FMASingle(2, 3, 4) = 10"
+    TEST_CHECK Math_FMADouble(2, 3, 4) = 10, "Math_FMADouble(2, 3, 4) = 10"
+
+    TEST_CHECK Math_PowerSingle(2, 3) = 8, "Math_PowerSingle(2, 3) = 8"
+    TEST_CHECK Math_PowerDouble(2, 3) = 8, "Math_PowerDouble(2, 3) = 8"
+
+    TEST_CHECK Math_FastPowerSingle(2, 3) = 8, "Math_FastPowerSingle(2, 3) = 8"
+    TEST_CHECK Math_FastPowerDouble(2, 3) = 8, "Math_FastPowerDouble(2, 3) = 8"
+
+    TEST_CHECK ABS(Math_FastSquareRoot(9) - 3) < 0.2, "ABS(Math_FastSquareRoot(9) - 3) < 0.2"
+    TEST_CHECK ABS(Math_FastInverseSquareRoot(4) - 0.5) < 0.001, "ABS(Math_FastInverseSquareRoot(4) - 0.5) < 0.001"
+
+    TEST_CHECK Math_Log10Single(100) = 2, "Math_Log10Single(100) = 2"
+    TEST_CHECK Math_Log10Double(100) = 2, "Math_Log10Double(100) = 2"
+
+    TEST_CHECK Math_Log2Single(8) = 3, "Math_Log2Single(8) = 3"
+    TEST_CHECK Math_Log2Double(8) = 3, "Math_Log2Double(8) = 3"
+
+    TEST_CHECK Math_CubeRootSingle(27) = 3, "Math_CubeRootSingle(27) = 3"
+    TEST_CHECK Math_CubeRootDouble(27) = 3, "Math_CubeRootDouble(27) = 3"
+
+    TEST_CHECK Math_MulDiv(10, 2, 5) = 4, "Math_MulDiv(10, 2, 5) = 4"
 
     TEST_CASE_END
 END SUB
