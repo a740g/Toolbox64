@@ -8,6 +8,7 @@ $CONSOLE:ONLY
 '$INCLUDE:'../Math/Math.bi'
 '$INCLUDE:'../Math/Vector2f.bi'
 '$INCLUDE:'../Math/Vector2i.bi'
+'$INCLUDE:'../Math/Bounds2i.bi'
 
 TEST_BEGIN_ALL
 
@@ -18,6 +19,7 @@ Test_StringFile
 Test_Math
 Test_Vector2f
 Test_Vector2i
+Test_Bounds2i
 
 TEST_END_ALL
 
@@ -644,6 +646,106 @@ SUB Test_Vector2i
     Vector2i_Negate v, dst
     TEST_CHECK dst.x = -2, "Vector2i_Negate x=-2"
     TEST_CHECK dst.y = -3, "Vector2i_Negate y=-3"
+    TEST_CASE_END
+END SUB
+
+SUB Test_Bounds2i
+    TEST_CASE_BEGIN "Bounds2i: Basic Operations"
+
+    DIM b AS Bounds2i, b2 AS Bounds2i, tmp AS Vector2i, v AS Vector2i
+
+    ' Basic init and queries (inclusive bounds)
+    Bounds2i_Initialize 0, 0, 4, 4, b
+    TEST_CHECK Bounds2i_GetWidth(b) = 5, "Bounds2i_GetWidth = 5"
+    TEST_CHECK Bounds2i_GetHeight(b) = 5, "Bounds2i_GetHeight = 5"
+    TEST_CHECK Bounds2i_GetArea(b) = 25, "Bounds2i_GetArea = 25"
+    TEST_CHECK NOT Bounds2i_IsEmpty(b), "Bounds2i is not empty"
+    TEST_CHECK Bounds2i_IsValid(b), "Bounds2i is valid"
+
+    Bounds2i_GetCenter b, tmp
+    TEST_CHECK tmp.x = 2 AND tmp.y = 2, "Bounds2i_GetCenter = (2,2)"
+
+    Bounds2i_GetRightTop b, tmp
+    TEST_CHECK tmp.x = 4 AND tmp.y = 0, "Bounds2i_GetRightTop = (4,0)"
+
+    Bounds2i_GetLeftBottom b, tmp
+    TEST_CHECK tmp.x = 0 AND tmp.y = 4, "Bounds2i_GetLeftBottom = (0,4)"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Bounds2i: Sanitize and Empty"
+
+    ' Sanitize swaps coordinates when needed
+    Bounds2i_Initialize 5, 5, 1, 1, b
+    Bounds2i_Sanitize b
+    TEST_CHECK b.lt.x = 1 AND b.lt.y = 1, "Sanitize lt = (1,1)"
+    TEST_CHECK b.rb.x = 5 AND b.rb.y = 5, "Sanitize rb = (5,5)"
+
+    ' Empty bounds when rb < lt
+    Bounds2i_Initialize 2, 2, 1, 1, b
+    TEST_CHECK Bounds2i_IsEmpty(b), "Bounds2i_IsEmpty when rb < lt"
+    TEST_CHECK Bounds2i_GetWidth(b) = 0, "Width of empty bounds = 0"
+    TEST_CHECK Bounds2i_GetHeight(b) = 0, "Height of empty bounds = 0"
+    TEST_CHECK Bounds2i_GetArea(b) = 0, "Area of empty bounds = 0"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Bounds2i: Inflate/Deflate/Expand/Shrink"
+
+    Bounds2i_Initialize 1, 1, 2, 2, b
+    Bounds2i_Inflate b, 1, 1, b2
+    TEST_CHECK b2.lt.x = 0 AND b2.lt.y = 0, "Inflate lt = (0,0)"
+    TEST_CHECK b2.rb.x = 3 AND b2.rb.y = 3, "Inflate rb = (3,3)"
+
+    Bounds2i_Deflate b2, 1, 1, b2
+    TEST_CHECK b2.lt.x = 1 AND b2.lt.y = 1, "Deflate restores lt = (1,1)"
+    TEST_CHECK b2.rb.x = 2 AND b2.rb.y = 2, "Deflate restores rb = (2,2)"
+
+    ' ExpandByVector with a point outside
+    Vector2i_Initialize 0, 5, v
+    Bounds2i_ExpandByVector b, v, b2
+    TEST_CHECK b2.lt.x = 0 AND b2.lt.y = 1, "ExpandByVector lt.x=min(1,0)=0"
+    TEST_CHECK b2.rb.x = 2 AND b2.rb.y = 5, "ExpandByVector rb.y=max(2,5)=5"
+
+    ' Deflate should reduce extents (same semantic as previous Shrink)
+    Bounds2i_Deflate b2, 1, 1, b2
+    TEST_CHECK b2.lt.x = 1 AND b2.lt.y = 2, "Deflate lt = (1,2)"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Bounds2i: Translate, Contains, Intersects, Union/Intersection"
+
+    Bounds2i_Initialize 0, 0, 2, 2, b
+    Bounds2i_Translate b, 1, 2, b2
+    TEST_CHECK b2.lt.x = 1 AND b2.lt.y = 2, "Translate lt = (1,2)"
+    TEST_CHECK b2.rb.x = 3 AND b2.rb.y = 4, "Translate rb = (3,4)"
+
+    TEST_CHECK Bounds2i_ContainsXY(b2, 1, 2), "Contains edge point"
+
+    ' Intersection at single point (inclusive bounds)
+    Bounds2i_Initialize 0, 0, 2, 2, b
+    Bounds2i_Initialize 2, 2, 4, 4, b2
+    TEST_CHECK Bounds2i_Intersects(b, b2), "Intersect at corner"
+
+    DIM r AS Bounds2i
+    Bounds2i_MakeIntersection b, b2, r
+    TEST_CHECK r.lt.x = 2 AND r.lt.y = 2 AND r.rb.x = 2 AND r.rb.y = 2, "Intersection is single point (2,2)"
+    TEST_CHECK Bounds2i_GetArea(r) = 1, "Intersection area = 1"
+
+    ' Union with empty
+    Bounds2i_Reset r
+    Bounds2i_MakeUnion b, r, r
+    TEST_CHECK r.lt.x = 0 AND r.lt.y = 0 AND r.rb.x = 2 AND r.rb.y = 2, "Union with empty yields original"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Bounds2i: Clamp to bounds"
+
+    Bounds2i_Initialize 0, 0, 5, 5, b
+    Bounds2i_Initialize 2, 2, 3, 3, b2
+    Bounds2i_ClampToBounds b, b2, r
+    TEST_CHECK r.lt.x = 2 AND r.lt.y = 2 AND r.rb.x = 3 AND r.rb.y = 3, "ClampToBounds = (2,2)-(3,3)"
+
     TEST_CASE_END
 END SUB
 
