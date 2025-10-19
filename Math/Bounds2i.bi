@@ -39,8 +39,7 @@ DECLARE LIBRARY "Bounds2i"
     SUB Bounds2i_InflateByVector (src AS Bounds2i, vector AS Vector2i, dst AS Bounds2i)
     SUB Bounds2i_Deflate (src AS Bounds2i, BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
     SUB Bounds2i_DeflateByVector (src AS Bounds2i, vector AS Vector2i, dst AS Bounds2i)
-    SUB Bounds2i_ExpandByVector (src AS Bounds2i, vector AS Vector2i, dst AS Bounds2i)
-    ' Note: Expand/Shrink renamed to Inflate/Deflate; ExpandByVector kept to expand to include a point
+    SUB Bounds2i_IncludePoint (src AS Bounds2i, point AS Vector2i, dst AS Bounds2i)
     SUB Bounds2i_Translate (src AS Bounds2i, BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
     SUB Bounds2i_TranslateByVector (src AS Bounds2i, vector AS Vector2i, dst AS Bounds2i)
     FUNCTION Bounds2i_ContainsXY%% (src AS Bounds2i, BYVAL x AS LONG, BYVAL y AS LONG)
@@ -49,5 +48,4 @@ DECLARE LIBRARY "Bounds2i"
     FUNCTION Bounds2i_Intersects%% (src1 AS Bounds2i, src2 AS Bounds2i)
     SUB Bounds2i_MakeUnion (src1 AS Bounds2i, src2 AS Bounds2i, dst AS Bounds2i)
     SUB Bounds2i_MakeIntersection (src1 AS Bounds2i, src2 AS Bounds2i, dst AS Bounds2i)
-    SUB Bounds2i_ClampToBounds (src AS Bounds2i, limit AS Bounds2i, dst AS Bounds2i)
 END DECLARE

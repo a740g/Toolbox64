@@ -29,9 +29,8 @@ inline void Bounds2i_Assign(const void *src, void *dst) {
 }
 
 inline void Bounds2i_InitializeFromPositionSize(const void *position, const void *size, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt = *reinterpret_cast<const Vector2i *>(position);
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Vector2i *>(position)->x + reinterpret_cast<const Vector2i *>(size)->x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Vector2i *>(position)->y + reinterpret_cast<const Vector2i *>(size)->y;
+    Vector2i_Assign(position, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_Add(position, size, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
 inline void Bounds2i_InitializeFromPoints(const void *p1, const void *p2, void *dst) {
@@ -107,15 +106,11 @@ inline void Bounds2i_SetLeftBottom(const void *src, const void *point, void *dst
 }
 
 inline int32_t Bounds2i_GetArea(const void *src) {
-    int32_t w = Bounds2i_GetWidth(src);
-    int32_t h = Bounds2i_GetHeight(src);
-    return w * h;
+    return Bounds2i_GetWidth(src) * Bounds2i_GetHeight(src);
 }
 
 inline int32_t Bounds2i_GetPerimeter(const void *src) {
-    int32_t w = Bounds2i_GetWidth(src);
-    int32_t h = Bounds2i_GetHeight(src);
-    return 2 * (w + h);
+    return (Bounds2i_GetWidth(src) + Bounds2i_GetHeight(src)) * 2;
 }
 
 inline int32_t Bounds2i_GetDiagonalLength(const void *src) {
@@ -127,54 +122,40 @@ inline qb_bool Bounds2i_HasSameArea(const void *src1, const void *src2) {
 }
 
 inline void Bounds2i_Inflate(const void *src, int32_t x, int32_t y, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Bounds2i *>(src)->lt.x - x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Bounds2i *>(src)->lt.y - y;
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Bounds2i *>(src)->rb.x + x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Bounds2i *>(src)->rb.y + y;
+    Vector2i_SubtractXY(&reinterpret_cast<const Bounds2i *>(src)->lt, x, y, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_AddXY(&reinterpret_cast<const Bounds2i *>(src)->rb, x, y, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
 inline void Bounds2i_InflateByVector(const void *src, const void *vector, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x -= reinterpret_cast<const Vector2i *>(vector)->x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y -= reinterpret_cast<const Vector2i *>(vector)->y;
-    reinterpret_cast<Bounds2i *>(dst)->rb.x += reinterpret_cast<const Vector2i *>(vector)->x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y += reinterpret_cast<const Vector2i *>(vector)->y;
+    Vector2i_Subtract(&reinterpret_cast<const Bounds2i *>(src)->lt, vector, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_Add(&reinterpret_cast<const Bounds2i *>(src)->rb, vector, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
 inline void Bounds2i_Deflate(const void *src, int32_t x, int32_t y, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Bounds2i *>(src)->lt.x + x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Bounds2i *>(src)->lt.y + y;
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Bounds2i *>(src)->rb.x - x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Bounds2i *>(src)->rb.y - y;
+    Vector2i_AddXY(&reinterpret_cast<const Bounds2i *>(src)->lt, x, y, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_SubtractXY(&reinterpret_cast<const Bounds2i *>(src)->rb, x, y, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
 inline void Bounds2i_DeflateByVector(const void *src, const void *vector, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x += reinterpret_cast<const Vector2i *>(vector)->x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y += reinterpret_cast<const Vector2i *>(vector)->y;
-    reinterpret_cast<Bounds2i *>(dst)->rb.x -= reinterpret_cast<const Vector2i *>(vector)->x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y -= reinterpret_cast<const Vector2i *>(vector)->y;
+    Vector2i_Add(&reinterpret_cast<const Bounds2i *>(src)->lt, vector, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_Subtract(&reinterpret_cast<const Bounds2i *>(src)->rb, vector, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
-// Note: "Expand" is equivalent to Inflate (symmetric grow); we keep Inflate/Deflate
-// implemented above. ExpandByVector is a different semantic (expand to include point)
-inline void Bounds2i_ExpandByVector(const void *src, const void *vector, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x = std::min(reinterpret_cast<const Bounds2i *>(src)->lt.x, reinterpret_cast<const Vector2i *>(vector)->x);
-    reinterpret_cast<Bounds2i *>(dst)->lt.y = std::min(reinterpret_cast<const Bounds2i *>(src)->lt.y, reinterpret_cast<const Vector2i *>(vector)->y);
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = std::max(reinterpret_cast<const Bounds2i *>(src)->rb.x, reinterpret_cast<const Vector2i *>(vector)->x);
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = std::max(reinterpret_cast<const Bounds2i *>(src)->rb.y, reinterpret_cast<const Vector2i *>(vector)->y);
+inline void Bounds2i_IncludePoint(const void *src, const void *point, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->lt.x = std::min(reinterpret_cast<const Bounds2i *>(src)->lt.x, reinterpret_cast<const Vector2i *>(point)->x);
+    reinterpret_cast<Bounds2i *>(dst)->lt.y = std::min(reinterpret_cast<const Bounds2i *>(src)->lt.y, reinterpret_cast<const Vector2i *>(point)->y);
+    reinterpret_cast<Bounds2i *>(dst)->rb.x = std::max(reinterpret_cast<const Bounds2i *>(src)->rb.x, reinterpret_cast<const Vector2i *>(point)->x);
+    reinterpret_cast<Bounds2i *>(dst)->rb.y = std::max(reinterpret_cast<const Bounds2i *>(src)->rb.y, reinterpret_cast<const Vector2i *>(point)->y);
 }
 
 inline void Bounds2i_Translate(const void *src, int32_t x, int32_t y, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Bounds2i *>(src)->lt.x + x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Bounds2i *>(src)->lt.y + y;
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Bounds2i *>(src)->rb.x + x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Bounds2i *>(src)->rb.y + y;
+    Vector2i_AddXY(&reinterpret_cast<const Bounds2i *>(src)->lt, x, y, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_AddXY(&reinterpret_cast<const Bounds2i *>(src)->rb, x, y, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
 inline void Bounds2i_TranslateByVector(const void *src, const void *vector, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Bounds2i *>(src)->lt.x + reinterpret_cast<const Vector2i *>(vector)->x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Bounds2i *>(src)->lt.y + reinterpret_cast<const Vector2i *>(vector)->y;
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Bounds2i *>(src)->rb.x + reinterpret_cast<const Vector2i *>(vector)->x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Bounds2i *>(src)->rb.y + reinterpret_cast<const Vector2i *>(vector)->y;
+    Vector2i_Add(&reinterpret_cast<const Bounds2i *>(src)->lt, vector, &reinterpret_cast<Bounds2i *>(dst)->lt);
+    Vector2i_Add(&reinterpret_cast<const Bounds2i *>(src)->rb, vector, &reinterpret_cast<Bounds2i *>(dst)->rb);
 }
 
 inline qb_bool Bounds2i_ContainsXY(const void *src, int32_t x, int32_t y) {
@@ -195,7 +176,6 @@ inline qb_bool Bounds2i_ContainsBounds(const void *src1, const void *src2) {
 }
 
 inline qb_bool Bounds2i_Intersects(const void *src1, const void *src2) {
-    // inclusive intersection: check if projections overlap
     auto a = reinterpret_cast<const Bounds2i *>(src1);
     auto b = reinterpret_cast<const Bounds2i *>(src2);
     return TO_QB_BOOL(a->lt.x <= b->rb.x && b->lt.x <= a->rb.x && a->lt.y <= b->rb.y && b->lt.y <= a->rb.y);
@@ -228,9 +208,4 @@ inline void Bounds2i_MakeIntersection(const void *src1, const void *src2, void *
         reinterpret_cast<Bounds2i *>(dst)->rb.x = std::min(reinterpret_cast<const Bounds2i *>(src1)->rb.x, reinterpret_cast<const Bounds2i *>(src2)->rb.x);
         reinterpret_cast<Bounds2i *>(dst)->rb.y = std::min(reinterpret_cast<const Bounds2i *>(src1)->rb.y, reinterpret_cast<const Bounds2i *>(src2)->rb.y);
     }
-}
-
-// Clamp a bounds to another bounds (alias to intersection semantics)
-inline void Bounds2i_ClampToBounds(const void *src, const void *limit, void *dst) {
-    Bounds2i_MakeIntersection(src, limit, dst);
 }

@@ -701,11 +701,11 @@ SUB Test_Bounds2i
     TEST_CHECK b2.lt.x = 1 AND b2.lt.y = 1, "Deflate restores lt = (1,1)"
     TEST_CHECK b2.rb.x = 2 AND b2.rb.y = 2, "Deflate restores rb = (2,2)"
 
-    ' ExpandByVector with a point outside
+    ' IncludePoint with a point outside
     Vector2i_Initialize 0, 5, v
-    Bounds2i_ExpandByVector b, v, b2
-    TEST_CHECK b2.lt.x = 0 AND b2.lt.y = 1, "ExpandByVector lt.x=min(1,0)=0"
-    TEST_CHECK b2.rb.x = 2 AND b2.rb.y = 5, "ExpandByVector rb.y=max(2,5)=5"
+    Bounds2i_IncludePoint b, v, b2
+    TEST_CHECK b2.lt.x = 0 AND b2.lt.y = 1, "IncludePoint lt.x=min(1,0)=0"
+    TEST_CHECK b2.rb.x = 2 AND b2.rb.y = 5, "IncludePoint rb.y=max(2,5)=5"
 
     ' Deflate should reduce extents (same semantic as previous Shrink)
     Bounds2i_Deflate b2, 1, 1, b2
@@ -739,12 +739,12 @@ SUB Test_Bounds2i
 
     TEST_CASE_END
 
-    TEST_CASE_BEGIN "Bounds2i: Clamp to bounds"
+    TEST_CASE_BEGIN "Bounds2i: Intersection as clamp"
 
     Bounds2i_Initialize 0, 0, 5, 5, b
     Bounds2i_Initialize 2, 2, 3, 3, b2
-    Bounds2i_ClampToBounds b, b2, r
-    TEST_CHECK r.lt.x = 2 AND r.lt.y = 2 AND r.rb.x = 3 AND r.rb.y = 3, "ClampToBounds = (2,2)-(3,3)"
+    Bounds2i_MakeIntersection b, b2, r
+    TEST_CHECK r.lt.x = 2 AND r.lt.y = 2 AND r.rb.x = 3 AND r.rb.y = 3, "MakeIntersection = (2,2)-(3,3)"
 
     TEST_CASE_END
 END SUB
