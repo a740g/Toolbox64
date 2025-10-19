@@ -126,10 +126,9 @@ inline int32_t Vector2i_GetLength(const void *src) {
 }
 
 inline int32_t Vector2i_GetDistanceSquared(const void *src1, const void *src2) {
-    return (reinterpret_cast<const Vector2i *>(src1)->x - reinterpret_cast<const Vector2i *>(src2)->x) *
-               (reinterpret_cast<const Vector2i *>(src1)->x - reinterpret_cast<const Vector2i *>(src2)->x) +
-           (reinterpret_cast<const Vector2i *>(src1)->y - reinterpret_cast<const Vector2i *>(src2)->y) *
-               (reinterpret_cast<const Vector2i *>(src1)->y - reinterpret_cast<const Vector2i *>(src2)->y);
+    Vector2i diff;
+    Vector2i_Subtract(src1, src2, &diff);
+    return Vector2i_GetLengthSquared(&diff);
 }
 
 inline int32_t Vector2i_GetDistance(const void *src1, const void *src2) {
@@ -137,8 +136,10 @@ inline int32_t Vector2i_GetDistance(const void *src1, const void *src2) {
 }
 
 inline void Vector2i_GetSizeVector(const void *src1, const void *src2, void *dst) {
-    reinterpret_cast<Vector2i *>(dst)->x = 1 + std::abs(reinterpret_cast<const Vector2i *>(src1)->x - reinterpret_cast<const Vector2i *>(src2)->x);
-    reinterpret_cast<Vector2i *>(dst)->y = 1 + std::abs(reinterpret_cast<const Vector2i *>(src1)->y - reinterpret_cast<const Vector2i *>(src2)->y);
+    Vector2i diff;
+    Vector2i_Subtract(src1, src2, &diff);
+    reinterpret_cast<Vector2i *>(dst)->x = 1 + std::abs(diff.x);
+    reinterpret_cast<Vector2i *>(dst)->y = 1 + std::abs(diff.y);
 }
 
 inline int32_t Vector2i_GetArea(const void *src) {
@@ -188,9 +189,9 @@ inline void Vector2i_Lerp(const void *src1, const void *src2, float amount, void
 
 inline void Vector2i_Reflect(const void *src, const void *normal, void *dst) {
     auto dot = Vector2i_GetDotProduct(src, normal);
-
-    reinterpret_cast<Vector2i *>(dst)->x = reinterpret_cast<const Vector2i *>(src)->x - 2 * reinterpret_cast<const Vector2i *>(normal)->x * dot;
-    reinterpret_cast<Vector2i *>(dst)->y = reinterpret_cast<const Vector2i *>(src)->y - 2 * reinterpret_cast<const Vector2i *>(normal)->y * dot;
+    Vector2i scaled;
+    Vector2i_MultiplyValue(normal, 2 * dot, &scaled);
+    Vector2i_Subtract(src, &scaled, dst);
 }
 
 inline void Vector2i_Rotate(const void *src, float angle, void *dst) {

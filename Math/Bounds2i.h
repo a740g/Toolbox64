@@ -164,10 +164,7 @@ inline qb_bool Bounds2i_ContainsXY(const void *src, int32_t x, int32_t y) {
 }
 
 inline qb_bool Bounds2i_ContainsPoint(const void *src, const void *point) {
-    return TO_QB_BOOL(reinterpret_cast<const Bounds2i *>(src)->lt.x <= reinterpret_cast<const Vector2i *>(point)->x &&
-                      reinterpret_cast<const Bounds2i *>(src)->rb.x >= reinterpret_cast<const Vector2i *>(point)->x &&
-                      reinterpret_cast<const Bounds2i *>(src)->lt.y <= reinterpret_cast<const Vector2i *>(point)->y &&
-                      reinterpret_cast<const Bounds2i *>(src)->rb.y >= reinterpret_cast<const Vector2i *>(point)->y);
+    return Bounds2i_ContainsXY(src, reinterpret_cast<const Vector2i *>(point)->x, reinterpret_cast<const Vector2i *>(point)->y);
 }
 
 inline qb_bool Bounds2i_ContainsBounds(const void *src1, const void *src2) {
