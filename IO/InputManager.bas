@@ -155,8 +155,8 @@ FUNCTION InputManager_GetMousePositionY&
 END FUNCTION
 
 ''' @brief Returns the mouse position.
-''' @param position The x and y position in a Vector2D.
-SUB InputManager_GetMousePosition (position AS InputManager_Vector2DType)
+''' @param position The x and y position in a Vector2i.
+SUB InputManager_GetMousePosition (position AS Vector2i)
     SHARED __InputManager AS __InputManagerType
 
     position = __InputManager.mousePosition

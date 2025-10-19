@@ -9,6 +9,7 @@ $INCLUDEONCE
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'GraphicOps.bi'
 '$INCLUDE:'SAUCE.bi'
+'$INCLUDE:'Math/Vector2i.bi'
 
 ' ANSI constants
 CONST ANSI_ESC_DECSC = 55 ' Save Cursor Position in Memory
@@ -66,8 +67,8 @@ TYPE __ANSIEmulatorType
     isBold AS LONG ' text attributes - high intensity bg color
     isBlink AS LONG ' text attributes - we make this high intensity as well
     isInvert AS LONG ' text attributes - inverted colors (fg <--> bg)
-    posDEC AS Vector2LType ' DEC saved cursor position
-    posSCO AS Vector2LType ' SCO saved cursor position
+    posDEC AS Vector2i ' DEC saved cursor position
+    posSCO AS Vector2i ' SCO saved cursor position
     lastChar AS _UNSIGNED _BYTE ' last character rendered
     lastCharX AS LONG ' the x position of the last "printed" character
     CPS AS LONG ' characters / second

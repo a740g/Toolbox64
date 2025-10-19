@@ -2,20 +2,18 @@ $INCLUDEONCE
 
 OPTION _EXPLICIT
 
-TYPE InputManager_Vector2DType
-    x AS LONG
-    y AS LONG
-END TYPE
+'$INCLUDE:'../Math/Vector2i.bi'
+
 
 TYPE InputManager_Rectangle2DType
-    a AS InputManager_Vector2DType
-    b AS InputManager_Vector2DType
+    a AS Vector2i
+    b AS Vector2i
 END TYPE
 
 TYPE __InputManagerType
     keyboardKeyCode AS LONG
     isMouseEvent AS _BYTE
-    mousePosition AS InputManager_Vector2DType
+    mousePosition AS Vector2i
     mouseLeftButtonDown AS _BYTE
     mouseRightButtonDown AS _BYTE
     mouseCenterButtonDown AS _BYTE
@@ -29,7 +27,7 @@ TYPE __InputManagerType
     isWindowEvent AS _BYTE
     windowCloseRequested AS _BYTE
     windowResized AS _BYTE
-    windowSize AS InputManager_Vector2DType
+    windowSize AS Vector2i
 END TYPE
 
 DIM __InputManager AS __InputManagerType

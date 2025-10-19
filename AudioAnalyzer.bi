@@ -10,11 +10,11 @@ $INCLUDEONCE
 '$INCLUDE:'PointerOps.bi'
 '$INCLUDE:'BitwiseOps.bi'
 '$INCLUDE:'Math/Math.bi'
-'$INCLUDE:'Math/Vector2D.bi'
+'$INCLUDE:'Math/Vector2f.bi'
 '$INCLUDE:'StringOps.bi'
 '$INCLUDE:'GraphicOps.bi'
 '$INCLUDE:'AudioAnalyzerFFT.bi'
-'$INCLUDE:'AudioConv.bi'
+'$INCLUDE:'Audio/AudioConv.bi'
 
 CONST __AUDIOANALYZER_FORMAT_UNKNOWN~%% = 0~%%
 CONST __AUDIOANALYZER_FORMAT_U8~%% = 1~%%
@@ -46,14 +46,14 @@ CONST AUDIOANALYZER_STYLE_BUBBLE_UNIVERSE~%% = 10~%%
 CONST AUDIOANALYZER_STYLE_COUNT~%% = 11~%% ' add new stuff before this and adjust values
 
 TYPE __AudioAnalyzer_StarType
-    p AS Vector3FType ' position
+    p AS Vector3f ' position
     a AS SINGLE ' angle
     c AS _UNSIGNED LONG ' color
 END TYPE
 
 TYPE __AudioAnalyzer_CircleWaveType
-    p AS Vector2DType ' position
-    v AS Vector2DType ' velocity
+    p AS Vector2f ' position
+    v AS Vector2f ' velocity
     r AS SINGLE ' radius
     c AS BGRAType ' color
     a AS SINGLE ' alpha (0.0 - 1.0)
@@ -74,7 +74,7 @@ TYPE __AudioAnalyzerType
     clipBufferSamples AS _UNSIGNED LONG
     fftBufferSamples AS _UNSIGNED LONG
     fftBits AS _UNSIGNED _BYTE
-    fftScale AS Vector2LType
+    fftScale AS Vector2f
     vuPeakFallSpeed AS SINGLE
     progressTextHide AS _BYTE
     progressTextColor AS _UNSIGNED LONG

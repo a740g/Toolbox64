@@ -357,4 +357,4 @@ END FUNCTION
 
 
 '$INCLUDE:'StringOps.bas'
-'$INCLUDE:'Pathname.bas'
+'$INCLUDE:'FS/Pathname.bas'

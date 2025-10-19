@@ -15,6 +15,7 @@ $INCLUDEONCE
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'GraphicOps.bi'
 '$INCLUDE:'TimeOps.bi'
+'$INCLUDE:'Math/Vector2i.bi'
 
 ' These are flags that can be used by the text box widget
 CONST TEXT_BOX_ALPHA = 1 ' alphabetic input allowed
@@ -36,13 +37,13 @@ CONST WIDGET_CLASS_COUNT = 2 ' this is the total number of widgets
 CONST WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
 
 TYPE RectangleType ' a 2D rectangle
-    a AS Vector2LType
-    b AS Vector2LType
+    a AS Vector2i
+    b AS Vector2i
 END TYPE
 
 TYPE InputManagerType ' simple input manager
     keyCode AS LONG ' buffer keyboard input
-    mousePosition AS Vector2LType ' mouse position
+    mousePosition AS Vector2i ' mouse position
     mouseLeftButton AS _BYTE ' mouse left button down
     mouseRightButton AS _BYTE ' mouse right button down
     mouseLeftClicked AS _BYTE ' If this true mouseLeftButtonClickedRectangle is the rectangle where the click happened
@@ -74,8 +75,8 @@ TYPE WidgetType
     inUse AS _BYTE ' is this widget in use?
     visible AS _BYTE ' is this widget visible on screen?
     disabled AS _BYTE ' is the widget disabled?
-    position AS Vector2LType ' position of the widget on the screen
-    size AS Vector2LType ' size of the widget on the screen
+    position AS Vector2i ' position of the widget on the screen
+    size AS Vector2i ' size of the widget on the screen
     text AS STRING ' text associated with the widget
     changed AS _BYTE ' true if the text was changed somehow
     clicked AS _BYTE ' was the widget pressed / clicked?

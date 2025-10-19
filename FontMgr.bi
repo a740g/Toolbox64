@@ -9,7 +9,7 @@ $INCLUDEONCE
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'BitwiseOps.bi'
 '$INCLUDE:'StringOps.bi'
-'$INCLUDE:'Pathname.bi'
+'$INCLUDE:'FS/Pathname.bi'
 
 CONST __FONTMGR_PROBE_SIZE_MIN~%% = 8~% ' minimum font height that can be reported
 CONST __FONTMGR_PROBE_SIZE_MAX~%% = 120~%% ' maximum font height that can be reported

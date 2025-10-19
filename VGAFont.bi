@@ -8,6 +8,7 @@ $INCLUDEONCE
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
 '$INCLUDE:'File.bi'
+'$INCLUDE:'Math/Vector2i.bi'
 
 ' PSF1 file ID
 CONST __PSF1_MAGIC0 = &H36
@@ -17,7 +18,7 @@ CONST PSF1_FONT_WIDTH = 8
 
 ' An in-memory PSF representation
 TYPE PSF1Type
-    size AS Vector2LType ' this just holds the font width and height
+    size AS Vector2i ' this just holds the font width and height
     bitmap AS STRING ' a variable length string that holds the bitmap of all glyphs in the font
 END TYPE
 

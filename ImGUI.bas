@@ -14,7 +14,7 @@ $INCLUDEONCE
 '$INCLUDE:'ImGUI.bi'
 
 ' Calculates the bounding rectangle for a object given its position & size
-SUB RectangleCreate (p AS Vector2LType, s AS Vector2LType, r AS RectangleType)
+SUB RectangleCreate (p AS Vector2i, s AS Vector2i, r AS RectangleType)
     r.a.x = p.x
     r.a.y = p.y
     r.b.x = p.x + s.x - 1
@@ -29,7 +29,7 @@ END FUNCTION
 
 
 ' Point & box collision test
-FUNCTION PointCollidesWithRectangle%% (p AS Vector2LType, r AS RectangleType)
+FUNCTION PointCollidesWithRectangle%% (p AS Vector2i, r AS RectangleType)
     PointCollidesWithRectangle = NOT (p.x < r.a.x OR p.x > r.b.x OR p.y < r.a.y OR p.y > r.b.y)
 END FUNCTION
 
