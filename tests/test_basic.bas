@@ -7,6 +7,7 @@ $CONSOLE:ONLY
 '$INCLUDE:'../DS/StringFile.bi'
 '$INCLUDE:'../Math/Math.bi'
 '$INCLUDE:'../Math/Vector2f.bi'
+'$INCLUDE:'../Math/Vector2i.bi'
 
 TEST_BEGIN_ALL
 
@@ -16,6 +17,7 @@ Test_Pathname
 Test_StringFile
 Test_Math
 Test_Vector2f
+Test_Vector2i
 
 TEST_END_ALL
 
@@ -565,6 +567,83 @@ SUB Test_Vector2f
     Vector2f_Initialize 5.0!, 6.0!, b
     TEST_CHECK Math_IsSingleEqual(Vector2f_GetCrossProduct(a, b), -2.0!), "Vector2f_GetCrossProduct = -2"
 
+    TEST_CASE_END
+END SUB
+
+SUB Test_Vector2i
+    TEST_CASE_BEGIN "Vector2i: Basic Operations"
+    DIM v AS Vector2i, a AS Vector2i, b AS Vector2i, dst AS Vector2i
+
+    Vector2i_Initialize 3, 4, v
+    TEST_CHECK v.x = 3, "Vector2i_Initialize x=3"
+    TEST_CHECK v.y = 4, "Vector2i_Initialize y=4"
+    TEST_CHECK Vector2i_GetLength(v) = 5, "Vector2i_GetLength = 5"
+
+    Vector2i_Reset v
+    TEST_CHECK Vector2i_IsNull(v), "Vector2i_Reset nulls vector"
+    TEST_CHECK v.x = 0, "Vector2i_Reset x=0"
+    TEST_CHECK v.y = 0, "Vector2i_Reset y=0"
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2i: Arithmetic Operations"
+    Vector2i_Initialize 1, 2, a
+    Vector2i_Initialize 3, 4, b
+    Vector2i_Add a, b, dst
+    TEST_CHECK dst.x = 4, "Vector2i_Add x=1+3=4"
+    TEST_CHECK dst.y = 6, "Vector2i_Add y=2+4=6"
+    Vector2i_Subtract b, a, dst
+    TEST_CHECK dst.x = 2, "Vector2i_Subtract x=3-1=2"
+    TEST_CHECK dst.y = 2, "Vector2i_Subtract y=4-2=2"
+    Vector2i_Multiply a, b, dst
+    TEST_CHECK dst.x = 3, "Vector2i_Multiply x=1*3=3"
+    TEST_CHECK dst.y = 8, "Vector2i_Multiply y=2*4=8"
+    Vector2i_Divide b, a, dst
+    TEST_CHECK dst.x = 3, "Vector2i_Divide x=3/1=3"
+    TEST_CHECK dst.y = 2, "Vector2i_Divide y=4/2=2"
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2i: Vector Operations"
+    Vector2i_Initialize 3, 4, v
+    TEST_CHECK Vector2i_GetLength(v) = 5, "Vector2i_GetLength = 5"
+    Vector2i_Initialize 1, 1, a
+    Vector2i_Initialize 4, 5, b
+    TEST_CHECK Vector2i_GetDistance(a, b) = 5, "Vector2i_GetDistance = 5"
+    TEST_CHECK Vector2i_GetDotProduct(a, b) = 9, "Vector2i_GetDotProduct = 9"
+    TEST_CHECK Vector2i_GetCrossProduct(a, b) = 1, "Vector2i_GetCrossProduct = 1"
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2i: Transformations"
+    Vector2i_Initialize 1, 2, v
+    Vector2i_TurnLeft v, dst
+    TEST_CHECK dst.x = -2, "Vector2i_TurnLeft x=-2"
+    TEST_CHECK dst.y = 1, "Vector2i_TurnLeft y=1"
+    Vector2i_TurnRight v, dst
+    TEST_CHECK dst.x = 2, "Vector2i_TurnRight x=2"
+    TEST_CHECK dst.y = -1, "Vector2i_TurnRight y=-1"
+    Vector2i_FlipVertical v, dst
+    TEST_CHECK dst.x = 1, "Vector2i_FlipVertical x=1"
+    TEST_CHECK dst.y = -2, "Vector2i_FlipVertical y=-2"
+    Vector2i_FlipHorizontal v, dst
+    TEST_CHECK dst.x = -1, "Vector2i_FlipHorizontal x=-1"
+    TEST_CHECK dst.y = 2, "Vector2i_FlipHorizontal y=2"
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2i: Special Operations"
+    Vector2i_Initialize 0, 0, a
+    Vector2i_Initialize 10, 0, b
+    Vector2i_MoveTowards a, b, 3, dst
+    TEST_CHECK dst.x = 3, "Vector2i_MoveTowards x=3"
+    TEST_CHECK dst.y = 0, "Vector2i_MoveTowards y=0"
+    Vector2i_Initialize 5, 5, v
+    Vector2i_Initialize -1, -1, a
+    Vector2i_Initialize 2, 2, b
+    Vector2i_Clamp v, a, b, dst
+    TEST_CHECK dst.x = 2, "Vector2i_Clamp x=2"
+    TEST_CHECK dst.y = 2, "Vector2i_Clamp y=2"
+    Vector2i_Initialize 2, 3, v
+    Vector2i_Negate v, dst
+    TEST_CHECK dst.x = -2, "Vector2i_Negate x=-2"
+    TEST_CHECK dst.y = -3, "Vector2i_Negate y=-3"
     TEST_CASE_END
 END SUB
 

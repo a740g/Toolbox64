@@ -126,21 +126,7 @@ CONST KEY_TILDE~%% = 126~%%, ASC_TILDE~%% = 126~%%, CHR_TILDE = CHR$(126)
 
 ' Some of the type below do not have a "home" yet and should be moved to appropriate files later
 
-' A simple integer 2D vector.
-TYPE Vector2LType
-    x AS LONG
-    y AS LONG
-END TYPE
-
-' A simple integer 2D vector.
-TYPE Vector3LType
-    x AS LONG
-    y AS LONG
-    z AS LONG
-END TYPE
-
-' A simple floating-point 2D vector.
-TYPE Vector3FType
+TYPE Vector3f
     x AS SINGLE
     y AS SINGLE
     z AS SINGLE
