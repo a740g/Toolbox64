@@ -85,6 +85,46 @@ inline void Bounds2i_Sanitize(void *src) {
     }
 }
 
+inline void Bounds2i_SetLeftTop(const void *point, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Vector2i *>(point)->x;
+    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Vector2i *>(point)->y;
+}
+
+inline void Bounds2i_SetLeftTopXY(int32_t x, int32_t y, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->lt.x = x;
+    reinterpret_cast<Bounds2i *>(dst)->lt.y = y;
+}
+
+inline void Bounds2i_SetRightBottom(const void *point, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Vector2i *>(point)->x;
+    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Vector2i *>(point)->y;
+}
+
+inline void Bounds2i_SetRightBottomXY(int32_t x, int32_t y, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->rb.x = x;
+    reinterpret_cast<Bounds2i *>(dst)->rb.y = y;
+}
+
+inline void Bounds2i_SetRightTop(const void *point, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Vector2i *>(point)->x;
+    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Vector2i *>(point)->y;
+}
+
+inline void Bounds2i_SetRightTopXY(int32_t x, int32_t y, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->rb.x = x;
+    reinterpret_cast<Bounds2i *>(dst)->lt.y = y;
+}
+
+inline void Bounds2i_SetLeftBottom(const void *point, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Vector2i *>(point)->x;
+    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Vector2i *>(point)->y;
+}
+
+inline void Bounds2i_SetLeftBottomXY(int32_t x, int32_t y, void *dst) {
+    reinterpret_cast<Bounds2i *>(dst)->lt.x = x;
+    reinterpret_cast<Bounds2i *>(dst)->rb.y = y;
+}
+
 inline void Bounds2i_GetRightTop(const void *src, void *dst) {
     reinterpret_cast<Vector2i *>(dst)->x = reinterpret_cast<const Bounds2i *>(src)->rb.x;
     reinterpret_cast<Vector2i *>(dst)->y = reinterpret_cast<const Bounds2i *>(src)->lt.y;
@@ -93,16 +133,6 @@ inline void Bounds2i_GetRightTop(const void *src, void *dst) {
 inline void Bounds2i_GetLeftBottom(const void *src, void *dst) {
     reinterpret_cast<Vector2i *>(dst)->x = reinterpret_cast<const Bounds2i *>(src)->lt.x;
     reinterpret_cast<Vector2i *>(dst)->y = reinterpret_cast<const Bounds2i *>(src)->rb.y;
-}
-
-inline void Bounds2i_SetRightTop(const void *src, const void *point, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->rb.x = reinterpret_cast<const Vector2i *>(point)->x;
-    reinterpret_cast<Bounds2i *>(dst)->lt.y = reinterpret_cast<const Vector2i *>(point)->y;
-}
-
-inline void Bounds2i_SetLeftBottom(const void *src, const void *point, void *dst) {
-    reinterpret_cast<Bounds2i *>(dst)->lt.x = reinterpret_cast<const Vector2i *>(point)->x;
-    reinterpret_cast<Bounds2i *>(dst)->rb.y = reinterpret_cast<const Vector2i *>(point)->y;
 }
 
 inline int32_t Bounds2i_GetArea(const void *src) {

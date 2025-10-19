@@ -671,6 +671,23 @@ SUB Test_Bounds2i
     Bounds2i_GetLeftBottom b, tmp
     TEST_CHECK tmp.x = 0 AND tmp.y = 4, "Bounds2i_GetLeftBottom = (0,4)"
 
+    Bounds2i_Initialize -15, -20, 40, 30, b
+    Bounds2i_GetRightTop b, v
+    TEST_CHECK v.x = 40 AND v.y = -20, "Bounds2i_GetRightTop = (40,-20)"
+
+    Bounds2i_GetLeftBottom b, v
+    TEST_CHECK v.x = -15 AND v.y = 30, "Bounds2i_GetLeftBottom = (-15,30)"
+
+    Bounds2i_SetRightTopXY 20, 10, b
+    Bounds2i_GetRightTop b, v
+    TEST_CHECK v.x = 20 AND v.y = 10, "Bounds2i_SetRightTop = (20,10)"
+
+    Bounds2i_SetLeftBottomXY 10, 20, b
+    Bounds2i_GetLeftBottom b, v
+    TEST_CHECK v.x = 10 AND v.y = 20, "Bounds2i_SetLeftBottom = (10,20)"
+
+    TEST_CHECK b.lt.x = 10 AND b.lt.y = 10 AND b.rb.x = 20 AND b.rb.y = 20, "Bounds2i_SetLeftBottom = (10,10,20,20)"
+
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Bounds2i: Sanitize and Empty"
