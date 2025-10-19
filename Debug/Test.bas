@@ -8,7 +8,7 @@ $INCLUDEONCE
 '$INCLUDE:'Test.bi'
 
 SUB TEST_BEGIN_ALL
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     __TestState.colorEnabled = _TRUE
     __TestState.testsRun = 0
@@ -28,7 +28,7 @@ SUB TEST_BEGIN_ALL
 END SUB
 
 SUB TEST_END_ALL
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine STRING$(__TEST_SEPARATOR_WIDTH, "-")
     __TestSetColor __TEST_COLOR_NOTE: StandardIO_Write "Tests run :": __TestSetColor __TEST_COLOR_NAME: StandardIO_WriteLine STR$(__TestState.testsRun)
@@ -49,7 +49,7 @@ SUB TEST_CASE_BEGIN (testName AS STRING)
         FUNCTION __Test_GetTicks~&& ALIAS "GetTicks"
     END DECLARE
 
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     __TestState.currentTestName = testName
     __TestState.currentTestChecks = 0
@@ -78,7 +78,7 @@ SUB TEST_CASE_BEGIN (testName AS STRING)
 END SUB
 
 SUB TEST_CASE_END
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     DIM durMs AS _UNSIGNED _INTEGER64: durMs = __Test_GetTicks - __TestState.testStart
 
@@ -98,7 +98,7 @@ SUB TEST_CASE_END
 END SUB
 
 SUB TEST_CHECK (cond AS _INTEGER64, expr AS STRING)
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     IF __TestState.abortCurrentTest THEN EXIT SUB
 
@@ -117,7 +117,7 @@ SUB TEST_CHECK2 (cond AS _INTEGER64)
 END SUB
 
 SUB TEST_CHECK_FALSE (cond AS _INTEGER64, expr AS STRING)
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     IF __TestState.abortCurrentTest THEN EXIT SUB
 
@@ -136,7 +136,7 @@ SUB TEST_CHECK_FALSE2 (cond AS _INTEGER64)
 END SUB
 
 SUB TEST_REQUIRE (cond AS _INTEGER64, expr AS STRING)
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     IF __TestState.abortCurrentTest THEN EXIT SUB
 
@@ -156,7 +156,7 @@ SUB TEST_REQUIRE2 (cond AS _INTEGER64)
 END SUB
 
 SUB TEST_REQUIRE_FALSE (cond AS _INTEGER64, expr AS STRING)
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
 
     IF __TestState.abortCurrentTest THEN EXIT SUB
 
@@ -176,22 +176,22 @@ SUB TEST_REQUIRE_FALSE2 (cond AS _INTEGER64)
 END SUB
 
 FUNCTION TEST_ABORTED%%
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
     TEST_ABORTED = __TestState.abortCurrentTest
 END FUNCTION
 
 SUB TEST_ENABLE_COLOR (enable AS _INTEGER64)
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
     __TestState.colorEnabled = (enable <> _FALSE)
 END SUB
 
 SUB __TestSetColor (fg AS _UNSIGNED _BYTE)
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
     IF __TestState.colorEnabled THEN StandardIO_Write _CHR_ESC + "[" + _TOSTR$(fg) + "m"
 END SUB
 
 SUB __TestResetColor
-    SHARED __TestState AS __TestStateType
+    SHARED __TestState AS __TestState
     IF __TestState.colorEnabled THEN StandardIO_Write _CHR_ESC + "[0m"
 END SUB
 

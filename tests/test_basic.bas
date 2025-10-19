@@ -4,8 +4,9 @@ $CONSOLE:ONLY
 
 '$INCLUDE:'../DS/HashTable.bi'
 '$INCLUDE:'../FS/Pathname.bi'
-'$INCLUDE:'../StringFile.bi'
+'$INCLUDE:'../DS/StringFile.bi'
 '$INCLUDE:'../Math/Math.bi'
+'$INCLUDE:'../Math/Vector2D.bi'
 
 TEST_BEGIN_ALL
 
@@ -14,6 +15,7 @@ Test_Hash
 Test_Pathname
 Test_StringFile
 Test_Math
+Test_Vector2D
 
 TEST_END_ALL
 
@@ -174,13 +176,14 @@ SUB Test_Pathname
 END SUB
 
 SUB Test_StringFile
-    TEST_CASE_BEGIN "StringFile"
+    TEST_CASE_BEGIN "StringFile: Basic Operations"
 
-    DIM sf AS StringFileType
+    DIM sf AS StringFile
     StringFile_Create sf, "This_is_a_test_buffer."
     TEST_CHECK LEN(sf.buffer) = 22, "LEN(sf.buffer) = 22"
     TEST_CHECK sf.cursor = 0, "sf.cursor = 0"
     TEST_CHECK StringFile_GetPosition(sf) = 0, "StringFile_GetPosition(sf) = 0"
+    TEST_CHECK StringFile_GetSize(sf) = 22, "StringFile_GetSize = 22"
     TEST_CHECK StringFile_ReadString(sf, 22) = "This_is_a_test_buffer.", "StringFile_ReadString(sf, 22)"
     TEST_CHECK StringFile_GetPosition(sf) = 22, "StringFile_GetPosition(sf) = 22"
     TEST_CHECK StringFile_IsEOF(sf), "StringFile_IsEOF(sf)"
@@ -246,6 +249,72 @@ SUB Test_StringFile
     StringFile_Seek sf, 0
     TEST_CHECK StringFile_ReadInteger64(sf) = 9999999999999999&&, "StringFile_ReadInteger64(sf) = 9999999999999999&&"
     TEST_CHECK LEN(sf.buffer) = 49, "LEN(sf.buffer) = 49"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "StringFile: Resize and Boundary Tests"
+    
+    ' Test resize operations
+    StringFile_Create sf, "Original"
+    TEST_CHECK StringFile_GetSize(sf) = 8, "Initial size = 8"
+    
+    ' Grow buffer
+    StringFile_Resize sf, 16
+    TEST_CHECK StringFile_GetSize(sf) = 16, "Grown size = 16"
+    TEST_CHECK LEFT$(sf.buffer, 8) = "Original", "Content preserved after grow"
+    
+    ' Shrink buffer
+    StringFile_Resize sf, 4
+    TEST_CHECK StringFile_GetSize(sf) = 4, "Shrunk size = 4"
+    TEST_CHECK sf.buffer = "Orig", "Content truncated after shrink"
+    
+    ' Test offset operations
+    DIM testOffset AS _OFFSET
+    testOffset = 12345
+    StringFile_Seek sf, 0
+    StringFile_WriteOffset sf, testOffset
+    StringFile_Seek sf, 0
+    TEST_CHECK StringFile_ReadOffset(sf) = testOffset, "Offset read/write"
+    
+    ' Test boundary conditions
+    StringFile_Create sf, "1234"
+    StringFile_Seek sf, 4 ' Seek to EOF is valid
+    TEST_CHECK StringFile_IsEOF(sf), "EOF at end"
+    TEST_CHECK StringFile_GetPosition(sf) = 4, "Position at EOF"
+    
+    ' Test extreme values
+    StringFile_Create sf, ""
+    StringFile_Seek sf, 0
+    StringFile_WriteDouble sf, 1E+308 ' Near max double
+    StringFile_Seek sf, 0
+    TEST_CHECK ABS(StringFile_ReadDouble(sf) - 1E+308) < 1E+298, "Large double"
+    
+    StringFile_Seek sf, 0
+    StringFile_WriteDouble sf, 1E-308 ' Near min positive double
+    StringFile_Seek sf, 0
+    TEST_CHECK ABS((StringFile_ReadDouble(sf) - 1E-308) / 1E-308) < 0.000001, "Small double relative error"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "StringFile: Boundary Conditions"
+    
+    ' Test boundary read conditions
+    StringFile_Create sf, "123"
+    StringFile_Seek sf, 3 ' Seek to EOF
+    TEST_CHECK StringFile_IsEOF(sf), "EOF at end position"
+    TEST_CHECK StringFile_GetPosition(sf) = 3, "Correct EOF position"
+    
+    ' Test partial reads at end
+    StringFile_Seek sf, 2
+    TEST_CHECK StringFile_ReadString(sf, 10) = "3", "Partial read at end"
+    TEST_CHECK StringFile_IsEOF(sf), "EOF after partial read"
+    
+    ' Test boundary writes
+    StringFile_Seek sf, 3
+    StringFile_WriteString sf, "456" ' Write at EOF
+    TEST_CHECK StringFile_GetSize(sf) = 6, "Size after EOF write"
+    StringFile_Seek sf, 0
+    TEST_CHECK StringFile_ReadString(sf, 6) = "123456", "Content after EOF write"
 
     TEST_CASE_END
 END SUB
@@ -363,7 +432,117 @@ SUB Test_Math
     TEST_CASE_END
 END SUB
 
-'$INCLUDE:'../StringFile.bas'
+SUB Test_Vector2D
+    TEST_CASE_BEGIN "Vector2D: Basic Operations"
+    
+    DIM v AS Vector2D, a AS Vector2D, b AS Vector2D, dst AS Vector2D
+    DIM tolerance AS SINGLE: tolerance = 0.0001 ' For floating point comparisons
+    
+    ' Test Initialize and Reset
+    Vector2D_Initialize 3.0!, 4.0!, v
+    TEST_CHECK Math_IsSingleEqual(v.x, 3.0!), "Vector2D_Initialize x=3"
+    TEST_CHECK Math_IsSingleEqual(v.y, 4.0!), "Vector2D_Initialize y=4"
+    TEST_CHECK Math_IsSingleEqual(Vector2D_GetLength(v), 5.0!), "Vector2D_GetLength = 5"
+    
+    Vector2D_Reset v
+    TEST_CHECK Vector2D_IsNull(v), "Vector2D_Reset nulls vector"
+    TEST_CHECK Math_IsSingleEqual(v.x, 0.0!), "Vector2D_Reset x=0"
+    TEST_CHECK Math_IsSingleEqual(v.y, 0.0!), "Vector2D_Reset y=0"
+    
+    TEST_CASE_END
+    
+    TEST_CASE_BEGIN "Vector2D: Arithmetic Operations"
+    
+    ' Test Add, Subtract, Multiply, Divide
+    Vector2D_Initialize 1.0!, 2.0!, a
+    Vector2D_Initialize 3.0!, 4.0!, b
+    
+    Vector2D_Add a, b, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 4.0!), "Vector2D_Add x=1+3=4"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 6.0!), "Vector2D_Add y=2+4=6"
+
+    Vector2D_Subtract b, a, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2D_Subtract x=3-1=2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2D_Subtract y=4-2=2"
+
+    Vector2D_Multiply a, b, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2D_Multiply x=1*3=3"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 8.0!), "Vector2D_Multiply y=2*4=8"
+
+    Vector2D_Divide b, a, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2D_Divide x=3/1=3"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2D_Divide y=4/2=2"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2D: Vector Operations"
+
+    ' Test Normalize, Length, Distance
+    Vector2D_Initialize 3.0!, 4.0!, v
+    Vector2D_Normalize v, dst
+    TEST_CHECK ABS(dst.x - 0.6) < tolerance, "ABS(dst.x - 0.6) < tolerance"
+    TEST_CHECK ABS(dst.y - 0.8) < tolerance, "ABS(dst.y - 0.8) < tolerance"
+    TEST_CHECK ABS(Vector2D_GetLength(dst) - 1.0!) < tolerance, "ABS(Vector2D_GetLength(dst) - 1.0!) < tolerance"
+
+    Vector2D_Initialize 1.0!, 1.0!, a
+    Vector2D_Initialize 4.0!, 5.0!, b
+    TEST_CHECK Math_IsSingleEqual(Vector2D_GetDistance(a, b), 5.0!), "Vector2D_GetDistance = 5"
+    TEST_CHECK Math_IsSingleEqual(Vector2D_GetDotProduct(a, b), 9.0!), "Vector2D_GetDotProduct = 9"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2D: Transformations"
+
+    ' Test Rotate, Lerp, Reflect
+    Vector2D_Initialize 1.0!, 0.0!, v
+    Vector2D_Rotate v, 1.5708!, dst ' ~90 degrees in radians
+    TEST_CHECK ABS(dst.x) < tolerance, "ABS(dst.x) < tolerance"
+    TEST_CHECK ABS(dst.y - 1.0!) < tolerance, "ABS(dst.y - 1.0!) < tolerance"
+
+    Vector2D_Initialize 0.0!, 0.0!, a
+    Vector2D_Initialize 10.0!, 10.0!, b
+    Vector2D_Lerp a, b, 0.5!, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 5.0!), "Vector2D_Lerp x=5"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 5.0!), "Vector2D_Lerp y=5"
+
+    Vector2D_Initialize 1.0!, -1.0!, v
+    Vector2D_Initialize 0.0!, 1.0!, b ' Normal vector
+    Vector2D_Reflect v, b, dst
+    TEST_CHECK ABS(dst.x - 1.0!) < tolerance, "ABS(dst.x - 1.0!) < tolerance"
+    TEST_CHECK ABS(dst.y - 1.0!) < tolerance, "ABS(dst.y - 1.0!) < tolerance"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Vector2D: Special Operations"
+
+    ' Test MoveTowards, Clamp, Invert
+    Vector2D_Initialize 0.0!, 0.0!, a
+    Vector2D_Initialize 10.0!, 0.0!, b
+    Vector2D_MoveTowards a, b, 3.0!, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2D_MoveTowards x=3"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 0.0!), "Vector2D_MoveTowards y=0"
+
+    Vector2D_Initialize 5.0!, 5.0!, v
+    Vector2D_Initialize -1.0!, -1.0!, a ' Min
+    Vector2D_Initialize 2.0!, 2.0!, b ' Max
+    Vector2D_Clamp v, a, b, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2D_Clamp x=2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2D_Clamp y=2"
+
+    Vector2D_Initialize 2.0!, 3.0!, v
+    Vector2D_Invert v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, -2.0!), "Vector2D_Invert x=-2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, -3.0!), "Vector2D_Invert y=-3"
+    
+    Vector2D_Initialize 2.0!, 4.0!, v
+    Vector2D_Reciprocal v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 0.5!), "Vector2D_Reciprocal x=1/2=0.5"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 0.25!), "Vector2D_Reciprocal y=1/4=0.25"
+    
+    TEST_CASE_END
+END SUB
+
+'$INCLUDE:'../DS/StringFile.bas'
 '$INCLUDE:'../FS/Pathname.bas'
 '$INCLUDE:'../DS/HashTable.bas'
 '$INCLUDE:'../Debug/Test.bas'

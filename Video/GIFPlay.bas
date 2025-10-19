@@ -3,6 +3,8 @@
 ' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
+OPTION _EXPLICIT
+
 $INCLUDEONCE
 
 '$INCLUDE:'GIFPlay.bi'
@@ -60,7 +62,7 @@ FUNCTION GIF_LoadFromMemory%% (Id AS LONG, buffer AS STRING)
         END IF
     $END IF
 
-    DIM sf AS StringFileType
+    DIM sf AS StringFile
 
     StringFile_Create sf, buffer
 
@@ -77,7 +79,7 @@ FUNCTION GIF_LoadFromFile%% (Id AS LONG, fileName AS STRING)
         END IF
     $END IF
 
-    DIM sf AS StringFileType: StringFile_Create sf, File_Load(fileName)
+    DIM sf AS StringFile: StringFile_Create sf, File_Load(fileName)
 
     IF StringFile_GetSize(sf) THEN
         GIF_LoadFromFile = __GIF_Load(Id, sf)
@@ -87,16 +89,16 @@ END FUNCTION
 
 ' Free a GIF and all associated resources
 SUB GIF_Free (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
     SHARED __GIFPlayFrame() AS __GIFPlayFrameType
     SHARED __GIF_FirstFreeFrame AS LONG
 
     ' Nothing to do if Id is invalid
-    IF NOT HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN EXIT SUB
+    IF NOT HashTable_Contains(__GIFPlayHashTable, Id) THEN EXIT SUB
 
     ' Get the slot we need to free
-    DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+    DIM idx AS LONG: idx = HashTable_GetLong(__GIFPlayHashTable, Id)
 
     ' Walk the whole animation chain to free all the frames and associated data
     __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame
@@ -134,61 +136,61 @@ SUB GIF_Free (Id AS LONG)
     __GIFPlay(idx).isUsed = _FALSE
 
     ' Remove Id from the hash table
-    HashTable_Remove __GIFPlayHashTable(), Id
+    HashTable_Remove __GIFPlayHashTable, Id
 END SUB
 
 
 ' Returns the width of the animation in pixels
 FUNCTION GIF_GetWidth~& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetWidth = _WIDTH(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).image)
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetWidth = _WIDTH(__GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).image)
     END IF
 END FUNCTION
 
 
 ' Returns the height of the animation in pixels
 FUNCTION GIF_GetHeight~& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetHeight = _HEIGHT(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).image)
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetHeight = _HEIGHT(__GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).image)
     END IF
 END FUNCTION
 
 
 ' Returns the number of currently playing frame
 FUNCTION GIF_GetFrameNumber~& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetFrameNumber = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frameNumber
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetFrameNumber = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).frameNumber
     END IF
 END FUNCTION
 
 
 ' Returns the total frames in the GIF. If this is 1 then it is a static image
 FUNCTION GIF_GetTotalFrames~& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetTotalFrames = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frameCount
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetTotalFrames = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).frameCount
     END IF
 END FUNCTION
 
 
 ' Resume or starts playback
 SUB GIF_Play (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        DIM idx AS LONG: idx = HashTable_GetLong(__GIFPlayHashTable, Id)
 
         __GIFPlay(idx).isPlaying = _TRUE
         __GIFPlay(idx).lastTick = Time_GetTicks
@@ -198,22 +200,22 @@ END SUB
 
 ' Pauses playback. That same frame is served as long as playback is paused
 SUB GIF_Pause (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isPlaying = _FALSE
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).isPlaying = _FALSE
     END IF
 END SUB
 
 
 ' Stops playing the GIF and resets the cursor to the first frame
 SUB GIF_Stop (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        DIM idx AS LONG: idx = HashTable_GetLong(__GIFPlayHashTable, Id)
 
         __GIFPlay(idx).isPlaying = _FALSE
         __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame
@@ -228,11 +230,11 @@ END SUB
 
 ' Return True if GIF is currently playing
 FUNCTION GIF_IsPlaying%% (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_IsPlaying = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isPlaying
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_IsPlaying = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).isPlaying
     END IF
 END FUNCTION
 
@@ -240,10 +242,10 @@ END FUNCTION
 ' This draws the current frame on the destination surface @ (0, 0) (stretching the frame if needed)
 ' This will also draw the overlay if the playback is stopped / paused
 SUB GIF_Draw (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
         $IF INFORM_BI = DEFINED THEN
             BeginDraw ID
         $END IF
@@ -252,7 +254,7 @@ SUB GIF_Draw (Id AS LONG)
         DIM renderedFrame AS LONG: renderedFrame = GIF_GetFrame(Id)
 
         ' Cache the GIF index because we'll be using this a lot
-        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+        DIM idx AS LONG: idx = HashTable_GetLong(__GIFPlayHashTable, Id)
 
         ' Clear the surface using the background color (this will be black if the GIF has no global color table)
         CLS , __GIFPlay(idx).bgColor
@@ -279,15 +281,15 @@ END SUB
 ' Use this if you want to do your own rendering
 ' Also do not free the image. The library will do that when it is no longer needed
 FUNCTION GIF_GetFrame& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
     SHARED __GIFPlayFrame() AS __GIFPlayFrameType
 
     ' Exit if Id is not valid
-    IF NOT HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN EXIT FUNCTION
+    IF NOT HashTable_Contains(__GIFPlayHashTable, Id) THEN EXIT FUNCTION
 
     ' Cache the GIF index because we'll be using this a lot
-    DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+    DIM idx AS LONG: idx = HashTable_GetLong(__GIFPlayHashTable, Id)
 
     ' Always return the rendered image handle (since this does not change during the GIFs lifetime)
     GIF_GetFrame = __GIFPlay(idx).image
@@ -367,67 +369,67 @@ END FUNCTION
 
 ' Returns the background color that should be used to clear the surface before drawing the final rendered frame
 FUNCTION GIF_GetBackgroundColor~& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetBackgroundColor = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).bgColor
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetBackgroundColor = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).bgColor
     END IF
 END FUNCTION
 
 
 ' Returns the total runtime of the animation in ms
 FUNCTION GIF_GetTotalDuration~&& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetTotalDuration = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).duration
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetTotalDuration = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).duration
     END IF
 END FUNCTION
 
 
 ' Returns the total runtime of the current frame in ms
 FUNCTION GIF_GetFrameDuration~&& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
     SHARED __GIFPlayFrame() AS __GIFPlayFrameType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetFrameDuration = __GIFPlayFrame(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frame).duration
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetFrameDuration = __GIFPlayFrame(__GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).frame).duration
     END IF
 END FUNCTION
 
 
 ' Returns the current runtime of the animation in ms
 FUNCTION GIF_GetElapsedTime~&& (Id AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_GetElapsedTime = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).elapsedTime
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_GetElapsedTime = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).elapsedTime
     END IF
 END FUNCTION
 
 
 ' Set the looping behavior
 SUB GIF_SetLoop (Id AS LONG, loops AS LONG)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).loops = loops
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).loops = loops
     END IF
 END SUB
 
 
 ' Sets the GIF overlay to enable / disable
 SUB GIF_EnableOverlay (Id AS LONG, isEnabled AS _BYTE)
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).overlayEnabled = isEnabled
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).overlayEnabled = isEnabled
     END IF
 END SUB
 
@@ -435,11 +437,11 @@ END SUB
 ' Returns TRUE if a GIF with Id is loaded
 FUNCTION GIF_IsLoaded%% (Id AS LONG)
     $CHECKING:OFF
-    SHARED __GIFPlayHashTable() AS HashTableType
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
 
-    IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
-        GIF_IsLoaded = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isReady
+    IF HashTable_Contains(__GIFPlayHashTable, Id) THEN
+        GIF_IsLoaded = __GIFPlay(HashTable_GetLong(__GIFPlayHashTable, Id)).isReady
     END IF
     $CHECKING:ON
 END FUNCTION
@@ -487,7 +489,7 @@ END SUB
 
 
 ' https://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art011
-FUNCTION __GIF_ReadLZWCode& (sf AS StringFileType, buffer AS STRING, bitPos AS LONG, bitSize AS LONG)
+FUNCTION __GIF_ReadLZWCode& (sf AS StringFile, buffer AS STRING, bitPos AS LONG, bitSize AS LONG)
     DIM AS LONG code, p: p = 1
 
     DIM i AS LONG: FOR i = 1 TO bitSize
@@ -518,7 +520,7 @@ END FUNCTION
 
 
 ' https://stackoverflow.com/questions/26894809/gif-lzw-decompression
-FUNCTION __GIF_DecodeLZW%% (sf AS StringFileType, bmpMem AS _MEM)
+FUNCTION __GIF_DecodeLZW%% (sf AS StringFile, bmpMem AS _MEM)
     TYPE __LZWCodeType
         c AS LONG
         prefix AS LONG
@@ -636,11 +638,16 @@ END SUB
 
 
 ' This is an internal loading function common for both memory and file loaders
-FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
-    SHARED __GIFPlayHashTable() AS HashTableType
+FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFile)
+    SHARED __GIFPlayHashTable AS _UNSIGNED _OFFSET
     SHARED __GIFPlay() AS __GIFPlayType
     SHARED __GIFPlayFrame() AS __GIFPlayFrameType
     SHARED __GIF_FirstFreeFrame AS LONG
+
+    ' Create the hash table just once
+    IF __GIFPlayHashTable = NULL THEN
+        __GIFPlayHashTable = HashTable_Create
+    END IF
 
     ' Check if Id already exists and if so free it
     IF GIF_IsLoaded(Id) THEN GIF_Free Id
@@ -661,7 +668,7 @@ FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
     IF idx > UBOUND(__GIFPlay) THEN REDIM _PRESERVE __GIFPlay(0 TO idx) AS __GIFPlayType
 
     __GIFPlay(idx).isUsed = _TRUE ' occupy the slot
-    HashTable_InsertLong __GIFPlayHashTable(), Id, idx ' add it to the hash table
+    HashTable_SetLong __GIFPlayHashTable, Id, idx ' add it to the hash table
 
     ' Reset some stuff
     __GIFPlay(idx).isReady = _FALSE
@@ -941,7 +948,7 @@ FUNCTION __GIF_GetOverlayImage&
     __GIF_GetOverlayImage = overlayImage
 END FUNCTION
 
-'$INCLUDE:'HashTable.bas'
-'$INCLUDE:'StringFile.bas'
-'$INCLUDE:'Base64.bas'
-'$INCLUDE:'File.bas'
+'$INCLUDE:'../DS/HashTable.bas'
+'$INCLUDE:'../DS/StringFile.bas'
+'$INCLUDE:'../Base64.bas'
+'$INCLUDE:'../File.bas'

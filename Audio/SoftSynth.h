@@ -7,9 +7,9 @@
 
 #define _USE_MATH_DEFINES
 
-#include "Debug.h"
-#include "Types.h"
-#include "Math/Math.h"
+#include "../Debug/Debug.h"
+#include "../Types.h"
+#include "../Math/Math.h"
 #include <cstdint>
 #include <memory>
 #include <utility>

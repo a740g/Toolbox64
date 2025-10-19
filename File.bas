@@ -139,4 +139,4 @@ FUNCTION File_GetModifiedTime&& (pathName AS STRING)
 END FUNCTION
 
 '$INCLUDE:'StringOps.bas'
-'$INCLUDE:'Pathname.bas'
+'$INCLUDE:'FS/Pathname.bas'

@@ -32,7 +32,7 @@ inline void Vector2D_Assign(const void *src, void *dst)
     *reinterpret_cast<Vector2D *>(dst) = *reinterpret_cast<const Vector2D *>(src);
 }
 
-inline auto constexpr Vector2D_IsNull(const void *src)
+inline qb_bool Vector2D_IsNull(const void *src)
 {
     return TO_QB_BOOL(reinterpret_cast<const Vector2D *>(src)->x == 0.0f && reinterpret_cast<const Vector2D *>(src)->y == 0.0f);
 }
@@ -139,23 +139,23 @@ inline void Vector2D_Negate(const void *src, void *dst)
     reinterpret_cast<Vector2D *>(dst)->y = -reinterpret_cast<const Vector2D *>(src)->y;
 }
 
-inline auto constexpr Vector2D_GetLengthSquared(const void *src)
+inline float Vector2D_GetLengthSquared(const void *src)
 {
     return (reinterpret_cast<const Vector2D *>(src)->x * reinterpret_cast<const Vector2D *>(src)->x) + (reinterpret_cast<const Vector2D *>(src)->y * reinterpret_cast<const Vector2D *>(src)->y);
 }
 
-inline auto constexpr Vector2D_GetLength(const void *src)
+inline float Vector2D_GetLength(const void *src)
 {
     return std::sqrt(Vector2D_GetLengthSquared(src));
 }
 
-inline auto constexpr Vector2D_GetDistanceSquared(const void *src1, const void *src2)
+inline float Vector2D_GetDistanceSquared(const void *src1, const void *src2)
 {
     return (reinterpret_cast<const Vector2D *>(src1)->x - reinterpret_cast<const Vector2D *>(src2)->x) * (reinterpret_cast<const Vector2D *>(src1)->x - reinterpret_cast<const Vector2D *>(src2)->x) +
            (reinterpret_cast<const Vector2D *>(src1)->y - reinterpret_cast<const Vector2D *>(src2)->y) * (reinterpret_cast<const Vector2D *>(src1)->y - reinterpret_cast<const Vector2D *>(src2)->y);
 }
 
-inline auto constexpr Vector2D_GetDistance(const void *src1, const void *src2)
+inline float Vector2D_GetDistance(const void *src1, const void *src2)
 {
     return std::sqrt(Vector2D_GetDistanceSquared(src1, src2));
 }
@@ -166,27 +166,27 @@ inline void Vector2D_GetSizeVector(const void *src1, const void *src2, void *dst
     reinterpret_cast<Vector2D *>(dst)->y = 1.0f + std::abs(reinterpret_cast<const Vector2D *>(src1)->y - reinterpret_cast<const Vector2D *>(src2)->y);
 }
 
-inline auto constexpr Vector2D_GetArea(const void *src)
+inline float Vector2D_GetArea(const void *src)
 {
     return reinterpret_cast<const Vector2D *>(src)->x * reinterpret_cast<const Vector2D *>(src)->y;
 }
 
-inline auto constexpr Vector2D_GetPerimeter(const void *src)
+inline float Vector2D_GetPerimeter(const void *src)
 {
     return 2.0f * (reinterpret_cast<const Vector2D *>(src)->x + reinterpret_cast<const Vector2D *>(src)->y);
 }
 
-inline auto constexpr Vector2D_GetDotProduct(const void *src1, const void *src2)
+inline float Vector2D_GetDotProduct(const void *src1, const void *src2)
 {
     return (reinterpret_cast<const Vector2D *>(src1)->x * reinterpret_cast<const Vector2D *>(src2)->x) + (reinterpret_cast<const Vector2D *>(src1)->y * reinterpret_cast<const Vector2D *>(src2)->y);
 }
 
-inline auto constexpr Vector2D_GetAngle(const void *src1, const void *src2)
+inline float Vector2D_GetAngle(const void *src1, const void *src2)
 {
     return std::atan2(reinterpret_cast<const Vector2D *>(src1)->x * reinterpret_cast<const Vector2D *>(src2)->y - reinterpret_cast<const Vector2D *>(src1)->y * reinterpret_cast<const Vector2D *>(src2)->x, Vector2D_GetDotProduct(src1, src2));
 }
 
-inline auto constexpr Vector2D_GetLineAngle(const void *src1, const void *src2)
+inline float Vector2D_GetLineAngle(const void *src1, const void *src2)
 {
     return -std::atan2(reinterpret_cast<const Vector2D *>(src2)->y - reinterpret_cast<const Vector2D *>(src1)->y, reinterpret_cast<const Vector2D *>(src2)->x - reinterpret_cast<const Vector2D *>(src1)->x);
 }
@@ -252,6 +252,12 @@ inline void Vector2D_MoveTowards(const void *src, const void *target, float maxD
 }
 
 inline void Vector2D_Invert(const void *src, void *dst)
+{
+    reinterpret_cast<Vector2D *>(dst)->x = -reinterpret_cast<const Vector2D *>(src)->x;
+    reinterpret_cast<Vector2D *>(dst)->y = -reinterpret_cast<const Vector2D *>(src)->y;
+}
+
+inline void Vector2D_Reciprocal(const void *src, void *dst)
 {
     reinterpret_cast<Vector2D *>(dst)->x = 1.0f / reinterpret_cast<const Vector2D *>(src)->x;
     reinterpret_cast<Vector2D *>(dst)->y = 1.0f / reinterpret_cast<const Vector2D *>(src)->y;

@@ -38,7 +38,7 @@ CONST __TEST_COLOR_ARROW = 94 ' light blue
 CONST __TEST_COLOR_KIND = 35 ' magenta
 CONST __TEST_SEPARATOR_WIDTH = 60
 
-TYPE __TestStateType
+TYPE __TestState
     testsRun AS LONG
     assertions AS LONG
     failures AS LONG
@@ -52,4 +52,4 @@ TYPE __TestStateType
     colorEnabled AS _BYTE
 END TYPE
 
-DIM __TestState AS __TestStateType
+DIM __TestState AS __TestState

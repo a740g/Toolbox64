@@ -179,7 +179,7 @@ FUNCTION __MODPlayer_LoadS3M%% (buffer AS STRING)
     __MODPlayer_InitializeSong ' just in case something is playing
 
     ' Open the buffer as a StringFile
-    DIM memFile AS StringFileType
+    DIM memFile AS StringFile
     StringFile_Create memFile, buffer
 
     ' Seek to offset 44 (2Ch) in the file & read the file signature
@@ -794,7 +794,7 @@ FUNCTION __MODPlayer_LoadMTM%% (buffer AS STRING)
     __MODPlayer_InitializeSong ' just in case something is playing
 
     ' Open the buffer as a StringFile
-    DIM memFile AS StringFileType
+    DIM memFile AS StringFile
     StringFile_Create memFile, buffer
 
     ' Read the file signature
@@ -1010,7 +1010,7 @@ FUNCTION __MODPlayer_LoadMOD%% (buffer AS STRING)
     __MODPlayer_InitializeSong ' just in case something is playing
 
     ' Attempt to open the file
-    DIM i AS LONG, memFile AS StringFileType
+    DIM i AS LONG, memFile AS StringFile
     StringFile_Create memFile, buffer
 
     ' Seek to offset 1080 (438h) in the file and read the file signature
@@ -2309,5 +2309,5 @@ FUNCTION MODPlayer_GetOrders~%
 END FUNCTION
 
 '$INCLUDE:'SoftSynth.bas'
-'$INCLUDE:'StringFile.bas'
-'$INCLUDE:'File.bas'
+'$INCLUDE:'../DS/StringFile.bas'
+'$INCLUDE:'../File.bas'

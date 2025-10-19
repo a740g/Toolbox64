@@ -5,11 +5,10 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'StringFile.bi'
-'$INCLUDE:'Base64.bi'
-'$INCLUDE:'HashTable.bi'
-'$INCLUDE:'File.bi'
-'$INCLUDE:'TimeOps.bi'
+'$INCLUDE:'../DS/StringFile.bi'
+'$INCLUDE:'../DS/HashTable.bi'
+'$INCLUDE:'../File.bi'
+'$INCLUDE:'../TimeOps.bi'
 
 ' This is the master animation type that holds info about a complete animation
 TYPE __GIFPlayType
@@ -57,7 +56,7 @@ TYPE __GIFFrameType
     duration AS _UNSIGNED INTEGER ' raw duration data in 1/100th seconds
 END TYPE
 
-REDIM __GIFPlayHashTable(0 TO 0) AS HashTableType ' shared hash table to keep user supplied IDs (the values here points to indexes in __GIFPlay)
+REDIM __GIFPlayHashTable AS _UNSIGNED _OFFSET ' shared hash table to keep user supplied IDs (the values here points to indexes in __GIFPlay)
 REDIM __GIFPlay(0 TO 0) AS __GIFPlayType ' main GIFPlay array - each array element is for a single GIF
 REDIM __GIFPlayFrame(0 TO 0) AS __GIFPlayFrameType ' shared GIF frame array - this holds GIF frame and frame information for all loaded GIFs
 DIM __GIF_FirstFreeFrame AS LONG ' index of the lowest free frame in __GIFPlayFrame
