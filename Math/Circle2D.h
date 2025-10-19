@@ -7,8 +7,7 @@
 
 #include "Vector2D.h"
 
-struct Circle2D
-{
+struct Circle2D {
     Vector2D position;
     float radius;
 };

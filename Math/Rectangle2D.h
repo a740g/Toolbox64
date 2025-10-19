@@ -7,8 +7,7 @@
 
 #include "Vector2D.h"
 
-struct Rectangle2D
-{
+struct Rectangle2D {
     Vector2D position;
     Vector2D size;
 };

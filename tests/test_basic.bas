@@ -6,7 +6,7 @@ $CONSOLE:ONLY
 '$INCLUDE:'../FS/Pathname.bi'
 '$INCLUDE:'../DS/StringFile.bi'
 '$INCLUDE:'../Math/Math.bi'
-'$INCLUDE:'../Math/Vector2D.bi'
+'$INCLUDE:'../Math/Vector2f.bi'
 
 TEST_BEGIN_ALL
 
@@ -15,7 +15,7 @@ Test_Hash
 Test_Pathname
 Test_StringFile
 Test_Math
-Test_Vector2D
+Test_Vector2f
 
 TEST_END_ALL
 
@@ -432,113 +432,139 @@ SUB Test_Math
     TEST_CASE_END
 END SUB
 
-SUB Test_Vector2D
-    TEST_CASE_BEGIN "Vector2D: Basic Operations"
-    
-    DIM v AS Vector2D, a AS Vector2D, b AS Vector2D, dst AS Vector2D
+SUB Test_Vector2f
+    TEST_CASE_BEGIN "Vector2f: Basic Operations"
+
+    DIM v AS Vector2f, a AS Vector2f, b AS Vector2f, dst AS Vector2f
     DIM tolerance AS SINGLE: tolerance = 0.0001 ' For floating point comparisons
-    
+
     ' Test Initialize and Reset
-    Vector2D_Initialize 3.0!, 4.0!, v
-    TEST_CHECK Math_IsSingleEqual(v.x, 3.0!), "Vector2D_Initialize x=3"
-    TEST_CHECK Math_IsSingleEqual(v.y, 4.0!), "Vector2D_Initialize y=4"
-    TEST_CHECK Math_IsSingleEqual(Vector2D_GetLength(v), 5.0!), "Vector2D_GetLength = 5"
-    
-    Vector2D_Reset v
-    TEST_CHECK Vector2D_IsNull(v), "Vector2D_Reset nulls vector"
-    TEST_CHECK Math_IsSingleEqual(v.x, 0.0!), "Vector2D_Reset x=0"
-    TEST_CHECK Math_IsSingleEqual(v.y, 0.0!), "Vector2D_Reset y=0"
-    
+    Vector2f_Initialize 3.0!, 4.0!, v
+    TEST_CHECK Math_IsSingleEqual(v.x, 3.0!), "Vector2f_Initialize x=3"
+    TEST_CHECK Math_IsSingleEqual(v.y, 4.0!), "Vector2f_Initialize y=4"
+    TEST_CHECK Math_IsSingleEqual(Vector2f_GetLength(v), 5.0!), "Vector2f_GetLength = 5"
+
+    Vector2f_Reset v
+    TEST_CHECK Vector2f_IsNull(v), "Vector2f_Reset nulls vector"
+    TEST_CHECK Math_IsSingleEqual(v.x, 0.0!), "Vector2f_Reset x=0"
+    TEST_CHECK Math_IsSingleEqual(v.y, 0.0!), "Vector2f_Reset y=0"
+
     TEST_CASE_END
-    
-    TEST_CASE_BEGIN "Vector2D: Arithmetic Operations"
-    
+
+    TEST_CASE_BEGIN "Vector2f: Arithmetic Operations"
+
     ' Test Add, Subtract, Multiply, Divide
-    Vector2D_Initialize 1.0!, 2.0!, a
-    Vector2D_Initialize 3.0!, 4.0!, b
-    
-    Vector2D_Add a, b, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 4.0!), "Vector2D_Add x=1+3=4"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 6.0!), "Vector2D_Add y=2+4=6"
+    Vector2f_Initialize 1.0!, 2.0!, a
+    Vector2f_Initialize 3.0!, 4.0!, b
 
-    Vector2D_Subtract b, a, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2D_Subtract x=3-1=2"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2D_Subtract y=4-2=2"
+    Vector2f_Add a, b, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 4.0!), "Vector2f_Add x=1+3=4"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 6.0!), "Vector2f_Add y=2+4=6"
 
-    Vector2D_Multiply a, b, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2D_Multiply x=1*3=3"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 8.0!), "Vector2D_Multiply y=2*4=8"
+    Vector2f_Subtract b, a, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2f_Subtract x=3-1=2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2f_Subtract y=4-2=2"
 
-    Vector2D_Divide b, a, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2D_Divide x=3/1=3"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2D_Divide y=4/2=2"
+    Vector2f_Multiply a, b, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2f_Multiply x=1*3=3"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 8.0!), "Vector2f_Multiply y=2*4=8"
+
+    Vector2f_Divide b, a, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2f_Divide x=3/1=3"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2f_Divide y=4/2=2"
 
     TEST_CASE_END
 
-    TEST_CASE_BEGIN "Vector2D: Vector Operations"
+    TEST_CASE_BEGIN "Vector2f: Vector Operations"
 
     ' Test Normalize, Length, Distance
-    Vector2D_Initialize 3.0!, 4.0!, v
-    Vector2D_Normalize v, dst
+    Vector2f_Initialize 3.0!, 4.0!, v
+    Vector2f_Normalize v, dst
     TEST_CHECK ABS(dst.x - 0.6) < tolerance, "ABS(dst.x - 0.6) < tolerance"
     TEST_CHECK ABS(dst.y - 0.8) < tolerance, "ABS(dst.y - 0.8) < tolerance"
-    TEST_CHECK ABS(Vector2D_GetLength(dst) - 1.0!) < tolerance, "ABS(Vector2D_GetLength(dst) - 1.0!) < tolerance"
+    TEST_CHECK ABS(Vector2f_GetLength(dst) - 1.0!) < tolerance, "ABS(Vector2f_GetLength(dst) - 1.0!) < tolerance"
 
-    Vector2D_Initialize 1.0!, 1.0!, a
-    Vector2D_Initialize 4.0!, 5.0!, b
-    TEST_CHECK Math_IsSingleEqual(Vector2D_GetDistance(a, b), 5.0!), "Vector2D_GetDistance = 5"
-    TEST_CHECK Math_IsSingleEqual(Vector2D_GetDotProduct(a, b), 9.0!), "Vector2D_GetDotProduct = 9"
+    Vector2f_Initialize 1.0!, 1.0!, a
+    Vector2f_Initialize 4.0!, 5.0!, b
+    TEST_CHECK Math_IsSingleEqual(Vector2f_GetDistance(a, b), 5.0!), "Vector2f_GetDistance = 5"
+    TEST_CHECK Math_IsSingleEqual(Vector2f_GetDotProduct(a, b), 9.0!), "Vector2f_GetDotProduct = 9"
 
     TEST_CASE_END
 
-    TEST_CASE_BEGIN "Vector2D: Transformations"
+    TEST_CASE_BEGIN "Vector2f: Transformations"
 
     ' Test Rotate, Lerp, Reflect
-    Vector2D_Initialize 1.0!, 0.0!, v
-    Vector2D_Rotate v, 1.5708!, dst ' ~90 degrees in radians
+    Vector2f_Initialize 1.0!, 0.0!, v
+    Vector2f_Rotate v, 1.5708!, dst ' ~90 degrees in radians
     TEST_CHECK ABS(dst.x) < tolerance, "ABS(dst.x) < tolerance"
     TEST_CHECK ABS(dst.y - 1.0!) < tolerance, "ABS(dst.y - 1.0!) < tolerance"
 
-    Vector2D_Initialize 0.0!, 0.0!, a
-    Vector2D_Initialize 10.0!, 10.0!, b
-    Vector2D_Lerp a, b, 0.5!, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 5.0!), "Vector2D_Lerp x=5"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 5.0!), "Vector2D_Lerp y=5"
+    Vector2f_Initialize 0.0!, 0.0!, a
+    Vector2f_Initialize 10.0!, 10.0!, b
+    Vector2f_Lerp a, b, 0.5!, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 5.0!), "Vector2f_Lerp x=5"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 5.0!), "Vector2f_Lerp y=5"
 
-    Vector2D_Initialize 1.0!, -1.0!, v
-    Vector2D_Initialize 0.0!, 1.0!, b ' Normal vector
-    Vector2D_Reflect v, b, dst
+    Vector2f_Initialize 1.0!, -1.0!, v
+    Vector2f_Initialize 0.0!, 1.0!, b ' Normal vector
+    Vector2f_Reflect v, b, dst
     TEST_CHECK ABS(dst.x - 1.0!) < tolerance, "ABS(dst.x - 1.0!) < tolerance"
     TEST_CHECK ABS(dst.y - 1.0!) < tolerance, "ABS(dst.y - 1.0!) < tolerance"
 
     TEST_CASE_END
 
-    TEST_CASE_BEGIN "Vector2D: Special Operations"
+    TEST_CASE_BEGIN "Vector2f: Special Operations"
 
     ' Test MoveTowards, Clamp, Invert
-    Vector2D_Initialize 0.0!, 0.0!, a
-    Vector2D_Initialize 10.0!, 0.0!, b
-    Vector2D_MoveTowards a, b, 3.0!, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2D_MoveTowards x=3"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 0.0!), "Vector2D_MoveTowards y=0"
+    Vector2f_Initialize 0.0!, 0.0!, a
+    Vector2f_Initialize 10.0!, 0.0!, b
+    Vector2f_MoveTowards a, b, 3.0!, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 3.0!), "Vector2f_MoveTowards x=3"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 0.0!), "Vector2f_MoveTowards y=0"
 
-    Vector2D_Initialize 5.0!, 5.0!, v
-    Vector2D_Initialize -1.0!, -1.0!, a ' Min
-    Vector2D_Initialize 2.0!, 2.0!, b ' Max
-    Vector2D_Clamp v, a, b, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2D_Clamp x=2"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2D_Clamp y=2"
+    Vector2f_Initialize 5.0!, 5.0!, v
+    Vector2f_Initialize -1.0!, -1.0!, a ' Min
+    Vector2f_Initialize 2.0!, 2.0!, b ' Max
+    Vector2f_Clamp v, a, b, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2f_Clamp x=2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2f_Clamp y=2"
 
-    Vector2D_Initialize 2.0!, 3.0!, v
-    Vector2D_Invert v, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, -2.0!), "Vector2D_Invert x=-2"
-    TEST_CHECK Math_IsSingleEqual(dst.y, -3.0!), "Vector2D_Invert y=-3"
-    
-    Vector2D_Initialize 2.0!, 4.0!, v
-    Vector2D_Reciprocal v, dst
-    TEST_CHECK Math_IsSingleEqual(dst.x, 0.5!), "Vector2D_Reciprocal x=1/2=0.5"
-    TEST_CHECK Math_IsSingleEqual(dst.y, 0.25!), "Vector2D_Reciprocal y=1/4=0.25"
-    
+    Vector2f_Initialize 2.0!, 3.0!, v
+    Vector2f_Negate v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, -2.0!), "Vector2f_Negate x=-2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, -3.0!), "Vector2f_Negate y=-3"
+
+    Vector2f_Initialize 2.0!, 4.0!, v
+    Vector2f_Reciprocal v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 0.5!), "Vector2f_Reciprocal x=1/2=0.5"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 0.25!), "Vector2f_Reciprocal y=1/4=0.25"
+
+    ' TurnLeft (90 deg CCW)
+    Vector2f_Initialize 1.0!, 2.0!, v
+    Vector2f_TurnLeft v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, -2.0!), "Vector2f_TurnLeft x=-2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 1.0!), "Vector2f_TurnLeft y=1"
+
+    ' TurnRight (90 deg CW)
+    Vector2f_TurnRight v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 2.0!), "Vector2f_TurnRight x=2"
+    TEST_CHECK Math_IsSingleEqual(dst.y, -1.0!), "Vector2f_TurnRight y=-1"
+
+    ' FlipVertical
+    Vector2f_FlipVertical v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, 1.0!), "Vector2f_FlipVertical x=1"
+    TEST_CHECK Math_IsSingleEqual(dst.y, -2.0!), "Vector2f_FlipVertical y=-2"
+
+    ' FlipHorizontal
+    Vector2f_FlipHorizontal v, dst
+    TEST_CHECK Math_IsSingleEqual(dst.x, -1.0!), "Vector2f_FlipHorizontal x=-1"
+    TEST_CHECK Math_IsSingleEqual(dst.y, 2.0!), "Vector2f_FlipHorizontal y=2"
+
+    ' CrossProduct
+    Vector2f_Initialize 3.0!, 4.0!, a
+    Vector2f_Initialize 5.0!, 6.0!, b
+    TEST_CHECK Math_IsSingleEqual(Vector2f_GetCrossProduct(a, b), -2.0!), "Vector2f_GetCrossProduct = -2"
+
     TEST_CASE_END
 END SUB
 

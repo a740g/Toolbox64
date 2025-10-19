@@ -7,8 +7,7 @@
 
 #include "Vector2D.h"
 
-struct Triangle2D
-{
+struct Triangle2D {
     Vector2D a;
     Vector2D b;
     Vector2D c;

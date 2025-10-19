@@ -7,8 +7,7 @@
 
 #include "Vector2D.h"
 
-struct Line2D
-{
+struct Line2D {
     Vector2D a;
     Vector2D b;
 };
