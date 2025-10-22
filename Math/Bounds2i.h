@@ -64,8 +64,8 @@ inline int32_t Bounds2i_GetHeight(const void *src) {
 }
 
 inline void Bounds2i_GetCenter(const void *src, void *dst) {
-    VECTOR2I_DST(dst)->x = (BOUNDS2I_SRC(src)->lt.x + BOUNDS2I_SRC(src)->rb.x) / 2;
-    VECTOR2I_DST(dst)->y = (BOUNDS2I_SRC(src)->lt.y + BOUNDS2I_SRC(src)->rb.y) / 2;
+    VECTOR2I_DST(dst)->x = BOUNDS2I_SRC(src)->lt.x + (BOUNDS2I_SRC(src)->rb.x - BOUNDS2I_SRC(src)->lt.x) / 2;
+    VECTOR2I_DST(dst)->y = BOUNDS2I_SRC(src)->lt.y + (BOUNDS2I_SRC(src)->rb.y - BOUNDS2I_SRC(src)->lt.y) / 2;
 }
 
 inline void Bounds2i_GetSize(const void *src, void *dst) {
@@ -80,26 +80,6 @@ inline void Bounds2i_Sanitize(void *dst) {
     if (BOUNDS2I_DST(dst)->lt.y > BOUNDS2I_DST(dst)->rb.y) {
         std::swap(BOUNDS2I_DST(dst)->lt.y, BOUNDS2I_DST(dst)->rb.y);
     }
-}
-
-inline void Bounds2i_SetLeftTop(const void *point, void *dst) {
-    BOUNDS2I_DST(dst)->lt.x = VECTOR2I_SRC(point)->x;
-    BOUNDS2I_DST(dst)->lt.y = VECTOR2I_SRC(point)->y;
-}
-
-inline void Bounds2i_SetLeftTopXY(int32_t x, int32_t y, void *dst) {
-    BOUNDS2I_DST(dst)->lt.x = x;
-    BOUNDS2I_DST(dst)->lt.y = y;
-}
-
-inline void Bounds2i_SetRightBottom(const void *point, void *dst) {
-    BOUNDS2I_DST(dst)->rb.x = VECTOR2I_SRC(point)->x;
-    BOUNDS2I_DST(dst)->rb.y = VECTOR2I_SRC(point)->y;
-}
-
-inline void Bounds2i_SetRightBottomXY(int32_t x, int32_t y, void *dst) {
-    BOUNDS2I_DST(dst)->rb.x = x;
-    BOUNDS2I_DST(dst)->rb.y = y;
 }
 
 inline void Bounds2i_SetRightTop(const void *point, void *dst) {

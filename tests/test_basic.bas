@@ -261,7 +261,7 @@ SUB Test_StringFile
     ' Test resize operations
     StringFile_Create sf, "Original"
     TEST_CHECK StringFile_GetSize(sf) = 8, "Initial size = 8"
-    
+
     ' Grow buffer
     StringFile_Resize sf, 16
     TEST_CHECK StringFile_GetSize(sf) = 16, "Grown size = 16"
@@ -285,7 +285,7 @@ SUB Test_StringFile
     StringFile_Seek sf, 4 ' Seek to EOF is valid
     TEST_CHECK StringFile_IsEOF(sf), "EOF at end"
     TEST_CHECK StringFile_GetPosition(sf) = 4, "Position at EOF"
-    
+
     ' Test extreme values
     StringFile_Create sf, ""
     StringFile_Seek sf, 0
@@ -432,6 +432,37 @@ SUB Test_Math
     TEST_CHECK Math_CbRtDouble(27) = 3, "Math_CbRtDouble(27) = 3"
 
     TEST_CHECK Math_MulDiv(10, 2, 5) = 4, "Math_MulDiv(10, 2, 5) = 4"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Math: SQR vs Math_FastSqRt results"
+
+    DIM AS SINGLE s, resS
+
+    FOR s = 0 TO 65536
+        resS = SQR(s) - Math_FastSqRt(s)
+        TEST_CHECK ABS(resS) < 11, "Result should not exceed +-11 tolerance"
+    NEXT
+
+    TEST_CASE_END
+
+    ' Performance comparison: Math_FastSqRt vs QB64 SQR
+    CONST PTEST_LB = 1
+    CONST PTEST_UB = 400000
+
+    TEST_CASE_BEGIN "Math: QB64 SQR performance -" + STR$(PTEST_UB) + " iterations"
+
+    FOR s = PTEST_LB TO PTEST_UB
+        resS = SQR(s)
+    NEXT
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Math: Math_FastSqRt performance -" + STR$(PTEST_UB) + " iterations"
+
+    FOR s = PTEST_LB TO PTEST_UB
+        resS = Math_FastSqRt(s)
+    NEXT
 
     TEST_CASE_END
 END SUB

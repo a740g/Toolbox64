@@ -86,6 +86,4 @@ DECLARE LIBRARY "Math"
     FUNCTION Math_CbRtSingle! ALIAS "std::cbrt" (BYVAL n AS SINGLE)
     FUNCTION Math_CbRtDouble# ALIAS "std::cbrt" (BYVAL n AS DOUBLE)
     FUNCTION Math_MulDiv& (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
-    FUNCTION Math_ISqRtLong& ALIAS "Math_ISqRt<int32_t>" (BYVAL n AS LONG)
-    FUNCTION Math_ISqRtInteger64&& ALIAS "Math_ISqRt<int64_t>" (BYVAL n AS _INTEGER64)
 END DECLARE
