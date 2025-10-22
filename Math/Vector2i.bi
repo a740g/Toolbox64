@@ -5,6 +5,8 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
+
 TYPE Vector2i
     x AS LONG
     y AS LONG

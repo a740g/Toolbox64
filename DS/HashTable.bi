@@ -5,6 +5,8 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
+
 DECLARE LIBRARY "HashTable"
     FUNCTION HashTable_Create~%&
     SUB HashTable_Destroy (BYVAL t AS _UNSIGNED _OFFSET)

@@ -1,10 +1,11 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Animated GIF Player library
-' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2025 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
 '$INCLUDE:'../DS/StringFile.bi'
 '$INCLUDE:'../DS/HashTable.bi'
 '$INCLUDE:'../File.bi'

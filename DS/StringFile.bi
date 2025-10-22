@@ -5,6 +5,7 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
 '$INCLUDE:'../Types.bi'
 '$INCLUDE:'../PointerOps.bi'
 

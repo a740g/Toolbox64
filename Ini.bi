@@ -6,6 +6,8 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'Common.bi'
+
 TYPE __IniType
     loadedFiles AS STRING
     currentFileName AS STRING

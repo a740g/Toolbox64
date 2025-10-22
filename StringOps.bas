@@ -110,7 +110,7 @@ FUNCTION String_MakePrintable$ (text AS STRING)
     DIM i AS _UNSIGNED LONG: WHILE i < LEN(text)
         DIM c AS _UNSIGNED _BYTE: c = PeekStringByte(text, i)
 
-        IF c > KEY_SPACE THEN PokeStringByte buffer, i, c
+        IF c > _ASC_SPACE THEN PokeStringByte buffer, i, c
 
         i = i + 1
     WEND

@@ -24,6 +24,7 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
 '$INCLUDE:'../IO/StandardIO.bi'
 
 $CONSOLE

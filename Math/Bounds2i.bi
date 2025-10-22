@@ -5,6 +5,7 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
 '$INCLUDE:'Vector2i.bi'
 
 TYPE Bounds2i
@@ -28,13 +29,13 @@ DECLARE LIBRARY "Bounds2i"
     SUB Bounds2i_GetSize (src AS Bounds2i, dst AS Vector2i)
     SUB Bounds2i_Sanitize (src AS Bounds2i)
     SUB Bounds2i_SetLeftTop (point AS Vector2i, dst AS Bounds2i)
-    sub Bounds2i_SetLeftTopXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
+    SUB Bounds2i_SetLeftTopXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
     SUB Bounds2i_SetRightBottom (point AS Vector2i, dst AS Bounds2i)
-    sub Bounds2i_SetRightBottomXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
+    SUB Bounds2i_SetRightBottomXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
     SUB Bounds2i_SetRightTop (point AS Vector2i, dst AS Bounds2i)
-    sub Bounds2i_SetRightTopXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
+    SUB Bounds2i_SetRightTopXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
     SUB Bounds2i_SetLeftBottom (point AS Vector2i, dst AS Bounds2i)
-    sub Bounds2i_SetLeftBottomXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
+    SUB Bounds2i_SetLeftBottomXY (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Bounds2i)
     SUB Bounds2i_GetRightTop (src AS Bounds2i, dst AS Vector2i)
     SUB Bounds2i_GetLeftBottom (src AS Bounds2i, dst AS Vector2i)
     FUNCTION Bounds2i_GetArea~& (src AS Bounds2i)

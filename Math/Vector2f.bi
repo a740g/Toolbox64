@@ -5,6 +5,8 @@
 
 $INCLUDEONCE
 
+'$INCLUDE:'../Common.bi'
+
 TYPE Vector2f
     x AS SINGLE
     y AS SINGLE
