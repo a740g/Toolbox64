@@ -15,7 +15,6 @@ END TYPE
 DECLARE LIBRARY "Vector2i"
     SUB Vector2i_Reset (dst AS Vector2i)
     SUB Vector2i_Initialize (BYVAL x AS LONG, BYVAL y AS LONG, dst AS Vector2i)
-    SUB Vector2i_Assign (src AS Vector2i, dst AS Vector2i)
     FUNCTION Vector2i_IsNull%% (src AS Vector2i)
     SUB Vector2i_Add (src1 AS Vector2i, src2 AS Vector2i, dst AS Vector2i)
     SUB Vector2i_AddValue (src AS Vector2i, BYVAL value AS LONG, dst AS Vector2i)

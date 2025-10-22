@@ -419,8 +419,8 @@ SUB Test_Math
     TEST_CHECK Math_FastPowerSingle(2, 3) = 8, "Math_FastPowerSingle(2, 3) = 8"
     TEST_CHECK Math_FastPowerDouble(2, 3) = 8, "Math_FastPowerDouble(2, 3) = 8"
 
-    TEST_CHECK ABS(Math_FastSquareRoot(9) - 3) < 0.2, "ABS(Math_FastSquareRoot(9) - 3) < 0.2"
-    TEST_CHECK ABS(Math_FastInverseSquareRoot(4) - 0.5) < 0.001, "ABS(Math_FastInverseSquareRoot(4) - 0.5) < 0.001"
+    TEST_CHECK ABS(Math_FastSqRt(9) - 3) < 0.2, "ABS(Math_FastSqRt(9) - 3) < 0.2"
+    TEST_CHECK ABS(Math_FastInvSqRt(4) - 0.5) < 0.001, "ABS(Math_FastInvSqRt(4) - 0.5) < 0.001"
 
     TEST_CHECK Math_Log10Single(100) = 2, "Math_Log10Single(100) = 2"
     TEST_CHECK Math_Log10Double(100) = 2, "Math_Log10Double(100) = 2"
@@ -428,8 +428,8 @@ SUB Test_Math
     TEST_CHECK Math_Log2Single(8) = 3, "Math_Log2Single(8) = 3"
     TEST_CHECK Math_Log2Double(8) = 3, "Math_Log2Double(8) = 3"
 
-    TEST_CHECK Math_CubeRootSingle(27) = 3, "Math_CubeRootSingle(27) = 3"
-    TEST_CHECK Math_CubeRootDouble(27) = 3, "Math_CubeRootDouble(27) = 3"
+    TEST_CHECK Math_CbRtSingle(27) = 3, "Math_CbRtSingle(27) = 3"
+    TEST_CHECK Math_CbRtDouble(27) = 3, "Math_CbRtDouble(27) = 3"
 
     TEST_CHECK Math_MulDiv(10, 2, 5) = 4, "Math_MulDiv(10, 2, 5) = 4"
 

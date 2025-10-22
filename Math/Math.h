@@ -306,7 +306,7 @@ inline qb_bool Math_IsDoubleEqual(double x, double y) {
 /// @brief This one comes from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Approximations_that_depend_on_the_floating_point_representation
 /// @param x A floating-pointer number
 /// @return An approximate square root
-inline float Math_FastSquareRoot(float x) {
+inline float Math_FastSqRt(float x) {
     auto i = reinterpret_cast<int32_t *>(&x);
     *i -= (1 << 23);
     *i >>= 1;
@@ -317,7 +317,7 @@ inline float Math_FastSquareRoot(float x) {
 /// @brief This one comes from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Reciprocal_of_the_square_root
 /// @param x A floating-pointer number
 /// @return An approximate square root
-inline float Math_FastInverseSquareRoot(float x) {
+inline float Math_FastInvSqRt(float x) {
     auto xhalf = 0.5f * x;
     auto i = reinterpret_cast<int32_t *>(&x);
     *i = 0x5f375a86 - (*i >> 1);
@@ -333,4 +333,43 @@ inline float Math_FastInverseSquareRoot(float x) {
 /// @return The result of the multiplication and division, rounded towards zero
 inline constexpr int32_t Math_MulDiv(int32_t val, int32_t mul, int32_t div) {
     return int32_t((int64_t(val) * mul + (div >> 1)) / div);
+}
+
+/// @brief Calculate the square root of an integer number.
+/// @param n The number to calculate the square root of.
+/// @return The square root of n.
+template <typename T> inline typename std::enable_if<std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value, T>::type Math_ISqRt(T n) {
+    if (n <= 0)
+        return 0;
+    if (n == 1)
+        return 1;
+
+    using UT = typename std::make_unsigned<T>::type;
+    UT u = static_cast<UT>(n);
+
+    UT x;
+    if constexpr (std::is_same<T, int32_t>::value) {
+        int shift = (31 - __builtin_clz(static_cast<uint32_t>(u))) >> 1;
+        x = UT(1) << shift;
+    } else {
+        int shift = (63 - __builtin_clzll(static_cast<uint64_t>(u))) >> 1;
+        x = UT(1) << shift;
+    }
+
+    UT prev;
+    do {
+        prev = x;
+        x = (x + u / x) >> 1;
+    } while (x < prev);
+
+    if constexpr (sizeof(UT) <= 4) {
+        while (x * x > u)
+            --x;
+    } else {
+        using Wide = __int128;
+        while (Wide(x) * Wide(x) > u)
+            --x;
+    }
+
+    return static_cast<T>(x);
 }

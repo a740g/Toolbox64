@@ -16,7 +16,6 @@ END TYPE
 DECLARE LIBRARY "Bounds2i"
     SUB Bounds2i_Reset (dst AS Bounds2i)
     SUB Bounds2i_Initialize (BYVAL x1 AS LONG, BYVAL y1 AS LONG, BYVAL x2 AS LONG, BYVAL y2 AS LONG, dst AS Bounds2i)
-    SUB Bounds2i_Assign (src AS Bounds2i, dst AS Bounds2i)
     SUB Bounds2i_InitializeFromPositionSize (position AS Vector2i, size AS Vector2i, dst AS Bounds2i)
     SUB Bounds2i_InitializeFromPoints (p1 AS Vector2i, p2 AS Vector2i, dst AS Bounds2i)
     FUNCTION Bounds2i_IsEmpty%% (src AS Bounds2i)
