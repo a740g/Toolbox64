@@ -1,6 +1,11 @@
 //----------------------------------------------------------------------------------------------------------------------
 // 2D Bounding Box (integer) routines
 // Copyright (c) 2024 Samuel Gomes
+//
+// Rule:
+// Trival local and dependency functions can be nested in hot paths as long as:
+// 1. We do not repeat unnecessary calculations.
+// 2. We do not have direct or indirect nested TO_QB_BOOL insertions.
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -37,10 +42,16 @@ inline void Bounds2i_InitializeFromPoints(const void *p1, const void *p2, void *
     BOUNDS2I_DST(dst)->rb = *VECTOR2I_SRC(p2);
 }
 
+/// @brief Checks if the bounding box is empty (i.e has no width or height).
+/// @param src The source bounding box.
+/// @return True if the bounding box is empty, false otherwise.
 inline qb_bool Bounds2i_IsEmpty(const void *src) {
-    return TO_QB_BOOL(BOUNDS2I_SRC(src)->rb.x < BOUNDS2I_SRC(src)->lt.x || BOUNDS2I_SRC(src)->rb.y < BOUNDS2I_SRC(src)->lt.y);
+    return TO_QB_BOOL(BOUNDS2I_SRC(src)->rb.x <= BOUNDS2I_SRC(src)->lt.x || BOUNDS2I_SRC(src)->rb.y <= BOUNDS2I_SRC(src)->lt.y);
 }
 
+/// @brief Checks if the bounding box is valid (i.e has a non-negative width and height).
+/// @param src The source bounding box.
+/// @return True if the bounding box is valid, false otherwise.
 inline qb_bool Bounds2i_IsValid(const void *src) {
     return TO_QB_BOOL(BOUNDS2I_SRC(src)->rb.x >= BOUNDS2I_SRC(src)->lt.x && BOUNDS2I_SRC(src)->rb.y >= BOUNDS2I_SRC(src)->lt.y);
 }
@@ -184,30 +195,35 @@ inline qb_bool Bounds2i_Intersects(const void *src1, const void *src2) {
 }
 
 inline void Bounds2i_MakeUnion(const void *src1, const void *src2, void *dst) {
-    auto src1Empty = Bounds2i_IsEmpty(src1);
-    auto src2Empty = Bounds2i_IsEmpty(src2);
+    auto src1Valid = BOUNDS2I_SRC(src1)->rb.x >= BOUNDS2I_SRC(src1)->lt.x && BOUNDS2I_SRC(src1)->rb.y >= BOUNDS2I_SRC(src1)->lt.y;
+    auto src2Valid = BOUNDS2I_SRC(src2)->rb.x >= BOUNDS2I_SRC(src2)->lt.x && BOUNDS2I_SRC(src2)->rb.y >= BOUNDS2I_SRC(src2)->lt.y;
 
-    if (src1Empty && src2Empty) {
-        Bounds2i_Reset(dst);
-    } else if (src1Empty) {
-        *BOUNDS2I_DST(dst) = *BOUNDS2I_SRC(src2);
-    } else if (src2Empty) {
-        *BOUNDS2I_DST(dst) = *BOUNDS2I_SRC(src1);
-    } else {
+    if (src1Valid && src2Valid) {
         BOUNDS2I_DST(dst)->lt.x = std::min(BOUNDS2I_SRC(src1)->lt.x, BOUNDS2I_SRC(src2)->lt.x);
         BOUNDS2I_DST(dst)->lt.y = std::min(BOUNDS2I_SRC(src1)->lt.y, BOUNDS2I_SRC(src2)->lt.y);
         BOUNDS2I_DST(dst)->rb.x = std::max(BOUNDS2I_SRC(src1)->rb.x, BOUNDS2I_SRC(src2)->rb.x);
         BOUNDS2I_DST(dst)->rb.y = std::max(BOUNDS2I_SRC(src1)->rb.y, BOUNDS2I_SRC(src2)->rb.y);
+    } else if (src1Valid) {
+        *BOUNDS2I_DST(dst) = *BOUNDS2I_SRC(src1);
+    } else if (src2Valid) {
+        *BOUNDS2I_DST(dst) = *BOUNDS2I_SRC(src2);
+    } else {
+        Bounds2i_Reset(dst);
     }
 }
 
 inline void Bounds2i_MakeIntersection(const void *src1, const void *src2, void *dst) {
-    if (Bounds2i_IsEmpty(src1) || Bounds2i_IsEmpty(src2) || !Bounds2i_Intersects(src1, src2)) {
-        Bounds2i_Reset(dst);
-    } else {
+    auto src1Valid = (BOUNDS2I_SRC(src1)->rb.x >= BOUNDS2I_SRC(src1)->lt.x && BOUNDS2I_SRC(src1)->rb.y >= BOUNDS2I_SRC(src1)->lt.y);
+    auto src2Valid = (BOUNDS2I_SRC(src2)->rb.x >= BOUNDS2I_SRC(src2)->lt.x && BOUNDS2I_SRC(src2)->rb.y >= BOUNDS2I_SRC(src2)->lt.y);
+    auto intersects = (BOUNDS2I_SRC(src1)->lt.x <= BOUNDS2I_SRC(src2)->rb.x && BOUNDS2I_SRC(src2)->lt.x <= BOUNDS2I_SRC(src1)->rb.x &&
+                       BOUNDS2I_SRC(src1)->lt.y <= BOUNDS2I_SRC(src2)->rb.y && BOUNDS2I_SRC(src2)->lt.y <= BOUNDS2I_SRC(src1)->rb.y);
+
+    if (src1Valid && src2Valid && intersects) {
         BOUNDS2I_DST(dst)->lt.x = std::max(BOUNDS2I_SRC(src1)->lt.x, BOUNDS2I_SRC(src2)->lt.x);
         BOUNDS2I_DST(dst)->lt.y = std::max(BOUNDS2I_SRC(src1)->lt.y, BOUNDS2I_SRC(src2)->lt.y);
         BOUNDS2I_DST(dst)->rb.x = std::min(BOUNDS2I_SRC(src1)->rb.x, BOUNDS2I_SRC(src2)->rb.x);
         BOUNDS2I_DST(dst)->rb.y = std::min(BOUNDS2I_SRC(src1)->rb.y, BOUNDS2I_SRC(src2)->rb.y);
+    } else {
+        Bounds2i_Reset(dst);
     }
 }
