@@ -12,7 +12,7 @@ $INCLUDEONCE
 '$INCLUDE:'Math/Math.bi'
 '$INCLUDE:'Math/Vector2f.bi'
 '$INCLUDE:'StringOps.bi'
-'$INCLUDE:'GraphicOps.bi'
+'$INCLUDE:'Graphics/Graphics2D.bi'
 '$INCLUDE:'AudioAnalyzerFFT.bi'
 '$INCLUDE:'Audio/AudioConv.bi'
 

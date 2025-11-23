@@ -13,7 +13,7 @@ $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
-'$INCLUDE:'GraphicOps.bi'
+'$INCLUDE:'Graphics/Graphics2D.bi'
 '$INCLUDE:'TimeOps.bi'
 '$INCLUDE:'Math/Vector2i.bi'
 

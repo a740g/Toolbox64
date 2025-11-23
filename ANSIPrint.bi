@@ -7,7 +7,7 @@ $INCLUDEONCE
 
 '$INCLUDE:'Common.bi'
 '$INCLUDE:'Types.bi'
-'$INCLUDE:'GraphicOps.bi'
+'$INCLUDE:'Graphics/Graphics2D.bi'
 '$INCLUDE:'SAUCE.bi'
 '$INCLUDE:'Math/Vector2i.bi'
 

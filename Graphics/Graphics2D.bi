@@ -5,8 +5,8 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'Common.bi'
-'$INCLUDE:'Types.bi'
+'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Types.bi'
 
 ' 32-bit BGRA color constants based on HTML color names
 CONST BGRA_ALICEBLUE~& = &HFFF0F8FF~&
@@ -288,7 +288,7 @@ TYPE BGRAType
     a AS _UNSIGNED _BYTE
 END TYPE
 
-DECLARE LIBRARY "Graphic2D"
+DECLARE LIBRARY "Graphics2D"
     FUNCTION Graphics_BGRATypeToBGRA~& (bgra AS BGRAType)
     SUB Graphics_DrawPixel (BYVAL x AS LONG, BYVAL y AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
     FUNCTION Graphics_GetPixel~& (BYVAL x AS LONG, BYVAL y AS LONG)
