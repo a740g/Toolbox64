@@ -5,15 +5,14 @@
 
 #pragma once
 
-#include "Debug.h"
+#include "../Debug/Debug.h"
 #include "Types.h"
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
 #include <vector>
 
 /// @brief A pointer to an object of this struct is returned by MemFile_Create()
-struct MemFile
-{
+struct MemFile {
     std::vector<uint8_t> buffer; // a std::vector of bytes
     size_t cursor;               // the current read / write position in the vector
 };
@@ -22,12 +21,10 @@ struct MemFile
 /// @param data A valid data buffer or nullptr
 /// @param size The correct size of the data if data is not nullptr
 /// @return A pointer to a new MemFile or nullptr on failure
-uintptr_t MemFile_Create(uintptr_t data, size_t size)
-{
+uintptr_t MemFile_Create(uintptr_t data, size_t size) {
     auto memFile = new MemFile;
 
-    if (memFile)
-    {
+    if (memFile) {
         memFile->buffer.assign(reinterpret_cast<const uint8_t *>(data), reinterpret_cast<const uint8_t *>(data) + size);
         memFile->cursor = 0;
     }
@@ -37,8 +34,7 @@ uintptr_t MemFile_Create(uintptr_t data, size_t size)
 
 /// @brief Deletes a MemFile object created using MemFile_Create()
 /// @param p A valid pointer to a MemFile object
-void MemFile_Destroy(uintptr_t p)
-{
+void MemFile_Destroy(uintptr_t p) {
     if (p)
         delete reinterpret_cast<MemFile *>(p);
     else
@@ -48,8 +44,7 @@ void MemFile_Destroy(uintptr_t p)
 /// @brief Returns QB_TRUE if the cursor moved past the end of the buffer
 /// @param p A valid pointer to a MemFile object
 /// @return QB_TRUE if EOF, QB_FALSE otherwise
-qb_bool MemFile_IsEOF(uintptr_t p)
-{
+qb_bool MemFile_IsEOF(uintptr_t p) {
     auto memFile = reinterpret_cast<const MemFile *>(p);
 
     if (memFile)
@@ -62,8 +57,7 @@ qb_bool MemFile_IsEOF(uintptr_t p)
 /// @brief Returns the size of the buffer in bytes
 /// @param p A valid pointer to a MemFile object
 /// @return The size of the buffer in bytes
-size_t MemFile_GetSize(uintptr_t p)
-{
+size_t MemFile_GetSize(uintptr_t p) {
     auto memFile = reinterpret_cast<const MemFile *>(p);
 
     if (memFile)
@@ -76,8 +70,7 @@ size_t MemFile_GetSize(uintptr_t p)
 /// @brief Returns the cursor position
 /// @param p A valid pointer to a MemFile object
 /// @return The position from the origin
-size_t MemFile_GetPosition(uintptr_t p)
-{
+size_t MemFile_GetPosition(uintptr_t p) {
     auto memFile = reinterpret_cast<const MemFile *>(p);
 
     if (memFile)
@@ -90,8 +83,7 @@ size_t MemFile_GetPosition(uintptr_t p)
 /// @brief Position the read / write cursor inside the data buffer
 /// @param p A valid pointer to a MemFile object
 /// @param position A value that is less than or equal to the size of the buffer
-void MemFile_Seek(uintptr_t p, size_t position)
-{
+void MemFile_Seek(uintptr_t p, size_t position) {
     auto memFile = reinterpret_cast<MemFile *>(p);
 
     if (memFile && position <= memFile->buffer.size())
@@ -103,19 +95,15 @@ void MemFile_Seek(uintptr_t p, size_t position)
 /// @brief Resizes the buffer of a MemFile object
 /// @param p A valid pointer to a MemFile object
 /// @param newSize The new size of the buffer
-void MemFile_Resize(uintptr_t p, size_t newSize)
-{
+void MemFile_Resize(uintptr_t p, size_t newSize) {
     auto memFile = reinterpret_cast<MemFile *>(p);
 
-    if (memFile)
-    {
+    if (memFile) {
         memFile->buffer.resize(newSize);
 
         if (memFile->cursor > newSize)
             memFile->cursor = newSize;
-    }
-    else
-    {
+    } else {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 }
@@ -125,23 +113,18 @@ void MemFile_Resize(uintptr_t p, size_t newSize)
 /// @param data Pointer to the buffer the data needs to be written to
 /// @param size The size of the chuck that needs to be read
 /// @return The actual number of bytes read. This can be less than `size`
-size_t MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
-{
+size_t MemFile_Read(uintptr_t p, uintptr_t data, size_t size) {
     auto memFile = reinterpret_cast<MemFile *>(p);
 
-    if (memFile && data)
-    {
+    if (memFile && data) {
         auto bytesToRead = std::min(size, memFile->buffer.size() - memFile->cursor);
-        if (bytesToRead > 0)
-        {
+        if (bytesToRead > 0) {
             std::copy(memFile->buffer.begin() + memFile->cursor, memFile->buffer.begin() + memFile->cursor + bytesToRead, (uint8_t *)data);
             memFile->cursor += bytesToRead;
         }
 
         return bytesToRead;
-    }
-    else
-    {
+    } else {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 
@@ -153,12 +136,10 @@ size_t MemFile_Read(uintptr_t p, uintptr_t data, size_t size)
 /// @param data Pointer to the buffer the data needs to be read from
 /// @param size The size of the chunk that needs to be written
 /// @return The number of bytes written
-size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
-{
+size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size) {
     auto memFile = reinterpret_cast<MemFile *>(p);
 
-    if (memFile && data)
-    {
+    if (memFile && data) {
         // Resize the buffer if needed
         if (memFile->cursor + size > memFile->buffer.size())
             memFile->buffer.resize(memFile->cursor + size);
@@ -170,9 +151,7 @@ size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
         memFile->cursor += size;
 
         return size;
-    }
-    else
-    {
+    } else {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
     }
 
@@ -183,9 +162,7 @@ size_t MemFile_Write(uintptr_t p, uintptr_t data, size_t size)
 /// @tparam T A valid C+ type
 /// @param p A valid pointer to a MemFile object
 /// @return The T value read
-template <typename T>
-inline T MemFile_Read(uintptr_t p)
-{
+template <typename T> inline T MemFile_Read(uintptr_t p) {
     T value = T();
 
     if (MemFile_Read(p, reinterpret_cast<uintptr_t>(&value), sizeof(T)) != sizeof(T))
@@ -198,9 +175,7 @@ inline T MemFile_Read(uintptr_t p)
 /// @tparam T A valid C+ type
 /// @param p A valid pointer to a MemFile object
 /// @param value The T value to write
-template <typename T>
-inline void MemFile_Write(uintptr_t p, T value)
-{
+template <typename T> inline void MemFile_Write(uintptr_t p, T value) {
     if (MemFile_Write(p, reinterpret_cast<uintptr_t>(&value), sizeof(T)) != sizeof(T))
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
 }
