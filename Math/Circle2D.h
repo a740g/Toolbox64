@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "Vector2D.h"
+#include "Vector2f.h"
 
 struct Circle2D {
-    Vector2D position;
+    Vector2f position;
     float radius;
 };

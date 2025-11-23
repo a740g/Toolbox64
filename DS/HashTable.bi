@@ -5,7 +5,7 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Core/Common.bi'
 
 DECLARE LIBRARY "HashTable"
     FUNCTION HashTable_Create~%&

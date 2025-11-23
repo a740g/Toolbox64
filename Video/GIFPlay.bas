@@ -950,5 +950,5 @@ END FUNCTION
 
 '$INCLUDE:'../DS/HashTable.bas'
 '$INCLUDE:'../DS/StringFile.bas'
-'$INCLUDE:'../Base64.bas'
-'$INCLUDE:'../File.bas'
+'$INCLUDE:'../Resource/Base64.bas'
+'$INCLUDE:'../IO/File.bas'

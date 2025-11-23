@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "Vector2D.h"
+#include "Vector2f.h"
 
 struct Triangle2D {
-    Vector2D a;
-    Vector2D b;
-    Vector2D c;
+    Vector2f a;
+    Vector2f b;
+    Vector2f c;
 };

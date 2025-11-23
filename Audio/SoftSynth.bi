@@ -5,10 +5,10 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
-'$INCLUDE:'../Types.bi'
+'$INCLUDE:'../Core/Common.bi'
+'$INCLUDE:'../Core/Types.bi'
 '$INCLUDE:'../Math/Math.bi'
-'$INCLUDE:'../PointerOps.bi'
+'$INCLUDE:'../Core/PointerOps.bi'
 
 CONST SOFTSYNTH_VOICE_PLAY_FORWARD = 0 ' single-shot forward playback
 CONST SOFTSYNTH_VOICE_PLAY_FORWARD_LOOP = 1 ' forward-looping playback

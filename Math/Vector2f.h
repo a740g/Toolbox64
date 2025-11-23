@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../Types.h"
+#include "../Core/Types.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>

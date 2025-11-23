@@ -5,7 +5,7 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Core/Common.bi'
 
 DECLARE LIBRARY "../external/reasings"
     FUNCTION Easing_BackIn! ALIAS "EaseBackIn" (BYVAL t AS SINGLE, BYVAL b AS SINGLE, BYVAL c AS SINGLE, BYVAL d AS SINGLE)

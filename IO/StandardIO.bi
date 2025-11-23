@@ -5,7 +5,7 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Core/Common.bi'
 
 DECLARE LIBRARY "StandardIO"
     FUNCTION StandardIO_ReadChar& ALIAS "std::getchar"

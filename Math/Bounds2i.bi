@@ -5,7 +5,7 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'Vector2i.bi'
 
 TYPE Bounds2i

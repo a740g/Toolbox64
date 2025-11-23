@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "Vector2D.h"
+#include "Vector2f.h"
 
 struct Line2D {
-    Vector2D a;
-    Vector2D b;
+    Vector2f a;
+    Vector2f b;
 };

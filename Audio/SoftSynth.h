@@ -7,21 +7,19 @@
 
 #define _USE_MATH_DEFINES
 
+#include "../Core/Types.h"
 #include "../Debug/Debug.h"
-#include "../Types.h"
 #include "../Math/Math.h"
 #include <cstdint>
 #include <memory>
 #include <utility>
 #include <vector>
 
-struct SoftSynth
-{
+struct SoftSynth {
     static constexpr auto VOLUME_MIN = 0.0f; // minimum volume
     static constexpr auto VOLUME_MAX = 1.0f; // maximum volume
 
-    struct Voice
-    {
+    struct Voice {
         static const auto NO_SOUND = -1; // used to unbind a sound from a voice
         static constexpr auto MULTIPLIER_32_TO_16 = 32768.0f;
         static constexpr auto MULTIPLIER_32_TO_8 = 128.0f;
@@ -32,8 +30,7 @@ struct SoftSynth
         static constexpr auto PAN_CENTER = PAN_LEFT + PAN_RIGHT; // center pan position
 
         /// @brief Various playing modes
-        enum PlayMode
-        {
+        enum PlayMode {
             FORWARD = 0,  // single-shot forward playback
             FORWARD_LOOP, // forward-looping playback
         };
@@ -53,15 +50,13 @@ struct SoftSynth
         float oldFrame;               // the previous frame
 
         /// @brief Initialized the voice (including pan position)
-        Voice()
-        {
+        Voice() {
             Reset();
             SetPanPosition(PAN_CENTER); // center the voice only when creating it the first time
         }
 
         /// @brief Resets the voice to defaults. Balance is intentionally left out so that we do not reset pan positions set by the user
-        void Reset()
-        {
+        void Reset() {
             sound = NO_SOUND;
             volume = VOLUME_MAX;
             frequency = iPosition = startPosition = endPosition = 0;
@@ -69,8 +64,7 @@ struct SoftSynth
             mode = PlayMode::FORWARD;
         }
 
-        void SetPanPosition(float value)
-        {
+        void SetPanPosition(float value) {
             static constexpr auto QUARTER_PI = float(M_PI) / 4.0f;
 
             panPosition = std::clamp(value, PAN_LEFT, PAN_RIGHT); // clamp the value
@@ -91,38 +85,31 @@ struct SoftSynth
 
 static std::unique_ptr<SoftSynth> g_SoftSynth; // global softynth object
 
-static inline constexpr bool SoftSynth_IsChannelsValid(uint8_t channels)
-{
+static inline constexpr bool SoftSynth_IsChannelsValid(uint8_t channels) {
     return channels >= 1;
 }
 
-static inline constexpr bool SoftSynth_IsBytesPerSampleValid(uint8_t bytesPerSample)
-{
+static inline constexpr bool SoftSynth_IsBytesPerSampleValid(uint8_t bytesPerSample) {
     return bytesPerSample == sizeof(int8_t) or bytesPerSample == sizeof(int16_t) or bytesPerSample == sizeof(float);
 }
 
-inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
-{
+inline constexpr uint32_t SoftSynth_BytesToFrames(uint32_t bytes, uint8_t bytesPerSample, uint8_t channels) {
     return bytes / ((uint32_t)bytesPerSample * (uint32_t)channels);
 }
 
 /// @brief Initializes the SoftSynth object
 /// @param sampleRate This should ideally be the device sampling rate
-inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
-{
-    if (g_SoftSynth)
-    {
+inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate) {
+    if (g_SoftSynth) {
         return QB_TRUE;
     }
 
-    if (!sampleRate)
-    {
+    if (!sampleRate) {
         return QB_FALSE;
     }
 
     g_SoftSynth = std::make_unique<SoftSynth>();
-    if (!g_SoftSynth)
-    {
+    if (!g_SoftSynth) {
         return QB_FALSE;
     }
 
@@ -133,20 +120,16 @@ inline qb_bool __SoftSynth_Initialize(uint32_t sampleRate)
     return QB_TRUE;
 }
 
-inline void __SoftSynth_Finalize()
-{
+inline void __SoftSynth_Finalize() {
     g_SoftSynth.reset();
 }
 
-inline qb_bool SoftSynth_IsInitialized()
-{
+inline qb_bool SoftSynth_IsInitialized() {
     return TO_QB_BOOL(g_SoftSynth != nullptr);
 }
 
-uint32_t SoftSynth_GetSampleRate()
-{
-    if (!g_SoftSynth)
-    {
+uint32_t SoftSynth_GetSampleRate() {
+    if (!g_SoftSynth) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
@@ -154,10 +137,8 @@ uint32_t SoftSynth_GetSampleRate()
     return g_SoftSynth->sampleRate;
 }
 
-uint32_t SoftSynth_GetTotalSounds()
-{
-    if (!g_SoftSynth)
-    {
+uint32_t SoftSynth_GetTotalSounds() {
+    if (!g_SoftSynth) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
@@ -165,10 +146,8 @@ uint32_t SoftSynth_GetTotalSounds()
     return (uint32_t)g_SoftSynth->sounds.size();
 }
 
-uint32_t SoftSynth_GetTotalVoices()
-{
-    if (!g_SoftSynth)
-    {
+uint32_t SoftSynth_GetTotalVoices() {
+    if (!g_SoftSynth) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
@@ -176,10 +155,8 @@ uint32_t SoftSynth_GetTotalVoices()
     return (uint32_t)g_SoftSynth->voices.size();
 }
 
-void SoftSynth_SetTotalVoices(uint32_t voices)
-{
-    if (!g_SoftSynth or voices < 1)
-    {
+void SoftSynth_SetTotalVoices(uint32_t voices) {
+    if (!g_SoftSynth or voices < 1) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -188,10 +165,8 @@ void SoftSynth_SetTotalVoices(uint32_t voices)
     g_SoftSynth->voices.resize(voices);
 }
 
-uint32_t SoftSynth_GetActiveVoices()
-{
-    if (!g_SoftSynth)
-    {
+uint32_t SoftSynth_GetActiveVoices() {
+    if (!g_SoftSynth) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0;
     }
@@ -199,10 +174,8 @@ uint32_t SoftSynth_GetActiveVoices()
     return g_SoftSynth->activeVoices;
 }
 
-float SoftSynth_GetGlobalVolume()
-{
-    if (!g_SoftSynth)
-    {
+float SoftSynth_GetGlobalVolume() {
+    if (!g_SoftSynth) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -210,10 +183,8 @@ float SoftSynth_GetGlobalVolume()
     return g_SoftSynth->volume;
 }
 
-void SoftSynth_SetGlobalVolume(float volume)
-{
-    if (!g_SoftSynth)
-    {
+void SoftSynth_SetGlobalVolume(float volume) {
+    if (!g_SoftSynth) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -228,17 +199,14 @@ void SoftSynth_SetGlobalVolume(float volume)
 /// @param bytes The size of the raw sound in bytes
 /// @param bytesPerSample The bytes / samples (this can be 1 for 8-bit, 2 for 16-bit or 3 for 32-bit)
 /// @param channels The number of channels (this must be 1 or more)
-inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint32_t bytes, uint8_t bytesPerSample, uint8_t channels)
-{
-    if (!g_SoftSynth or sound < 0 or !source or !SoftSynth_IsBytesPerSampleValid(bytesPerSample) or !SoftSynth_IsChannelsValid(channels))
-    {
+inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint32_t bytes, uint8_t bytesPerSample, uint8_t channels) {
+    if (!g_SoftSynth or sound < 0 or !source or !SoftSynth_IsBytesPerSampleValid(bytesPerSample) or !SoftSynth_IsChannelsValid(channels)) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
     // Resize the vector to fit the number of sounds if needed
-    if (sound >= g_SoftSynth->sounds.size())
-    {
+    if (sound >= g_SoftSynth->sounds.size()) {
         g_SoftSynth->sounds.resize(sound + 1);
     }
 
@@ -252,52 +220,39 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
 
     data.resize(frames); // resize the buffer
 
-    switch (bytesPerSample)
-    {
-    case sizeof(int8_t):
-    {
+    switch (bytesPerSample) {
+    case sizeof(int8_t): {
         auto src = reinterpret_cast<const int8_t *>(source);
-        for (size_t i = 0; i < frames; i++)
-        {
+        for (size_t i = 0; i < frames; i++) {
             // Flatten all channels to mono
-            for (auto j = 0; j < channels; j++)
-            {
+            for (auto j = 0; j < channels; j++) {
                 data[i] = std::fma(float(*src), SoftSynth::Voice::MULTIPLIER_8_TO_32, data[i]);
                 ++src;
             }
         }
-    }
-    break;
+    } break;
 
-    case sizeof(int16_t):
-    {
+    case sizeof(int16_t): {
         auto src = reinterpret_cast<const int16_t *>(source);
-        for (size_t i = 0; i < frames; i++)
-        {
+        for (size_t i = 0; i < frames; i++) {
             // Flatten all channels to mono
-            for (auto j = 0; j < channels; j++)
-            {
+            for (auto j = 0; j < channels; j++) {
                 data[i] = std::fma(float(*src), SoftSynth::Voice::MULTIPLIER_16_TO_32, data[i]);
                 ++src;
             }
         }
-    }
-    break;
+    } break;
 
-    case sizeof(float):
-    {
+    case sizeof(float): {
         auto src = reinterpret_cast<const float *>(source);
-        for (size_t i = 0; i < frames; i++)
-        {
+        for (size_t i = 0; i < frames; i++) {
             // Flatten all channels to mono
-            for (auto j = 0; j < channels; j++)
-            {
+            for (auto j = 0; j < channels; j++) {
                 data[i] += *src;
                 ++src;
             }
         }
-    }
-    break;
+    } break;
 
     default:
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
@@ -308,10 +263,8 @@ inline void __SoftSynth_LoadSound(int32_t sound, const char *const source, uint3
 /// @param sound The sound slot / index
 /// @param position The frame position
 /// @return A floating point sample frame
-float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position)
-{
-    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size())
-    {
+float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position) {
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -323,10 +276,8 @@ float SoftSynth_PeekSoundFrameSingle(int32_t sound, uint32_t position)
 /// @param sound The sound slot / index
 /// @param position The frame position
 /// @param frame A floating point sample frame
-void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float frame)
-{
-    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size())
-    {
+void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float frame) {
+    if (!g_SoftSynth or sound < 0 or sound >= g_SoftSynth->sounds.size() or position >= g_SoftSynth->sounds[sound].size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -334,30 +285,24 @@ void SoftSynth_PokeSoundFrameSingle(int32_t sound, uint32_t position, float fram
     g_SoftSynth->sounds[sound][position] = frame;
 }
 
-inline int16_t SoftSynth_PeekSoundFrameInteger(int32_t sound, uint32_t position)
-{
+inline int16_t SoftSynth_PeekSoundFrameInteger(int32_t sound, uint32_t position) {
     return SoftSynth_PeekSoundFrameSingle(sound, position) * SoftSynth::Voice::MULTIPLIER_32_TO_16;
 }
 
-inline void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t frame)
-{
+inline void SoftSynth_PokeSoundFrameInteger(int32_t sound, uint32_t position, int16_t frame) {
     SoftSynth_PokeSoundFrameSingle(sound, position, SoftSynth::Voice::MULTIPLIER_16_TO_32 * frame);
 }
 
-inline int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position)
-{
+inline int8_t SoftSynth_PeekSoundFrameByte(int32_t sound, uint32_t position) {
     return SoftSynth_PeekSoundFrameSingle(sound, position) * SoftSynth::Voice::MULTIPLIER_32_TO_8;
 }
 
-inline void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame)
-{
+inline void SoftSynth_PokeSoundFrameByte(int32_t sound, uint32_t position, int8_t frame) {
     SoftSynth_PokeSoundFrameSingle(sound, position, SoftSynth::Voice::MULTIPLIER_8_TO_32 * frame);
 }
 
-float SoftSynth_GetVoiceVolume(uint32_t voice)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
-    {
+float SoftSynth_GetVoiceVolume(uint32_t voice) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -365,10 +310,8 @@ float SoftSynth_GetVoiceVolume(uint32_t voice)
     return g_SoftSynth->voices[voice].volume;
 }
 
-void SoftSynth_SetVoiceVolume(uint32_t voice, float volume)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
-    {
+void SoftSynth_SetVoiceVolume(uint32_t voice, float volume) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -376,10 +319,8 @@ void SoftSynth_SetVoiceVolume(uint32_t voice, float volume)
     g_SoftSynth->voices[voice].volume = std::clamp(volume, SoftSynth::VOLUME_MIN, SoftSynth::VOLUME_MAX);
 }
 
-float SoftSynth_GetVoiceBalance(uint32_t voice)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
-    {
+float SoftSynth_GetVoiceBalance(uint32_t voice) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -387,10 +328,8 @@ float SoftSynth_GetVoiceBalance(uint32_t voice)
     return g_SoftSynth->voices[voice].panPosition;
 }
 
-void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
-    {
+void SoftSynth_SetVoiceBalance(uint32_t voice, float balance) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -401,10 +340,8 @@ void SoftSynth_SetVoiceBalance(uint32_t voice, float balance)
 /// @brief Gets the voice frequency
 /// @param voice The voice number to get the frequency for
 /// @return The frequency value
-uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
-    {
+uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return 0.0f;
     }
@@ -415,10 +352,8 @@ uint32_t SoftSynth_GetVoiceFrequency(uint32_t voice)
 /// @brief Sets the voice frequency
 /// @param voice The voice number to set the frequency for
 /// @param frequency The frequency to be set (must be > 0)
-void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or !frequency)
-    {
+void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or !frequency) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -427,10 +362,8 @@ void SoftSynth_SetVoiceFrequency(uint32_t voice, uint32_t frequency)
     g_SoftSynth->voices[voice].pitch = (float)frequency / (float)g_SoftSynth->sampleRate;
 }
 
-void SoftSynth_StopVoice(uint32_t voice)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size())
-    {
+void SoftSynth_StopVoice(uint32_t voice) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -445,15 +378,14 @@ void SoftSynth_StopVoice(uint32_t voice)
 /// @param mode The playback mode
 /// @param start The playback start frame or loop start frame (based on playMode)
 /// @param end The playback end frame or loop end frame (based on playMode)
-void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32_t mode, uint32_t startPosition, uint32_t endPosition)
-{
-    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or sound < 0 or sound >= g_SoftSynth->sounds.size())
-    {
+void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32_t mode, uint32_t startPosition, uint32_t endPosition) {
+    if (!g_SoftSynth or voice >= g_SoftSynth->voices.size() or sound < 0 or sound >= g_SoftSynth->sounds.size()) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
 
-    g_SoftSynth->voices[voice].mode = mode < SoftSynth::Voice::PlayMode::FORWARD or mode > SoftSynth::Voice::PlayMode::FORWARD_LOOP ? SoftSynth::Voice::PlayMode::FORWARD : mode;
+    g_SoftSynth->voices[voice].mode =
+        mode < SoftSynth::Voice::PlayMode::FORWARD or mode > SoftSynth::Voice::PlayMode::FORWARD_LOOP ? SoftSynth::Voice::PlayMode::FORWARD : mode;
     g_SoftSynth->voices[voice].position = position;           // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].iPosition = position;          // if this value is junk then the mixer should deal with it correctly
     g_SoftSynth->voices[voice].startPosition = startPosition; // if this value is junk then the mixer should deal with it correctly
@@ -468,10 +400,8 @@ void SoftSynth_PlayVoice(uint32_t voice, int32_t sound, uint32_t position, int32
 /// @brief This mixes and writes the mixed samples to "buffer"
 /// @param buffer A buffer pointer that will receive the mixed samples (the buffer is not cleared before mixing)
 /// @param frames The number of frames to mix
-inline void __SoftSynth_Update(float *buffer, uint32_t frames)
-{
-    if (!g_SoftSynth or !buffer or !frames)
-    {
+inline void __SoftSynth_Update(float *buffer, uint32_t frames) {
+    if (!g_SoftSynth or !buffer or !frames) {
         error(QB_ERROR_ILLEGAL_FUNCTION_CALL);
         return;
     }
@@ -484,14 +414,12 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
 
     // We will iterate through each channel completely rather than jumping from channel to channel
     // We are doing this because it is easier for the CPU to access adjacent memory rather than something far away
-    for (size_t v = 0; v < voiceCount; v++)
-    {
+    for (size_t v = 0; v < voiceCount; v++) {
         // Get the current voice we need to work with
         auto &voice = g_SoftSynth->voices[v];
 
         // Only proceed if we have a valid sound number (>= 0)
-        if (voice.sound >= 0)
-        {
+        if (voice.sound >= 0) {
             // Get the sample data we need to work with
             auto &soundData = g_SoftSynth->sounds[voice.sound];
 
@@ -499,8 +427,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
             auto soundFrames = soundData.size();
 
             // Only proceed if we have something to play in the sound
-            if (soundFrames > 0)
-            {
+            if (soundFrames > 0) {
                 // Increment the active voices
                 ++g_SoftSynth->activeVoices;
 
@@ -508,18 +435,13 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
                 auto output = buffer;
 
                 //  Next we go through the channel sample data and mix it to our mixer buffer
-                for (uint32_t s = 0; s < frames; s++)
-                {
+                for (uint32_t s = 0; s < frames; s++) {
                     // Check if we crossed the end of the sound and take action based on the playback mode
-                    if (voice.position > voice.endPosition)
-                    {
-                        if (SoftSynth::Voice::PlayMode::FORWARD_LOOP == voice.mode)
-                        {
+                    if (voice.position > voice.endPosition) {
+                        if (SoftSynth::Voice::PlayMode::FORWARD_LOOP == voice.mode) {
                             // Reset loop position if we reached the end of the loop and preserve fractional position
                             voice.position = voice.startPosition + (voice.position - voice.endPosition);
-                        }
-                        else
-                        {
+                        } else {
                             // For non-looping sound simply stop playing if we reached the end
                             voice.sound = SoftSynth::Voice::NO_SOUND; // just invalidate the sound leaving other properties intact
                             break;                                    // exit the mixing loop as we have no more samples to mix for this channel
@@ -559,8 +481,7 @@ inline void __SoftSynth_Update(float *buffer, uint32_t frames)
     // TODO: Move this out to SoftSynth.bas so that we do the global volume only once after mixing FM, reverb and stuff
     // Or probably we can move this to it's own function that can mix several buffers in one go and apply global volume
     auto output = buffer;
-    for (uint32_t s = 0; s < frames; s++)
-    {
+    for (uint32_t s = 0; s < frames; s++) {
         *output *= g_SoftSynth->volume; // left channel
         ++output;
         *output *= g_SoftSynth->volume; // right channel

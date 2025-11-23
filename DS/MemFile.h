@@ -5,8 +5,8 @@
 
 #pragma once
 
+#include "../Core/Types.h"
 #include "../Debug/Debug.h"
-#include "Types.h"
 #include <algorithm>
 #include <cstdint>
 #include <vector>

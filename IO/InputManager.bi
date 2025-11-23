@@ -7,11 +7,11 @@ $INCLUDEONCE
 
 $LET TOOLBOX64_STRICT = TRUE
 
-'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../Math/Math.bi'
 '$INCLUDE:'../Math/Vector2i.bi'
 '$INCLUDE:'../Math/Bounds2i.bi'
-'$INCLUDE:'../StringOps.bi'
+'$INCLUDE:'../String/StringOps.bi'
 
 CONST KEY_SPACE& = _ASC_SPACE
 CONST KEY_EXCLAMATION& = _ASC_EXCLAMATION

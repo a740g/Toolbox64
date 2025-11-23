@@ -5,8 +5,8 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'Common.bi'
-'$INCLUDE:'Types.bi'
+'$INCLUDE:'../Core/Common.bi'
+'$INCLUDE:'../Core/Types.bi'
 
 DECLARE LIBRARY "MemFile"
     FUNCTION MemFile_Create~%& (BYVAL src AS _UNSIGNED _OFFSET, BYVAL size AS _UNSIGNED _OFFSET)

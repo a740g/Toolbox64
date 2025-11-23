@@ -5,11 +5,11 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
+'$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../DS/StringFile.bi'
 '$INCLUDE:'../DS/HashTable.bi'
-'$INCLUDE:'../File.bi'
-'$INCLUDE:'../TimeOps.bi'
+'$INCLUDE:'../IO/File.bi'
+'$INCLUDE:'../Core/TimeOps.bi'
 
 ' This is the master animation type that holds info about a complete animation
 TYPE __GIFPlayType

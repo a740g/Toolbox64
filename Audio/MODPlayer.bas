@@ -2310,4 +2310,4 @@ END FUNCTION
 
 '$INCLUDE:'SoftSynth.bas'
 '$INCLUDE:'../DS/StringFile.bas'
-'$INCLUDE:'../File.bas'
+'$INCLUDE:'../IO/File.bas'

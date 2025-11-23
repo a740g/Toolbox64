@@ -5,9 +5,9 @@
 
 $INCLUDEONCE
 
-'$INCLUDE:'../Common.bi'
-'$INCLUDE:'../Types.bi'
-'$INCLUDE:'../PointerOps.bi'
+'$INCLUDE:'../Core/Common.bi'
+'$INCLUDE:'../Core/Types.bi'
+'$INCLUDE:'../Core/PointerOps.bi'
 
 ' Simplified memory-only file-like object
 TYPE StringFile
