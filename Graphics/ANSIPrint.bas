@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' ANSI Escape Sequence Emulator
-' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2025 Samuel Gomes
 '
 ' TODO:
 '   https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#screen-colors
@@ -17,6 +17,7 @@ $INCLUDEONCE
 '-------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
 '-------------------------------------------------------------------------------------------------------------------
+'OPTION _EXPLICIT
 '$DEBUG
 'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 32)
 'SCREEN _NEWIMAGE(8 * 80, 16 * 28, 9)
@@ -263,7 +264,7 @@ FUNCTION ANSI_PrintCharacter%% (ch AS _UNSIGNED _BYTE)
 
                     END SELECT
 
-                CASE ASC_AT TO _ASC_TILDE ' final byte
+                CASE _ASC_ATSIGN TO _ASC_TILDE ' final byte
                     SELECT CASE ch
                         CASE ANSI_ESC_CSI_SM, ANSI_ESC_CSI_RM ' Set and reset screen mode
                             IF __ANSIEmu.argIndex > 1 THEN ERROR _ERR_CANNOT_CONTINUE ' was not expecting more than 1 arg
