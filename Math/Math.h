@@ -306,7 +306,7 @@ inline qb_bool Math_IsDoubleEqual(double x, double y) {
 /// @brief This one comes from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Approximations_that_depend_on_the_floating_point_representation
 /// @param x A floating-pointer number
 /// @return An approximate square root
-inline float Math_FastSqRt(float x) {
+inline float Math_FastSqRt(float x) noexcept {
     auto i = reinterpret_cast<int32_t *>(&x);
     *i -= (1 << 23);
     *i >>= 1;
@@ -317,7 +317,7 @@ inline float Math_FastSqRt(float x) {
 /// @brief This one comes from https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Reciprocal_of_the_square_root
 /// @param x A floating-pointer number
 /// @return An approximate square root
-inline float Math_FastInvSqRt(float x) {
+inline float Math_FastInvSqRt(float x) noexcept {
     auto xhalf = 0.5f * x;
     auto i = reinterpret_cast<int32_t *>(&x);
     *i = 0x5f375a86 - (*i >> 1);
@@ -325,12 +325,31 @@ inline float Math_FastInvSqRt(float x) {
     return x;
 }
 
-/// @brief Multiply and divide in a single operation, rounding towards zero
-/// @details This is a single operation (no intermediate results), and is more efficient than doing a separate multiplication and division.
+/// @brief Multiply and divide in a single operation, rounding towards zero. This is a single operation (no intermediate results), and is more efficient than
+/// doing a separate multiplication and division.
 /// @param val The value to multiply and then divide
 /// @param mul The multiplier
 /// @param div The divisor
 /// @return The result of the multiplication and division, rounded towards zero
-inline constexpr int32_t Math_MulDiv(int32_t val, int32_t mul, int32_t div) {
+inline constexpr int32_t Math_MulDiv(int32_t val, int32_t mul, int32_t div) noexcept {
     return int32_t((int64_t(val) * mul + (div >> 1)) / div);
+}
+
+/// @brief Check if test is within [lower, upper] range (inclusive).
+/// @param test The value to check.
+/// @param lower The lower bound.
+/// @param upper The upper bound.
+/// @return True if test is within [lower, upper] range (inclusive).
+template <std::integral T, std::integral U, std::integral V> inline constexpr qb_bool Math_IsInRange(T test, U lower, V upper) noexcept {
+    using UT = std::make_unsigned_t<std::common_type_t<T, U, V>>;
+    return TO_QB_BOOL(UT(test - lower) <= UT(upper - lower));
+}
+
+/// @brief Check if test is within [lower, upper] range (inclusive).
+/// @param test The value to check.
+/// @param lower The lower bound.
+/// @param upper The upper bound.
+/// @return True if test is within [lower, upper] range (inclusive).
+template <std::floating_point T, std::floating_point U, std::floating_point V> inline constexpr qb_bool Math_IsInRange(T test, U lower, V upper) noexcept {
+    return TO_QB_BOOL(test >= lower && test <= upper);
 }
