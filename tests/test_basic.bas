@@ -266,7 +266,7 @@ SUB Test_StringFile
     StringFile_Resize sf, 16
     TEST_CHECK StringFile_GetSize(sf) = 16, "Grown size = 16"
     TEST_CHECK LEFT$(sf.buffer, 8) = "Original", "Content preserved after grow"
-    
+
     ' Shrink buffer
     StringFile_Resize sf, 4
     TEST_CHECK StringFile_GetSize(sf) = 4, "Shrunk size = 4"
@@ -431,7 +431,8 @@ SUB Test_Math
     TEST_CHECK Math_CbRtSingle(27) = 3, "Math_CbRtSingle(27) = 3"
     TEST_CHECK Math_CbRtDouble(27) = 3, "Math_CbRtDouble(27) = 3"
 
-    TEST_CHECK Math_MulDiv(10, 2, 5) = 4, "Math_MulDiv(10, 2, 5) = 4"
+    TEST_CHECK Math_MulDivLong(10, 2, 5) = 4, "Math_MulDivLong(10, 2, 5) = 4"
+    TEST_CHECK Math_MulDivULong(10, 2, 5) = 4, "Math_MulDivULong(10, 2, 5) = 4"
 
     TEST_CASE_END
 

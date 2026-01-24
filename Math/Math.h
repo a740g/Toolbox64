@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // Math routines
-// Copyright (c) 2024 Samuel Gomes
+// Copyright (c) 2026 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -59,70 +59,65 @@ inline constexpr qb_bool Math_IsInteger64Even(int64_t n) {
     return TO_QB_BOOL((n & 1) == 0);
 }
 
-/// @brief Check if n is a power of 2
-/// @param n A number
-/// @return True if n is a power of 2
-inline constexpr qb_bool Math_IsLongPowerOf2(uint32_t n) {
-    return TO_QB_BOOL(n && !(n & (n - 1)));
+/// @brief Returns true if n is odd.
+/// @param n Any integer.
+/// @return True if n is odd.
+template <std::integral T> inline constexpr qb_bool Math_IsPowerOf2(T n) {
+    using UT = std::make_unsigned_t<T>;
+    UT un = static_cast<UT>(n);
+    return TO_QB_BOOL(un && !(un & (un - 1)));
 }
 
-/// @brief Check if n is a power of 2
-/// @param n A number
-/// @return True if n is a power of 2
-inline constexpr qb_bool Math_IsInteger64PowerOf2(uint64_t n) {
-    return TO_QB_BOOL(n && !(n & (n - 1)));
+/// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024.
+/// @param n Any number.
+/// @return Next (ceiling) power of 2 for x.
+template <std::integral T> inline constexpr T Math_RoundUpToPowerOf2(T n) {
+    using UT = std::make_unsigned_t<T>;
+
+    UT un = static_cast<UT>(n - 1);
+
+    if constexpr (sizeof(UT) >= 1) {
+        un |= un >> 1;
+        un |= un >> 2;
+        un |= un >> 4;
+    }
+    if constexpr (sizeof(UT) >= 2) {
+        un |= un >> 8;
+    }
+    if constexpr (sizeof(UT) >= 4) {
+        un |= un >> 16;
+    }
+    if constexpr (sizeof(UT) >= 8) {
+        un |= un >> 32;
+    }
+
+    return static_cast<T>(un + 1);
 }
 
-/// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
-/// @param n Any number
-/// @return Next (ceiling) power of 2 for x
-inline constexpr uint32_t Math_RoundUpLongToPowerOf2(uint32_t n) {
-    --n;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    return ++n;
-}
+/// @brief Returns the next (floor) power of 2 for x. E.g. n = 600 then returns 512.
+/// @param n Any number.
+/// @return Next (floor) power of 2 for x.
+template <std::integral T> static inline constexpr T Math_RoundDownToPowerOf2(T n) {
+    using UT = std::make_unsigned_t<T>;
 
-/// @brief Returns the next (ceiling) power of 2 for x. E.g. n = 600 then returns 1024
-/// @param n Any number
-/// @return Next (ceiling) power of 2 for x
-inline constexpr uint64_t Math_RoundUpInteger64ToPowerOf2(uint64_t n) {
-    --n;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    n |= n >> 32;
-    return ++n;
-}
+    UT un = static_cast<UT>(n);
 
-/// @brief Returns the previous (floor) power of 2 for x. E.g. n = 600 then returns 512
-/// @param n Any number
-/// @return Previous (floor) power of 2 for x
-inline constexpr uint32_t Math_RoundDownLongToPowerOf2(uint32_t n) {
-    n |= (n >> 1);
-    n |= (n >> 2);
-    n |= (n >> 4);
-    n |= (n >> 8);
-    n |= (n >> 16);
-    return n - (n >> 1);
-}
+    if constexpr (sizeof(UT) >= 1) {
+        un |= un >> 1;
+        un |= un >> 2;
+        un |= un >> 4;
+    }
+    if constexpr (sizeof(UT) >= 2) {
+        un |= un >> 8;
+    }
+    if constexpr (sizeof(UT) >= 4) {
+        un |= un >> 16;
+    }
+    if constexpr (sizeof(UT) >= 8) {
+        un |= un >> 32;
+    }
 
-/// @brief Returns the previous (floor) power of 2 for x. E.g. n = 600 then returns 512
-/// @param n Any number
-/// @return Previous (floor) power of 2 for x
-inline constexpr uint64_t Math_RoundDownInteger64ToPowerOf2(uint64_t n) {
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    n |= n >> 32;
-    return n - (n >> 1);
+    return static_cast<T>(un - (un >> 1));
 }
 
 /// @brief Get the digit from position p in integer n
@@ -325,17 +320,51 @@ inline float Math_FastInvSqRt(float x) noexcept {
     return x;
 }
 
-/// @brief Multiply and divide in a single operation, rounding towards zero. This is a single operation (no intermediate results), and is more efficient than
-/// doing a separate multiplication and division.
-/// @param val The value to multiply and then divide
-/// @param mul The multiplier
-/// @param div The divisor
-/// @return The result of the multiplication and division, rounded towards zero
-inline constexpr int32_t Math_MulDiv(int32_t val, int32_t mul, int32_t div) noexcept {
-    return int32_t((int64_t(val) * mul + (div >> 1)) / div);
+/// @brief Performs a multiply-divide operation with full precision and rounding to nearest.
+/// @tparam T The data type to use.
+/// @param val The value to multiply.
+/// @param mul The value to multiply by.
+/// @param div The value to divide by.
+/// @return The result of the multiply-divide operation.
+template <std::unsigned_integral T> inline constexpr T Math_MulDiv(T val, T mul, T div) noexcept {
+    using Wide = std::conditional_t<(sizeof(T) < 8), std::uint64_t, unsigned __int128>;
+
+    Wide wval = static_cast<Wide>(val);
+    Wide wmul = static_cast<Wide>(mul);
+    Wide wdiv = static_cast<Wide>(div);
+
+    Wide result = (wval * wmul + (wdiv >> 1)) / wdiv;
+
+    return static_cast<T>(result);
+}
+
+/// @brief Performs a multiply-divide operation with full precision and rounding to nearest.
+/// @tparam T The data type to use.
+/// @param val The value to multiply.
+/// @param mul The value to multiply by.
+/// @param div The value to divide by.
+/// @return The result of the multiply-divide operation.
+template <std::signed_integral T> inline constexpr T Math_MulDiv(T val, T mul, T div) noexcept {
+    using Wide = std::conditional_t<(sizeof(T) < 8), std::int64_t, __int128>;
+
+    Wide wval = static_cast<Wide>(val);
+    Wide wmul = static_cast<Wide>(mul);
+    Wide wdiv = static_cast<Wide>(div);
+
+    Wide sign = (wdiv < 0) ? -1 : 1;
+    wval *= sign;
+    wmul *= sign;
+    wdiv *= sign;
+
+    Wide result = (wval * wmul + (wdiv >> 1)) / wdiv;
+
+    return static_cast<T>(result);
 }
 
 /// @brief Check if test is within [lower, upper] range (inclusive).
+/// @tparam T Type of test value.
+/// @tparam U Type of lower bound.
+/// @tparam V Type of upper bound.
 /// @param test The value to check.
 /// @param lower The lower bound.
 /// @param upper The upper bound.
@@ -346,6 +375,9 @@ template <std::integral T, std::integral U, std::integral V> inline constexpr qb
 }
 
 /// @brief Check if test is within [lower, upper] range (inclusive).
+/// @tparam T Type of test value.
+/// @tparam U Type of lower bound.
+/// @tparam V Type of upper bound.
 /// @param test The value to check.
 /// @param lower The lower bound.
 /// @param upper The upper bound.

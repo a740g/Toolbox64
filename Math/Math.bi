@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Math routines
-' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2026 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
@@ -37,12 +37,12 @@ DECLARE LIBRARY "Math"
     FUNCTION Math_IsDoubleNaN# (BYVAL n AS DOUBLE)
     FUNCTION Math_IsLongEven%% (BYVAL n AS LONG)
     FUNCTION Math_IsInteger64Even%% (BYVAL n AS _INTEGER64)
-    FUNCTION Math_IsLongPowerOf2%% (BYVAL n AS _UNSIGNED LONG)
-    FUNCTION Math_IsInteger64PowerOf2%% (BYVAL n AS _UNSIGNED _INTEGER64)
-    FUNCTION Math_RoundUpLongToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
-    FUNCTION Math_RoundUpInteger64ToPowerOf2~&& (BYVAL n AS _UNSIGNED _INTEGER64)
-    FUNCTION Math_RoundDownLongToPowerOf2~& (BYVAL n AS _UNSIGNED LONG)
-    FUNCTION Math_RoundDownInteger64ToPowerOf2~&& (BYVAL n AS _UNSIGNED _INTEGER64)
+    FUNCTION Math_IsLongPowerOf2%% ALIAS "Math_IsPowerOf2" (BYVAL n AS _UNSIGNED LONG)
+    FUNCTION Math_IsInteger64PowerOf2%% ALIAS "Math_IsPowerOf2" (BYVAL n AS _UNSIGNED _INTEGER64)
+    FUNCTION Math_RoundUpLongToPowerOf2~& ALIAS "Math_RoundUpToPowerOf2" (BYVAL n AS _UNSIGNED LONG)
+    FUNCTION Math_RoundUpInteger64ToPowerOf2~&& ALIAS "Math_RoundUpToPowerOf2" (BYVAL n AS _UNSIGNED _INTEGER64)
+    FUNCTION Math_RoundDownLongToPowerOf2~& ALIAS "Math_RoundDownToPowerOf2" (BYVAL n AS _UNSIGNED LONG)
+    FUNCTION Math_RoundDownInteger64ToPowerOf2~&& ALIAS "Math_RoundDownToPowerOf2" (BYVAL n AS _UNSIGNED _INTEGER64)
     FUNCTION Math_GetDigitFromLong& (BYVAL n AS _UNSIGNED LONG, BYVAL p AS _UNSIGNED LONG)
     FUNCTION Math_GetDigitFromInteger64& (BYVAL n AS _UNSIGNED _INTEGER64, BYVAL p AS _UNSIGNED LONG)
     FUNCTION Math_AverageLong& (BYVAL x AS LONG, BYVAL y AS LONG)
@@ -85,5 +85,12 @@ DECLARE LIBRARY "Math"
     FUNCTION Math_Log2Double# ALIAS "std::log2" (BYVAL n AS DOUBLE)
     FUNCTION Math_CbRtSingle! ALIAS "std::cbrt" (BYVAL n AS SINGLE)
     FUNCTION Math_CbRtDouble# ALIAS "std::cbrt" (BYVAL n AS DOUBLE)
-    FUNCTION Math_MulDiv& (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
+    FUNCTION Math_MulDivULong& ALIAS "Math_MulDiv" (BYVAL v AS _UNSIGNED LONG, BYVAL m AS _UNSIGNED LONG, BYVAL d AS _UNSIGNED LONG)
+    FUNCTION Math_MulDivLong& ALIAS "Math_MulDiv" (BYVAL v AS LONG, BYVAL m AS LONG, BYVAL d AS LONG)
+    FUNCTION Math_MulDivUInteger64&& ALIAS "Math_MulDiv" (BYVAL v AS _UNSIGNED _INTEGER64, BYVAL m AS _UNSIGNED _INTEGER64, BYVAL d AS _UNSIGNED _INTEGER64)
+    FUNCTION Math_MulDivInteger64&& ALIAS "Math_MulDiv" (BYVAL v AS _INTEGER64, BYVAL m AS _INTEGER64, BYVAL d AS _INTEGER64)
+    FUNCTION Math_IsLongInRange%% ALIAS "Math_IsInRange" (BYVAL n AS LONG, BYVAL lo AS LONG, BYVAL hi AS LONG)
+    FUNCTION Math_IsInteger64InRange%% ALIAS "Math_IsInRange" (BYVAL n AS _INTEGER64, BYVAL lo AS _INTEGER64, BYVAL hi AS _INTEGER64)
+    FUNCTION Math_IsSingleInRange%% ALIAS "Math_IsInRange" (BYVAL n AS SINGLE, BYVAL lo AS SINGLE, BYVAL hi AS SINGLE)
+    FUNCTION Math_IsDoubleInRange%% ALIAS "Math_IsInRange" (BYVAL n AS DOUBLE, BYVAL lo AS DOUBLE, BYVAL hi AS DOUBLE)
 END DECLARE
