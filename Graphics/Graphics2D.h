@@ -1141,19 +1141,18 @@ void Graphics_PutTextImage(int32_t imageHandle, int32_t x, int32_t y, int32_t lx
 }
 
 /// @brief Finds the closest color index in the palette.
-/// @param r The red color component.
-/// @param g The green color component.
-/// @param b The blue color component.
+/// @param c The 32-bit color to find.
 /// @param palette The palette to search (an array of 32-bit colors).
 /// @param paletteColors The number of colors in the palette.
 /// @return The index of the closest color in the palette (zero based).
-uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const uint32_t *palette, uint32_t paletteColors) {
+uint32_t Graphics_FindClosestColor(uint32_t c, const uint32_t *palette, uint32_t paletteColors) {
+    // FIXME: We can allow custom distance functions
     auto minDistance = std::numeric_limits<uint32_t>::max();
     auto closestIndex = 0u;
 
     for (auto i = 0u; i < paletteColors; i++) {
-        auto c = *palette++;
-        auto distance = image_get_color_delta(r, g, b, (c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
+        auto c2 = *palette++;
+        auto distance = Graphics_GetRGBDelta(c, c2);
 
         if (distance < minDistance) {
             if (!distance)
@@ -1168,12 +1167,14 @@ uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const uint32
 }
 
 /// @brief Finds the closest color index in the palette.
-/// @param c The 32-bit color to find.
+/// @param r The red color component.
+/// @param g The green color component.
+/// @param b The blue color component.
 /// @param palette The palette to search (an array of 32-bit colors).
 /// @param paletteColors The number of colors in the palette.
 /// @return The index of the closest color in the palette (zero based).
-inline auto Graphics_FindClosestColor(uint32_t c, const uint32_t *palette, uint32_t paletteColors) {
-    return Graphics_FindClosestColor(image_get_bgra_red(c), image_get_bgra_green(c), image_get_bgra_blue(c), palette, paletteColors);
+inline uint32_t Graphics_FindClosestColor(uint8_t r, uint8_t g, uint8_t b, const uint32_t *palette, uint32_t paletteColors) {
+    return Graphics_FindClosestColor(Graphics_MakeRGBA(r, g, b, 0xFFu), palette, paletteColors);
 }
 
 /// @brief Renders ASCII art of an image to a destination text mode image.
