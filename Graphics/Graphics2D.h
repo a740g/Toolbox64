@@ -69,8 +69,6 @@ extern uint32_t image_set_bgra_alpha(uint32_t c, uint8_t a = 0xFFu);
 extern uint32_t image_make_bgra(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xFFu);
 extern uint32_t image_swap_red_blue(uint32_t clr);
 extern uint8_t image_clamp_color_component(int n);
-extern float image_calculate_rgb_distance(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8_t b2);
-extern uint32_t image_get_color_delta(uint8_t r1, uint8_t g1, uint8_t b1, uint8_t r2, uint8_t g2, uint8_t b2);
 extern uint32_t func__rgb32(int32_t r, int32_t g, int32_t b, int32_t a);
 extern uint32_t func__rgb32(int32_t r, int32_t g, int32_t b);
 extern uint32_t func__rgb32(int32_t i, int32_t a);
@@ -910,8 +908,11 @@ inline constexpr auto Graphics_InterpolateColor(uint32_t colorA, uint32_t colorB
 /// @param colorB The second color.
 /// @return The distance between the two colors.
 inline float Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB) {
-    return image_calculate_rgb_distance(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB),
-                                        image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
+    // FIXME: The function name is incorrect
+    auto dr = float(image_get_bgra_red(colorA)) - float(image_get_bgra_red(colorB));
+    auto dg = float(image_get_bgra_green(colorA)) - float(image_get_bgra_green(colorB));
+    auto db = float(image_get_bgra_blue(colorA)) - float(image_get_bgra_blue(colorB));
+    return std::sqrt(dr * dr + dg * dg + db * db);
 }
 
 /// @brief Calculates the delta between two colors.
@@ -919,8 +920,11 @@ inline float Graphics_GetRGBDistance(uint32_t colorA, uint32_t colorB) {
 /// @param colorB The second color.
 /// @return The delta between the two colors.
 inline uint32_t Graphics_GetRGBDelta(uint32_t colorA, uint32_t colorB) {
-    return image_get_color_delta(image_get_bgra_red(colorA), image_get_bgra_green(colorA), image_get_bgra_blue(colorA), image_get_bgra_red(colorB),
-                                 image_get_bgra_green(colorB), image_get_bgra_blue(colorB));
+    // FIXME: The function name is incorrect
+    auto dr = int32_t(image_get_bgra_red(colorA)) - int32_t(image_get_bgra_red(colorB));
+    auto dg = int32_t(image_get_bgra_green(colorA)) - int32_t(image_get_bgra_green(colorB));
+    auto db = int32_t(image_get_bgra_blue(colorA)) - int32_t(image_get_bgra_blue(colorB));
+    return dr * dr + dg * dg + db * db;
 }
 
 /// @brief Set the text image's transparent "color" that will be used by Graphics_PutTextImage()
