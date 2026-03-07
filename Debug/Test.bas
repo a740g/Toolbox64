@@ -17,11 +17,11 @@ SUB TEST_BEGIN_ALL
 
     __TestState.filter = _TRIM$(COMMAND$)
 
-    __TestSetColor __TEST_COLOR_HEADER: StandardIO_WriteLine "Minimalistic test framework library for QB64-PE"
-    __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine STRING$(__TEST_SEPARATOR_WIDTH, "-")
+    __TestSetColor __TEST_COLOR_HEADER: Console_WriteLine "Minimalistic test framework library for QB64-PE"
+    __TestSetColor __TEST_COLOR_NOTE: Console_WriteLine STRING$(__TEST_SEPARATOR_WIDTH, "-")
 
     IF LEN(__TestState.filter) THEN
-        __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine "Filter: " + _CHR_QUOTE + __TestState.filter + _CHR_QUOTE
+        __TestSetColor __TEST_COLOR_NOTE: Console_WriteLine "Filter: " + _CHR_QUOTE + __TestState.filter + _CHR_QUOTE
     END IF
 
     __TestResetColor
@@ -30,15 +30,15 @@ END SUB
 SUB TEST_END_ALL
     SHARED __TestState AS __TestState
 
-    __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine STRING$(__TEST_SEPARATOR_WIDTH, "-")
-    __TestSetColor __TEST_COLOR_NOTE: StandardIO_Write "Tests run :": __TestSetColor __TEST_COLOR_NAME: StandardIO_WriteLine STR$(__TestState.testsRun)
-    __TestSetColor __TEST_COLOR_NOTE: StandardIO_Write "Asserts   :": __TestSetColor __TEST_COLOR_NAME: StandardIO_WriteLine STR$(__TestState.assertions)
-    __TestSetColor __TEST_COLOR_NOTE: StandardIO_Write "Failures  :": __TestSetColor __TEST_COLOR_NAME: StandardIO_WriteLine STR$(__TestState.failures)
+    __TestSetColor __TEST_COLOR_NOTE: Console_WriteLine STRING$(__TEST_SEPARATOR_WIDTH, "-")
+    __TestSetColor __TEST_COLOR_NOTE: Console_Write "Tests run :": __TestSetColor __TEST_COLOR_NAME: Console_WriteLine STR$(__TestState.testsRun)
+    __TestSetColor __TEST_COLOR_NOTE: Console_Write "Asserts   :": __TestSetColor __TEST_COLOR_NAME: Console_WriteLine STR$(__TestState.assertions)
+    __TestSetColor __TEST_COLOR_NOTE: Console_Write "Failures  :": __TestSetColor __TEST_COLOR_NAME: Console_WriteLine STR$(__TestState.failures)
 
     IF __TestState.failures THEN
-        __TestSetColor __TEST_COLOR_FAIL: StandardIO_WriteLine "RESULT    : FAILURE"
+        __TestSetColor __TEST_COLOR_FAIL: Console_WriteLine "RESULT    : FAILURE"
     ELSE
-        __TestSetColor __TEST_COLOR_PASS: StandardIO_WriteLine "RESULT    : SUCCESS"
+        __TestSetColor __TEST_COLOR_PASS: Console_WriteLine "RESULT    : SUCCESS"
     END IF
 
     __TestResetColor
@@ -66,13 +66,13 @@ SUB TEST_CASE_BEGIN (testName AS STRING)
         END IF
     END IF
 
-    __TestSetColor __TEST_COLOR_ARROW: StandardIO_Write "->": __TestResetColor: StandardIO_WriteChar _ASC_SPACE
-    __TestSetColor __TEST_COLOR_NAME: StandardIO_Write testName
+    __TestSetColor __TEST_COLOR_ARROW: Console_Write "->": __TestResetColor: Console_WriteChar _ASC_SPACE
+    __TestSetColor __TEST_COLOR_NAME: Console_Write testName
     IF __TestState.skipCurrentTest THEN
-        StandardIO_WriteChar _ASC_SPACE
+        Console_WriteChar _ASC_SPACE
         __TestPrintTag "SKIP", __TEST_COLOR_SKIP
     END IF
-    StandardIO_WriteLine _STR_EMPTY
+    Console_WriteLine _STR_EMPTY
 
     __TestResetColor
 END SUB
@@ -82,16 +82,16 @@ SUB TEST_CASE_END
 
     DIM durMs AS _UNSIGNED _INTEGER64: durMs = __Test_GetTicks - __TestState.testStart
 
-    StandardIO_Write "  "
+    Console_Write "  "
     IF __TestState.skipCurrentTest THEN
         __TestPrintTag "SKIP", __TEST_COLOR_SKIP
-        __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine "(0 asserts, 0 fails," + STR$(durMs) + " ms)"
+        __TestSetColor __TEST_COLOR_NOTE: Console_WriteLine "(0 asserts, 0 fails," + STR$(durMs) + " ms)"
     ELSEIF __TestState.currentTestFails = 0 THEN
         __TestPrintTag "OK", __TEST_COLOR_PASS
-        __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine "(" + _TOSTR$(__TestState.currentTestChecks) + " asserts, 0 fails," + STR$(durMs) + " ms)"
+        __TestSetColor __TEST_COLOR_NOTE: Console_WriteLine "(" + _TOSTR$(__TestState.currentTestChecks) + " asserts, 0 fails," + STR$(durMs) + " ms)"
     ELSE
         __TestPrintTag "FAIL", __TEST_COLOR_FAIL
-        __TestSetColor __TEST_COLOR_NOTE: StandardIO_WriteLine "(" + _TOSTR$(__TestState.currentTestChecks) + " asserts," + STR$(__TestState.currentTestFails) + " fails," + STR$(durMs) + " ms)"
+        __TestSetColor __TEST_COLOR_NOTE: Console_WriteLine "(" + _TOSTR$(__TestState.currentTestChecks) + " asserts," + STR$(__TestState.currentTestFails) + " fails," + STR$(durMs) + " ms)"
     END IF
 
     __TestResetColor
@@ -187,30 +187,28 @@ END SUB
 
 SUB __TestSetColor (fg AS _UNSIGNED _BYTE)
     SHARED __TestState AS __TestState
-    IF __TestState.colorEnabled THEN StandardIO_Write _CHR_ESC + "[" + _TOSTR$(fg) + "m"
+    IF __TestState.colorEnabled THEN Console_Write _CHR_ESC + "[" + _TOSTR$(fg) + "m"
 END SUB
 
 SUB __TestResetColor
     SHARED __TestState AS __TestState
-    IF __TestState.colorEnabled THEN StandardIO_Write _CHR_ESC + "[0m"
+    IF __TestState.colorEnabled THEN Console_Write _CHR_ESC + "[0m"
 END SUB
 
 SUB __TestPrintTag (tag AS STRING, fg AS _UNSIGNED _BYTE)
-    __TestSetColor fg: StandardIO_Write "[" + tag + "] "
+    __TestSetColor fg: Console_Write "[" + tag + "] "
     __TestResetColor
 END SUB
 
 SUB __TestPrintFailure (kind AS STRING, expr AS STRING)
-    __TestSetColor __TEST_COLOR_FAIL: StandardIO_Write "    "
+    __TestSetColor __TEST_COLOR_FAIL: Console_Write "    "
     __TestPrintTag "FAIL", __TEST_COLOR_FAIL
     IF LEN(expr) THEN
-        __TestSetColor __TEST_COLOR_KIND: StandardIO_Write kind + ": "
-        __TestSetColor __TEST_COLOR_NAME: StandardIO_WriteLine expr
+        __TestSetColor __TEST_COLOR_KIND: Console_Write kind + ": "
+        __TestSetColor __TEST_COLOR_NAME: Console_WriteLine expr
     ELSE
-        __TestSetColor __TEST_COLOR_KIND: StandardIO_WriteLine kind
+        __TestSetColor __TEST_COLOR_KIND: Console_WriteLine kind
     END IF
 
     __TestResetColor
 END SUB
-
-'$INCLUDE:'../IO/StandardIO.bas'

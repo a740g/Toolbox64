@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------------------------------------
-// Standard Input/Output functions
+// Console Input/Output functions
 // Copyright (c) 2025 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -9,14 +9,17 @@
 #include <algorithm>
 #include <cstdio>
 
-inline void StandardIO_Write_(const char *text) {
+inline void Console_Write_(const char *text) {
     std::fputs(text, stdout);
 }
 
-inline const char *StandardIO_Read_(size_t maxLength) {
+inline const char *Console_Read_(size_t maxLength) {
     g_TmpBuf[0] = '\0';
 
-    std::fgets(reinterpret_cast<char *>(g_TmpBuf), std::min<int>(maxLength, sizeof(g_TmpBuf)), stdin);
+    if (maxLength) {
+        g_TmpBuf.resize(std::max(maxLength, g_TmpBuf.size()));
+        std::fgets(reinterpret_cast<char *>(g_TmpBuf.data()), maxLength, stdin);
+    }
 
-    return reinterpret_cast<char *>(g_TmpBuf);
+    return reinterpret_cast<char *>(g_TmpBuf.data());
 }

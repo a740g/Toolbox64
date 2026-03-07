@@ -22,8 +22,8 @@ constexpr auto String_Empty = "";
 /// @return A formatted string.
 template <typename T> inline const char *__String_Format(const T &value, const char *fmt) {
     g_TmpBuf[0] = '\0';
-    snprintf(reinterpret_cast<char *>(g_TmpBuf), sizeof(g_TmpBuf), fmt, value);
-    return reinterpret_cast<char *>(g_TmpBuf);
+    snprintf(reinterpret_cast<char *>(g_TmpBuf.data()), g_TmpBuf.size(), fmt, value);
+    return reinterpret_cast<char *>(g_TmpBuf.data());
 }
 
 /// @brief Gets a string form of the boolean value passed
