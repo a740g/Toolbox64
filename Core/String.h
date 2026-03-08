@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // String related routines
-// Copyright (c) 2024 Samuel Gomes
+// Copyright (c) 2025 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -30,7 +30,7 @@ template <typename T> inline const char *__String_Format(const T &value, const c
 /// @param n A boolean value
 /// @param fmt The format type needed
 /// @return A string form of the boolean value
-inline const char *String_FormatBoolean(int32_t n, uint32_t fmt) {
+inline const char *String_FormatBoolean(intptr_t n, uint32_t fmt) {
     static const char *const BOOLEAN_STRINGS[][2] = {{"False", "True"},
                                                      {"0", "1"},
                                                      {"0", "-1"},

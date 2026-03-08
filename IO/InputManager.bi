@@ -11,7 +11,7 @@ $LET TOOLBOX64_STRICT = TRUE
 '$INCLUDE:'../Math/Math.bi'
 '$INCLUDE:'../Math/Vector2i.bi'
 '$INCLUDE:'../Math/Bounds2i.bi'
-'$INCLUDE:'../String/StringOps.bi'
+'$INCLUDE:'../Core/String.bi'
 
 CONST KEY_SPACE& = _ASC_SPACE
 CONST KEY_EXCLAMATION& = _ASC_EXCLAMATION

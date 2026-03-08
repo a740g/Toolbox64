@@ -8,7 +8,7 @@ $INCLUDEONCE
 '$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../Core/Types.bi'
 '$INCLUDE:'../Core/BitwiseOps.bi'
-'$INCLUDE:'../String/StringOps.bi'
+'$INCLUDE:'../Core/String.bi'
 '$INCLUDE:'../FS/Pathname.bi'
 
 CONST __FONTMGR_PROBE_SIZE_MIN~%% = 8~% ' minimum font height that can be reported

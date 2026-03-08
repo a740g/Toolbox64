@@ -10,7 +10,7 @@ $INCLUDEONCE
 '$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../Core/Types.bi'
 '$INCLUDE:'../Core/PointerOps.bi'
-'$INCLUDE:'../String/StringOps.bi'
+'$INCLUDE:'../Core/String.bi'
 
 CONST __SAUCE_RECORD_SIZE~%% = 128~%%
 CONST __SAUCE_COMMENT_SIZE~%% = 64~%%

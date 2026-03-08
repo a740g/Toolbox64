@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------------------------------------------
 // File management routines
-// Copyright (c) 2024 Samuel Gomes
+// Copyright (c) 2025 Samuel Gomes
 //----------------------------------------------------------------------------------------------------------------------
 
 #pragma once
@@ -13,7 +13,7 @@
 #include <ctime>
 #include <filesystem>
 #include <sys/stat.h>
-#if defined(_WIN32)
+#ifdef _WIN32
     #include <windows.h>
 #endif
 

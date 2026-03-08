@@ -356,5 +356,4 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
 END FUNCTION
 
 
-'$INCLUDE:'../String/StringOps.bas'
 '$INCLUDE:'../FS/Pathname.bas'

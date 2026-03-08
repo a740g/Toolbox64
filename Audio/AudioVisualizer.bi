@@ -11,7 +11,7 @@ $INCLUDEONCE
 '$INCLUDE:'../Core/BitwiseOps.bi'
 '$INCLUDE:'../Math/Math.bi'
 '$INCLUDE:'../Math/Vector2f.bi'
-'$INCLUDE:'../String/StringOps.bi'
+'$INCLUDE:'../Core/String.bi'
 '$INCLUDE:'../Graphics/Graphics2D.bi'
 '$INCLUDE:'AudioAnalyzer.bi'
 '$INCLUDE:'AudioConv.bi'

@@ -5,8 +5,9 @@
 
 #pragma once
 
+#include "../Core/Common.h"
+#include "../Core/String.h"
 #include "../Core/Types.h"
-#include "../String/StringOps.h"
 #include <algorithm>
 #include <cstring>
 #include <string>

@@ -447,5 +447,3 @@ SUB SAUCE_SetComment (sauce AS SAUCEType, commentLine AS _UNSIGNED _BYTE, commen
     ' Now insert the comment line
     MID$(sauce.comments, 1 + (commentLine - 1) * __SAUCE_COMMENT_SIZE, __SAUCE_COMMENT_SIZE) = LEFT$(comment, __SAUCE_COMMENT_SIZE)
 END SUB
-
-'$INCLUDE:'../String/StringOps.bas'
