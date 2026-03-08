@@ -1,9 +1,9 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Common header
-' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2025 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF VERSION < 4.2.0 THEN
+$IF VERSION < 4.4.0 THEN
     $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
 $END IF
 
