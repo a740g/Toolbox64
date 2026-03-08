@@ -169,5 +169,3 @@ END FUNCTION
 FUNCTION File_GetModifiedTime&& (pathName AS STRING)
     File_GetModifiedTime = __File_GetModifiedTime(String_ToCStr(pathName))
 END FUNCTION
-
-'$INCLUDE:'../FS/Pathname.bas'
