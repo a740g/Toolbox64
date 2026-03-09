@@ -11,6 +11,7 @@
 
 $INCLUDEONCE
 
+'$LET TOOLBOX64_STRICT = TRUE
 '$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../Core/Types.bi'
 '$INCLUDE:'Graphics2D.bi'
@@ -198,36 +199,6 @@ SUB WidgetUpdate
         END IF
     NEXT
 END SUB
-
-
-' This gets the current keyboard input
-FUNCTION InputManagerKey&
-    InputManagerKey = InputManager_PeekKeyboardKey
-END FUNCTION
-
-
-' Get the mouse X position
-FUNCTION InputManagerMouseX&
-    InputManagerMouseX = InputManager_GetMousePositionX
-END FUNCTION
-
-
-' Get the mouse Y position
-FUNCTION InputManagerMouseY&
-    InputManagerMouseY = InputManager_GetMousePositionY
-END FUNCTION
-
-
-' Is the left mouse button down?
-FUNCTION InputManagerMouseLeftButton%%
-    InputManagerMouseLeftButton = InputManager_IsMouseLeftButtonDown
-END FUNCTION
-
-
-' Is the right mouse button down?
-FUNCTION InputManagerMouseRightButton%%
-    InputManagerMouseRightButton = InputManager_IsMouseRightButtonDown
-END FUNCTION
 
 
 ' Returns the handle number of the widget that has focus
@@ -701,8 +672,7 @@ SUB __PushButtonUpdate
         END IF
     END IF
 
-    k = InputManager_PeekKeyboardKey
-    IF k = _KEY_ENTER OR k = KEY_SPACE THEN
+    IF InputManager_PeekKeyboardKey = _KEY_ENTER OR InputManager_PeekKeyboardKey = KEY_SPACE THEN
         clicked = _TRUE
         k = InputManager_GetKeyboardKey ' consume keystroke
     END IF
@@ -805,7 +775,7 @@ SUB __TextBoxUpdate
             ' Box cursor movement
             Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
             IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.textPosition THEN
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.textPosition
+                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition
             END IF
             Widget(WidgetManager.current).txt.boxStartCharacter = 1 + LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.boxTextLength
             IF Widget(WidgetManager.current).txt.boxStartCharacter < 1 THEN
