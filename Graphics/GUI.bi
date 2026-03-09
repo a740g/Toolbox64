@@ -165,20 +165,36 @@ SUB WidgetUpdate
 
     ' Shift focus if it was requested (programmatically, by Tab, or by click)
     IF WidgetManager.forced <> NULL THEN ' being forced to a widget
+        DIM nh AS LONG
         IF WidgetManager.forced = -1 THEN ' yes, to the next one?
             h = WidgetManager.current ' set scanner to current widget
             DO ' start scanning
                 h = h + 1 ' move scanner to next handle number
                 IF h > UBOUND(Widget) THEN h = 1 ' return to start of widget array if limit reached
-                IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN WidgetManager.current = h ' set current widget if in use
-            LOOP UNTIL WidgetManager.current = h ' leave scanner when a widget in use is found
-            WidgetManager.forced = NULL ' reset force indicator
+                IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN nh = h ' set candidate widget if in use
+            LOOP UNTIL nh = h ' leave scanner when a widget in use is found
         ELSE ' yes, to a specific input field
             IF Widget(WidgetManager.forced).inUse AND Widget(WidgetManager.forced).visible AND NOT Widget(WidgetManager.forced).disabled THEN
-                WidgetManager.current = WidgetManager.forced ' set the current widget
+                nh = WidgetManager.forced ' set the candidate widget
             END IF
-            WidgetManager.forced = NULL ' reset force indicator
         END IF
+
+        IF nh <> NULL AND nh <> WidgetManager.current THEN
+            WidgetManager.current = nh
+            ' When a text box gets focus, move the cursor to the end
+            IF Widget(WidgetManager.current).class = WIDGET_TEXT_BOX THEN
+                Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1
+                ' Recalculate scrolling to ensure cursor is visible
+                IF Widget(WidgetManager.current).txt.textPosition > Widget(WidgetManager.current).txt.boxTextLength THEN
+                    Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
+                    Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
+                ELSE
+                    Widget(WidgetManager.current).txt.boxStartCharacter = 1
+                    Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.textPosition
+                END IF
+            END IF
+        END IF
+        WidgetManager.forced = NULL ' reset force indicator
     END IF
 
     ' Run update for the widget that has focus
@@ -717,14 +733,9 @@ SUB __TextBoxUpdate
             ' Box cursor movement
             Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition + 1
 
-            IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.textPosition THEN
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.textPosition
-            END IF
-
             IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.boxTextLength + 1 THEN
                 Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-
-                Widget(WidgetManager.current).txt.boxStartCharacter = 1 + LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.boxTextLength
+                Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
             END IF
 
             k = InputManager_GetKeyboardKey ' consume the key
@@ -746,25 +757,7 @@ SUB __TextBoxUpdate
 
             k = InputManager_GetKeyboardKey ' consume the key
 
-        CASE _KEY_BACKSPACE
-            IF Widget(WidgetManager.current).txt.textPosition > 1 THEN ' is the cursor at the beginning of the line?
-                Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 2) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' no, delete character
-                Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
-            END IF
-
-            ' Box cursor movement
-            Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition - 1
-            IF Widget(WidgetManager.current).txt.boxPosition < 1 THEN
-                Widget(WidgetManager.current).txt.boxPosition = 1
-                IF Widget(WidgetManager.current).txt.boxStartCharacter > 1 THEN
-                    Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.boxStartCharacter - 1
-                END IF
-            END IF
-
-            k = InputManager_GetKeyboardKey ' consume the key
-            Widget(WidgetManager.current).changed = _TRUE ' something changed
-
-        CASE _KEY_HOME
+        CASE _KEY_UP, _KEY_HOME
             Widget(WidgetManager.current).txt.textPosition = 1 ' move the cursor to the beginning of the line
 
             ' Box cursor movement
@@ -773,17 +766,35 @@ SUB __TextBoxUpdate
 
             k = InputManager_GetKeyboardKey ' consume the key
 
-        CASE _KEY_END
+        CASE _KEY_DOWN, _KEY_END
             Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 ' move the cursor to the end of the line
 
             ' Box cursor movement
-            Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-            IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.textPosition THEN
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition
-            END IF
-            Widget(WidgetManager.current).txt.boxStartCharacter = 1 + LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.boxTextLength
-            IF Widget(WidgetManager.current).txt.boxStartCharacter < 1 THEN
+            IF Widget(WidgetManager.current).txt.textPosition > Widget(WidgetManager.current).txt.boxTextLength THEN
+                Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
+                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
+            ELSE
                 Widget(WidgetManager.current).txt.boxStartCharacter = 1
+                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.textPosition
+            END IF
+
+            k = InputManager_GetKeyboardKey ' consume the key
+
+        CASE _KEY_BACKSPACE
+            IF Widget(WidgetManager.current).txt.textPosition > 1 THEN ' is the cursor at the beginning of the line?
+                Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 2) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' no, delete character
+                Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
+
+                ' Box cursor movement
+                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition - 1
+                IF Widget(WidgetManager.current).txt.boxPosition < 1 THEN
+                    Widget(WidgetManager.current).txt.boxPosition = 1
+                    IF Widget(WidgetManager.current).txt.boxStartCharacter > 1 THEN
+                        Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.boxStartCharacter - 1
+                    END IF
+                END IF
+
+                Widget(WidgetManager.current).changed = _TRUE ' something changed
             END IF
 
             k = InputManager_GetKeyboardKey ' consume the key
@@ -791,10 +802,10 @@ SUB __TextBoxUpdate
         CASE _KEY_DELETE
             IF Widget(WidgetManager.current).txt.textPosition < LEN(Widget(WidgetManager.current).text) + 1 THEN ' is the cursor at the end of the line?
                 Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' no, delete character
+                Widget(WidgetManager.current).changed = _TRUE ' something changed
             END IF
 
             k = InputManager_GetKeyboardKey ' consume the key
-            Widget(WidgetManager.current).changed = _TRUE ' something changed
 
         CASE _KEY_ENTER
             Widget(WidgetManager.current).txt.entered = _TRUE ' if enter key was pressed remember it (TRUE)
@@ -866,13 +877,13 @@ SUB __TextBoxUpdate
                     Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition + 1
                     IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.boxTextLength + 1 THEN
                         Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-                        Widget(WidgetManager.current).txt.boxStartCharacter = 1 + LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.boxTextLength
+                        Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
                     END IF
 
-                    k = InputManager_GetKeyboardKey ' consume the key
                     Widget(WidgetManager.current).changed = _TRUE ' something changed
                 END IF
             END IF
+            k = InputManager_GetKeyboardKey ' consume the key
     END SELECT
 END SUB
 
