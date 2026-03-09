@@ -791,5 +791,4 @@ FUNCTION ANSI_GetHeight& (sauce AS SAUCEType)
 END FUNCTION
 
 
-'$INCLUDE:'Graphics2D.bas'
 '$INCLUDE:'../Resource/SAUCE.bas'
