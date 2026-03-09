@@ -456,11 +456,11 @@ FUNCTION TextBoxNew& (text AS STRING, x AS LONG, y AS LONG, w AS _UNSIGNED LONG,
 
     ' Set class specific stuff
     Widget(t).flags = flags ' store the flags
-    Widget(t).txt.textPosition = 1 ' set the cursor at the beginning of the input line
-    Widget(t).txt.boxPosition = 1
-    Widget(t).txt.boxTextLength = (w - _PRINTWIDTH("W") * 2) \ _PRINTWIDTH("W") ' calculate the number of character we can show at a time
-    Widget(t).txt.boxStartCharacter = 1
     Widget(t).txt.insertMode = _TRUE ' initial insert mode to insert
+    Widget(t).txt.boxTextLength = (w - _PRINTWIDTH("W") * 2) \ _PRINTWIDTH("W") ' calculate the number of character we can show at a time
+    ' Move cursor to end of initial text
+    Widget(t).txt.textPosition = LEN(text) + 1
+    __TextBoxScrollToView t
 
     TextBoxNew = t
 END FUNCTION
