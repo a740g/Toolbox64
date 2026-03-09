@@ -11,7 +11,7 @@
 
 $INCLUDEONCE
 
-'$LET TOOLBOX64_STRICT = TRUE
+'LET TOOLBOX64_STRICT = TRUE
 '$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../Core/Types.bi'
 '$INCLUDE:'Graphics2D.bi'
@@ -115,6 +115,12 @@ SUB WidgetUpdate
 
     IF UBOUND(Widget) = NULL THEN EXIT SUB ' Exit if there is nothing to do
 
+    ' Reset some stuff that the user should have handled last time
+    FOR h = 1 TO UBOUND(Widget)
+        Widget(h).clicked = _FALSE
+        Widget(h).txt.entered = _FALSE
+    NEXT
+
     ' Blinky stuff
     currentTick = Time_GetTicks
     IF currentTick > blinkTick + WIDGET_BLINK_INTERVAL THEN
@@ -125,7 +131,39 @@ SUB WidgetUpdate
     ' Manage widget focus stuff
     IF WidgetManager.current = NULL THEN WidgetManager.current = 1 ' if this is first time set current widget to 1
 
-    ' Shift focus if it was requested
+    ' Check for user input requesting focus change via Tab key
+    IF InputManager_PeekKeyboardKey = _KEY_TAB THEN
+        WidgetManager.forced = -1 ' Move to the next widget
+        dummy = InputManager_GetKeyboardKey ' consume the key
+    END IF
+
+    ' Check if the user is trying to click on something to change focus
+    IF InputManager_IsMouseLeftButtonClicked OR InputManager_IsMouseRightButtonClicked THEN
+        FOR h = 1 TO UBOUND(Widget)
+            IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN
+                ' Find the bounding box
+                Bounds2i_InitializeFromPositionSize Widget(h).position, Widget(h).size, r
+
+                IF InputManager_IsMouseLeftButtonClicked THEN
+                    DIM lClickBounds AS Bounds2i: InputManager_GetMouseLeftClickBounds lClickBounds
+                    IF Bounds2i_ContainsBounds(r, lClickBounds) THEN
+                        WidgetManager.forced = h ' Move to the specific widget
+                        EXIT FOR
+                    END IF
+                END IF
+
+                IF InputManager_IsMouseRightButtonClicked THEN
+                    DIM rClickBounds AS Bounds2i: InputManager_GetMouseRightClickBounds rClickBounds
+                    IF Bounds2i_ContainsBounds(r, rClickBounds) THEN
+                        WidgetManager.forced = h ' Move to the specific widget
+                        EXIT FOR
+                    END IF
+                END IF
+            END IF
+        NEXT
+    END IF
+
+    ' Shift focus if it was requested (programmatically, by Tab, or by click)
     IF WidgetManager.forced <> NULL THEN ' being forced to a widget
         IF WidgetManager.forced = -1 THEN ' yes, to the next one?
             h = WidgetManager.current ' set scanner to current widget
@@ -142,40 +180,6 @@ SUB WidgetUpdate
             WidgetManager.forced = NULL ' reset force indicator
         END IF
     END IF
-
-    ' Check for user input requesting focus change
-    IF InputManager_PeekKeyboardKey = _KEY_TAB THEN
-        WidgetManager.forced = -1 ' Move to the next widget
-        dummy = InputManager_GetKeyboardKey ' consume the key
-    END IF
-
-    ' Check if the user is trying to click on something to change focus
-    FOR h = 1 TO UBOUND(Widget)
-        ' Reset some stuff that the user should have handled last time
-        Widget(h).clicked = _FALSE
-        Widget(h).txt.entered = _FALSE
-
-        IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled AND h <> WidgetManager.current THEN
-
-            ' Find the bounding box
-            Bounds2i_InitializeFromPositionSize Widget(h).position, Widget(h).size, r
-
-            IF InputManager_IsMouseLeftButtonClicked THEN
-                DIM lClickBounds AS Bounds2i: InputManager_GetMouseLeftClickBounds lClickBounds
-                IF Bounds2i_ContainsBounds(r, lClickBounds) THEN
-                    WidgetManager.forced = h ' Move to the specific widget
-                END IF
-            END IF
-
-            IF InputManager_IsMouseRightButtonClicked THEN
-                DIM rClickBounds AS Bounds2i: InputManager_GetMouseRightClickBounds rClickBounds
-                IF Bounds2i_ContainsBounds(r, rClickBounds) THEN
-                    WidgetManager.forced = h ' Move to the specific widget
-                END IF
-            END IF
-        END IF
-    NEXT
-
 
     ' Run update for the widget that has focus
     IF Widget(WidgetManager.current).inUse AND Widget(WidgetManager.current).visible AND NOT Widget(WidgetManager.current).disabled THEN
