@@ -104,6 +104,39 @@ SUB WidgetDrawBox3D (position AS Vector2i, size AS Vector2i, depressed AS _BYTE)
 END SUB
 
 
+' Internal helper to ensure the cursor is within visible bounds of the text box
+SUB __TextBoxScrollToView (handle AS LONG)
+    SHARED Widget() AS WidgetType
+
+    ' Ensure textPosition is within bounds [1, LEN(text) + 1]
+    IF Widget(handle).txt.textPosition < 1 THEN
+        Widget(handle).txt.textPosition = 1
+    ELSEIF Widget(handle).txt.textPosition > LEN(Widget(handle).text) + 1 THEN
+        Widget(handle).txt.textPosition = LEN(Widget(handle).text) + 1
+    END IF
+
+    ' If the cursor moved before the start of the visible window
+    IF Widget(handle).txt.textPosition < Widget(handle).txt.boxStartCharacter THEN
+        Widget(handle).txt.boxStartCharacter = Widget(handle).txt.textPosition
+    END IF
+
+    ' If the cursor moved after the end of the visible window
+    IF Widget(handle).txt.textPosition > Widget(handle).txt.boxStartCharacter + Widget(handle).txt.boxTextLength THEN
+        Widget(handle).txt.boxStartCharacter = Widget(handle).txt.textPosition - Widget(handle).txt.boxTextLength
+    END IF
+
+    ' Final safety check for boxStartCharacter
+    IF Widget(handle).txt.boxStartCharacter < 1 THEN
+        Widget(handle).txt.boxStartCharacter = 1
+    ELSEIF Widget(handle).txt.boxStartCharacter > LEN(Widget(handle).text) + 1 THEN
+        Widget(handle).txt.boxStartCharacter = LEN(Widget(handle).text) + 1
+    END IF
+
+    ' Update the relative box position for drawing
+    Widget(handle).txt.boxPosition = Widget(handle).txt.textPosition - Widget(handle).txt.boxStartCharacter + 1
+END SUB
+
+
 ' This routine ties the whole update system and makes everything go
 SUB WidgetUpdate
     STATIC blinkTick AS _INTEGER64 ' stores the last blink tick (oooh!)
@@ -181,17 +214,9 @@ SUB WidgetUpdate
 
         IF nh <> NULL AND nh <> WidgetManager.current THEN
             WidgetManager.current = nh
-            ' When a text box gets focus, move the cursor to the end
+            ' When a text box gets focus, ensure cursor/scroll is valid
             IF Widget(WidgetManager.current).class = WIDGET_TEXT_BOX THEN
-                Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1
-                ' Recalculate scrolling to ensure cursor is visible
-                IF Widget(WidgetManager.current).txt.textPosition > Widget(WidgetManager.current).txt.boxTextLength THEN
-                    Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
-                    Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-                ELSE
-                    Widget(WidgetManager.current).txt.boxStartCharacter = 1
-                    Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.textPosition
-                END IF
+                __TextBoxScrollToView WidgetManager.current
             END IF
         END IF
         WidgetManager.forced = NULL ' reset force indicator
@@ -721,166 +746,111 @@ SUB __TextBoxUpdate
     SELECT CASE k ' which key was hit?
         CASE _KEY_INSERT
             Widget(WidgetManager.current).txt.insertMode = NOT Widget(WidgetManager.current).txt.insertMode
-
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_RIGHT
-            Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
-            IF Widget(WidgetManager.current).txt.textPosition > LEN(Widget(WidgetManager.current).text) + 1 THEN ' will this take the cursor too far?
-                Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 ' yes, keep the cursor at the end of the line
-            END IF
-
-            ' Box cursor movement
-            Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition + 1
-
-            IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.boxTextLength + 1 THEN
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-                Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
-            END IF
-
+            Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1
+            __TextBoxScrollToView WidgetManager.current
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_LEFT
-            Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
-            IF Widget(WidgetManager.current).txt.textPosition < 1 THEN ' did cursor go beyone beginning of line?
-                Widget(WidgetManager.current).txt.textPosition = 1 ' yes, keep the cursor at the beginning of the line
-            END IF
-
-            ' Box cursor movement
-            Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition - 1
-            IF Widget(WidgetManager.current).txt.boxPosition < 1 THEN
-                Widget(WidgetManager.current).txt.boxPosition = 1
-                IF Widget(WidgetManager.current).txt.boxStartCharacter > 1 THEN
-                    Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.boxStartCharacter - 1
-                END IF
-            END IF
-
+            Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1
+            __TextBoxScrollToView WidgetManager.current
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_UP, _KEY_HOME
-            Widget(WidgetManager.current).txt.textPosition = 1 ' move the cursor to the beginning of the line
-
-            ' Box cursor movement
-            Widget(WidgetManager.current).txt.boxPosition = 1
-            Widget(WidgetManager.current).txt.boxStartCharacter = 1
-
+            Widget(WidgetManager.current).txt.textPosition = 1
+            __TextBoxScrollToView WidgetManager.current
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_DOWN, _KEY_END
-            Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 ' move the cursor to the end of the line
-
-            ' Box cursor movement
-            IF Widget(WidgetManager.current).txt.textPosition > Widget(WidgetManager.current).txt.boxTextLength THEN
-                Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-            ELSE
-                Widget(WidgetManager.current).txt.boxStartCharacter = 1
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.textPosition
-            END IF
-
+            Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1
+            __TextBoxScrollToView WidgetManager.current
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_BACKSPACE
-            IF Widget(WidgetManager.current).txt.textPosition > 1 THEN ' is the cursor at the beginning of the line?
-                Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 2) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' no, delete character
-                Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
-
-                ' Box cursor movement
-                Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition - 1
-                IF Widget(WidgetManager.current).txt.boxPosition < 1 THEN
-                    Widget(WidgetManager.current).txt.boxPosition = 1
-                    IF Widget(WidgetManager.current).txt.boxStartCharacter > 1 THEN
-                        Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.boxStartCharacter - 1
-                    END IF
-                END IF
-
-                Widget(WidgetManager.current).changed = _TRUE ' something changed
+            IF Widget(WidgetManager.current).txt.textPosition > 1 THEN
+                Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 2) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1)
+                Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1
+                __TextBoxScrollToView WidgetManager.current
+                Widget(WidgetManager.current).changed = _TRUE
             END IF
-
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_DELETE
-            IF Widget(WidgetManager.current).txt.textPosition < LEN(Widget(WidgetManager.current).text) + 1 THEN ' is the cursor at the end of the line?
-                Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' no, delete character
-                Widget(WidgetManager.current).changed = _TRUE ' something changed
+            IF Widget(WidgetManager.current).txt.textPosition < LEN(Widget(WidgetManager.current).text) + 1 THEN
+                Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition)
+                Widget(WidgetManager.current).changed = _TRUE
             END IF
-
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_ENTER
-            Widget(WidgetManager.current).txt.entered = _TRUE ' if enter key was pressed remember it (TRUE)
-            Widget(WidgetManager.current).changed = _TRUE ' something changed
+            Widget(WidgetManager.current).txt.entered = _TRUE
+            Widget(WidgetManager.current).changed = _TRUE
             WidgetManager.forced = -1 ' Move to the next widget
-
             k = InputManager_GetKeyboardKey ' consume the key
 
         CASE ELSE ' a character key was pressed
-            IF k > 31 AND k < 256 THEN ' is it a valid ASCII displayable character?
-                DIM Kstr AS STRING ' yes, initialize key holder variable
+            IF k > 31 AND k < 256 THEN
+                DIM Kstr AS STRING
 
-                SELECT CASE k ' which alphanumeric key was pressed?
+                SELECT CASE k
                     CASE KEY_SPACE
-                        Kstr = CHR$(k) ' save the keystroke
+                        Kstr = CHR$(k)
 
-                    CASE 40 TO 41 ' PARENTHESIS key was pressed
+                    CASE 40 TO 41 ' PARENTHESIS
                         IF (Widget(WidgetManager.current).flags AND TEXT_BOX_SYMBOLS) OR (Widget(WidgetManager.current).flags AND TEXT_BOX_PAREN) THEN
-                            Kstr = CHR$(k) ' if it's allowed then save the keystroke
+                            Kstr = CHR$(k)
                         END IF
 
-                    CASE 45 ' DASH (minus -) key was pressed
-                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_DASH THEN ' are dashes allowed?
-                            Kstr = CHR$(k) ' yes, save the keystroke
+                    CASE 45 ' DASH
+                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_DASH THEN
+                            Kstr = CHR$(k)
                         END IF
 
                     CASE 46 ' DOT
-                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_DOT THEN ' are dashes allowed?
-                            Kstr = CHR$(k) ' yes, save the keystroke
+                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_DOT THEN
+                            Kstr = CHR$(k)
                         END IF
 
                     CASE KEY_0 TO KEY_9
-                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_NUMERIC THEN ' are numbers allowed?
-                            Kstr = CHR$(k) ' yes, save the keystroke
+                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_NUMERIC THEN
+                            Kstr = CHR$(k)
                         END IF
 
-                    CASE 33 TO 47, 58 TO 64, 91 TO 96, 123 TO 255 ' SYMBOL key was pressed
-                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_SYMBOLS THEN ' are symbols allowed?
-                            Kstr = CHR$(k) ' yes, save the keystroke
+                    CASE 33 TO 47, 58 TO 64, 91 TO 96, 123 TO 255 ' SYMBOL
+                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_SYMBOLS THEN
+                            Kstr = CHR$(k)
                         END IF
 
                     CASE KEY_LOWER_A TO KEY_LOWER_Z, KEY_UPPER_A TO KEY_UPPER_Z
-                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_ALPHA THEN ' are alpha keys allowed?
-                            Kstr = CHR$(k) ' yes, save the keystroke
+                        IF Widget(WidgetManager.current).flags AND TEXT_BOX_ALPHA THEN
+                            Kstr = CHR$(k)
                         END IF
                 END SELECT
 
-                IF LEN(Kstr) <> NULL THEN ' was an allowed keystroke saved?
-                    IF Widget(WidgetManager.current).flags AND TEXT_BOX_LOWER THEN ' should it be forced to lower case?
-                        Kstr = LCASE$(Kstr) ' yes, force the keystroke to lower case
+                IF LEN(Kstr) <> NULL THEN
+                    IF Widget(WidgetManager.current).flags AND TEXT_BOX_LOWER THEN
+                        Kstr = LCASE$(Kstr)
                     END IF
 
-                    IF Widget(WidgetManager.current).flags AND TEXT_BOX_UPPER THEN ' should it be forced to upper case?
-                        Kstr = UCASE$(Kstr) ' yes, force the keystroke to upper case
+                    IF Widget(WidgetManager.current).flags AND TEXT_BOX_UPPER THEN
+                        Kstr = UCASE$(Kstr)
                     END IF
 
-                    IF Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 THEN ' is the cursor at the end of the line?
-                        Widget(WidgetManager.current).text = Widget(WidgetManager.current).text + Kstr ' yes, simply add the keystroke to input text
-                        Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
-                    ELSEIF Widget(WidgetManager.current).txt.insertMode THEN ' no, are we in INSERT mode?
-                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + Kstr + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' yes, insert the character
-                        Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
-                    ELSE ' no, we are in OVERWRITE mode
-                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + Kstr + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' overwrite with new character
-                        Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
+                    IF Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 THEN
+                        Widget(WidgetManager.current).text = Widget(WidgetManager.current).text + Kstr
+                        Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1
+                    ELSEIF Widget(WidgetManager.current).txt.insertMode THEN
+                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + Kstr + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1)
+                        Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1
+                    ELSE ' OVERWRITE
+                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + Kstr + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition)
+                        Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1
                     END IF
 
-                    ' Box cursor movement
-                    Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxPosition + 1
-                    IF Widget(WidgetManager.current).txt.boxPosition > Widget(WidgetManager.current).txt.boxTextLength + 1 THEN
-                        Widget(WidgetManager.current).txt.boxPosition = Widget(WidgetManager.current).txt.boxTextLength + 1
-                        Widget(WidgetManager.current).txt.boxStartCharacter = Widget(WidgetManager.current).txt.textPosition - Widget(WidgetManager.current).txt.boxTextLength
-                    END IF
-
-                    Widget(WidgetManager.current).changed = _TRUE ' something changed
+                    __TextBoxScrollToView WidgetManager.current
+                    Widget(WidgetManager.current).changed = _TRUE
                 END IF
             END IF
             k = InputManager_GetKeyboardKey ' consume the key
