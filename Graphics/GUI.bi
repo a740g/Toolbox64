@@ -16,6 +16,8 @@ $INCLUDEONCE
 '$INCLUDE:'Graphics2D.bi'
 '$INCLUDE:'../Core/TimeOps.bi'
 '$INCLUDE:'../Math/Vector2i.bi'
+'$INCLUDE:'../Math/Bounds2i.bi'
+'$INCLUDE:'../IO/InputManager.bi'
 
 ' These are flags that can be used by the text box widget
 CONST TEXT_BOX_ALPHA = 1 ' alphabetic input allowed
@@ -35,22 +37,6 @@ CONST WIDGET_TEXT_BOX = 2
 CONST WIDGET_CLASS_COUNT = 2 ' this is the total number of widgets
 
 CONST WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
-
-TYPE RectangleType ' a 2D rectangle
-    a AS Vector2i
-    b AS Vector2i
-END TYPE
-
-TYPE InputManagerType ' simple input manager
-    keyCode AS LONG ' buffer keyboard input
-    mousePosition AS Vector2i ' mouse position
-    mouseLeftButton AS _BYTE ' mouse left button down
-    mouseRightButton AS _BYTE ' mouse right button down
-    mouseLeftClicked AS _BYTE ' If this true mouseLeftButtonClickedRectangle is the rectangle where the click happened
-    mouseLeftButtonClickedRectangle AS RectangleType ' the rectangle where the mouse left button was clicked
-    mouseRightClicked AS _BYTE ' If this true mouseRightButtonClickedRectangle is the rectangle where the click happened
-    mouseRightButtonClickedRectangle AS RectangleType ' the rectangle where the mouse left button was clicked
-END TYPE
 
 TYPE WidgetManagerType ' widget state information
     forced AS LONG ' widget that is forced to get focus
@@ -88,51 +74,32 @@ TYPE WidgetType
     txt AS TextBoxType
 END TYPE
 
-DIM InputManager AS InputManagerType 'input manager global variable. Use this to check for input
 DIM WidgetManager AS WidgetManagerType ' widget manager global variable. This contains top level widget state
 REDIM Widget(NULL TO NULL) AS WidgetType ' this is the widget array and contains info for all widgets used by the program
-
-
-' Calculates the bounding rectangle for a object given its position & size
-SUB RectangleCreate (p AS Vector2i, s AS Vector2i, r AS RectangleType)
-    r.a.x = p.x
-    r.a.y = p.y
-    r.b.x = p.x + s.x - 1
-    r.b.y = p.y + s.y - 1
-END SUB
-
-
-' Does big contain small?
-FUNCTION RectangleContainsRectangle%% (big AS RectangleType, small AS RectangleType)
-    RectangleContainsRectangle = PointCollidesWithRectangle(small.a, big) AND PointCollidesWithRectangle(small.b, big)
-END FUNCTION
-
-
-' Point & box collision test
-FUNCTION PointCollidesWithRectangle%% (p AS Vector2i, r AS RectangleType)
-    PointCollidesWithRectangle = NOT (p.x < r.a.x OR p.x > r.b.x OR p.y < r.a.y OR p.y > r.b.y)
-END FUNCTION
 
 
 ' Draws a basic 3D box
 ' This can be improved ... a lot XD
 ' Also all colors are hardcoded
-SUB WidgetDrawBox3D (r AS RectangleType, depressed AS _BYTE)
+SUB WidgetDrawBox3D (position AS Vector2i, size AS Vector2i, depressed AS _BYTE)
+    DIM r AS Bounds2i
+    Bounds2i_InitializeFromPositionSize position, size, r
+
     IF depressed THEN
         ' sunken
-        Graphics_DrawHorizontalLine r.a.x, r.a.y, r.b.x - 1, &HFF696969
-        Graphics_DrawVerticalLine r.a.x, r.a.y, r.b.y - 1, &HFF696969
-        Graphics_DrawHorizontalLine r.a.x, r.b.y, r.b.x, &HFFD3D3D3
-        Graphics_DrawVerticalLine r.b.x, r.a.y, r.b.y - 1, &HFFD3D3D3
+        Graphics_DrawHorizontalLine r.lt.x, r.lt.y, r.rb.x - 1, &HFF696969
+        Graphics_DrawVerticalLine r.lt.x, r.lt.y, r.rb.y - 1, &HFF696969
+        Graphics_DrawHorizontalLine r.lt.x, r.rb.y, r.rb.x, &HFFD3D3D3
+        Graphics_DrawVerticalLine r.rb.x, r.lt.y, r.rb.y - 1, &HFFD3D3D3
     ELSE
         ' raised
-        Graphics_DrawHorizontalLine r.a.x, r.a.y, r.b.x - 1, &HFFD3D3D3
-        Graphics_DrawVerticalLine r.a.x, r.a.y, r.b.y - 1, &HFFD3D3D3
-        Graphics_DrawHorizontalLine r.a.x, r.b.y, r.b.x, &HFF696969
-        Graphics_DrawVerticalLine r.b.x, r.a.y, r.b.y - 1, &HFF696969
+        Graphics_DrawHorizontalLine r.lt.x, r.lt.y, r.rb.x - 1, &HFFD3D3D3
+        Graphics_DrawVerticalLine r.lt.x, r.lt.y, r.rb.y - 1, &HFFD3D3D3
+        Graphics_DrawHorizontalLine r.lt.x, r.rb.y, r.rb.x, &HFF696969
+        Graphics_DrawVerticalLine r.rb.x, r.lt.y, r.rb.y - 1, &HFF696969
     END IF
 
-    Graphics_DrawFilledRectangle r.a.x + 1, r.a.y + 1, r.b.x - 1, r.b.y - 1, &HFF808080
+    Graphics_DrawFilledRectangle r.lt.x + 1, r.lt.y + 1, r.rb.x - 1, r.rb.y - 1, &HFF808080
 END SUB
 
 
@@ -141,10 +108,9 @@ SUB WidgetUpdate
     STATIC blinkTick AS _INTEGER64 ' stores the last blink tick (oooh!)
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
-    SHARED InputManager AS InputManagerType
-    DIM h AS LONG, r AS RectangleType, currentTick AS _INTEGER64
+    DIM h AS LONG, r AS Bounds2i, currentTick AS _INTEGER64, dummy AS LONG
 
-    InputManagerUpdate ' We will gather input even if there are no widgets
+    InputManager_Update ' We will gather input even if there are no widgets
 
     IF UBOUND(Widget) = NULL THEN EXIT SUB ' Exit if there is nothing to do
 
@@ -177,9 +143,9 @@ SUB WidgetUpdate
     END IF
 
     ' Check for user input requesting focus change
-    IF InputManager.keyCode = _KEY_TAB THEN
+    IF InputManager_PeekKeyboardKey = _KEY_TAB THEN
         WidgetManager.forced = -1 ' Move to the next widget
-        InputManager.keyCode = NULL ' consume the key
+        dummy = InputManager_GetKeyboardKey ' consume the key
     END IF
 
     ' Check if the user is trying to click on something to change focus
@@ -191,16 +157,18 @@ SUB WidgetUpdate
         IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled AND h <> WidgetManager.current THEN
 
             ' Find the bounding box
-            RectangleCreate Widget(h).position, Widget(h).size, r
+            Bounds2i_InitializeFromPositionSize Widget(h).position, Widget(h).size, r
 
-            IF InputManager.mouseLeftClicked THEN
-                IF RectangleContainsRectangle(r, InputManager.mouseLeftButtonClickedRectangle) THEN
+            IF InputManager_IsMouseLeftButtonClicked THEN
+                DIM lClickBounds AS Bounds2i: InputManager_GetMouseLeftClickBounds lClickBounds
+                IF Bounds2i_ContainsBounds(r, lClickBounds) THEN
                     WidgetManager.forced = h ' Move to the specific widget
                 END IF
             END IF
 
-            IF InputManager.mouseRightClicked THEN
-                IF RectangleContainsRectangle(r, InputManager.mouseRightButtonClickedRectangle) THEN
+            IF InputManager_IsMouseRightButtonClicked THEN
+                DIM rClickBounds AS Bounds2i: InputManager_GetMouseRightClickBounds rClickBounds
+                IF Bounds2i_ContainsBounds(r, rClickBounds) THEN
                     WidgetManager.forced = h ' Move to the specific widget
                 END IF
             END IF
@@ -232,89 +200,33 @@ SUB WidgetUpdate
 END SUB
 
 
-SUB InputManagerUpdate
-    SHARED InputManager AS InputManagerType
-    STATIC AS _BYTE mouseLeftButtonDown, mouseRightButtonDown ' keeps track if the mouse buttons were held down
-
-    ' Collect mouse input
-    DO WHILE _MOUSEINPUT
-        InputManager.mousePosition.x = _MOUSEX
-        InputManager.mousePosition.y = _MOUSEY
-
-        InputManager.mouseLeftButton = _MOUSEBUTTON(1)
-        InputManager.mouseRightButton = _MOUSEBUTTON(2)
-
-        ' Check if the left button were previously held down and update the up position if released
-        IF NOT InputManager.mouseLeftButton AND mouseLeftButtonDown THEN
-            mouseLeftButtonDown = _FALSE
-            InputManager.mouseLeftButtonClickedRectangle.b = InputManager.mousePosition
-            InputManager.mouseLeftClicked = _TRUE
-        END IF
-
-        ' Check if the button were previously held down and update the up position if released
-        IF NOT InputManager.mouseRightButton AND mouseRightButtonDown THEN
-            mouseRightButtonDown = _FALSE
-            InputManager.mouseRightButtonClickedRectangle.b = InputManager.mousePosition
-            InputManager.mouseRightClicked = _TRUE
-        END IF
-
-        ' Check if the mouse button was pressed and update the down position
-        IF InputManager.mouseLeftButton AND NOT mouseLeftButtonDown THEN
-            mouseLeftButtonDown = _TRUE
-            InputManager.mouseLeftButtonClickedRectangle.a = InputManager.mousePosition
-            InputManager.mouseLeftClicked = _FALSE
-        END IF
-
-        ' Check if the mouse button was pressed and update the down position
-        IF InputManager.mouseRightButton AND NOT mouseRightButtonDown THEN
-            mouseRightButtonDown = _TRUE
-            InputManager.mouseRightButtonClickedRectangle.a = InputManager.mousePosition
-            InputManager.mouseRightClicked = _FALSE
-        END IF
-    LOOP
-
-    ' Get keyboard input from the keyboard buffer
-    InputManager.keyCode = _KEYHIT
-END SUB
-
-
 ' This gets the current keyboard input
 FUNCTION InputManagerKey&
-    SHARED InputManager AS InputManagerType
-
-    InputManagerKey = InputManager.keyCode
+    InputManagerKey = InputManager_PeekKeyboardKey
 END FUNCTION
 
 
 ' Get the mouse X position
 FUNCTION InputManagerMouseX&
-    SHARED InputManager AS InputManagerType
-
-    InputManagerMouseX = InputManager.mousePosition.x
+    InputManagerMouseX = InputManager_GetMousePositionX
 END FUNCTION
 
 
 ' Get the mouse Y position
 FUNCTION InputManagerMouseY&
-    SHARED InputManager AS InputManagerType
-
-    InputManagerMouseY = InputManager.mousePosition.y
+    InputManagerMouseY = InputManager_GetMousePositionY
 END FUNCTION
 
 
 ' Is the left mouse button down?
 FUNCTION InputManagerMouseLeftButton%%
-    SHARED InputManager AS InputManagerType
-
-    InputManagerMouseLeftButton = InputManager.mouseLeftButton
+    InputManagerMouseLeftButton = InputManager_IsMouseLeftButtonDown
 END FUNCTION
 
 
 ' Is the right mouse button down?
 FUNCTION InputManagerMouseRightButton%%
-    SHARED InputManager AS InputManagerType
-
-    InputManagerMouseRightButton = InputManager.mouseRightButton
+    InputManagerMouseRightButton = InputManager_IsMouseRightButtonDown
 END FUNCTION
 
 
@@ -770,29 +682,29 @@ END SUB
 SUB __PushButtonUpdate
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
-    SHARED InputManager AS InputManagerType
-    DIM r AS RectangleType, clicked AS _BYTE
+    DIM r AS Bounds2i, clicked AS _BYTE, k AS LONG
 
     ' Find the bounding box
-    RectangleCreate Widget(WidgetManager.current).position, Widget(WidgetManager.current).size, r
+    Bounds2i_InitializeFromPositionSize Widget(WidgetManager.current).position, Widget(WidgetManager.current).size, r
 
-    IF InputManager.mouseLeftClicked THEN
-        IF RectangleContainsRectangle(r, InputManager.mouseLeftButtonClickedRectangle) THEN
+    IF InputManager_GetMouseLeftButtonClicked THEN
+        DIM lClickBounds AS Bounds2i: InputManager_GetMouseLeftClickBounds lClickBounds
+        IF Bounds2i_ContainsBounds(r, lClickBounds) THEN
             clicked = _TRUE
-            InputManager.mouseLeftClicked = _FALSE ' consume mouse click
         END IF
     END IF
 
-    IF InputManager.mouseRightClicked THEN
-        IF RectangleContainsRectangle(r, InputManager.mouseRightButtonClickedRectangle) THEN
+    IF InputManager_GetMouseRightButtonClicked THEN
+        DIM rClickBounds AS Bounds2i: InputManager_GetMouseRightClickBounds rClickBounds
+        IF Bounds2i_ContainsBounds(r, rClickBounds) THEN
             clicked = _TRUE
-            InputManager.mouseRightClicked = _FALSE ' consume mouse click
         END IF
     END IF
 
-    IF InputManager.keyCode = _KEY_ENTER OR InputManager.keyCode = KEY_SPACE THEN
+    k = InputManager_PeekKeyboardKey
+    IF k = _KEY_ENTER OR k = KEY_SPACE THEN
         clicked = _TRUE
-        InputManager.keyCode = NULL ' consume keystroke
+        k = InputManager_GetKeyboardKey ' consume keystroke
     END IF
 
     Widget(WidgetManager.current).clicked = clicked
@@ -809,17 +721,18 @@ END SUB
 SUB __TextBoxUpdate
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
-    SHARED InputManager AS InputManagerType
+    DIM k AS LONG
 
     Widget(WidgetManager.current).changed = _FALSE ' Set this to false
     Widget(WidgetManager.current).txt.entered = _FALSE ' Set this to false too
 
     ' First process any pressed keys
-    SELECT CASE InputManager.keyCode ' which key was hit?
+    k = InputManager_PeekKeyboardKey
+    SELECT CASE k ' which key was hit?
         CASE _KEY_INSERT
             Widget(WidgetManager.current).txt.insertMode = NOT Widget(WidgetManager.current).txt.insertMode
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_RIGHT
             Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
@@ -840,7 +753,7 @@ SUB __TextBoxUpdate
                 Widget(WidgetManager.current).txt.boxStartCharacter = 1 + LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.boxTextLength
             END IF
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_LEFT
             Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition - 1 ' decrement the cursor position
@@ -857,7 +770,7 @@ SUB __TextBoxUpdate
                 END IF
             END IF
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_BACKSPACE
             IF Widget(WidgetManager.current).txt.textPosition > 1 THEN ' is the cursor at the beginning of the line?
@@ -874,7 +787,7 @@ SUB __TextBoxUpdate
                 END IF
             END IF
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
             Widget(WidgetManager.current).changed = _TRUE ' something changed
 
         CASE _KEY_HOME
@@ -884,7 +797,7 @@ SUB __TextBoxUpdate
             Widget(WidgetManager.current).txt.boxPosition = 1
             Widget(WidgetManager.current).txt.boxStartCharacter = 1
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_END
             Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 ' move the cursor to the end of the line
@@ -899,14 +812,14 @@ SUB __TextBoxUpdate
                 Widget(WidgetManager.current).txt.boxStartCharacter = 1
             END IF
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
 
         CASE _KEY_DELETE
             IF Widget(WidgetManager.current).txt.textPosition < LEN(Widget(WidgetManager.current).text) + 1 THEN ' is the cursor at the end of the line?
                 Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' no, delete character
             END IF
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
             Widget(WidgetManager.current).changed = _TRUE ' something changed
 
         CASE _KEY_ENTER
@@ -914,64 +827,64 @@ SUB __TextBoxUpdate
             Widget(WidgetManager.current).changed = _TRUE ' something changed
             WidgetManager.forced = -1 ' Move to the next widget
 
-            InputManager.keyCode = NULL ' consume the key
+            k = InputManager_GetKeyboardKey ' consume the key
 
         CASE ELSE ' a character key was pressed
-            IF InputManager.keyCode > 31 AND InputManager.keyCode < 256 THEN ' is it a valid ASCII displayable character?
-                DIM K AS STRING ' yes, initialize key holder variable
+            IF k > 31 AND k < 256 THEN ' is it a valid ASCII displayable character?
+                DIM Kstr AS STRING ' yes, initialize key holder variable
 
-                SELECT CASE InputManager.keyCode ' which alphanumeric key was pressed?
+                SELECT CASE k ' which alphanumeric key was pressed?
                     CASE KEY_SPACE
-                        K = CHR$(InputManager.keyCode) ' save the keystroke
+                        Kstr = CHR$(k) ' save the keystroke
 
                     CASE 40 TO 41 ' PARENTHESIS key was pressed
                         IF (Widget(WidgetManager.current).flags AND TEXT_BOX_SYMBOLS) OR (Widget(WidgetManager.current).flags AND TEXT_BOX_PAREN) THEN
-                            K = CHR$(InputManager.keyCode) ' if it's allowed then save the keystroke
+                            Kstr = CHR$(k) ' if it's allowed then save the keystroke
                         END IF
 
                     CASE 45 ' DASH (minus -) key was pressed
                         IF Widget(WidgetManager.current).flags AND TEXT_BOX_DASH THEN ' are dashes allowed?
-                            K = CHR$(InputManager.keyCode) ' yes, save the keystroke
+                            Kstr = CHR$(k) ' yes, save the keystroke
                         END IF
 
                     CASE 46 ' DOT
                         IF Widget(WidgetManager.current).flags AND TEXT_BOX_DOT THEN ' are dashes allowed?
-                            K = CHR$(InputManager.keyCode) ' yes, save the keystroke
+                            Kstr = CHR$(k) ' yes, save the keystroke
                         END IF
 
                     CASE KEY_0 TO KEY_9
                         IF Widget(WidgetManager.current).flags AND TEXT_BOX_NUMERIC THEN ' are numbers allowed?
-                            K = CHR$(InputManager.keyCode) ' yes, save the keystroke
+                            Kstr = CHR$(k) ' yes, save the keystroke
                         END IF
 
                     CASE 33 TO 47, 58 TO 64, 91 TO 96, 123 TO 255 ' SYMBOL key was pressed
                         IF Widget(WidgetManager.current).flags AND TEXT_BOX_SYMBOLS THEN ' are symbols allowed?
-                            K = CHR$(InputManager.keyCode) ' yes, save the keystroke
+                            Kstr = CHR$(k) ' yes, save the keystroke
                         END IF
 
                     CASE KEY_LOWER_A TO KEY_LOWER_Z, KEY_UPPER_A TO KEY_UPPER_Z
                         IF Widget(WidgetManager.current).flags AND TEXT_BOX_ALPHA THEN ' are alpha keys allowed?
-                            K = CHR$(InputManager.keyCode) ' yes, save the keystroke
+                            Kstr = CHR$(k) ' yes, save the keystroke
                         END IF
                 END SELECT
 
-                IF LEN(K) <> NULL THEN ' was an allowed keystroke saved?
+                IF LEN(Kstr) <> NULL THEN ' was an allowed keystroke saved?
                     IF Widget(WidgetManager.current).flags AND TEXT_BOX_LOWER THEN ' should it be forced to lower case?
-                        K = LCASE$(K) ' yes, force the keystroke to lower case
+                        Kstr = LCASE$(Kstr) ' yes, force the keystroke to lower case
                     END IF
 
                     IF Widget(WidgetManager.current).flags AND TEXT_BOX_UPPER THEN ' should it be forced to upper case?
-                        K = UCASE$(K) ' yes, force the keystroke to upper case
+                        Kstr = UCASE$(Kstr) ' yes, force the keystroke to upper case
                     END IF
 
                     IF Widget(WidgetManager.current).txt.textPosition = LEN(Widget(WidgetManager.current).text) + 1 THEN ' is the cursor at the end of the line?
-                        Widget(WidgetManager.current).text = Widget(WidgetManager.current).text + K ' yes, simply add the keystroke to input text
+                        Widget(WidgetManager.current).text = Widget(WidgetManager.current).text + Kstr ' yes, simply add the keystroke to input text
                         Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
                     ELSEIF Widget(WidgetManager.current).txt.insertMode THEN ' no, are we in INSERT mode?
-                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + K + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' yes, insert the character
+                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + Kstr + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition + 1) ' yes, insert the character
                         Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
                     ELSE ' no, we are in OVERWRITE mode
-                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + K + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' overwrite with new character
+                        Widget(WidgetManager.current).text = LEFT$(Widget(WidgetManager.current).text, Widget(WidgetManager.current).txt.textPosition - 1) + Kstr + RIGHT$(Widget(WidgetManager.current).text, LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.textPosition) ' overwrite with new character
                         Widget(WidgetManager.current).txt.textPosition = Widget(WidgetManager.current).txt.textPosition + 1 ' increment the cursor position
                     END IF
 
@@ -982,7 +895,7 @@ SUB __TextBoxUpdate
                         Widget(WidgetManager.current).txt.boxStartCharacter = 1 + LEN(Widget(WidgetManager.current).text) - Widget(WidgetManager.current).txt.boxTextLength
                     END IF
 
-                    InputManager.keyCode = NULL ' consume the key
+                    k = InputManager_GetKeyboardKey ' consume the key
                     Widget(WidgetManager.current).changed = _TRUE ' something changed
                 END IF
             END IF
@@ -996,11 +909,10 @@ END SUB
 SUB __PushButtonDraw (handle AS LONG)
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
-    SHARED InputManager AS InputManagerType
-    DIM r AS RectangleType, depressed AS _BYTE, textColor AS _UNSIGNED LONG
+    DIM r AS Bounds2i, depressed AS _BYTE, textColor AS _UNSIGNED LONG
 
     ' Create the bounding box for the widget
-    RectangleCreate Widget(handle).position, Widget(handle).size, r
+    Bounds2i_InitializeFromPositionSize Widget(handle).position, Widget(handle).size, r
 
     IF Widget(handle).disabled THEN ' Draw a widget with dull colors and disregard any user interaction
         textColor = &HFFA9A9A9
@@ -1009,7 +921,11 @@ SUB __PushButtonDraw (handle AS LONG)
         textColor = &HFF000000
 
         ' Flip depressed state if mouse was clicked and is being held inside the bounding box
-        IF (InputManager.mouseLeftButton OR InputManager.mouseRightButton) AND PointCollidesWithRectangle(InputManager.mousePosition, r) AND (PointCollidesWithRectangle(InputManager.mouseLeftButtonClickedRectangle.a, r) OR PointCollidesWithRectangle(InputManager.mouseRightButtonClickedRectangle.a, r)) THEN
+        DIM msePos AS Vector2i: InputManager_GetMousePosition msePos
+        DIM mseLCB AS Bounds2i: InputManager_GetMouseLeftClickBounds mseLCB
+        DIM mseRCB AS Bounds2i: InputManager_GetMouseRightClickBounds mseRCB
+
+        IF (InputManager_IsMouseLeftButtonDown OR InputManager_IsMouseRightButtonDown) AND Bounds2i_ContainsPoint(r, msePos) AND (Bounds2i_ContainsPoint(r, mseLCB.lt) OR Bounds2i_ContainsPoint(r, mseRCB.lt)) THEN
             depressed = NOT Widget(handle).cmd.depressed
         ELSE
             depressed = Widget(handle).cmd.depressed
@@ -1017,7 +933,7 @@ SUB __PushButtonDraw (handle AS LONG)
     END IF
 
     ' Draw now
-    WidgetDrawBox3D r, depressed
+    WidgetDrawBox3D Widget(handle).position, Widget(handle).size, depressed
     COLOR textColor, &HFF808080 ' disabled text color
     IF depressed THEN
         _PRINTSTRING (1 + Widget(handle).position.x + Widget(handle).size.x \ 2 - _PRINTWIDTH(Widget(handle).text) \ 2, 1 + Widget(handle).position.y + Widget(handle).size.y \ 2 - _FONTHEIGHT \ 2), Widget(handle).text
@@ -1026,7 +942,7 @@ SUB __PushButtonDraw (handle AS LONG)
     END IF
 
     ' Draw a decorated box inside the bounding box if the button is focused
-    IF handle = WidgetManager.current AND WidgetManager.focusBlink THEN LINE (r.a.x + 4, r.a.y + 4)-(r.b.x - 4, r.b.y - 4), &HFF000000, B , &B1100110011001100
+    IF handle = WidgetManager.current AND WidgetManager.focusBlink THEN LINE (r.lt.x + 4, r.lt.y + 4)-(r.rb.x - 4, r.rb.y - 4), &HFF000000, B , &B1100110011001100
 END SUB
 
 
@@ -1036,9 +952,7 @@ END SUB
 SUB __TextBoxDraw (handle AS LONG)
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
-    DIM visibleText AS STRING, r AS RectangleType, textColor AS _UNSIGNED LONG, textY AS LONG
-
-    RectangleCreate Widget(handle).position, Widget(handle).size, r ' create the bounding box for the widget
+    DIM visibleText AS STRING, textColor AS _UNSIGNED LONG, textY AS LONG
 
     ' Draw a widget with dull colors if disabled
     IF Widget(handle).disabled THEN
@@ -1048,7 +962,7 @@ SUB __TextBoxDraw (handle AS LONG)
     END IF
 
     ' Draw the depressed box first
-    WidgetDrawBox3D r, _TRUE
+    WidgetDrawBox3D Widget(handle).position, Widget(handle).size, _TRUE
 
     ' Next figure out what part of the text we need to draw
     visibleText = MID$(Widget(handle).text, Widget(handle).txt.boxStartCharacter, Widget(handle).txt.boxTextLength)

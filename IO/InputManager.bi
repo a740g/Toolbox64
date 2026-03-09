@@ -219,6 +219,9 @@ SUB InputManager_Update
     ' Clear some flags and previous states
     __InputManager.isMouseEvent = _FALSE
     __InputManager.mse.scrollWheelValue = 0
+    __InputManager.mse.leftButtonClicked = _FALSE
+    __InputManager.mse.rightButtonClicked = _FALSE
+    __InputManager.mse.centerButtonClicked = _FALSE
     __InputManager.isWindowEvent = _FALSE
     __InputManager.win.shouldClose = _FALSE
     __InputManager.win.resized = _FALSE
@@ -395,11 +398,19 @@ FUNCTION InputManager_GetMouseScrollWheelValue&
     InputManager_GetMouseScrollWheelValue = __InputManager.mse.scrollWheelValue
 END FUNCTION
 
-''' @brief Return true if the left mouse button was pressed and released.
+''' @brief Return true if the left mouse button was pressed and released. But does not consume the button.
 ''' @return True if the left mouse button was pressed and released.
 FUNCTION InputManager_IsMouseLeftButtonClicked%%
     SHARED __InputManager AS __InputManager
     InputManager_IsMouseLeftButtonClicked = __InputManager.mse.leftButtonClicked
+END FUNCTION
+
+''' @brief Return true if the left mouse button was pressed and released and consumes the button.
+''' @return True if the left mouse button was pressed and released.
+FUNCTION InputManager_GetMouseLeftButtonClicked%%
+    SHARED __InputManager AS __InputManager
+    InputManager_GetMouseLeftButtonClicked = __InputManager.mse.leftButtonClicked
+    __InputManager.mse.leftButtonClicked = _FALSE
 END FUNCTION
 
 ''' @brief Gets the bounding box where the left mouse button was pressed and released.
@@ -409,11 +420,19 @@ SUB InputManager_GetMouseLeftClickBounds (bounds AS Bounds2i)
     bounds = __InputManager.mse.leftButtonClickedBounds
 END SUB
 
-''' @brief Return true if the right mouse button was pressed and released.
+''' @brief Return true if the right mouse button was pressed and released. But does not consume the button.
 ''' @return True if the right mouse button was pressed and released.
 FUNCTION InputManager_IsMouseRightButtonClicked%%
     SHARED __InputManager AS __InputManager
     InputManager_IsMouseRightButtonClicked = __InputManager.mse.rightButtonClicked
+END FUNCTION
+
+''' @brief Return true if the right mouse button was pressed and released and consumes the button.
+''' @return True if the right mouse button was pressed and released.
+FUNCTION InputManager_GetMouseRightButtonClicked%%
+    SHARED __InputManager AS __InputManager
+    InputManager_GetMouseRightButtonClicked = __InputManager.mse.rightButtonClicked
+    __InputManager.mse.rightButtonClicked = _FALSE
 END FUNCTION
 
 ''' @brief Gets the bounding box where the right mouse button was pressed and released.
@@ -423,11 +442,19 @@ SUB InputManager_GetMouseRightClickBounds (bounds AS Bounds2i)
     bounds = __InputManager.mse.rightButtonClickedBounds
 END SUB
 
-''' @brief Return true if the center mouse button was pressed and released.
+''' @brief Return true if the center mouse button was pressed and released. But does not consume the button.
 ''' @return True if the center mouse button was pressed and released.
 FUNCTION InputManager_IsMouseCenterButtonClicked%%
     SHARED __InputManager AS __InputManager
     InputManager_IsMouseCenterButtonClicked = __InputManager.mse.centerButtonClicked
+END FUNCTION
+
+''' @brief Return true if the center mouse button was pressed and released and consumes the button.
+''' @return True if the center mouse button was pressed and released.
+FUNCTION InputManager_GetMouseCenterButtonClicked%%
+    SHARED __InputManager AS __InputManager
+    InputManager_GetMouseCenterButtonClicked = __InputManager.mse.centerButtonClicked
+    __InputManager.mse.centerButtonClicked = _FALSE
 END FUNCTION
 
 ''' @brief Gets the bounding box where the center mouse button was pressed and released.
