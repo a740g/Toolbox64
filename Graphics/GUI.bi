@@ -42,6 +42,7 @@ CONST WIDGET_BLINK_INTERVAL = 500 ' number of ticks to wait for next blink
 TYPE WidgetManagerType ' widget state information
     forced AS LONG ' widget that is forced to get focus
     current AS LONG ' current widget that has focus
+    active AS LONG ' widget currently being interacted with (e.g. held down)
     focusBlink AS _BYTE ' should the focused widget "blink"
 END TYPE
 
@@ -137,92 +138,86 @@ SUB __TextBoxScrollToView (handle AS LONG)
 END SUB
 
 
-' This routine ties the whole update system and makes everything go
+' This routine handles all GUI logic
 SUB WidgetUpdate
-    STATIC blinkTick AS _INTEGER64 ' stores the last blink tick (oooh!)
+    STATIC blinkTick AS _INTEGER64
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
     DIM h AS LONG, r AS Bounds2i, currentTick AS _INTEGER64, dummy AS LONG
 
-    InputManager_Update ' We will gather input even if there are no widgets
+    IF UBOUND(Widget) = NULL THEN EXIT SUB
 
-    IF UBOUND(Widget) = NULL THEN EXIT SUB ' Exit if there is nothing to do
-
-    ' Reset some stuff that the user should have handled last time
+    ' Reset transient flags
     FOR h = 1 TO UBOUND(Widget)
         Widget(h).clicked = _FALSE
         Widget(h).txt.entered = _FALSE
     NEXT
 
-    ' Blinky stuff
+    ' Blinky stuff for cursor
     currentTick = Time_GetTicks
     IF currentTick > blinkTick + WIDGET_BLINK_INTERVAL THEN
         blinkTick = currentTick
         WidgetManager.focusBlink = NOT WidgetManager.focusBlink
     END IF
 
-    ' Manage widget focus stuff
-    IF WidgetManager.current = NULL THEN WidgetManager.current = 1 ' if this is first time set current widget to 1
+    ' Initial focus
+    IF WidgetManager.current = NULL THEN WidgetManager.current = 1
 
-    ' Check for user input requesting focus change via Tab key
+    ' Tab focus change
     IF InputManager_PeekKeyboardKey = _KEY_TAB THEN
-        WidgetManager.forced = -1 ' Move to the next widget
-        dummy = InputManager_GetKeyboardKey ' consume the key
+        WidgetManager.forced = -1
+        dummy = InputManager_GetKeyboardKey ' consume
     END IF
 
-    ' Check if the user is trying to click on something to change focus
-    IF InputManager_IsMouseLeftButtonClicked OR InputManager_IsMouseRightButtonClicked THEN
-        FOR h = 1 TO UBOUND(Widget)
-            IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN
-                ' Find the bounding box
-                Bounds2i_InitializeFromPositionSize Widget(h).position, Widget(h).size, r
-
-                IF InputManager_IsMouseLeftButtonClicked THEN
-                    DIM lClickBounds AS Bounds2i: InputManager_GetMouseLeftClickBounds lClickBounds
-                    IF Bounds2i_ContainsBounds(r, lClickBounds) THEN
-                        WidgetManager.forced = h ' Move to the specific widget
+    ' Mouse focus activation (on mouse down)
+    DIM mb AS LONG
+    FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+        IF InputManager_IsMouseButtonDown(mb) THEN
+            DIM mseDownPos AS Vector2i: InputManager_GetMouseButtonDownPosition mb, mseDownPos
+            FOR h = 1 TO UBOUND(Widget)
+                IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN
+                    Bounds2i_InitializeFromPositionSize Widget(h).position, Widget(h).size, r
+                    IF Bounds2i_ContainsPoint(r, mseDownPos) THEN
+                        WidgetManager.forced = h
+                        WidgetManager.active = h ' Mark as active for hold interaction
                         EXIT FOR
                     END IF
                 END IF
+            NEXT
+        END IF
+    NEXT mb
 
-                IF InputManager_IsMouseRightButtonClicked THEN
-                    DIM rClickBounds AS Bounds2i: InputManager_GetMouseRightClickBounds rClickBounds
-                    IF Bounds2i_ContainsBounds(r, rClickBounds) THEN
-                        WidgetManager.forced = h ' Move to the specific widget
-                        EXIT FOR
-                    END IF
-                END IF
-            END IF
-        NEXT
+    ' Clear active widget on mouse release
+    IF NOT InputManager_IsMouseLeftButtonDown THEN
+        WidgetManager.active = NULL
     END IF
 
-    ' Shift focus if it was requested (programmatically, by Tab, or by click)
-    IF WidgetManager.forced <> NULL THEN ' being forced to a widget
+    ' Apply focus changes
+    IF WidgetManager.forced <> NULL THEN
         DIM nh AS LONG
-        IF WidgetManager.forced = -1 THEN ' yes, to the next one?
-            h = WidgetManager.current ' set scanner to current widget
-            DO ' start scanning
-                h = h + 1 ' move scanner to next handle number
-                IF h > UBOUND(Widget) THEN h = 1 ' return to start of widget array if limit reached
-                IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN nh = h ' set candidate widget if in use
-            LOOP UNTIL nh = h ' leave scanner when a widget in use is found
-        ELSE ' yes, to a specific input field
+        IF WidgetManager.forced = -1 THEN
+            h = WidgetManager.current
+            DO
+                h = h + 1
+                IF h > UBOUND(Widget) THEN h = 1
+                IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN nh = h
+            LOOP UNTIL nh = h
+        ELSE
             IF Widget(WidgetManager.forced).inUse AND Widget(WidgetManager.forced).visible AND NOT Widget(WidgetManager.forced).disabled THEN
-                nh = WidgetManager.forced ' set the candidate widget
+                nh = WidgetManager.forced
             END IF
         END IF
 
         IF nh <> NULL AND nh <> WidgetManager.current THEN
             WidgetManager.current = nh
-            ' When a text box gets focus, ensure cursor/scroll is valid
             IF Widget(WidgetManager.current).class = WIDGET_TEXT_BOX THEN
                 __TextBoxScrollToView WidgetManager.current
             END IF
         END IF
-        WidgetManager.forced = NULL ' reset force indicator
+        WidgetManager.forced = NULL
     END IF
 
-    ' Run update for the widget that has focus
+    ' Update the focused widget
     IF Widget(WidgetManager.current).inUse AND Widget(WidgetManager.current).visible AND NOT Widget(WidgetManager.current).disabled THEN
         SELECT CASE Widget(WidgetManager.current).class
             CASE WIDGET_PUSH_BUTTON
@@ -231,8 +226,16 @@ SUB WidgetUpdate
                 __TextBoxUpdate
         END SELECT
     END IF
+END SUB
 
-    ' Now draw all the widget to the framebuffer
+
+' This routine handles all GUI rendering
+SUB WidgetDraw
+    SHARED Widget() AS WidgetType
+    DIM h AS LONG
+
+    IF UBOUND(Widget) = NULL THEN EXIT SUB
+
     FOR h = 1 TO UBOUND(Widget)
         IF Widget(h).inUse AND Widget(h).visible THEN
             SELECT CASE Widget(h).class
@@ -304,6 +307,7 @@ SUB WidgetFreeAll
     REDIM Widget(NULL TO NULL) AS WidgetType ' reset the widget array
     WidgetManager.current = NULL
     WidgetManager.forced = NULL
+    WidgetManager.active = NULL
 END SUB
 
 
@@ -703,19 +707,17 @@ SUB __PushButtonUpdate
     ' Find the bounding box
     Bounds2i_InitializeFromPositionSize Widget(WidgetManager.current).position, Widget(WidgetManager.current).size, r
 
-    IF InputManager_GetMouseLeftButtonClicked THEN
-        DIM lClickBounds AS Bounds2i: InputManager_GetMouseLeftClickBounds lClickBounds
-        IF Bounds2i_ContainsBounds(r, lClickBounds) THEN
-            clicked = _TRUE
+    DIM mb AS LONG
+    FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+        IF InputManager_PeekMouseButtonClicked(mb) THEN
+            IF InputManager_GetMouseButtonClicked(mb) THEN
+                DIM clickBounds AS Bounds2i: InputManager_GetMouseButtonClickBounds mb, clickBounds
+                IF Bounds2i_ContainsBounds(r, clickBounds) THEN
+                    clicked = _TRUE
+                END IF
+            END IF
         END IF
-    END IF
-
-    IF InputManager_GetMouseRightButtonClicked THEN
-        DIM rClickBounds AS Bounds2i: InputManager_GetMouseRightClickBounds rClickBounds
-        IF Bounds2i_ContainsBounds(r, rClickBounds) THEN
-            clicked = _TRUE
-        END IF
-    END IF
+    NEXT mb
 
     IF InputManager_PeekKeyboardKey = _KEY_ENTER OR InputManager_PeekKeyboardKey = KEY_SPACE THEN
         clicked = _TRUE
@@ -875,12 +877,9 @@ SUB __PushButtonDraw (handle AS LONG)
     ELSE
         textColor = &HFF000000
 
-        ' Flip depressed state if mouse was clicked and is being held inside the bounding box
+        ' Check visual press state: mouse must be held down, and must be over the button that was originally pressed
         DIM msePos AS Vector2i: InputManager_GetMousePosition msePos
-        DIM mseLCB AS Bounds2i: InputManager_GetMouseLeftClickBounds mseLCB
-        DIM mseRCB AS Bounds2i: InputManager_GetMouseRightClickBounds mseRCB
-
-        IF (InputManager_IsMouseLeftButtonDown OR InputManager_IsMouseRightButtonDown) AND Bounds2i_ContainsPoint(r, msePos) AND (Bounds2i_ContainsPoint(r, mseLCB.lt) OR Bounds2i_ContainsPoint(r, mseRCB.lt)) THEN
+        IF WidgetManager.active = handle AND InputManager_IsMouseLeftButtonDown AND Bounds2i_ContainsPoint(r, msePos) THEN
             depressed = NOT Widget(handle).cmd.depressed
         ELSE
             depressed = Widget(handle).cmd.depressed

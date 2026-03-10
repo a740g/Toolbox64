@@ -108,18 +108,23 @@ CONST KEY_VERTICALBAR& = _ASC_VERTICALBAR
 CONST KEY_RIGHTCURLYBRACKET& = _ASC_RIGHTCURLYBRACKET
 CONST KEY_TILDE& = _ASC_TILDE
 
+CONST MOUSE_BUTTON_LEFT& = 1&
+CONST MOUSE_BUTTON_RIGHT& = 2&
+CONST MOUSE_BUTTON_CENTER& = 3&
+CONST MOUSE_BUTTON_FIRST& = MOUSE_BUTTON_LEFT
+CONST MOUSE_BUTTON_LAST& = MOUSE_BUTTON_CENTER
+
+TYPE __InputManager_MouseButtonState
+    isDown AS _BYTE
+    wasClicked AS _BYTE
+    downPosition AS Vector2i
+    upPosition AS Vector2i
+    clickedBounds AS Bounds2i
+END TYPE
+
 TYPE __InputManager_MouseEvent
     position AS Vector2i
-    leftButtonDown AS _BYTE
-    rightButtonDown AS _BYTE
-    centerButtonDown AS _BYTE
     scrollWheelValue AS LONG
-    leftButtonClicked AS _BYTE
-    leftButtonClickedBounds AS Bounds2i
-    rightButtonClicked AS _BYTE
-    rightButtonClickedBounds AS Bounds2i
-    centerButtonClicked AS _BYTE
-    centerButtonClickedBounds AS Bounds2i
 END TYPE
 
 TYPE __InputManager_WindowEvent
@@ -156,6 +161,7 @@ TYPE __InputManager
 END TYPE
 
 DIM __InputManager AS __InputManager
+DIM __InputManager_MouseButtonState(MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST) AS __InputManager_MouseButtonState
 
 '-----------------------------------------------------------------------------------------------------------------------
 ' TEST CODE
@@ -211,7 +217,8 @@ END FUNCTION
 ''' Run this once in the main loop and then use the other APIs to react to events.
 SUB InputManager_Update
     SHARED __InputManager AS __InputManager
-    STATIC AS _BYTE mouseLeftButtonDown, mouseCenterButtonDown, mouseRightButtonDown ' keeps track if the mouse buttons were held down
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    STATIC mouseButtonDown(1 TO 3) AS _BYTE ' keeps track if the mouse buttons were held down
 
     ' Get keyboard input from the keyboard buffer
     __InputManager.kbdKeyCode = _KEYHIT
@@ -219,9 +226,12 @@ SUB InputManager_Update
     ' Clear some flags and previous states
     __InputManager.isMouseEvent = _FALSE
     __InputManager.mse.scrollWheelValue = 0
-    __InputManager.mse.leftButtonClicked = _FALSE
-    __InputManager.mse.rightButtonClicked = _FALSE
-    __InputManager.mse.centerButtonClicked = _FALSE
+
+    DIM i AS LONG
+    FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+        __InputManager_MouseButtonState(i).wasClicked = _FALSE
+    NEXT i
+
     __InputManager.isWindowEvent = _FALSE
     __InputManager.win.shouldClose = _FALSE
     __InputManager.win.resized = _FALSE
@@ -237,67 +247,47 @@ SUB InputManager_Update
         Vector2i_Initialize _MOUSEX, _MOUSEY, __InputManager.mse.position
 
         ' Save all three button status
-        __InputManager.mse.leftButtonDown = _MOUSEBUTTON(1)
-        __InputManager.mse.rightButtonDown = _MOUSEBUTTON(2)
-        __InputManager.mse.centerButtonDown = _MOUSEBUTTON(3)
+        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+            __InputManager_MouseButtonState(i).isDown = _MOUSEBUTTON(i)
+        NEXT i
 
         ' Calculate the net displacement of the scroll wheel
         __InputManager.mse.scrollWheelValue = __InputManager.mse.scrollWheelValue + _MOUSEWHEEL
 
-        ' Check if the left mouse button was previously held down and update the up position if released
-        IF NOT __InputManager.mse.leftButtonDown _ANDALSO mouseLeftButtonDown THEN
-            mouseLeftButtonDown = _FALSE
-            __InputManager.mse.leftButtonClickedBounds.rb = __InputManager.mse.position
-            Bounds2i_Sanitize __InputManager.mse.leftButtonClickedBounds
-            __InputManager.mse.leftButtonClicked = _TRUE
-        END IF
+        ' Check if any mouse button was previously held down and update the up position if released
+        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+            IF NOT __InputManager_MouseButtonState(i).isDown _ANDALSO mouseButtonDown(i) THEN
+                mouseButtonDown(i) = _FALSE
+                __InputManager_MouseButtonState(i).upPosition = __InputManager.mse.position
+                __InputManager_MouseButtonState(i).clickedBounds.rb = __InputManager.mse.position
+                Bounds2i_Sanitize __InputManager_MouseButtonState(i).clickedBounds
+                __InputManager_MouseButtonState(i).wasClicked = _TRUE
+            END IF
+        NEXT i
 
-        ' Check if the right mouse button was previously held down and update the up position if released
-        IF NOT __InputManager.mse.rightButtonDown _ANDALSO mouseRightButtonDown THEN
-            mouseRightButtonDown = _FALSE
-            __InputManager.mse.rightButtonClickedBounds.rb = __InputManager.mse.position
-            Bounds2i_Sanitize __InputManager.mse.rightButtonClickedBounds
-            __InputManager.mse.rightButtonClicked = _TRUE
-        END IF
+        ' Exit if we have any button clicked event for the system to process it
+        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+            IF __InputManager_MouseButtonState(i).wasClicked THEN
+                EXIT DO
+            END IF
+        NEXT i
 
-        ' Check if the center mouse button was previously held down and update the up position if released
-        IF NOT __InputManager.mse.centerButtonDown _ANDALSO mouseCenterButtonDown THEN
-            mouseCenterButtonDown = _FALSE
-            __InputManager.mse.centerButtonClickedBounds.rb = __InputManager.mse.position
-            Bounds2i_Sanitize __InputManager.mse.centerButtonClickedBounds
-            __InputManager.mse.centerButtonClicked = _TRUE
-        END IF
-
-        ' Exit if we have any button up event for the system to process it
-        IF __InputManager.mse.leftButtonClicked _ORELSE __InputManager.mse.rightButtonClicked _ORELSE __InputManager.mse.centerButtonClicked THEN
-            EXIT DO
-        END IF
-
-        ' Check if the left mouse button was pressed and update the down position
-        IF __InputManager.mse.leftButtonDown _ANDALSO NOT mouseLeftButtonDown THEN
-            mouseLeftButtonDown = _TRUE
-            __InputManager.mse.leftButtonClickedBounds.lt = __InputManager.mse.position
-            __InputManager.mse.leftButtonClicked = _FALSE
-        END IF
-
-        ' Check if the right mouse button was pressed and update the down position
-        IF __InputManager.mse.rightButtonDown _ANDALSO NOT mouseRightButtonDown THEN
-            mouseRightButtonDown = _TRUE
-            __InputManager.mse.rightButtonClickedBounds.lt = __InputManager.mse.position
-            __InputManager.mse.rightButtonClicked = _FALSE
-        END IF
-
-        ' Check if the center mouse button was pressed and update the down position
-        IF __InputManager.mse.centerButtonDown _ANDALSO NOT mouseCenterButtonDown THEN
-            mouseCenterButtonDown = _TRUE
-            __InputManager.mse.centerButtonClickedBounds.lt = __InputManager.mse.position
-            __InputManager.mse.centerButtonClicked = _FALSE
-        END IF
+        ' Check if any mouse button is down and update the down position
+        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+            IF __InputManager_MouseButtonState(i).isDown _ANDALSO NOT mouseButtonDown(i) THEN
+                mouseButtonDown(i) = _TRUE
+                __InputManager_MouseButtonState(i).downPosition = __InputManager.mse.position
+                __InputManager_MouseButtonState(i).clickedBounds.lt = __InputManager.mse.position
+                __InputManager_MouseButtonState(i).wasClicked = _FALSE
+            END IF
+        NEXT i
 
         ' Exit if we have any button down event for the system to process it
-        IF mouseLeftButtonDown _ORELSE mouseRightButtonDown _ORELSE mouseCenterButtonDown THEN
-            EXIT DO
-        END IF
+        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+            IF mouseButtonDown(i) THEN
+                EXIT DO
+            END IF
+        NEXT i
     LOOP
 
     ' Gather window events
@@ -370,27 +360,6 @@ SUB InputManager_GetMousePosition (position AS Vector2i)
     position = __InputManager.mse.position
 END SUB
 
-''' @brief Returns true if the left mouse button is down. But does not consume the button.
-''' @return True if the left mouse button is down.
-FUNCTION InputManager_IsMouseLeftButtonDown%%
-    SHARED __InputManager AS __InputManager
-    InputManager_IsMouseLeftButtonDown = __InputManager.mse.leftButtonDown
-END FUNCTION
-
-''' @brief Returns true if the right mouse button is down. But does not consume the button.
-''' @return True if the right mouse button is down.
-FUNCTION InputManager_IsMouseRightButtonDown%%
-    SHARED __InputManager AS __InputManager
-    InputManager_IsMouseRightButtonDown = __InputManager.mse.rightButtonDown
-END FUNCTION
-
-''' @brief Returns true if the center mouse button is down. But does not consume the button.
-''' @return True if the center mouse button is down.
-FUNCTION InputManager_IsMouseCenterButtonDown%%
-    SHARED __InputManager AS __InputManager
-    InputManager_IsMouseCenterButtonDown = __InputManager.mse.centerButtonDown
-END FUNCTION
-
 ''' @brief Returns the mouse scroll wheel value.
 ''' @return The mouse scroll wheel value.
 FUNCTION InputManager_GetMouseScrollWheelValue&
@@ -398,70 +367,49 @@ FUNCTION InputManager_GetMouseScrollWheelValue&
     InputManager_GetMouseScrollWheelValue = __InputManager.mse.scrollWheelValue
 END FUNCTION
 
-''' @brief Return true if the left mouse button was pressed and released. But does not consume the button.
-''' @return True if the left mouse button was pressed and released.
-FUNCTION InputManager_IsMouseLeftButtonClicked%%
-    SHARED __InputManager AS __InputManager
-    InputManager_IsMouseLeftButtonClicked = __InputManager.mse.leftButtonClicked
+''' @brief Returns true if a mouse button is down. But does not consume the button.
+''' @return True if the mouse button is down.
+FUNCTION InputManager_IsMouseButtonDown%% (button AS LONG)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    InputManager_IsMouseButtonDown = __InputManager_MouseButtonState(button).isDown
 END FUNCTION
 
-''' @brief Return true if the left mouse button was pressed and released and consumes the button.
-''' @return True if the left mouse button was pressed and released.
-FUNCTION InputManager_GetMouseLeftButtonClicked%%
-    SHARED __InputManager AS __InputManager
-    InputManager_GetMouseLeftButtonClicked = __InputManager.mse.leftButtonClicked
-    __InputManager.mse.leftButtonClicked = _FALSE
-END FUNCTION
-
-''' @brief Gets the bounding box where the left mouse button was pressed and released.
-''' @param bounds The bounding box where the left mouse button was pressed and released.
-SUB InputManager_GetMouseLeftClickBounds (bounds AS Bounds2i)
-    SHARED __InputManager AS __InputManager
-    bounds = __InputManager.mse.leftButtonClickedBounds
+''' @brief Gets the position where the mouse button was pressed down. This is only valid if the button is currently down.
+''' @param button The mouse button to check.
+''' @param position The x and y position in a Vector2i where the mouse button was pressed down.
+SUB InputManager_GetMouseButtonDownPosition (button AS LONG, position AS Vector2i)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    position = __InputManager_MouseButtonState(button).downPosition
 END SUB
 
-''' @brief Return true if the right mouse button was pressed and released. But does not consume the button.
-''' @return True if the right mouse button was pressed and released.
-FUNCTION InputManager_IsMouseRightButtonClicked%%
-    SHARED __InputManager AS __InputManager
-    InputManager_IsMouseRightButtonClicked = __InputManager.mse.rightButtonClicked
-END FUNCTION
-
-''' @brief Return true if the right mouse button was pressed and released and consumes the button.
-''' @return True if the right mouse button was pressed and released.
-FUNCTION InputManager_GetMouseRightButtonClicked%%
-    SHARED __InputManager AS __InputManager
-    InputManager_GetMouseRightButtonClicked = __InputManager.mse.rightButtonClicked
-    __InputManager.mse.rightButtonClicked = _FALSE
-END FUNCTION
-
-''' @brief Gets the bounding box where the right mouse button was pressed and released.
-''' @param bounds The bounding box where the right mouse button was pressed and released.
-SUB InputManager_GetMouseRightClickBounds (bounds AS Bounds2i)
-    SHARED __InputManager AS __InputManager
-    bounds = __InputManager.mse.rightButtonClickedBounds
+''' @brief Gets the position where the mouse button was released. This is only valid if the button is currently up.
+''' @param button The mouse button to check.
+''' @param position The x and y position in a Vector2i where the mouse button was released.
+SUB InputManager_GetMouseButtonUpPosition (button AS LONG, position AS Vector2i)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    position = __InputManager_MouseButtonState(button).upPosition
 END SUB
 
-''' @brief Return true if the center mouse button was pressed and released. But does not consume the button.
-''' @return True if the center mouse button was pressed and released.
-FUNCTION InputManager_IsMouseCenterButtonClicked%%
-    SHARED __InputManager AS __InputManager
-    InputManager_IsMouseCenterButtonClicked = __InputManager.mse.centerButtonClicked
+''' @brief Return true if a mouse button was pressed and released. But does not consume the button.
+''' @return True if the mouse button was pressed and released.
+FUNCTION InputManager_PeekMouseButtonClicked%% (button AS LONG)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    InputManager_PeekMouseButtonClicked = __InputManager_MouseButtonState(button).wasClicked
 END FUNCTION
 
-''' @brief Return true if the center mouse button was pressed and released and consumes the button.
-''' @return True if the center mouse button was pressed and released.
-FUNCTION InputManager_GetMouseCenterButtonClicked%%
-    SHARED __InputManager AS __InputManager
-    InputManager_GetMouseCenterButtonClicked = __InputManager.mse.centerButtonClicked
-    __InputManager.mse.centerButtonClicked = _FALSE
+''' @brief Return true if a mouse button was pressed and released and consumes the button.
+''' @return True if the mouse button was pressed and released.
+FUNCTION InputManager_GetMouseButtonClicked%% (button AS LONG)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    InputManager_GetMouseButtonClicked = __InputManager_MouseButtonState(button).wasClicked
+    __InputManager_MouseButtonState(button).wasClicked = _FALSE
 END FUNCTION
 
-''' @brief Gets the bounding box where the center mouse button was pressed and released.
-''' @param bounds The bounding box where the center mouse button was pressed and released.
-SUB InputManager_GetMouseCenterClickBounds (bounds AS Bounds2i)
-    SHARED __InputManager AS __InputManager
-    bounds = __InputManager.mse.centerButtonClickedBounds
+''' @brief Gets the bounding box where a mouse button was pressed and released.
+''' @param bounds The bounding box where the mouse button was pressed and released.
+SUB InputManager_GetMouseButtonClickBounds (button AS LONG, bounds AS Bounds2i)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    bounds = __InputManager_MouseButtonState(button).clickedBounds
 END SUB
 
 ''' @brief Returns true if a window event is waiting to be processed.
