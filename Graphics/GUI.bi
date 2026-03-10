@@ -170,9 +170,10 @@ SUB WidgetUpdate
     END IF
 
     ' Mouse focus activation (on mouse down)
-    DIM mb AS LONG
+    DIM mb AS LONG, anyMBDown AS _BYTE
     FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
         IF InputManager_IsMouseButtonDown(mb) THEN
+            anyMBDown = _TRUE
             DIM mseDownPos AS Vector2i: InputManager_GetMouseButtonDownPosition mb, mseDownPos
             FOR h = 1 TO UBOUND(Widget)
                 IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN
@@ -188,7 +189,7 @@ SUB WidgetUpdate
     NEXT mb
 
     ' Clear active widget on mouse release
-    IF NOT InputManager_IsMouseLeftButtonDown THEN
+    IF NOT anyMBDown THEN
         WidgetManager.active = NULL
     END IF
 
@@ -879,11 +880,15 @@ SUB __PushButtonDraw (handle AS LONG)
 
         ' Check visual press state: mouse must be held down, and must be over the button that was originally pressed
         DIM msePos AS Vector2i: InputManager_GetMousePosition msePos
-        IF WidgetManager.active = handle AND InputManager_IsMouseLeftButtonDown AND Bounds2i_ContainsPoint(r, msePos) THEN
-            depressed = NOT Widget(handle).cmd.depressed
-        ELSE
-            depressed = Widget(handle).cmd.depressed
-        END IF
+        DIM mb AS LONG
+        FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+            IF WidgetManager.active = handle AND InputManager_IsMouseButtonDown(mb) AND Bounds2i_ContainsPoint(r, msePos) THEN
+                depressed = NOT Widget(handle).cmd.depressed
+                EXIT FOR
+            ELSE
+                depressed = Widget(handle).cmd.depressed
+            END IF
+        NEXT mb
     END IF
 
     ' Draw now
