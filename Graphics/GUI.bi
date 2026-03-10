@@ -183,11 +183,11 @@ SUB WidgetUpdate
                         WidgetManager.forced = h
                         WidgetManager.active = h ' Mark as active for hold interaction
                         WidgetManager.activeButton = mb ' Remember which button started it
+                        dummy = InputManager_GetMouseButtonPressed(mb) ' consume the press
                         EXIT FOR
                     END IF
                 END IF
             NEXT
-            dummy = InputManager_GetMouseButtonPressed(mb) ' consume the press
         END IF
     NEXT mb
 
@@ -717,11 +717,12 @@ SUB __PushButtonUpdate
 
     ' Check if the widget was clicked using ANY mouse button that was active on it
     FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-        IF InputManager_GetMouseButtonClicked(mb) THEN
+        IF InputManager_WasMouseButtonClicked(mb) THEN
             DIM clickBounds AS Bounds2i: InputManager_GetMouseButtonClickBounds mb, clickBounds
             ' A click is valid if it finished on the button AND this button was the one that started the press (is active)
             IF WidgetManager.active = WidgetManager.current OR WidgetManager.active = NULL THEN
                 IF Bounds2i_ContainsBounds(r, clickBounds) THEN
+                    DIM dummy AS _BYTE: dummy = InputManager_GetMouseButtonClicked(mb)
                     clicked = _TRUE
                     EXIT FOR
                 END IF
