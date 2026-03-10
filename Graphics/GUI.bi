@@ -43,6 +43,7 @@ TYPE WidgetManagerType ' widget state information
     forced AS LONG ' widget that is forced to get focus
     current AS LONG ' current widget that has focus
     active AS LONG ' widget currently being interacted with (e.g. held down)
+    activeButton AS LONG ' the mouse button that started the active interaction
     focusBlink AS _BYTE ' should the focused widget "blink"
 END TYPE
 
@@ -169,11 +170,11 @@ SUB WidgetUpdate
         dummy = InputManager_GetKeyboardKey ' consume
     END IF
 
-    ' Mouse focus activation (on mouse down)
-    DIM mb AS LONG, anyMBDown AS _BYTE
+    ' Mouse focus activation
+    DIM mb AS LONG
     FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-        IF InputManager_IsMouseButtonDown(mb) THEN
-            anyMBDown = _TRUE
+        ' Check for new button presses to start interaction
+        IF InputManager_WasMouseButtonPressed(mb) THEN
             DIM mseDownPos AS Vector2i: InputManager_GetMouseButtonDownPosition mb, mseDownPos
             FOR h = 1 TO UBOUND(Widget)
                 IF Widget(h).inUse AND Widget(h).visible AND NOT Widget(h).disabled THEN
@@ -181,16 +182,21 @@ SUB WidgetUpdate
                     IF Bounds2i_ContainsPoint(r, mseDownPos) THEN
                         WidgetManager.forced = h
                         WidgetManager.active = h ' Mark as active for hold interaction
+                        WidgetManager.activeButton = mb ' Remember which button started it
                         EXIT FOR
                     END IF
                 END IF
             NEXT
+            dummy = InputManager_GetMouseButtonPressed(mb) ' consume the press
         END IF
     NEXT mb
 
-    ' Clear active widget on mouse release
-    IF NOT anyMBDown THEN
-        WidgetManager.active = NULL
+    ' Clear active widget when the button that started the interaction is released
+    IF WidgetManager.active <> NULL THEN
+        IF WidgetManager.activeButton _ANDALSO NOT InputManager_IsMouseButtonDown(WidgetManager.activeButton) THEN
+            WidgetManager.active = NULL
+            WidgetManager.activeButton = NULL
+        END IF
     END IF
 
     ' Apply focus changes
@@ -309,6 +315,7 @@ SUB WidgetFreeAll
     WidgetManager.current = NULL
     WidgetManager.forced = NULL
     WidgetManager.active = NULL
+    WidgetManager.activeButton = NULL
 END SUB
 
 
@@ -703,23 +710,26 @@ END SUB
 SUB __PushButtonUpdate
     SHARED Widget() AS WidgetType
     SHARED WidgetManager AS WidgetManagerType
-    DIM r AS Bounds2i, clicked AS _BYTE, k AS LONG
+    DIM r AS Bounds2i, clicked AS _BYTE, k AS LONG, mb AS LONG
 
     ' Find the bounding box
     Bounds2i_InitializeFromPositionSize Widget(WidgetManager.current).position, Widget(WidgetManager.current).size, r
 
-    DIM mb AS LONG
+    ' Check if the widget was clicked using ANY mouse button that was active on it
     FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-        IF InputManager_PeekMouseButtonClicked(mb) THEN
-            IF InputManager_GetMouseButtonClicked(mb) THEN
-                DIM clickBounds AS Bounds2i: InputManager_GetMouseButtonClickBounds mb, clickBounds
+        IF InputManager_GetMouseButtonClicked(mb) THEN
+            DIM clickBounds AS Bounds2i: InputManager_GetMouseButtonClickBounds mb, clickBounds
+            ' A click is valid if it finished on the button AND this button was the one that started the press (is active)
+            IF WidgetManager.active = WidgetManager.current OR WidgetManager.active = NULL THEN
                 IF Bounds2i_ContainsBounds(r, clickBounds) THEN
                     clicked = _TRUE
+                    EXIT FOR
                 END IF
             END IF
         END IF
     NEXT mb
 
+    ' Keyboard confirmation
     IF InputManager_PeekKeyboardKey = _KEY_ENTER OR InputManager_PeekKeyboardKey = KEY_SPACE THEN
         clicked = _TRUE
         k = InputManager_GetKeyboardKey ' consume keystroke
@@ -880,15 +890,11 @@ SUB __PushButtonDraw (handle AS LONG)
 
         ' Check visual press state: mouse must be held down, and must be over the button that was originally pressed
         DIM msePos AS Vector2i: InputManager_GetMousePosition msePos
-        DIM mb AS LONG
-        FOR mb = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-            IF WidgetManager.active = handle AND InputManager_IsMouseButtonDown(mb) AND Bounds2i_ContainsPoint(r, msePos) THEN
-                depressed = NOT Widget(handle).cmd.depressed
-                EXIT FOR
-            ELSE
-                depressed = Widget(handle).cmd.depressed
-            END IF
-        NEXT mb
+        IF WidgetManager.active = handle _ANDALSO WidgetManager.activeButton _ANDALSO InputManager_IsMouseButtonDown(WidgetManager.activeButton) _ANDALSO Bounds2i_ContainsPoint(r, msePos) THEN
+            depressed = NOT Widget(handle).cmd.depressed
+        ELSE
+            depressed = Widget(handle).cmd.depressed
+        END IF
     END IF
 
     ' Draw now

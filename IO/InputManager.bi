@@ -116,6 +116,7 @@ CONST MOUSE_BUTTON_LAST& = MOUSE_BUTTON_CENTER
 
 TYPE __InputManager_MouseButtonState
     isDown AS _BYTE
+    wasPressed AS _BYTE
     wasClicked AS _BYTE
     downPosition AS Vector2i
     upPosition AS Vector2i
@@ -163,52 +164,6 @@ END TYPE
 DIM __InputManager AS __InputManager
 DIM __InputManager_MouseButtonState(MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST) AS __InputManager_MouseButtonState
 
-'-----------------------------------------------------------------------------------------------------------------------
-' TEST CODE
-'-----------------------------------------------------------------------------------------------------------------------
-'$RESIZE:ON
-
-'DO UNTIL InputManager_WindowShouldClose
-'    DO
-'        InputManager_Update
-
-'        IF InputManager_HasKeyboardEvent THEN
-'            LOCATE 1, 1
-'            PRINT "Keyboard key:"; InputManager_GetKeyboardKey;
-'        END IF
-
-'        IF InputManager_HasMouseEvent THEN
-'            LOCATE 2, 1
-'            PRINT "Mouse position: ("; InputManager_GetMousePositionX; ","; InputManager_GetMousePositionY; ")";
-'        END IF
-
-'        IF InputManager_HasWindowEvent THEN
-'            IF InputManager_WindowShouldClose THEN
-'                LOCATE 3, 1
-'                PRINT "Window closed by user"
-'                EXIT DO
-'            END IF
-
-'            IF InputManager_WasWindowResized THEN
-'                WIDTH InputManager_GetWindowResizeWidth \ 8, InputManager_GetWindowResizeHeight \ 16
-'                _FONT 16
-'                LOCATE 4, 1
-'                PRINT "Window resized: ("; InputManager_GetWindowResizeWidth; ","; InputManager_GetWindowResizeHeight; ")";
-'            END IF
-'        END IF
-
-'        IF InputManager_HasGamepadEvent THEN
-'            LOCATE 5, 1
-'            PRINT "Gamepad event";
-'        END IF
-'    LOOP WHILE InputManager_HasEvent
-
-'    _LIMIT 60
-'LOOP
-
-'END
-'-----------------------------------------------------------------------------------------------------------------------
-
 FUNCTION __InputManager_GetNormalizeGamepadAxis! (rawValue AS LONG)
     __InputManager_GetNormalizeGamepadAxis = Math_ClampSingle((rawValue - 127.5!) / 126.5!, -1!, 1!)
 END FUNCTION
@@ -218,17 +173,18 @@ END FUNCTION
 SUB InputManager_Update
     SHARED __InputManager AS __InputManager
     SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
-    STATIC mouseButtonDown(1 TO 3) AS _BYTE ' keeps track if the mouse buttons were held down
+    STATIC lastMBDown(MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST) AS _BYTE
 
     ' Get keyboard input from the keyboard buffer
     __InputManager.kbdKeyCode = _KEYHIT
 
-    ' Clear some flags and previous states
+    ' Clear transient states
     __InputManager.isMouseEvent = _FALSE
     __InputManager.mse.scrollWheelValue = 0
 
     DIM i AS LONG
     FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
+        __InputManager_MouseButtonState(i).wasPressed = _FALSE
         __InputManager_MouseButtonState(i).wasClicked = _FALSE
     NEXT i
 
@@ -238,55 +194,36 @@ SUB InputManager_Update
     __InputManager.isGamepad1Event = _FALSE
     __InputManager.isGamepad2Event = _FALSE
 
-    ' Collect mouse input
+    ' Process all pending mouse events
     DO WHILE _MOUSEINPUT
-        ' Flag mouse event
         __InputManager.isMouseEvent = _TRUE
 
-        ' Save the mouse position
+        ' Update global real-time position
         Vector2i_Initialize _MOUSEX, _MOUSEY, __InputManager.mse.position
 
-        ' Save all three button status
-        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-            __InputManager_MouseButtonState(i).isDown = _MOUSEBUTTON(i)
-        NEXT i
-
-        ' Calculate the net displacement of the scroll wheel
+        ' Accumulate scroll wheel movement
         __InputManager.mse.scrollWheelValue = __InputManager.mse.scrollWheelValue + _MOUSEWHEEL
 
-        ' Check if any mouse button was previously held down and update the up position if released
+        ' Process button transitions for tracked buttons
         FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-            IF NOT __InputManager_MouseButtonState(i).isDown _ANDALSO mouseButtonDown(i) THEN
-                mouseButtonDown(i) = _FALSE
+            DIM currentDown AS _BYTE: currentDown = _MOUSEBUTTON(i)
+            
+            IF currentDown _ANDALSO NOT lastMBDown(i) THEN
+                ' Pressed transition
+                __InputManager_MouseButtonState(i).downPosition = __InputManager.mse.position
+                __InputManager_MouseButtonState(i).clickedBounds.lt = __InputManager.mse.position
+                __InputManager_MouseButtonState(i).wasPressed = _TRUE
+            ELSEIF NOT currentDown _ANDALSO lastMBDown(i) THEN
+                ' Clicked (Released) transition
                 __InputManager_MouseButtonState(i).upPosition = __InputManager.mse.position
                 __InputManager_MouseButtonState(i).clickedBounds.rb = __InputManager.mse.position
                 Bounds2i_Sanitize __InputManager_MouseButtonState(i).clickedBounds
                 __InputManager_MouseButtonState(i).wasClicked = _TRUE
             END IF
-        NEXT i
-
-        ' Exit if we have any button clicked event for the system to process it
-        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-            IF __InputManager_MouseButtonState(i).wasClicked THEN
-                EXIT DO
-            END IF
-        NEXT i
-
-        ' Check if any mouse button is down and update the down position
-        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-            IF __InputManager_MouseButtonState(i).isDown _ANDALSO NOT mouseButtonDown(i) THEN
-                mouseButtonDown(i) = _TRUE
-                __InputManager_MouseButtonState(i).downPosition = __InputManager.mse.position
-                __InputManager_MouseButtonState(i).clickedBounds.lt = __InputManager.mse.position
-                __InputManager_MouseButtonState(i).wasClicked = _FALSE
-            END IF
-        NEXT i
-
-        ' Exit if we have any button down event for the system to process it
-        FOR i = MOUSE_BUTTON_FIRST TO MOUSE_BUTTON_LAST
-            IF mouseButtonDown(i) THEN
-                EXIT DO
-            END IF
+            
+            ' Update states
+            __InputManager_MouseButtonState(i).isDown = currentDown
+            lastMBDown(i) = currentDown
         NEXT i
     LOOP
 
@@ -367,14 +304,14 @@ FUNCTION InputManager_GetMouseScrollWheelValue&
     InputManager_GetMouseScrollWheelValue = __InputManager.mse.scrollWheelValue
 END FUNCTION
 
-''' @brief Returns true if a mouse button is down. But does not consume the button.
+''' @brief Returns true if a mouse button is down.
 ''' @return True if the mouse button is down.
 FUNCTION InputManager_IsMouseButtonDown%% (button AS LONG)
     SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
     InputManager_IsMouseButtonDown = __InputManager_MouseButtonState(button).isDown
 END FUNCTION
 
-''' @brief Gets the position where the mouse button was pressed down. This is only valid if the button is currently down.
+''' @brief Gets the position where the mouse button was pressed down.
 ''' @param button The mouse button to check.
 ''' @param position The x and y position in a Vector2i where the mouse button was pressed down.
 SUB InputManager_GetMouseButtonDownPosition (button AS LONG, position AS Vector2i)
@@ -382,7 +319,7 @@ SUB InputManager_GetMouseButtonDownPosition (button AS LONG, position AS Vector2
     position = __InputManager_MouseButtonState(button).downPosition
 END SUB
 
-''' @brief Gets the position where the mouse button was released. This is only valid if the button is currently up.
+''' @brief Gets the position where the mouse button was released.
 ''' @param button The mouse button to check.
 ''' @param position The x and y position in a Vector2i where the mouse button was released.
 SUB InputManager_GetMouseButtonUpPosition (button AS LONG, position AS Vector2i)
@@ -390,15 +327,30 @@ SUB InputManager_GetMouseButtonUpPosition (button AS LONG, position AS Vector2i)
     position = __InputManager_MouseButtonState(button).upPosition
 END SUB
 
-''' @brief Return true if a mouse button was pressed and released. But does not consume the button.
-''' @return True if the mouse button was pressed and released.
-FUNCTION InputManager_PeekMouseButtonClicked%% (button AS LONG)
+''' @brief Return true if a mouse button was pressed since the last update.
+''' @return True if the mouse button was pressed.
+FUNCTION InputManager_WasMouseButtonPressed%% (button AS LONG)
     SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
-    InputManager_PeekMouseButtonClicked = __InputManager_MouseButtonState(button).wasClicked
+    InputManager_WasMouseButtonPressed = __InputManager_MouseButtonState(button).wasPressed
 END FUNCTION
 
-''' @brief Return true if a mouse button was pressed and released and consumes the button.
-''' @return True if the mouse button was pressed and released.
+''' @brief Return true if a mouse button was pressed since the last update and consumes the flag.
+''' @return True if the mouse button was pressed.
+FUNCTION InputManager_GetMouseButtonPressed%% (button AS LONG)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    InputManager_GetMouseButtonPressed = __InputManager_MouseButtonState(button).wasPressed
+    __InputManager_MouseButtonState(button).wasPressed = _FALSE
+END FUNCTION
+
+''' @brief Return true if a mouse button was clicked since the last update.
+''' @return True if the mouse button was clicked.
+FUNCTION InputManager_WasMouseButtonClicked%% (button AS LONG)
+    SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
+    InputManager_WasMouseButtonClicked = __InputManager_MouseButtonState(button).wasClicked
+END FUNCTION
+
+''' @brief Return true if a mouse button was clicked since the last update and consumes the flag.
+''' @return True if the mouse button was clicked.
 FUNCTION InputManager_GetMouseButtonClicked%% (button AS LONG)
     SHARED __InputManager_MouseButtonState() AS __InputManager_MouseButtonState
     InputManager_GetMouseButtonClicked = __InputManager_MouseButtonState(button).wasClicked
