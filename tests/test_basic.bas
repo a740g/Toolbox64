@@ -798,7 +798,5 @@ SUB Test_Bounds2i
     TEST_CASE_END
 END SUB
 
-'$INCLUDE:'../DS/StringFile.bas'
-'$INCLUDE:'../FS/Pathname.bas'
 '$INCLUDE:'../DS/HashTable.bas'
 '$INCLUDE:'../Debug/Test.bas'
