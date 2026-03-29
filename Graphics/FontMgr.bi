@@ -1,11 +1,10 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Cross-platform TrueType / OpenType font helper library
-' Copyright (c) 2025 Samuel Gomes
+' Copyright (c) 2026 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
 
-'$LET TOOLBOX64_STRICT = TRUE
 '$INCLUDE:'../Core/Common.bi'
 '$INCLUDE:'../Core/Types.bi'
 '$INCLUDE:'../Core/BitwiseOps.bi'
