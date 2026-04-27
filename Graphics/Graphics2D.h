@@ -84,13 +84,14 @@ extern void validatepage(int32_t n);
 
 // NOTE: These are QB64-PE internal structures and can change at any time!
 extern img_struct *write_page;
-extern img_struct *read_page;
 extern img_struct *img;
 extern const int32_t *page;
 extern const int32_t nextimg;
 extern const uint8_t charset8x8[256][8][8];
 extern const uint8_t charset8x16[256][16][8];
 #endif
+
+extern img_struct *read_page;
 
 /// @brief This is a function pointer type that we'll use to plot "pixels" on graphics as well and "text" surfaces.
 typedef void (*Graphics_SetPixelFunction_)(int32_t x, int32_t y, uint32_t clrAtr);
