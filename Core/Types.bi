@@ -26,8 +26,6 @@ END DECLARE
 '-------------------------------------------------------------------------------------------------------------------
 '$CONSOLE:ONLY
 
-'PRINT Compiler_GetDate
-'PRINT Compiler_GetTime
 'PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
 
 'Foo 123

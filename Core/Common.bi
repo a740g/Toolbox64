@@ -3,7 +3,7 @@
 ' Copyright (c) 2025 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF VERSION < 4.4.0 THEN
+$IF VERSION < 4.5.0 THEN
     $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
 $END IF
 
@@ -34,8 +34,6 @@ TYPE Vector3f
 END TYPE
 
 DECLARE LIBRARY "Common"
-    FUNCTION Compiler_GetDate$
-    FUNCTION Compiler_GetTime$
     FUNCTION Compiler_GetFunctionName$
     FUNCTION Compiler_GetPrettyFunctionName$
 END DECLARE

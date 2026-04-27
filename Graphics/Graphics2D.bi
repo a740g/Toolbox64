@@ -420,7 +420,7 @@ END TYPE
 'Graphics_DrawFilledRectangle 0, 0, 9, 9, Graphics_MakeTextColorAttribute(3, 1, 14)
 '_DEST 0
 
-'Graphics_SetTextImageClearColor txtImg, Graphics_MakeTextColorAttribute(3, 1, 14)
+'_CLEARCOLOR txtImg, Graphics_MakeTextColorAttribute(3, 1, 14)
 
 'DO
 '    DIM AS LONG x, y
@@ -433,9 +433,9 @@ END TYPE
 '    CLS
 
 '    IF _PIXELSIZE = 0 THEN
-'        Graphics_PutTextImage txtImg, x - 5, y - 5
+'        _PUTIMAGE txtImg, x - 5, y - 5
 '    ELSE
-'        Graphics_PutTextImage txtImg, x - 36, y - 36
+'        _PUTIMAGE txtImg, x - 36, y - 36
 '    END IF
 
 '    _DISPLAY
@@ -489,9 +489,6 @@ DECLARE LIBRARY "Graphics2D"
     FUNCTION Graphics_GetRGBDistance! (BYVAL c1 AS _UNSIGNED LONG, BYVAL c2 AS _UNSIGNED LONG)
     FUNCTION Graphics_GetRGBDelta~& (BYVAL c1 AS _UNSIGNED LONG, BYVAL c2 AS _UNSIGNED LONG)
     FUNCTION Graphics_InterpolateColor~& (BYVAL colorA AS _UNSIGNED LONG, BYVAL colorB AS _UNSIGNED LONG, BYVAL factor AS SINGLE)
-    SUB Graphics_SetTextImageClearColor (BYVAL imageHandle AS LONG, BYVAL clrAtr AS _UNSIGNED LONG)
-    SUB Graphics_PutTextImage (BYVAL imageHandle AS LONG, BYVAL x AS LONG, BYVAL y AS LONG)
-    SUB Graphics_PutTextImagePro ALIAS "Graphics_PutTextImage" (BYVAL imageHandle AS LONG, BYVAL x AS LONG, BYVAL y AS LONG, BYVAL lx AS LONG, BYVAL ty AS LONG, BYVAL rx AS LONG, BYVAL by AS LONG)
     SUB Graphics_RenderASCIIArt (BYVAL srcImage AS LONG, BYVAL dstImage AS LONG)
     FUNCTION Graphics_FindClosestColor~& (BYVAL clr AS _UNSIGNED LONG, paletteArray AS _UNSIGNED LONG, BYVAL paletteColors AS _UNSIGNED LONG)
 END DECLARE
@@ -754,11 +751,7 @@ SUB Graphics_FadeScreen (isIn AS _BYTE, maxFPS AS _UNSIGNED INTEGER, stopPercent
             _DEST _DISPLAY ' Set destination to the screen
 
             ' Stretch and blit the image to the screen just once
-            IF _PIXELSIZE(dspImg) = 0 THEN
-                Graphics_PutTextImage tmpImg, 0, 0 ' _PutImage cannot blit text images
-            ELSE
-                _PUTIMAGE , tmpImg, _DISPLAY
-            END IF
+            _PUTIMAGE , tmpImg, _DISPLAY
 
             DO
                 ' Change the palette in small increments

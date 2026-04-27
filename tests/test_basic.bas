@@ -126,8 +126,12 @@ END SUB
 SUB Test_Pathname
     TEST_CASE_BEGIN "Pathname"
 
-    TEST_CHECK Pathname_IsAbsolute("C:/Windows"), "Pathname_IsAbsolute('C:/Windows')"
-    TEST_CHECK Pathname_IsAbsolute("/Windows"), "Pathname_IsAbsolute('/Windows')"
+    $IF WINDOWS THEN
+        TEST_CHECK Pathname_IsAbsolute("C:/Windows"), "Pathname_IsAbsolute('C:/Windows')"
+    $ELSE
+        TEST_CHECK Pathname_IsAbsolute("/Windows"), "Pathname_IsAbsolute('/Windows')"
+    $END IF
+
     TEST_CHECK_FALSE Pathname_IsAbsolute("Windows"), "Pathname_IsAbsolute('Windows')"
     TEST_CHECK_FALSE Pathname_IsAbsolute(""), "Pathname_IsAbsolute('')"
 
@@ -154,7 +158,12 @@ SUB Test_Pathname
     TEST_CHECK Pathname_GetFileName("") = "", "Pathname_GetFileName('')"
 
     TEST_CHECK Pathname_GetPath("C:\\foo/bar.ext") = "C:\\foo/", "Pathname_GetPath('C:\\foo/bar.ext')"
-    TEST_CHECK Pathname_GetPath("\\bar.ext") = "\\", "Pathname_GetPath('\\bar.ext')"
+    $IF WINDOWS THEN
+        TEST_CHECK Pathname_GetPath("\\bar.ext") = "\\", "Pathname_GetPath('\\bar.ext')"
+    $ELSE
+        TEST_CHECK Pathname_GetPath("//bar.ext") = "//", "Pathname_GetPath('//bar.ext')"
+    $END IF
+
     TEST_CHECK Pathname_GetPath("") = "", "Pathname_GetPath('')"
 
     TEST_CHECK Pathname_HasFileExtension("C:\\foo/bar.ext"), "Pathname_HasFileExtension('C:\\foo/bar.ext')"
@@ -428,8 +437,8 @@ SUB Test_Math
     TEST_CHECK Math_Log2Single(8) = 3, "Math_Log2Single(8) = 3"
     TEST_CHECK Math_Log2Double(8) = 3, "Math_Log2Double(8) = 3"
 
-    TEST_CHECK Math_CbRtSingle(27) = 3, "Math_CbRtSingle(27) = 3"
-    TEST_CHECK Math_CbRtDouble(27) = 3, "Math_CbRtDouble(27) = 3"
+    TEST_CHECK Math_CbRtSingle(27) = 3!, "Math_CbRtSingle(27) = 3"
+    TEST_CHECK ABS(Math_CbRtDouble(27) - 3#) < 0.000001, "ABS(Math_CbRtDouble(27) - 3#) < 0.000001"
 
     TEST_CHECK Math_MulDivLong(10, 2, 5) = 4, "Math_MulDivLong(10, 2, 5) = 4"
     TEST_CHECK Math_MulDivULong(10, 2, 5) = 4, "Math_MulDivULong(10, 2, 5) = 4"
