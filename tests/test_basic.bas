@@ -13,6 +13,7 @@ $CONSOLE:ONLY
 TEST_BEGIN_ALL
 
 Test_Test
+Test_Core
 Test_Hash
 Test_Pathname
 Test_StringFile
@@ -36,6 +37,24 @@ SUB Test_Test
     TEST_CHECK2 10 / 2 = 5
     TEST_REQUIRE_FALSE2 1 = 2
     TEST_CHECK_FALSE2 3 = 4
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_Core
+    TEST_CASE_BEGIN "Core"
+
+    TEST_REQUIRE Compiler_GetFunctionName = "SUB_TEST_CORE", Compiler_GetFunctionName
+    TEST_REQUIRE Compiler_GetPrettyFunctionName = "TEST_CORE", Compiler_GetPrettyFunctionName
+
+    TEST_REQUIRE CBool(0) = 0, "CBool(0) = 0"
+    TEST_REQUIRE CBool(1) = -1, "CBool(1) = -1"
+    TEST_REQUIRE CBool(-1) = -1, "CBool(-1) = -1"
+    TEST_REQUIRE CBool(100) = -1, "CBool(100) = -1"
+    TEST_REQUIRE CBool(-100) = -1, "CBool(-100) = -1"
+
+    DIM s AS STRING: s = "testing!" + CHR$(0)
+    TEST_REQUIRE CString(_OFFSET(s)) = "testing!", "CString(_OFFSET(s)) = 'testing!'"
 
     TEST_CASE_END
 END SUB

@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Variable type support, size and limits
-' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2026 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $INCLUDEONCE
@@ -14,41 +14,7 @@ CONST DOUBLE_EPSILON# = 2.22044604925031308084726333618164062E-16
 
 CONST CHARACTER_BITS~%% = 8~%%
 
-' Note: QB64 does not really care about the _OFFSET being used below.
-' For example, the output C code is "((int32)int32_t(20))" for "CLong(20~%%)"
 DECLARE LIBRARY "Types"
     FUNCTION CBool%% ALIAS "TO_QB_BOOL" (BYVAL x AS _OFFSET)
     FUNCTION CString$ (BYVAL p AS _UNSIGNED _OFFSET)
 END DECLARE
-
-'-------------------------------------------------------------------------------------------------------------------
-' TEST CODE
-'-------------------------------------------------------------------------------------------------------------------
-'$CONSOLE:ONLY
-
-'PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
-
-'Foo 123
-'PRINT Bar(321)
-
-'PRINT CBool(0)
-'PRINT CBool(1)
-'PRINT CBool(-1)
-'PRINT CBool(100)
-'PRINT CBool(-100)
-
-'DIM s AS STRING: s = "testing!" + CHR$(0)
-'PRINT CString(_OFFSET(s))
-
-'END
-
-'SUB Foo (alpha AS LONG)
-'    PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
-'    PRINT alpha
-'END SUB
-
-'FUNCTION Bar (beta AS LONG)
-'    Bar = beta
-'    PRINT Compiler_GetFunctionName, Compiler_GetPrettyFunctionName
-'END FUNCTION
-'-------------------------------------------------------------------------------------------------------------------
