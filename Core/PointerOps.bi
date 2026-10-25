@@ -64,9 +64,9 @@ $INCLUDEONCE
 
 DECLARE LIBRARY "PointerOps"
     $IF 32BIT THEN
-        FUNCTION GetCStringLength~& ALIAS "__GetCStringLength" (BYVAL str As _UNSIGNED _OFFSET)
+        FUNCTION GetCStringLength~& ALIAS "__GetCStringLength" (BYVAL s As _UNSIGNED _OFFSET)
     $ELSE
-        FUNCTION GetCStringLength~&& ALIAS "__GetCStringLength" (BYVAL str AS _UNSIGNED _OFFSET)
+        FUNCTION GetCStringLength~&& ALIAS "__GetCStringLength" (BYVAL s AS _UNSIGNED _OFFSET)
     $END IF
     FUNCTION CompareMemory& ALIAS "__CompareMemory" (BYVAL lhs AS _UNSIGNED _OFFSET, BYVAL rhs AS _UNSIGNED _OFFSET, BYVAL count AS _UNSIGNED _OFFSET)
     SUB SetMemoryByte ALIAS "__SetMemoryByte" (BYVAL dst AS _UNSIGNED _OFFSET, BYVAL ch AS _UNSIGNED _BYTE, BYVAL count AS _UNSIGNED _OFFSET)
